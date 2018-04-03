@@ -1,0 +1,55 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ekiden/testing
+    steps:
+      # Set up.
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - checkout
+      - run: git submodule update --init --recursive
+
+      # Check style.
+      - run: cargo make checkstyle
+
+      # Build Ekiden needed to run the tests.
+      - run:
+          working_directory: ekiden
+          command: cargo make
+
+      # Build contract.
+      - run: cargo make
+
+      # Build client.
+      - run:
+          working_directory: examples/client
+          command: cargo build
+
+      # Test: end-to-end contract.
+      - run:
+          command: ./ekiden/target/debug/consensus
+          background: true
+      - run: tendermint init
+      - run:
+          command: tendermint node --consensus.create_empty_blocks=false --rpc.laddr tcp://0.0.0.0:46666 --rpc.grpc_laddr tcp://0.0.0.0:46657
+          background: true
+      - run: echo "$IAS_PKCS12" | base64 --decode --ignore-garbage > client.pfx
+      - run:
+          command: ./ekiden/target/debug/compute target/enclave/dummy.signed.so
+          background: true
+      - run:
+          command: ./ekiden/target/debug/compute ekiden/target/enclave/key-manager.signed.so -p 9003 --disable-key-manager
+          background: true
+      - run: ./examples/client/target/debug/dummy-client --mr-enclave $(python ekiden/scripts/parse_enclave.py target/enclave/dummy.signed.so 2>/dev/null | grep ENCLAVEHASH | cut -f2)
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - build
+experimental:
+  notify:
+    branches:
+      only:
+        - master
