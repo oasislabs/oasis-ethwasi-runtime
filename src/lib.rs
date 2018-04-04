@@ -33,7 +33,7 @@ database_schema! {
     }
 }
 
-fn hello_world(request: &HelloWorldRequest) -> Result<HelloWorldResponse> {
+pub fn hello_world(request: &HelloWorldRequest) -> Result<HelloWorldResponse> {
     let db = HelloWorldDb::new();
     let previous_counter = db.counter.get().unwrap_or(0);
     db.counter.insert(&(previous_counter + 1));
