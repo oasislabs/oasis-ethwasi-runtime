@@ -6,10 +6,10 @@ build = "build.rs"
 
 [dependencies]
 helloworld-api = { path = "./api" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.1" }
-ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.1" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.2" }
+ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.2" }
 protobuf = "1.4.3"
 
 [build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.1" }
-ekiden-edl = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.1" }
+ekiden-tools = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.2" }
+ekiden-edl = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.2" }

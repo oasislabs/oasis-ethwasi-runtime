@@ -12,14 +12,14 @@ jobs:
 
       # Install Ekiden binaries.
       # TODO: Use 0.1.0-alpha.2 when released.
-      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.1 ekiden-compute
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.1 ekiden-consensus
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.2 ekiden-tools
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.2 ekiden-compute
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.2 ekiden-consensus
       # Build key manager contract.
       - run: |
           cargo ekiden build-contract \
               --git https://github.com/oasislabs/ekiden \
-              --tag 0.1.0-alpha.1 \
+              --tag 0.1.0-alpha.2 \
               --output target/contract \
               ekiden-key-manager
       # Build hello world contract.
