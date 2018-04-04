@@ -91,7 +91,7 @@ $ ekiden-compute \
     target/contract/helloworld.so
 ```
 
-The contract's compute node will listen on `::1` (loopback), TCP port `9001` by default.
+The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
 
 Development notes:
 
