@@ -4,44 +4,58 @@ jobs:
     docker:
       - image: ekiden/testing
     steps:
-      # Set up.
+      # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
       - checkout
-      - run: git submodule update --init --recursive
 
-      # Check style.
-      - run: cargo make checkstyle
-
-      # Build Ekiden needed to run the tests.
+      # Install Ekiden binaries.
+      # TODO: Use 0.1.0-alpha.2 when released.
+      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.1 ekiden-compute
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.1 ekiden-consensus
+      # Build key manager contract.
+      - run: |
+          cargo ekiden build-contract \
+              --git https://github.com/oasislabs/ekiden \
+              --tag 0.1.0-alpha.1 \
+              --output target/contract \
+              ekiden-key-manager
+      # Build hello world contract.
+      - run: cargo ekiden build-contract --output-identity
+      # Run hello world contract tests.
+      - run: cargo test
+      # Build hello world client.
       - run:
-          working_directory: ekiden
-          command: cargo make
-
-      # Build contract.
-      - run: cargo make
-
-      # Build client.
-      - run:
-          working_directory: examples/client
           command: cargo build
+          working_directory: examples/client
+      # Check style. This needs to be after everything is built.
+      - run: cargo fmt -- --write-mode=diff
 
-      # Test: end-to-end contract.
+      # Contract end-to-end tests.
+
+      # Start the consensus node.
       - run:
-          command: ./ekiden/target/debug/consensus
+          command: ekiden-consensus
           background: true
+      # Start tendermint node.
       - run: tendermint init
       - run:
           command: tendermint node --consensus.create_empty_blocks=false --rpc.laddr tcp://0.0.0.0:46666 --rpc.grpc_laddr tcp://0.0.0.0:46657
           background: true
-      - run: echo "$IAS_PKCS12" | base64 --decode --ignore-garbage > client.pfx
+      # Start key manager compute node.
       - run:
-          command: ./ekiden/target/debug/compute target/enclave/dummy.signed.so
+          command: ekiden-compute target/contract/ekiden-key-manager.so -p 9003 --disable-key-manager --identity-file identity-km.pb
           background: true
+      # Start hello world compute node.
       - run:
-          command: ./ekiden/target/debug/compute ekiden/target/enclave/key-manager.signed.so -p 9003 --disable-key-manager
+          command: ekiden-compute target/contract/helloworld.so --identity-file identity-helloworld.pb
           background: true
-      - run: ./examples/client/target/debug/dummy-client --mr-enclave $(python ekiden/scripts/parse_enclave.py target/enclave/dummy.signed.so 2>/dev/null | grep ENCLAVEHASH | cut -f2)
+      # Start hello world client.
+      - run:
+          command: ./target/debug/helloworld-client --mr-enclave $(cat ../../target/contract/helloworld.mrenclave)
+          working_directory: examples/client
 
 workflows:
   version: 2
