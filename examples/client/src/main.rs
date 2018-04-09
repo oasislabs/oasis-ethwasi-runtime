@@ -4,7 +4,7 @@
 extern crate clap;
 extern crate futures;
 extern crate rand;
-extern crate tokio_core;
+extern crate grpcio;
 
 #[macro_use]
 extern crate client_utils;

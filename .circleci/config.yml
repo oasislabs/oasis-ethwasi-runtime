@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ekiden/testing
+      - image: ekiden/testing:0.1.0-alpha.3
     steps:
       # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
@@ -11,15 +11,14 @@ jobs:
       - checkout
 
       # Install Ekiden binaries.
-      # TODO: Use 0.1.0-alpha.2 when released.
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.2 ekiden-tools
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.2 ekiden-compute
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.2 ekiden-consensus
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-tools
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-compute
+      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-consensus
       # Build key manager contract.
       - run: |
           cargo ekiden build-contract \
               --git https://github.com/oasislabs/ekiden \
-              --tag 0.1.0-alpha.2 \
+              --tag 0.1.0-alpha.3 \
               --output target/contract \
               ekiden-key-manager
       # Build hello world contract.

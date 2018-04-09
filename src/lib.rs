@@ -13,8 +13,8 @@ use helloworld_api::{with_api, HelloWorldRequest, HelloWorldResponse};
 use ekiden_core::error::Result;
 use ekiden_trusted::db::database_schema;
 use ekiden_trusted::enclave::enclave_init;
-use ekiden_trusted::rpc::create_enclave_rpc;
 use ekiden_trusted::key_manager::use_key_manager_contract;
+use ekiden_trusted::rpc::create_enclave_rpc;
 
 enclave_init!();
 
@@ -39,13 +39,10 @@ pub fn hello_world(request: &HelloWorldRequest) -> Result<HelloWorldResponse> {
     db.counter.insert(&(previous_counter + 1));
 
     let mut response = HelloWorldResponse::new();
-    response.set_world(
-        format!(
-            "contract says {} ({} times)",
-            request.hello,
-            previous_counter,
-        )
-    );
+    response.set_world(format!(
+        "contract says {} ({} times)",
+        request.hello, previous_counter,
+    ));
 
     Ok(response)
 }

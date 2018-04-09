@@ -5,8 +5,8 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.2" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.3" }
 protobuf = "1.4.3"
 
 [build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.2" }
+ekiden-tools = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.3" }
