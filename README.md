@@ -61,7 +61,7 @@ To build the hello world contract simply run:
 $ cargo ekiden build-contract
 ```
 
-The built contract will be stored under `target/contract/helloworld.so`.
+The built contract will be stored under `target/contract/evm.so`.
 
 ## Running the contract
 
@@ -87,15 +87,15 @@ $ ekiden-compute \
 To start the compute node for the hello world contract:
 ```bash
 $ ekiden-compute \
-    --identity-file /tmp/helloworld.identity.pb \
-    target/contract/helloworld.so
+    --identity-file /tmp/evm.identity.pb \
+    target/contract/evm.so
 ```
 
 The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to remove the referenced identity file (e.g., `/tmp/helloworld.identiy.pb`) as it will otherwise fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to remove the referenced identity file (e.g., `/tmp/evm.identiy.pb`) as it will otherwise fail to start as it will be impossible to unseal the old identity.
 * Also, when the contract hash changes, the contract will be unable to decrypt and old state as the key manager will give it fresh keys. So be sure to also clear (if you are using a Tendermint node) and restart the consensus node.
 
 ## Building the example client

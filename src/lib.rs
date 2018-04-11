@@ -1,14 +1,32 @@
-//! Example Ekiden contract.
 #![feature(use_extern_macros)]
+#![feature(alloc)]
+
+mod evm;
 
 extern crate protobuf;
+
+extern crate alloc;
+extern crate bigint;
+extern crate hexutil;
+extern crate sha3;
+extern crate sputnikvm;
 
 extern crate ekiden_core;
 extern crate ekiden_trusted;
 
-extern crate helloworld_api;
+extern crate evm_api;
 
-use helloworld_api::{with_api, HelloWorldRequest, HelloWorldResponse};
+use evm_api::{with_api, EthState, InitStateRequest, ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateResponse, Transaction};
+
+use sputnikvm::{TransactionAction, ValidTransaction};
+
+use bigint::{Address, Gas, H256, U256};
+use hexutil::{read_hex, to_hex};
+
+use std::str::FromStr;
+use std::rc::Rc;
+
+use evm::fire_transactions_and_update_state;
 
 use ekiden_core::error::Result;
 use ekiden_trusted::db::database_schema;
@@ -28,21 +46,55 @@ with_api! {
 
 // Create database schema.
 database_schema! {
-    pub struct HelloWorldDb {
-        pub counter: u64,
+    pub struct Db {
+        pub state: evm_api::EthState,
     }
 }
 
-pub fn hello_world(request: &HelloWorldRequest) -> Result<HelloWorldResponse> {
-    let db = HelloWorldDb::new();
-    let previous_counter = db.counter.get().unwrap_or(0);
-    db.counter.insert(&(previous_counter + 1));
+fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> {
+    println!("*** Init genesis state");
+    let response = InitStateResponse::new();
+    let db = Db::new();
+    db.state.insert(&EthState::new());
+    Ok(response)
+}
 
-    let mut response = HelloWorldResponse::new();
-    response.set_world(format!(
-        "contract says {} ({} times)",
-        request.hello, previous_counter,
-    ));
+fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
+    let action =
+        if transaction.get_is_call() {
+            TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
+        } else {
+            TransactionAction::Create
+        };
+
+    ValidTransaction {
+        caller: Some(Address::from_str(transaction.get_caller().clone()).unwrap()),
+        action: action,
+        gas_price: Gas::zero(),
+        gas_limit: Gas::max_value(),
+        value: U256::zero(),
+        input: Rc::new(read_hex(transaction.get_input()).unwrap()),
+        nonce: U256::zero()
+    }
+}
+
+fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
+
+    println!("*** Execute transaction");
+    println!("Transaction: {:?}", request.get_transaction());
+
+    let db = Db::new();
+    let state = db.state.get().unwrap();
+
+    let transactions = [to_valid_transaction(request.get_transaction())];
+    let (new_state, _) = fire_transactions_and_update_state(&transactions, &state, 1);
+
+    db.state.insert(&new_state);
+
+    let mut response = ExecuteTransactionResponse::new();
+
+    // TODO: set from vm.status (VMStatus::ExitedOk = true)
+    response.set_status(true);
 
     Ok(response)
 }

@@ -1,11 +1,47 @@
 syntax = "proto3";
 
-package dummy;
+package api;
 
-message HelloWorldRequest {
-    string hello = 1;
+message InitStateRequest {
 }
 
-message HelloWorldResponse {
-    string world = 2;
+message InitStateResponse {
+}
+
+// We have to use strings/bytes for everything since protobuf doesn't support wide enough integers (e.g., addresses
+// in ethereum are 160-bit hashes)
+message AccountState {
+    string nonce = 1;
+    string address = 2;
+    string balance = 3;
+    map<string, string> storage = 4;
+    string code = 5;
+}
+
+message EthState {
+    map<string, AccountState> accounts = 1;
+}
+
+message Transaction {
+    string caller = 1;
+    bool is_call = 2;
+    string address = 3; // defined if is_call = true
+    string input = 4;
+}
+
+message ExecuteTransactionRequest {
+    Transaction transaction = 1;
+}
+
+message Log {
+    // Todo: add logs from VM
+}
+
+message ExecuteTransactionResponse {
+    string request = 1;
+    Log log = 2;
+    string used_gas = 3;
+
+    bool status = 4;  // ExitedOk = true
+    string result = 5;
 }
