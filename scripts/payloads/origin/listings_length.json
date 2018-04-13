@@ -1,0 +1,12 @@
+{
+  "id": 4141099012,
+  "jsonrpc": "2.0",
+  "params": [
+    {
+      "to": "0x556b3371709f7d3df2d575ce3601db4f20bf80b7",
+      "data": "0x7afd81f5"
+    },
+    "latest"
+  ],
+  "method": "eth_call"
+}
