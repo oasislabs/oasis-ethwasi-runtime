@@ -1,0 +1,121 @@
+# `copper` is chosen as a random word for use as a key for labels that
+# aren't naturally structured as key-value pairs.
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: evm-consensus
+spec:
+  ports:
+    - name: consensus-grpc
+      port: 9002
+  selector:
+    copper: evm-consensus
+  # type: ClusterIP
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: evm-consensus
+spec:
+  selector:
+    matchLabels:
+      copper: evm-consensus
+  # replicas: 1
+  template:
+    metadata:
+      labels:
+        copper: evm-consensus
+    spec:
+      containers:
+        - name: ekiden-consensus
+          image: docker.io/oasislabs/ekiden-contract-evm:latest
+          command:
+            - ekiden-consensus
+          args:
+            - --no-tendermint
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: evm-key-manager
+spec:
+  ports:
+    - name: contract-grpc
+      port: 9003
+  selector:
+    copper: evm-key-manager
+  # type: ClusterIP
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: evm-key-manager
+spec:
+  selector:
+    matchLabels:
+      copper: evm-key-manager
+  # replicas: 1
+  template:
+    metadata:
+      labels:
+        copper: evm-key-manager
+    spec:
+      containers:
+        - name: ekiden-compute
+          image: docker.io/oasislabs/ekiden-contract-evm:latest
+          command:
+            - ekiden-compute
+          args:
+            - --port
+            - "9003"
+            - --disable-key-manager
+            - --no-persist-identity
+            - --max-batch-size
+            - "1"
+            - ekiden/lib/evm-key-manager.so
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: evm
+spec:
+  ports:
+    - name: contract-grpc
+      port: 9001
+  selector:
+    copper: evm
+  # Change this to make the network public.
+  # type: ClusterIP
+---
+# Should we go stateful and save the identity?
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: evm
+spec:
+  selector:
+    matchLabels:
+      copper: evm
+  # replicas: 1
+  template:
+    metadata:
+      labels:
+        copper: evm
+    spec:
+      containers:
+        - name: ekiden-compute
+          image: docker.io/oasislabs/ekiden-contract-evm:latest
+          command:
+            - ekiden-compute
+          args:
+            - --no-persist-identity
+            - --consensus-host
+            - $(EVM_CONSENSUS_SERVICE_HOST)
+            - --consensus-port
+            - $(EVM_CONSENSUS_SERVICE_PORT_CONSENSUS_GRPC)
+            - --key-manager-host
+            - $(EVM_KEY_MANAGER_SERVICE_HOST)
+            - --key-manager-port
+            - $(EVM_KEY_MANAGER_SERVICE_PORT_CONTRACT_GRPC)
+            - ekiden/lib/evm.so
