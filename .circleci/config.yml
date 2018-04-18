@@ -21,14 +21,14 @@ jobs:
               --tag 0.1.0-alpha.3 \
               --output target/contract \
               ekiden-key-manager
-      # Build hello world contract.
+      # Build the contract.
       - run: cargo ekiden build-contract --output-identity
-      # Run hello world contract tests.
+      # Run the contract tests.
       - run: cargo test
-      # Build hello world client.
+      # Build the client.
       - run:
           command: cargo build
-          working_directory: examples/client
+          working_directory: client
       # Check style. This needs to be after everything is built.
       - run: cargo fmt -- --write-mode=diff
 
@@ -47,14 +47,19 @@ jobs:
       - run:
           command: ekiden-compute target/contract/ekiden-key-manager.so -p 9003 --disable-key-manager --identity-file identity-km.pb
           background: true
-      # Start hello world compute node.
+      # Start EVM compute node.
       - run:
-          command: ekiden-compute target/contract/helloworld.so --identity-file identity-helloworld.pb
+          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb
           background: true
-      # Start hello world client.
+      # Start web3 proxy.
       - run:
-          command: ./target/debug/helloworld-client --mr-enclave $(cat ../../target/contract/helloworld.mrenclave)
-          working_directory: examples/client
+          command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
+          working_directory: client
+          background: true
+      # Run a test script.
+      - run:
+          working_directory: scripts
+          command: ./test_counter.sh
 
   deploy:
     docker:
