@@ -11,9 +11,9 @@ use bigint::{Address, Gas, H256, M256, Sign, U256};
 use evm_api::{AccountState, EthState};
 use hexutil::{read_hex, to_hex};
 
-use std::str::FromStr;
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, MainnetEIP160Patch, RequireError,
                 SeqTransactionVM, Storage, ValidTransaction, VM};
+use std::str::FromStr;
 
 use std::rc::Rc;
 
@@ -237,4 +237,3 @@ pub fn fire_transactions_and_update_state(
     let new_state = update_state_from_vm(&last_vm.as_ref().unwrap(), state);
     (new_state, vm_result.to_vec())
 }
-
