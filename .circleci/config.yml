@@ -56,10 +56,10 @@ jobs:
           command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
           working_directory: client
           background: true
-      # Run a test script.
-      - run:
-          working_directory: scripts
-          command: ./test_counter.sh
+      # TODO: Run a test script.
+      # - run:
+      #     working_directory: scripts
+      #     command: ./test_counter.sh
 
   deploy:
     docker:
