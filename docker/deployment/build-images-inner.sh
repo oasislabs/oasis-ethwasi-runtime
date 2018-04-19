@@ -19,13 +19,14 @@ fi
 cargo install --force --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-tools
 # TODO: Let this share our target path to reduce duplicated compilation.
 cargo ekiden build-contract --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 --output target/contract --release ekiden-key-manager
-cargo ekiden build-contract --release
+cargo ekiden build-contract --release --output-identity
 (cd client && cargo build --release)
 
 # Package all binaries and resources.
-mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib
+mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib target/docker-deployment/context/res
 ln target/contract/ekiden-key-manager.so target/docker-deployment/context/lib/evm-key-manager.so
 ln target/contract/evm.so target/docker-deployment/context/lib
+ln target/contract/evm.mrenclave target/docker-deployment/context/res
 ln client/target/release/web3-client target/docker-deployment/context/bin
 ln docker/deployment/Dockerfile target/docker-deployment/context/Dockerfile
 tar cvzhf target/docker-deployment/context.tar.gz -C target/docker-deployment/context .
