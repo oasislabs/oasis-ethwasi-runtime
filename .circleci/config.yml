@@ -87,7 +87,7 @@ jobs:
           kubectl set image deployments/evm-consensus ekiden-consensus=$REPO_DIGEST
           kubectl set image deployments/evm-key-manager ekiden-compute=$REPO_DIGEST
           kubectl set image deployments/evm ekiden-compute=$REPO_DIGEST
-
+          kubectl set image deployments/web3-client web3-client=$REPO_DIGEST
 
 workflows:
   version: 2

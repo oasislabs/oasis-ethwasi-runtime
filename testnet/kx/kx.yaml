@@ -119,3 +119,41 @@ spec:
             - --key-manager-port
             - $(EVM_KEY_MANAGER_SERVICE_PORT_CONTRACT_GRPC)
             - ekiden/lib/evm.so
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: web3-client
+spec:
+  ports:
+    - name: web3
+      port: 8545
+  selector:
+    copper: web3-client
+  type: NodePort
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: web3-client
+spec:
+  selector:
+    matchLabels:
+      copper: web3-client
+  template:
+    metadata:
+      labels:
+        copper: web3-client
+    spec:
+      containers:
+        - name: web3-client
+          image: docker.io/oasislabs/ekiden-contract-evm:latest
+          command:
+            - sh
+          args:
+            - -c
+            - >-
+              exec web3-client
+              --host $(EVM_SERVICE_HOST)
+              --port $(EVM_SERVICE_PORT_CONTRACT_GRPC)
+              --mr-enclave $$(cat ekiden/res/evm.mrenclave)
