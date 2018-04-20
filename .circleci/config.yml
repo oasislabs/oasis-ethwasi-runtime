@@ -97,8 +97,7 @@ workflows:
       - deploy:
           filters:
             branches:
-              # %%% change this to master before merging
-              only: testnet
+              only: master
           requires:
             - build
 experimental:
