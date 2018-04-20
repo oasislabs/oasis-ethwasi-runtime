@@ -96,7 +96,7 @@ fn main() {
     let private_key = "C87509A1C067BBDE78BEB793E6FA76530B6382A4C0241E5E4A9EC0A0F44DC0D3";
     let balance = "100000000000000000000";
     let chain = "foundation";
-    let addr = "127.0.0.1:8545".parse().unwrap();
+    let addr = "0.0.0.0:8545".parse().unwrap();
 
     let mut rng = OsRng::new().unwrap();
 
