@@ -15,19 +15,17 @@ EOF
 fi
 
 # Build all Ekiden binaries and resources.
-# TODO: Check if we can save any compilation by setting CARGO_TARGET_DIR.
-cargo install --force --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-tools
-# TODO: Let this share our target path to reduce duplicated compilation.
-cargo ekiden build-contract --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 --output target/contract --release ekiden-key-manager
+CARGO_TARGET_DIR=target cargo install --force --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
+cargo ekiden build-contract --git https://github.com/oasislabs/ekiden --branch master --output target/contract --target-dir target --release ekiden-key-manager
 cargo ekiden build-contract --release --output-identity
-(cd client && cargo build --release)
+(cd client && CARGO_BUILD_TARGET_DIR=../target cargo build --release)
 
 # Package all binaries and resources.
 mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib target/docker-deployment/context/res
 ln target/contract/ekiden-key-manager.so target/docker-deployment/context/lib/evm-key-manager.so
 ln target/contract/evm.so target/docker-deployment/context/lib
 ln target/contract/evm.mrenclave target/docker-deployment/context/res
-ln client/target/release/web3-client target/docker-deployment/context/bin
+ln target/release/web3-client target/docker-deployment/context/bin
 ln docker/deployment/Dockerfile target/docker-deployment/context/Dockerfile
 tar cvzhf target/docker-deployment/context.tar.gz -C target/docker-deployment/context .
 rm -rf target/docker-deployment/context
