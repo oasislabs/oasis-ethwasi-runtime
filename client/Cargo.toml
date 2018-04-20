@@ -36,9 +36,9 @@ etcommon-bloom = "0.2"
 etcommon-rlp = "0.2"
 etcommon-hexutil = "0.2"
 lazy_static = "0.2"
-jsonrpc-core = { version = "7.1" }
-jsonrpc-http-server-plus = { version = "7.1" }
-jsonrpc-macros-plus = { version = "7.1" }
+jsonrpc-core = { version = "8.0" }
+jsonrpc-http-server = { version = "8.0" }
+jsonrpc-macros = { version = "8.0" }
 serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
