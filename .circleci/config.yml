@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ekiden/testing:0.1.0-alpha.3
+      - image: ekiden/testing:0.1.0-alpha.4
     steps:
       # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
@@ -21,14 +21,14 @@ jobs:
               --tag 0.1.0-alpha.3 \
               --output target/contract \
               ekiden-key-manager
-      # Build hello world contract.
+      # Build the contract.
       - run: cargo ekiden build-contract --output-identity
-      # Run hello world contract tests.
+      # Run the contract tests.
       - run: cargo test
-      # Build hello world client.
+      # Build the client.
       - run:
           command: cargo build
-          working_directory: examples/client
+          working_directory: client
       # Check style. This needs to be after everything is built.
       - run: cargo fmt -- --write-mode=diff
 
@@ -47,20 +47,59 @@ jobs:
       - run:
           command: ekiden-compute target/contract/ekiden-key-manager.so -p 9003 --disable-key-manager --identity-file identity-km.pb
           background: true
-      # Start hello world compute node.
+      # Start EVM compute node.
       - run:
-          command: ekiden-compute target/contract/helloworld.so --identity-file identity-helloworld.pb
+          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb
           background: true
-      # Start hello world client.
+      # Start web3 proxy.
       - run:
-          command: ./target/debug/helloworld-client --mr-enclave $(cat ../../target/contract/helloworld.mrenclave)
-          working_directory: examples/client
+          command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
+          working_directory: client
+          background: true
+      # TODO: Run a test script.
+      # - run:
+      #     working_directory: scripts
+      #     command: ./test_counter.sh
+
+  deploy:
+    docker:
+      - image: ekiden/testing:0.1.0-alpha.4
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - checkout
+      - setup_remote_docker
+
+      # Build deployment image.
+      - run: |
+          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
+      # Push deployment image.
+      - run: docker push oasislabs/ekiden-contract-evm:latest
+      # Update testnet.
+      # https://stackoverflow.com/a/33511811/1864688
+      - run: |
+          REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-contract-evm:latest)
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_CONTENT_BASE64" | base64 -di >~/.kube/config
+          kubectl set image deployments/evm-consensus ekiden-consensus=$REPO_DIGEST
+          kubectl set image deployments/evm-key-manager ekiden-compute=$REPO_DIGEST
+          kubectl set image deployments/evm ekiden-compute=$REPO_DIGEST
+          kubectl set image deployments/web3-client web3-client=$REPO_DIGEST
 
 workflows:
   version: 2
   build:
     jobs:
       - build
+      - deploy:
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
 experimental:
   notify:
     branches:
