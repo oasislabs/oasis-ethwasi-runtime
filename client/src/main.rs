@@ -83,6 +83,7 @@ with_api! {
 
 fn main() {
     let mut client = contract_client!(evm);
+    let mut call_client = contract_client!(evm);
 
     println!("Initializing genesis state");
     client
@@ -114,6 +115,8 @@ fn main() {
 
     let state = miner::make_state::<ByzantiumPatch>(genesis);
 
+    let client_arc = Arc::new(Mutex::new(call_client));
+
     let miner_arc = Arc::new(Mutex::new(state));
     let rpc_arc = miner_arc.clone();
 
@@ -123,5 +126,5 @@ fn main() {
         miner::mine_loop::<ByzantiumPatch, ekiden_rpc_client::backend::Web3ContractClientBackend>(&mut client, miner_arc, receiver);
     });
 
-    rpc::rpc_loop::<ByzantiumPatch>(rpc_arc, &addr, sender);
+    rpc::rpc_loop::<ByzantiumPatch>(client_arc, rpc_arc, &addr, sender);
 }

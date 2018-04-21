@@ -15,6 +15,7 @@ use trie::{Database, DatabaseGuard, FixedSecureTrie};
 use blockchain::chain::HeaderHash;
 use sputnikvm::{AccountChange, ValidTransaction, SeqTransactionVM, VM, VMStatus, Memory, MachineStatus, HeaderParams, Patch};
 use sputnikvm_stateful::MemoryStateful;
+use evm_api::{ExecuteTransactionRequest, Transaction as EVMTransaction};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender, Receiver};
@@ -24,8 +25,14 @@ use std::marker::PhantomData;
 use jsonrpc_macros::Trailing;
 use miner::dump_vm;
 
+use futures::future::Future;
+use ekiden_rpc_client;
+use evm;
+use ekiden_rpc_client::backend::Web3ContractClientBackend;
+
 pub struct MinerEthereumRPC<P: Patch + Send> {
     state: Arc<Mutex<MinerState>>,
+    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
     channel: Sender<bool>,
     _patch: PhantomData<P>,
 }
@@ -45,9 +52,10 @@ unsafe impl<P: Patch + Send> Sync for MinerFilterRPC<P> { }
 unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> { }
 
 impl<P: Patch + Send> MinerEthereumRPC<P> {
-    pub fn new(state: Arc<Mutex<MinerState>>, channel: Sender<bool>) -> Self {
+    pub fn new(client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>, state: Arc<Mutex<MinerState>>, channel: Sender<bool>) -> Self {
         MinerEthereumRPC {
             channel,
+            client,
             state,
             _patch: PhantomData,
         }
@@ -393,26 +401,36 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
     fn call(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Bytes, Error> {
         println!("\n*** Call contract");
-        println!("    Transaction = {:?}", transaction);
 
         let state = self.state.lock().unwrap();
 
-        let stateful = state.stateful();
+        // do we need to validate calls?
+        //let stateful = state.stateful();
+        //let valid = to_valid_transaction(&state, transaction.clone(), &stateful)?;
 
-        let valid = to_valid_transaction(&state, transaction, &stateful)?;
-        let block = from_block_number(&state, block)?;
+        let mut _transaction = EVMTransaction::new();
+        _transaction.set_caller(transaction.from.unwrap().0.hex());
+        _transaction.set_is_call(true);
+        _transaction.set_address(transaction.to.unwrap().0.hex());
+        _transaction.set_input(to_hex(&(transaction.data.clone().unwrap().0)));
 
-        let block = state.get_block_by_number(block);
+        //state.stateful_mut().to_valid::<P>(transaction).unwrap();
+        //println!("    Valid t: {:?}", valid);
 
-        let vm: SeqTransactionVM<P> = stateful.call(
-            valid, HeaderParams::from(&block.header),
-            &state.get_last_256_block_hashes());
+        let mut client = self.client.lock().unwrap();
 
-        let result = Ok(Bytes(vm.out().into()));
+        let mut request = ExecuteTransactionRequest::new();
+        request.set_transaction(_transaction);
 
-        // dump_vm(&vm);
-        println!("    Result: {:?}", result);
-        result
+        println!("*** Call transaction");
+        println!("Transaction: {:?}", request.get_transaction());
+
+        let response = client.execute_transaction(request)
+            .wait()
+            .unwrap();
+        println!("    Response: {:?}", response);
+
+        Ok(Bytes(response.get_result().as_bytes().to_vec()))
     }
 
     fn estimate_gas(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Hex<Gas>, Error> {
