@@ -16,16 +16,17 @@ extern crate ekiden_trusted;
 
 extern crate evm_api;
 
-use evm_api::{with_api, EthState, InitStateRequest, ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateResponse, Transaction};
+use evm_api::{with_api, EthState, ExecuteTransactionRequest, ExecuteTransactionResponse,
+              InitStateRequest, InitStateResponse, Transaction};
 
 use sputnikvm::{TransactionAction, ValidTransaction};
 
 use bigint::{Address, Gas, H256, U256};
 use hexutil::{read_hex, to_hex};
 
+use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
-use std::rc::Rc;
 
 use evm::fire_transactions_and_update_state;
 
@@ -61,12 +62,11 @@ fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> 
 }
 
 fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
-    let action =
-        if transaction.get_is_call() {
-            TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
-        } else {
-            TransactionAction::Create
-        };
+    let action = if transaction.get_is_call() {
+        TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
+    } else {
+        TransactionAction::Create
+    };
 
     ValidTransaction {
         caller: Some(Address::from_str(transaction.get_caller().clone()).unwrap()),
@@ -75,12 +75,11 @@ fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
         gas_limit: Gas::max_value(),
         value: U256::zero(),
         input: Rc::new(read_hex(transaction.get_input()).unwrap()),
-        nonce: U256::zero()
+        nonce: U256::zero(),
     }
 }
 
 fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
-
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
