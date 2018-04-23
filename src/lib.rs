@@ -25,6 +25,7 @@ use bigint::{Address, Gas, H256, U256};
 use hexutil::{read_hex, to_hex};
 
 use std::rc::Rc;
+use std::str;
 use std::str::FromStr;
 
 use evm::fire_transactions_and_update_state;
@@ -86,7 +87,7 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     let state = db.state.get().unwrap();
 
     let transactions = [to_valid_transaction(request.get_transaction())];
-    let (new_state, _) = fire_transactions_and_update_state(&transactions, &state, 1);
+    let (new_state, vm_result) = fire_transactions_and_update_state(&transactions, &state, 1);
 
     db.state.insert(&new_state);
 
@@ -94,6 +95,12 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
 
     // TODO: set from vm.status (VMStatus::ExitedOk = true)
     response.set_status(true);
+
+    let result = match str::from_utf8(&vm_result) {
+        Ok(val) => val.to_string(),
+        Err(_err) => String::new(),
+    };
+    response.set_result(result);
 
     Ok(response)
 }

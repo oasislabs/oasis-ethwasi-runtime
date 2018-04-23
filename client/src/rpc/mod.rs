@@ -22,6 +22,9 @@ use error::Error;
 use super::miner::MinerState;
 use self::serialize::*;
 
+use ekiden_rpc_client;
+use evm;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum Either<T, U> {
@@ -318,9 +321,9 @@ build_rpc_trait! {
 }
 
 pub fn rpc_loop<P: 'static + Patch + Send>(
-    state: Arc<Mutex<MinerState>>, addr: &SocketAddr, channel: Sender<bool>
+    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>, state: Arc<Mutex<MinerState>>, addr: &SocketAddr, channel: Sender<bool>
 ) {
-    let rpc = serves::MinerEthereumRPC::<P>::new(state.clone(), channel);
+    let rpc = serves::MinerEthereumRPC::<P>::new(client, state.clone(), channel);
     let filter = serves::MinerFilterRPC::<P>::new(state.clone());
     let debug = serves::MinerDebugRPC::<P>::new(state);
 
