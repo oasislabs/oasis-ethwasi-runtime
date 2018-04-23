@@ -1,15 +1,13 @@
-# Hello world Ekiden contract
+# EVM Ekiden contract
 
 ## Setting up the development environment
 
-The easiest way to build SGX code is to use the provided scripts, which run a Docker
-container with all the included tools.
-
-*Currently you need to get this script from the Ekiden repository checkout.*
+The easiest way to build SGX code is to use the provided ekiden "shell,"  which runs a Docker
+container with all the included tools. Follow instructions for installing ekiden-tools provided in the [Ekiden repository](https://github.com/oasislabs/ekiden).
 
 To start the SGX development container:
 ```bash
-$ ../ekiden/scripts/sgx-enter.sh
+$ cargo ekiden shell
 ```
 
 All the following commands should be run in the container and not on the host.
@@ -54,9 +52,9 @@ $ cargo ekiden build-contract \
     ekiden-key-manager
 ```
 
-## Building the hello world contract
+## Building the EVM contract
 
-To build the hello world contract simply run:
+To build the EVM contract simply run:
 ```bash
 $ cargo ekiden build-contract
 ```
@@ -84,7 +82,7 @@ $ ekiden-compute \
     target/contract/ekiden-key-manager.so
 ```
 
-To start the compute node for the hello world contract:
+To start the compute node for the EVM contract:
 ```bash
 $ ekiden-compute \
     --identity-file /tmp/evm.identity.pb \
@@ -95,7 +93,7 @@ The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `900
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to remove the referenced identity file (e.g., `/tmp/evm.identiy.pb`) as it will otherwise fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to remove the referenced identity file (e.g., `/tmp/evm.identity.pb`) as it will otherwise fail to start as it will be impossible to unseal the old identity.
 * Also, when the contract hash changes, the contract will be unable to decrypt and old state as the key manager will give it fresh keys. So be sure to also clear (if you are using a Tendermint node) and restart the consensus node.
 
 ## Building the example client
