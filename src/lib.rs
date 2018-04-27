@@ -2,6 +2,7 @@
 #![feature(alloc)]
 
 mod evm;
+//mod miner;
 
 extern crate protobuf;
 
@@ -16,10 +17,12 @@ extern crate ekiden_trusted;
 
 extern crate evm_api;
 
-use evm_api::{with_api, EthState, ExecuteTransactionRequest, ExecuteTransactionResponse,
+extern crate rlp;
+
+use evm_api::{with_api, ExecuteTransactionRequest, ExecuteTransactionResponse,
               InitStateRequest, InitStateResponse, Transaction};
 
-use sputnikvm::{TransactionAction, ValidTransaction};
+use sputnikvm::{TransactionAction, ValidTransaction, VM, VMStatus};
 
 use bigint::{Address, Gas, H256, U256};
 use hexutil::{read_hex, to_hex};
@@ -28,10 +31,9 @@ use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
-use evm::fire_transactions_and_update_state;
+use evm::{fire_transaction, update_state_from_vm};
 
 use ekiden_core::error::Result;
-use ekiden_trusted::db::database_schema;
 use ekiden_trusted::enclave::enclave_init;
 use ekiden_trusted::key_manager::use_key_manager_contract;
 use ekiden_trusted::rpc::create_enclave_rpc;
@@ -46,18 +48,20 @@ with_api! {
     create_enclave_rpc!(api);
 }
 
-// Create database schema.
-database_schema! {
-    pub struct Db {
-        pub state: evm_api::EthState,
-    }
-}
-
 fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> {
     println!("*** Init genesis state");
+
+    /*
+    let mut genesis = Vec::new();
+    // add account address 7110316b618d20d0c44728ac2a3d683536ea682b. TODO: move this to a genesis config file
+    genesis.push((SecretKey::from_slice(&SECP256K1, &read_hex("533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c").unwrap()).unwrap(), U256::from_dec_str("200000000000000000000").unwrap()));
+    let miner_state = miner::make_state::<ByzantiumPatch>(genesis);
+    */
+
     let response = InitStateResponse::new();
-    let db = Db::new();
-    db.state.insert(&EthState::new());
+    // TODO: insert genesis state
+    //let db = Db::new();
+    //db.state.insert(&EthState::new());
     Ok(response)
 }
 
@@ -68,6 +72,15 @@ fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
         TransactionAction::Create
     };
 
+    // TODO: verify that nonce matches?
+    /*let nonce = match transaction.get_nonce() {
+        Some(val) => U256::from_str(val.clone()),
+        None => {
+            account.as_ref().map(|account| account.nonce).unwrap_or(U256::zero())
+        }
+    };*/
+    let nonce = U256::from_str(transaction.get_nonce().clone()).unwrap();
+
     ValidTransaction {
         caller: Some(Address::from_str(transaction.get_caller().clone()).unwrap()),
         action: action,
@@ -75,7 +88,7 @@ fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
         gas_limit: Gas::max_value(),
         value: U256::zero(),
         input: Rc::new(read_hex(transaction.get_input()).unwrap()),
-        nonce: U256::zero(),
+        nonce: nonce,
     }
 }
 
@@ -83,20 +96,27 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let db = Db::new();
-    let state = db.state.get().unwrap();
-
-    let transactions = [to_valid_transaction(request.get_transaction())];
-    let (new_state, vm_result) = fire_transactions_and_update_state(&transactions, &state, 1);
-
-    db.state.insert(&new_state);
+    let transaction = to_valid_transaction(request.get_transaction());
+    let vm = fire_transaction(&transaction, 1);
+    if !request.get_simulate() {
+        println!(" Not eth_call, updating state");
+        update_state_from_vm(&vm)
+    } else {
+        println!("eth_call, not updating state");
+    }
 
     let mut response = ExecuteTransactionResponse::new();
 
-    // TODO: set from vm.status (VMStatus::ExitedOk = true)
-    response.set_status(true);
+    // TODO: set transaction hash
+    response.set_hash(String::new());
 
-    let result = match str::from_utf8(&vm_result) {
+    // TODO: return error info to client
+    match vm.status() {
+        VMStatus::ExitedOk => response.set_status(true),
+        _ => response.set_status(false),
+    }
+
+    let result = match str::from_utf8(&vm.out().to_vec()) {
         Ok(val) => val.to_string(),
         Err(_err) => String::new(),
     };

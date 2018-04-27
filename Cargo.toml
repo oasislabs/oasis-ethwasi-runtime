@@ -7,6 +7,13 @@ build = "build.rs"
 [dependencies]
 etcommon-bigint = { version = "0.2", features = ["string", "rlp"], default-features = false }
 etcommon-hexutil = { version = "0.2", default-features = false }
+etcommon-rlp = "0.2"
+#etcommon-block = { version = "0.3", default-features = false }
+#etcommon-trie = "0.3"
+#etcommon-bloom = "0.2"
+#secp256k1-plus = "0.5" or #libsecp256k1 = "0.1"
+#sputnikvm-network-foundation = { version = "0.10", default-features = false }
+#sputnikvm-stateful = "0.10"
 sha3 = "0.6"
 sputnikvm = { version = "0.9", default-features = false }
 evm-api = { path = "./api" }

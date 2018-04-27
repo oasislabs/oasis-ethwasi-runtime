@@ -18,19 +18,17 @@ message AccountState {
     string code = 5;
 }
 
-message EthState {
-    map<string, AccountState> accounts = 1;
-}
-
 message Transaction {
-    string caller = 1;
-    bool is_call = 2;
-    string address = 3; // defined if is_call = true
-    string input = 4;
+    string nonce = 1; // optional
+    string caller = 2;
+    bool is_call = 3;
+    string address = 4; // defined if is_call = true
+    string input = 5;
 }
 
 message ExecuteTransactionRequest {
     Transaction transaction = 1;
+    bool simulate = 2; // true for eth_call
 }
 
 message Log {
@@ -41,7 +39,7 @@ message ExecuteTransactionResponse {
     string request = 1;
     Log log = 2;
     string used_gas = 3;
-
     bool status = 4;  // ExitedOk = true
     string result = 5;
+    string hash = 6; // returned by eth_sendTransaction
 }

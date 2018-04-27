@@ -1,29 +1,16 @@
-use super::{EthereumRPC, FilterRPC, DebugRPC, Either, RPCTransaction, RPCTrace, RPCStep, RPCBlock, RPCLog, RPCReceipt, RPCLogFilter, RPCBlockTrace, RPCDump, RPCDumpAccount, RPCTraceConfig};
+use super::{EthereumRPC, FilterRPC, DebugRPC, Either, RPCTransaction, RPCTrace, RPCBlock, RPCLog, RPCReceipt, RPCLogFilter, RPCBlockTrace, RPCDump, RPCTraceConfig};
 use super::util::*;
-use super::filter::*;
 use super::serialize::*;
-use super::solidity::*;
 
 use error::Error;
-use miner::MinerState;
 
-use rlp::{self, UntrustedRlp};
-use bigint::{M256, U256, H256, H2048, Address, Gas};
-use hexutil::{read_hex, to_hex};
-use block::{Block, TotalHeader, Account, Log, Receipt, FromKey, Transaction, UnsignedTransaction, TransactionAction};
-use trie::{Database, DatabaseGuard, FixedSecureTrie};
-use blockchain::chain::HeaderHash;
-use sputnikvm::{AccountChange, ValidTransaction, SeqTransactionVM, VM, VMStatus, Memory, MachineStatus, HeaderParams, Patch};
-use sputnikvm_stateful::MemoryStateful;
-use evm_api::{ExecuteTransactionRequest, Transaction as EVMTransaction};
-use std::str::FromStr;
+use bigint::{M256, U256, H256, Address, Gas};
+use sputnikvm::Patch;
+use evm_api::ExecuteTransactionRequest;
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use jsonrpc_macros::Trailing;
-use miner::dump_vm;
 
 use futures::future::Future;
 use ekiden_rpc_client;
@@ -31,19 +18,15 @@ use evm;
 use ekiden_rpc_client::backend::Web3ContractClientBackend;
 
 pub struct MinerEthereumRPC<P: Patch + Send> {
-    state: Arc<Mutex<MinerState>>,
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
-    channel: Sender<bool>,
     _patch: PhantomData<P>,
 }
 
 pub struct MinerFilterRPC<P: Patch + Send> {
-    filter: Mutex<FilterManager>,
     _patch: PhantomData<P>,
 }
 
 pub struct MinerDebugRPC<P: Patch + Send> {
-    state: Arc<Mutex<MinerState>>,
     _patch: PhantomData<P>,
 }
 
@@ -52,29 +35,25 @@ unsafe impl<P: Patch + Send> Sync for MinerFilterRPC<P> { }
 unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> { }
 
 impl<P: Patch + Send> MinerEthereumRPC<P> {
-    pub fn new(client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>, state: Arc<Mutex<MinerState>>, channel: Sender<bool>) -> Self {
+    pub fn new(client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>) -> Self {
         MinerEthereumRPC {
-            channel,
             client,
-            state,
             _patch: PhantomData,
         }
     }
 }
 
 impl<P: Patch + Send> MinerFilterRPC<P> {
-    pub fn new(state: Arc<Mutex<MinerState>>) -> Self {
+    pub fn new() -> Self {
         MinerFilterRPC {
-            filter: Mutex::new(FilterManager::new(state)),
             _patch: PhantomData,
         }
     }
 }
 
 impl<P: Patch + Send> MinerDebugRPC<P> {
-    pub fn new(state: Arc<Mutex<MinerState>>) -> Self {
+    pub fn new() -> Self {
         MinerDebugRPC {
-            state,
             _patch: PhantomData,
         }
     }
@@ -149,6 +128,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn accounts(&self) -> Result<Vec<Hex<Address>>, Error> {
+        /*
         let state = self.state.lock().unwrap();
 
          println!("\n*** Accounts");
@@ -163,18 +143,22 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         //println!("Result: {:?}", result);
         result
+        */
+        Err(Error::TODO)
     }
 
     fn block_number(&self) -> Result<Hex<usize>, Error> {
-
+        /*
         println!("\n*** block_number");
         let state = self.state.lock().unwrap();
 
         Ok(Hex(state.block_height()))
+        */
+        Err(Error::TODO)
     }
 
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
-
+       /*
        // println!("\n*** balance *** address = {:?}", address);
 
         let state = self.state.lock().unwrap();
@@ -194,9 +178,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
                 Ok(Hex(U256::zero()))
             },
         }
+        */
+        Err(Error::TODO)
     }
 
     fn storage_at(&self, address: Hex<Address>, index: Hex<U256>, block: Trailing<String>) -> Result<Hex<M256>, Error> {
+        /*
         println!("\n*** storage_at *** address = {:?}, index = {:?}", address, index);
 
         let state = self.state.lock().unwrap();
@@ -217,10 +204,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
             None => {
                 Ok(Hex(M256::zero()))
             },
-        }
+        }*/
+        Err(Error::TODO)
     }
 
     fn transaction_count(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
+        /*
         println!("\n*** transaction_count *** address = {:?}", address);
 
         let state = self.state.lock().unwrap();
@@ -240,9 +229,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
                 Ok(Hex(U256::zero()))
             },
         }
+        */
+        Err(Error::TODO)
     }
 
     fn block_transaction_count_by_hash(&self, block: Hex<H256>) -> Result<Option<Hex<usize>>, Error> {
+        /*
         println!("\n*** block_transaction_count_by_hash");
 
         let state = self.state.lock().unwrap();
@@ -254,9 +246,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         };
 
         Ok(Some(Hex(block.transactions.len())))
+        */
+        Err(Error::TODO)
     }
 
     fn block_transaction_count_by_number(&self, number: String) -> Result<Option<Hex<usize>>, Error> {
+        /*
         println!("\n*** block_transaction_count_by_number *** number = {:?}", number);
 
         let state = self.state.lock().unwrap();
@@ -269,9 +264,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let block = state.get_block_by_number(number);
 
         Ok(Some(Hex(block.transactions.len())))
+        */
+        Err(Error::TODO)
     }
 
     fn block_uncles_count_by_hash(&self, block: Hex<H256>) -> Result<Option<Hex<usize>>, Error> {
+        /*
         println!("\n*** block_uncles_count_by_hash");
         let state = self.state.lock().unwrap();
 
@@ -282,9 +280,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         };
 
         Ok(Some(Hex(block.ommers.len())))
+        */
+        Err(Error::TODO)
     }
 
     fn block_uncles_count_by_number(&self, number: String) -> Result<Option<Hex<usize>>, Error> {
+        /*
         println!("\n*** block_uncles_count_by_number *** number = {:?}", number);
         let state = self.state.lock().unwrap();
 
@@ -296,9 +297,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let block = state.get_block_by_number(number);
 
         Ok(Some(Hex(block.ommers.len())))
+        */
+        Err(Error::TODO)
     }
 
     fn code(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Bytes, Error> {
+        /*
         println!("\n*** code *** address = {:?}", address);
 
         let state = self.state.lock().unwrap();
@@ -318,9 +322,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
                 Ok(Bytes(Vec::new()))
             },
         }
+        */
+        Err(Error::TODO)
     }
 
     fn sign(&self, address: Hex<Address>, message: Bytes) -> Result<Bytes, Error> {
+        /*
         println!("\n*** sign *** address = {:?}, message = {:?}", address, message);
 
         use sha3::{Digest, Keccak256};
@@ -354,33 +361,33 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         ret.extend(sign.as_ref());
 
         Ok(Bytes(ret))
+        */
+        Err(Error::TODO)
     }
 
     fn send_transaction(&self, mut transaction: RPCTransaction) -> Result<Hex<H256>, Error> {
         println!("\n*** send_transaction");
-        transaction.gas = Some(Hex(Gas::max_value()));
 
-        println!("    t: {:?}", transaction);
+        let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut state = self.state.lock().unwrap();
+        let mut client = self.client.lock().unwrap();
 
-        let (valid, transaction) = {
-            let stateful = state.stateful();
-            let transaction = to_signed_transaction(&state, transaction, &stateful)?;
-            let valid = stateful.to_valid::<P>(transaction.clone())?;
-            (valid, transaction)
-        };
+        let mut request = ExecuteTransactionRequest::new();
+        request.set_transaction(_transaction);
+        request.set_simulate(false);
 
-        let hash = state.append_pending_transaction(transaction);
-        self.channel.send(true);
+        let response = client.execute_transaction(request)
+            .wait()
+            .unwrap();
+        println!("    Response: {:?}", response);
 
-        let result = Hex(hash);
-
-        println!("    result: {:?}", result);
-        Ok(result)
+        // PJG: TODO: handle this error
+        //Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
+        Ok(Hex(H256::new()))
     }
 
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
+        /*
         println!("\n*** send_raw_transaction *** data = {:?}", data);
 
         let mut state = self.state.lock().unwrap();
@@ -397,30 +404,19 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         println!("    Result: {:?}", result);
         Ok(result)
+        */
+        Err(Error::TODO)
     }
 
     fn call(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Bytes, Error> {
         println!("\n*** Call contract");
-
-        let state = self.state.lock().unwrap();
-
-        // do we need to validate calls?
-        //let stateful = state.stateful();
-        //let valid = to_valid_transaction(&state, transaction.clone(), &stateful)?;
-
-        let mut _transaction = EVMTransaction::new();
-        _transaction.set_caller(transaction.from.unwrap().0.hex());
-        _transaction.set_is_call(true);
-        _transaction.set_address(transaction.to.unwrap().0.hex());
-        _transaction.set_input(to_hex(&(transaction.data.clone().unwrap().0)));
-
-        //state.stateful_mut().to_valid::<P>(transaction).unwrap();
-        //println!("    Valid t: {:?}", valid);
+        let mut _transaction = to_evm_transaction(transaction).unwrap();
 
         let mut client = self.client.lock().unwrap();
 
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
+        request.set_simulate(true);
 
         println!("*** Call transaction");
         println!("Transaction: {:?}", request.get_transaction());
@@ -434,6 +430,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn estimate_gas(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Hex<Gas>, Error> {
+        /*
         println!("\n*** estimate_gas");
 
         if true
@@ -463,9 +460,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         println!("    Result: {:?}", result);
         Ok(result)
+        */
+        Err(Error::TODO)
     }
 
     fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
+        /*
         println!("\n*** block_by_hash *** hash = {:?}", hash);
 
         let state = self.state.lock().unwrap();
@@ -482,10 +482,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         };
 
         Ok(Some(to_rpc_block(block, total, full)))
+        */
+        Err(Error::TODO)
     }
 
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
-
+        /*
         let state = self.state.lock().unwrap();
 
         let number = match from_block_number(&state, Some(number)) {
@@ -503,9 +505,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let result = to_rpc_block(block, total, full);
        // println!("\n*** block_by_number ({:?}) -> {:?}", number, result);
         Ok(Some(result))
+        */
+        Err(Error::TODO)
     }
 
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {
+        /*
         println!("\n*** Transaction by hash: {:?}", hash);
 
         let state = self.state.lock().unwrap();
@@ -531,9 +536,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         println!("    Result: Ok({:?})", result);
         Ok(result)
+        */
+        Err(Error::TODO)
     }
 
     fn transaction_by_block_hash_and_index(&self, block_hash: Hex<H256>, index: Hex<U256>) -> Result<Option<RPCTransaction>, Error> {
+        /*
         println!("\n*** transaction_by_block_hash_and_index *** hash = {:?}, index = {:?}", block_hash, index);
 
         let state = self.state.lock().unwrap();
@@ -549,9 +557,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let transaction = block.transactions[index.0.as_usize()].clone();
 
         Ok(Some(to_rpc_transaction(transaction, Some(&block))))
+        */
+        Err(Error::TODO)
     }
 
     fn transaction_by_block_number_and_index(&self, number: String, index: Hex<U256>) -> Result<Option<RPCTransaction>, Error> {
+        /*
         println!("\n*** transaction_by_block_number_and_index *** number = {:?}, index = {:?}", number, index);
 
         let state = self.state.lock().unwrap();
@@ -568,9 +579,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let transaction = block.transactions[index.0.as_usize()].clone();
 
         Ok(Some(to_rpc_transaction(transaction, Some(&block))))
+        */
+        Err(Error::TODO)
     }
 
     fn transaction_receipt(&self, hash: Hex<H256>) -> Result<Option<RPCReceipt>, Error> {
+        /*
         println!("\n*** Transaction receipt: {:?}", hash);
 
         let state = self.state.lock().unwrap();
@@ -601,10 +615,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         println!("    Result: {:?}", result);
         result
-
+        */
+        Err(Error::TODO)
     }
 
     fn uncle_by_block_hash_and_index(&self, block_hash: Hex<H256>, index: Hex<U256>) -> Result<Option<RPCBlock>, Error> {
+        /*
         println!("\n*** uncle_by_block_hash_and_index *** block_hash = {:?}, index = {:?}", block_hash, index);
 
         let state = self.state.lock().unwrap();
@@ -629,11 +645,13 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         };
 
         Ok(Some(to_rpc_block(uncle, total, false)))
+        */
+        Err(Error::TODO)
     }
 
     fn uncle_by_block_number_and_index(&self, block_number: String, index: Hex<U256>) -> Result<Option<RPCBlock>, Error> {
+        /*
         println!("\n*** uncle_by_block_number_and_index *** block_number = {:?}, index = {:?}", block_number, index);
-
 
         let state = self.state.lock().unwrap();
 
@@ -657,6 +675,8 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         };
 
         Ok(Some(to_rpc_block(uncle, total, false)))
+        */
+        Err(Error::TODO)
     }
 
     fn compilers(&self) -> Result<Vec<String>, Error> {
@@ -666,6 +686,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn logs(&self, log: RPCLogFilter) -> Result<Vec<RPCLog>, Error> {
+        /*
         println!("\n*** logs. log = {:?}", log);
 
         let state = self.state.lock().unwrap();
@@ -674,232 +695,76 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
             Ok(filter) => Ok(get_logs(&state, filter)?),
             Err(_) => Ok(Vec::new()),
         }
+        */
+        Err(Error::TODO)
     }
 }
 
 impl<P: 'static + Patch + Send> FilterRPC for MinerFilterRPC<P> {
     fn new_filter(&self, log: RPCLogFilter) -> Result<String, Error> {
-        let mut filter = self.filter.lock().unwrap();
-        let log_filter = filter.from_log_filter(log)?;
-        let id = filter.install_log_filter(log_filter);
-        Ok(format!("0x{:x}", id))
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn new_block_filter(&self) -> Result<String, Error> {
-        let id = self.filter.lock().unwrap().install_block_filter();
-        Ok(format!("0x{:x}", id))
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn new_pending_transaction_filter(&self) -> Result<String, Error> {
-        let id = self.filter.lock().unwrap().install_pending_transaction_filter();
-        Ok(format!("0x{:x}", id))
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn uninstall_filter(&self, id: String) -> Result<bool, Error> {
-        let id = U256::from_str(&id)?.as_usize();
-        self.filter.lock().unwrap().uninstall_filter(id);
-        Ok(true)
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn filter_changes(&self, id: String) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
-        let id = U256::from_str(&id)?.as_usize();
-        Ok(self.filter.lock().unwrap().get_changes(id)?)
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn filter_logs(&self, id: String) -> Result<Vec<RPCLog>, Error> {
-        let id = U256::from_str(&id)?.as_usize();
-        Ok(self.filter.lock().unwrap().get_logs(id)?)
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 }
 
 impl<P: 'static + Patch + Send> DebugRPC for MinerDebugRPC<P> {
     fn block_rlp(&self, number: usize) -> Result<Bytes, Error> {
-        let state = self.state.lock().unwrap();
-
-        if number > state.block_height() {
-            return Err(Error::NotFound);
-        }
-
-        let block = state.get_block_by_number(number);
-        Ok(Bytes(rlp::encode(&block).to_vec()))
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn trace_transaction(&self, hash: Hex<H256>, config: Trailing<RPCTraceConfig>) -> Result<RPCTrace, Error> {
-        let config = config.unwrap_or(RPCTraceConfig::default());
-        let state = self.state.lock().unwrap();
-
-        let transaction = state.get_transaction_by_hash(hash.0)?;
-        let block = state.get_block_by_hash(state.get_transaction_block_hash_by_hash(hash.0)?)?;
-        let last_block = state.get_block_by_number(if block.header.number == U256::zero() { 0 } else { block.header.number.as_usize() - 1 });
-        let last_hashes = state.get_last_256_block_hashes_by_number(block.header.number.as_usize());
-
-        let mut stateful: MemoryStateful<'static> = state.stateful_at(last_block.header.state_root);
-        for other_transaction in &block.transactions {
-            if other_transaction != &transaction {
-                let valid = stateful.to_valid::<P>(transaction.clone())?;
-                let _: SeqTransactionVM<P> =
-                    stateful.execute::<_, P>(valid, HeaderParams::from(&block.header), &last_hashes);
-            } else {
-                break;
-            }
-        }
-
-        let (steps, vm) = replay_transaction::<P>(&stateful, transaction, &block, &last_hashes, &config)?;
-
-        let gas = Hex(vm.used_gas());
-        let return_value = Bytes(vm.out().into());
-
-        Ok(RPCTrace {
-            gas, return_value,
-            struct_logs: steps,
-        })
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn trace_block(&self, block_rlp: Bytes, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
-        let config = config.unwrap_or(RPCTraceConfig::default());
-        let state = self.state.lock().unwrap();
-        let block: Block = UntrustedRlp::new(&block_rlp.0).as_val()?;
-        let last_block = state.get_block_by_number(if block.header.number == U256::zero() { 0 } else { block.header.number.as_usize() - 1 });
-        let last_hashes = state.get_last_256_block_hashes_by_number(block.header.number.as_usize());
-
-        let mut stateful: MemoryStateful<'static> = state.stateful_at(last_block.header.state_root);
-        let mut steps = Vec::new();
-        for transaction in block.transactions.clone() {
-            let (mut local_steps, vm) = replay_transaction::<P>(&stateful, transaction,
-                                                                &block, &last_hashes,
-                                                                &config)?;
-            steps.append(&mut local_steps);
-            let mut accounts = Vec::new();
-            for account in vm.accounts() {
-                accounts.push(account.clone());
-            }
-            stateful.transit(&accounts);
-        }
-
-        Ok(RPCBlockTrace {
-            struct_logs: steps
-        })
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn trace_block_by_number(&self, number: usize, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
-        let config = config.unwrap_or(RPCTraceConfig::default());
-        let state = self.state.lock().unwrap();
-        if number > state.block_height() {
-            return Err(Error::NotFound);
-        }
-        let block: Block = state.get_block_by_number(number);
-        let last_block = state.get_block_by_number(if block.header.number == U256::zero() { 0 } else { block.header.number.as_usize() - 1 });
-        let last_hashes = state.get_last_256_block_hashes_by_number(block.header.number.as_usize());
-
-        let mut stateful: MemoryStateful<'static> = state.stateful_at(last_block.header.state_root);
-        let mut steps = Vec::new();
-        for transaction in block.transactions.clone() {
-            let (mut local_steps, vm) = replay_transaction::<P>(&stateful, transaction,
-                                                                &block, &last_hashes,
-                                                                &config)?;
-            steps.append(&mut local_steps);
-            let mut accounts = Vec::new();
-            for account in vm.accounts() {
-                accounts.push(account.clone());
-            }
-            stateful.transit(&accounts);
-        }
-
-        Ok(RPCBlockTrace {
-            struct_logs: steps
-        })
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn trace_block_by_hash(&self, hash: Hex<H256>, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
-        let config = config.unwrap_or(RPCTraceConfig::default());
-        let state = self.state.lock().unwrap();
-        let block: Block = state.get_block_by_hash(hash.0)?;
-        let last_block = state.get_block_by_number(if block.header.number == U256::zero() { 0 } else { block.header.number.as_usize() - 1 });
-        let last_hashes = state.get_last_256_block_hashes_by_number(block.header.number.as_usize());
-
-        let mut stateful: MemoryStateful<'static> = state.stateful_at(last_block.header.state_root);
-        let mut steps = Vec::new();
-        for transaction in block.transactions.clone() {
-            let (mut local_steps, vm) = replay_transaction::<P>(&stateful, transaction,
-                                                                &block, &last_hashes,
-                                                                &config)?;
-            steps.append(&mut local_steps);
-            let mut accounts = Vec::new();
-            for account in vm.accounts() {
-                accounts.push(account.clone());
-            }
-            stateful.transit(&accounts);
-        }
-
-        Ok(RPCBlockTrace {
-            struct_logs: steps
-        })
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn trace_block_from_file(&self, path: String, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
-        use std::fs::File;
-        use std::io::Read;
-
-        let config = config.unwrap_or(RPCTraceConfig::default());
-        let mut file = File::open(path).unwrap();
-        let mut buffer = Vec::new();
-        file.read_to_end(&mut buffer).unwrap();
-
-        let state = self.state.lock().unwrap();
-        let block: Block = UntrustedRlp::new(&buffer).as_val()?;
-        let last_block = state.get_block_by_number(if block.header.number == U256::zero() { 0 } else { block.header.number.as_usize() - 1 });
-        let last_hashes = state.get_last_256_block_hashes_by_number(block.header.number.as_usize());
-
-        let mut stateful: MemoryStateful<'static> = state.stateful_at(last_block.header.state_root);
-        let mut steps = Vec::new();
-        for transaction in block.transactions.clone() {
-            let (mut local_steps, vm) = replay_transaction::<P>(&stateful, transaction,
-                                                                &block, &last_hashes,
-                                                                &config)?;
-            steps.append(&mut local_steps);
-            let mut accounts = Vec::new();
-            for account in vm.accounts() {
-                accounts.push(account.clone());
-            }
-            stateful.transit(&accounts);
-        }
-
-        Ok(RPCBlockTrace {
-            struct_logs: steps
-        })
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 
     fn dump_block(&self, number: usize) -> Result<RPCDump, Error> {
-        let state = self.state.lock().unwrap();
-        let block: Block = state.get_block_by_number(number);
-
-        let mut accounts = HashMap::new();
-        let database = state.stateful().database();
-        let trie: FixedSecureTrie<_, Address, Account> = database.create_fixed_secure_trie(block.header.state_root);
-        let code_hashes = database.create_guard();
-
-        for (address, storage) in state.dump_accounts(number) {
-            let mut rpc_storage = HashMap::new();
-            for (key, value) in storage {
-                rpc_storage.insert(Hex(key), Hex(value));
-            }
-
-            let account = trie.get(&address).unwrap();
-            let code = code_hashes.get(account.code_hash).unwrap();
-
-            accounts.insert(Hex(address), RPCDumpAccount {
-                balance: Hex(account.balance),
-                code: Bytes(code),
-                code_hash: Hex(account.code_hash),
-                nonce: Hex(account.nonce),
-                root: Hex(account.storage_root),
-                storage: rpc_storage,
-            });
-        }
-
-        Ok(RPCDump {
-            accounts,
-            root: Hex(block.header.state_root)
-        })
+        // FIXME: implement
+        Err(Error::NotImplemented)
     }
 }

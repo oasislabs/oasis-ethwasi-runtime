@@ -16,6 +16,8 @@ pub enum Error {
     RlpError,
     CallError,
     UnknownSourceMapJump,
+    NotImplemented,
+    TODO,
 }
 
 impl From<PreExecutionError> for Error {

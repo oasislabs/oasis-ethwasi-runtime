@@ -1,25 +1,19 @@
-use jsonrpc_core::{self, IoHandler, Params};
+use jsonrpc_core::IoHandler;
 use jsonrpc_http_server::*;
 use jsonrpc_macros::Trailing;
 
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-use serde_json::{self, Value};
 use bigint::{U256, H256, M256, H2048, H64, Address, Gas};
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Sender, Receiver};
 use std::collections::HashMap;
 use sputnikvm::Patch;
 
 mod serves;
-mod filter;
 mod util;
 mod serialize;
 mod solidity;
 
 use error::Error;
-use super::miner::MinerState;
 use self::serialize::*;
 
 use ekiden_rpc_client;
@@ -321,11 +315,11 @@ build_rpc_trait! {
 }
 
 pub fn rpc_loop<P: 'static + Patch + Send>(
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>, state: Arc<Mutex<MinerState>>, addr: &SocketAddr, channel: Sender<bool>
+    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>, addr: &SocketAddr
 ) {
-    let rpc = serves::MinerEthereumRPC::<P>::new(client, state.clone(), channel);
-    let filter = serves::MinerFilterRPC::<P>::new(state.clone());
-    let debug = serves::MinerDebugRPC::<P>::new(state);
+    let rpc = serves::MinerEthereumRPC::<P>::new(client);
+    let filter = serves::MinerFilterRPC::<P>::new();
+    let debug = serves::MinerDebugRPC::<P>::new();
 
     let mut io = IoHandler::default();
 
