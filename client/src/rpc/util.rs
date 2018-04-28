@@ -93,7 +93,6 @@ pub fn to_rpc_transaction(transaction: Transaction, block: Option<&Block>) -> RP
 pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction, Error> {
     let mut _transaction = EVMTransaction::new();
 
-
     match transaction.from {
         Some(val) => _transaction.set_caller(val.0.hex()),
         None => {}
@@ -104,17 +103,18 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
         None => {}
     };
 
-    // TODO: nonce
-    /*
     match transaction.nonce {
-        Some(val) => _transaction.set_nonce(val.0.to_hex()),
-        None => {}
+        Some(val) => {
+            _transaction.set_use_nonce(true);
+            _transaction.set_nonce(format!("{:x}", val.0));
+        }
+        None => _transaction.set_use_nonce(false),
     };
-    */
+
     match transaction.to {
         Some(val) => {
-           _transaction.set_is_call(true);
-           _transaction.set_address(val.0.hex());
+            _transaction.set_is_call(true);
+            _transaction.set_address(val.0.hex());
         },
         None => _transaction.set_is_call(false),
     };

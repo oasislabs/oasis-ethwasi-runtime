@@ -31,7 +31,7 @@ use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
-use evm::{fire_transaction, update_state_from_vm};
+use evm::{fire_transaction, update_state_from_vm, get_nonce};
 
 use ekiden_core::error::Result;
 use ekiden_trusted::enclave::enclave_init;
@@ -72,17 +72,17 @@ fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
         TransactionAction::Create
     };
 
+    let caller_str = transaction.get_caller();
+
     // TODO: verify that nonce matches?
-    /*let nonce = match transaction.get_nonce() {
-        Some(val) => U256::from_str(val.clone()),
-        None => {
-            account.as_ref().map(|account| account.nonce).unwrap_or(U256::zero())
-        }
-    };*/
-    let nonce = U256::from_str(transaction.get_nonce().clone()).unwrap();
+    let nonce = if transaction.get_use_nonce() {
+        U256::from_str(transaction.get_nonce().clone()).unwrap()
+    } else {
+        get_nonce(caller_str.to_string())
+    };
 
     ValidTransaction {
-        caller: Some(Address::from_str(transaction.get_caller().clone()).unwrap()),
+        caller: Some(Address::from_str(caller_str.clone()).unwrap()),
         action: action,
         gas_price: Gas::zero(),
         gas_limit: Gas::max_value(),

@@ -19,11 +19,12 @@ message AccountState {
 }
 
 message Transaction {
-    string nonce = 1; // optional
-    string caller = 2;
-    bool is_call = 3;
-    string address = 4; // defined if is_call = true
-    string input = 5;
+    bool use_nonce = 1;
+    string nonce = 2; // optional
+    string caller = 3;
+    bool is_call = 4;
+    string address = 5; // defined if is_call = true
+    string input = 6;
 }
 
 message ExecuteTransactionRequest {

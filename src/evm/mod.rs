@@ -85,6 +85,15 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
     }
 }
 
+pub fn get_nonce(address: String) -> U256 {
+    let state = StateDb::new();
+    let nonce = match state.accounts.get(&address) {
+        Some(b) => U256::from_dec_str(b.get_nonce()).unwrap(),
+        None => U256::zero(),
+    };
+    nonce
+}
+
 fn create_account_state(
     nonce: U256,
     address: Address,
