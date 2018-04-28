@@ -1,21 +1,22 @@
-use super::{EthereumRPC, FilterRPC, DebugRPC, Either, RPCTransaction, RPCTrace, RPCBlock, RPCLog, RPCReceipt, RPCLogFilter, RPCBlockTrace, RPCDump, RPCTraceConfig};
-use super::util::*;
+use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, RPCDump, RPCLog,
+            RPCLogFilter, RPCReceipt, RPCTrace, RPCTraceConfig, RPCTransaction};
 use super::serialize::*;
+use super::util::*;
 
 use error::Error;
 
-use bigint::{M256, U256, H256, Address, Gas};
-use sputnikvm::Patch;
+use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::ExecuteTransactionRequest;
-use std::sync::{Arc, Mutex};
+use sputnikvm::Patch;
 use std::marker::PhantomData;
+use std::sync::{Arc, Mutex};
 
 use jsonrpc_macros::Trailing;
 
-use futures::future::Future;
 use ekiden_rpc_client;
-use evm;
 use ekiden_rpc_client::backend::Web3ContractClientBackend;
+use evm;
+use futures::future::Future;
 
 pub struct MinerEthereumRPC<P: Patch + Send> {
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
@@ -30,12 +31,14 @@ pub struct MinerDebugRPC<P: Patch + Send> {
     _patch: PhantomData<P>,
 }
 
-unsafe impl<P: Patch + Send> Sync for MinerEthereumRPC<P> { }
-unsafe impl<P: Patch + Send> Sync for MinerFilterRPC<P> { }
-unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> { }
+unsafe impl<P: Patch + Send> Sync for MinerEthereumRPC<P> {}
+unsafe impl<P: Patch + Send> Sync for MinerFilterRPC<P> {}
+unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> {}
 
 impl<P: Patch + Send> MinerEthereumRPC<P> {
-    pub fn new(client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>) -> Self {
+    pub fn new(
+        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
+    ) -> Self {
         MinerEthereumRPC {
             client,
             _patch: PhantomData,
@@ -61,68 +64,57 @@ impl<P: Patch + Send> MinerDebugRPC<P> {
 
 impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     fn client_version(&self) -> Result<String, Error> {
-
         println!("\n*** client_version");
         Ok("sputnikvm-dev/v0.1".to_string())
     }
 
     fn sha3(&self, data: Bytes) -> Result<Hex<H256>, Error> {
-
         println!("\n*** sha3");
         use sha3::{Digest, Keccak256};
         Ok(Hex(H256::from(Keccak256::digest(&data.0).as_slice())))
     }
 
     fn network_id(&self) -> Result<String, Error> {
-
-       // println!("\n*** network_id. Result: 4447");
+        // println!("\n*** network_id. Result: 4447");
         Ok(format!("{}", 4447))
     }
 
     fn is_listening(&self) -> Result<bool, Error> {
-
         println!("\n*** is_listening");
         Ok(false)
     }
 
     fn peer_count(&self) -> Result<Hex<usize>, Error> {
-
         println!("\n*** peer_count");
         Ok(Hex(0))
     }
 
     fn protocol_version(&self) -> Result<String, Error> {
-
         println!("\n*** protocol_version");
         Ok(format!("{}", 63))
     }
 
     fn is_syncing(&self) -> Result<bool, Error> {
-
         println!("\n*** is_syncing");
         Ok(false)
     }
 
     fn coinbase(&self) -> Result<Hex<Address>, Error> {
-
         println!("\n*** coinbase");
         Ok(Hex(Address::default()))
     }
 
     fn is_mining(&self) -> Result<bool, Error> {
-
         println!("\n*** is_mining");
         Ok(true)
     }
 
     fn hashrate(&self) -> Result<String, Error> {
-
         println!("\n*** hashrate");
         Ok(format!("{}", 0))
     }
 
     fn gas_price(&self) -> Result<Hex<Gas>, Error> {
-
         println!("\n*** gas_price");
         Ok(Hex(Gas::zero()))
     }
@@ -158,7 +150,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
-       /*
+        /*
        // println!("\n*** balance *** address = {:?}", address);
 
         let state = self.state.lock().unwrap();
@@ -182,7 +174,12 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn storage_at(&self, address: Hex<Address>, index: Hex<U256>, block: Trailing<String>) -> Result<Hex<M256>, Error> {
+    fn storage_at(
+        &self,
+        address: Hex<Address>,
+        index: Hex<U256>,
+        block: Trailing<String>,
+    ) -> Result<Hex<M256>, Error> {
         /*
         println!("\n*** storage_at *** address = {:?}, index = {:?}", address, index);
 
@@ -208,7 +205,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn transaction_count(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
+    fn transaction_count(
+        &self,
+        address: Hex<Address>,
+        block: Trailing<String>,
+    ) -> Result<Hex<U256>, Error> {
         /*
         println!("\n*** transaction_count *** address = {:?}", address);
 
@@ -233,7 +234,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn block_transaction_count_by_hash(&self, block: Hex<H256>) -> Result<Option<Hex<usize>>, Error> {
+    fn block_transaction_count_by_hash(
+        &self,
+        block: Hex<H256>,
+    ) -> Result<Option<Hex<usize>>, Error> {
         /*
         println!("\n*** block_transaction_count_by_hash");
 
@@ -250,7 +254,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn block_transaction_count_by_number(&self, number: String) -> Result<Option<Hex<usize>>, Error> {
+    fn block_transaction_count_by_number(
+        &self,
+        number: String,
+    ) -> Result<Option<Hex<usize>>, Error> {
         /*
         println!("\n*** block_transaction_count_by_number *** number = {:?}", number);
 
@@ -376,9 +383,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         request.set_transaction(_transaction);
         request.set_simulate(false);
 
-        let response = client.execute_transaction(request)
-            .wait()
-            .unwrap();
+        let response = client.execute_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         // PJG: TODO: handle this error
@@ -421,15 +426,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         println!("*** Call transaction");
         println!("Transaction: {:?}", request.get_transaction());
 
-        let response = client.execute_transaction(request)
-            .wait()
-            .unwrap();
+        let response = client.execute_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Bytes(response.get_result().as_bytes().to_vec()))
     }
 
-    fn estimate_gas(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Hex<Gas>, Error> {
+    fn estimate_gas(
+        &self,
+        transaction: RPCTransaction,
+        block: Trailing<String>,
+    ) -> Result<Hex<Gas>, Error> {
         /*
         println!("\n*** estimate_gas");
 
@@ -448,7 +455,8 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let block = from_block_number(&state, block)?;
         let mut block = state.get_block_by_number(block);
 
-        block.header.beneficiary = Address::from_str("0x7110316b618d20d0c44728ac2a3d683536ea682b").unwrap();
+        block.header.beneficiary = Address::from_str(
+            "0x7110316b618d20d0c44728ac2a3d683536ea682b").unwrap();
 
         println!("    block: {:?}", block);
 
@@ -540,7 +548,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn transaction_by_block_hash_and_index(&self, block_hash: Hex<H256>, index: Hex<U256>) -> Result<Option<RPCTransaction>, Error> {
+    fn transaction_by_block_hash_and_index(
+        &self,
+        block_hash: Hex<H256>,
+        index: Hex<U256>,
+    ) -> Result<Option<RPCTransaction>, Error> {
         /*
         println!("\n*** transaction_by_block_hash_and_index *** hash = {:?}, index = {:?}", block_hash, index);
 
@@ -561,7 +573,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn transaction_by_block_number_and_index(&self, number: String, index: Hex<U256>) -> Result<Option<RPCTransaction>, Error> {
+    fn transaction_by_block_number_and_index(
+        &self,
+        number: String,
+        index: Hex<U256>,
+    ) -> Result<Option<RPCTransaction>, Error> {
         /*
         println!("\n*** transaction_by_block_number_and_index *** number = {:?}, index = {:?}", number, index);
 
@@ -619,7 +635,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn uncle_by_block_hash_and_index(&self, block_hash: Hex<H256>, index: Hex<U256>) -> Result<Option<RPCBlock>, Error> {
+    fn uncle_by_block_hash_and_index(
+        &self,
+        block_hash: Hex<H256>,
+        index: Hex<U256>,
+    ) -> Result<Option<RPCBlock>, Error> {
         /*
         println!("\n*** uncle_by_block_hash_and_index *** block_hash = {:?}, index = {:?}", block_hash, index);
 
@@ -649,7 +669,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         Err(Error::TODO)
     }
 
-    fn uncle_by_block_number_and_index(&self, block_number: String, index: Hex<U256>) -> Result<Option<RPCBlock>, Error> {
+    fn uncle_by_block_number_and_index(
+        &self,
+        block_number: String,
+        index: Hex<U256>,
+    ) -> Result<Option<RPCBlock>, Error> {
         /*
         println!("\n*** uncle_by_block_number_and_index *** block_number = {:?}, index = {:?}", block_number, index);
 
@@ -738,27 +762,47 @@ impl<P: 'static + Patch + Send> DebugRPC for MinerDebugRPC<P> {
         Err(Error::NotImplemented)
     }
 
-    fn trace_transaction(&self, hash: Hex<H256>, config: Trailing<RPCTraceConfig>) -> Result<RPCTrace, Error> {
+    fn trace_transaction(
+        &self,
+        hash: Hex<H256>,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCTrace, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
-    fn trace_block(&self, block_rlp: Bytes, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
+    fn trace_block(
+        &self,
+        block_rlp: Bytes,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
-    fn trace_block_by_number(&self, number: usize, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
+    fn trace_block_by_number(
+        &self,
+        number: usize,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
-    fn trace_block_by_hash(&self, hash: Hex<H256>, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
+    fn trace_block_by_hash(
+        &self,
+        hash: Hex<H256>,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
-    fn trace_block_from_file(&self, path: String, config: Trailing<RPCTraceConfig>) -> Result<RPCBlockTrace, Error> {
+    fn trace_block_from_file(
+        &self,
+        path: String,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
     }

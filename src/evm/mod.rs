@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use bigint::{Address, Gas, H256, M256, Sign, U256};
 
-use evm_api::{AccountState};
+use evm_api::AccountState;
 use hexutil::{read_hex, to_hex};
 
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, MainnetEIP160Patch, RequireError,

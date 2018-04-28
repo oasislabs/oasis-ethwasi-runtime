@@ -1,8 +1,8 @@
+use hexutil::ParseHexError;
 use jsonrpc_core;
+use rlp::DecoderError;
 use secp256k1;
 use sputnikvm::errors::PreExecutionError;
-use rlp::DecoderError;
-use hexutil::ParseHexError;
 use std::num::ParseIntError;
 
 #[derive(Debug)]

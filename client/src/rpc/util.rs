@@ -1,29 +1,38 @@
-use super::{Either, RPCStep, RPCTransaction, RPCBlock, RPCLog, RPCReceipt, RPCTopicFilter, RPCLogFilter, RPCTraceConfig, RPCBreakpointConfig, RPCSourceMapConfig};
+use super::{Either, RPCBlock, RPCBreakpointConfig, RPCLog, RPCLogFilter, RPCReceipt,
+            RPCSourceMapConfig, RPCStep, RPCTopicFilter, RPCTraceConfig, RPCTransaction};
 use super::serialize::*;
 use super::solidity::*;
 use error::Error;
 
-use rlp::{self, UntrustedRlp};
-use bigint::{M256, U256, H256, H2048, Gas};
-use hexutil::to_hex;
-use block::{Block, TotalHeader, Receipt, Transaction, TransactionAction};
+use bigint::{Gas, H2048, H256, M256, U256};
+use block::{Block, Receipt, TotalHeader, Transaction, TransactionAction};
 use blockchain::chain::HeaderHash;
-use sputnikvm::{VM, VMStatus, MachineStatus, HeaderParams, SeqTransactionVM, Patch, Memory, AccountChange};
+use hexutil::to_hex;
+use rlp::{self, UntrustedRlp};
+use sha3::{Digest, Keccak256};
+use sputnikvm::{AccountChange, HeaderParams, MachineStatus, Memory, Patch, SeqTransactionVM,
+                VMStatus, VM};
 use sputnikvm_stateful::MemoryStateful;
 use std::collections::HashMap;
-use sha3::{Keccak256, Digest};
 
-use evm_api::{Transaction as EVMTransaction};
+use evm_api::Transaction as EVMTransaction;
 
-pub fn to_rpc_log(receipt: &Receipt, index: usize, transaction: &Transaction, block: &Block) -> RPCLog {
-    use sha3::{Keccak256, Digest};
+pub fn to_rpc_log(
+    receipt: &Receipt,
+    index: usize,
+    transaction: &Transaction,
+    block: &Block,
+) -> RPCLog {
+    use sha3::{Digest, Keccak256};
 
-    let transaction_hash = H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
+    let transaction_hash =
+        H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
     let transaction_index = {
         let mut i = 0;
         let mut found = false;
         for transaction in &block.transactions {
-            let other_hash = H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
+            let other_hash =
+                H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
             if transaction_hash == other_hash {
                 found = true;
                 break;
@@ -47,7 +56,7 @@ pub fn to_rpc_log(receipt: &Receipt, index: usize, transaction: &Transaction, bl
 }
 
 pub fn to_rpc_transaction(transaction: Transaction, block: Option<&Block>) -> RPCTransaction {
-    use sha3::{Keccak256, Digest};
+    use sha3::{Digest, Keccak256};
     let hash = H256::from(Keccak256::digest(&rlp::encode(&transaction).to_vec()).as_slice());
 
     RPCTransaction {
@@ -71,7 +80,9 @@ pub fn to_rpc_transaction(transaction: Transaction, block: Option<&Block>) -> RP
                 let mut i = 0;
                 let mut found = false;
                 for transaction in &block.transactions {
-                    let other_hash = H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
+                    let other_hash = H256::from(
+                        Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice(),
+                    );
                     if hash == other_hash {
                         found = true;
                         break;
@@ -115,7 +126,7 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
         Some(val) => {
             _transaction.set_is_call(true);
             _transaction.set_address(val.0.hex());
-        },
+        }
         None => _transaction.set_is_call(false),
     };
 
@@ -123,7 +134,7 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
 }
 
 pub fn to_rpc_block(block: Block, total_header: TotalHeader, full_transactions: bool) -> RPCBlock {
-    use sha3::{Keccak256, Digest};
+    use sha3::{Digest, Keccak256};
     let logs_bloom: H2048 = block.header.logs_bloom.clone().into();
 
     RPCBlock {
@@ -148,20 +159,35 @@ pub fn to_rpc_block(block: Block, total_header: TotalHeader, full_transactions: 
         gas_used: Hex(block.header.gas_used),
         timestamp: Hex(block.header.timestamp),
         transactions: if full_transactions {
-            Either::Right(block.transactions.iter().map(|t| to_rpc_transaction(t.clone(), Some(&block))).collect())
+            Either::Right(
+                block
+                    .transactions
+                    .iter()
+                    .map(|t| to_rpc_transaction(t.clone(), Some(&block)))
+                    .collect(),
+            )
         } else {
-            Either::Left(block.transactions.iter().map(|t| {
-                let encoded = rlp::encode(t).to_vec();
-                Hex(H256::from(Keccak256::digest(&encoded).as_slice()))
-            }).collect())
+            Either::Left(
+                block
+                    .transactions
+                    .iter()
+                    .map(|t| {
+                        let encoded = rlp::encode(t).to_vec();
+                        Hex(H256::from(Keccak256::digest(&encoded).as_slice()))
+                    })
+                    .collect(),
+            )
         },
         uncles: block.ommers.iter().map(|u| Hex(u.header_hash())).collect(),
     }
 }
 
 pub fn replay_transaction<P: Patch>(
-    stateful: &MemoryStateful<'static>, transaction: Transaction, block: &Block,
-    last_hashes: &[H256], config: &RPCTraceConfig
+    stateful: &MemoryStateful<'static>,
+    transaction: Transaction,
+    block: &Block,
+    last_hashes: &[H256],
+    config: &RPCTraceConfig,
 ) -> Result<(Vec<RPCStep>, SeqTransactionVM<P>), Error> {
     let valid = stateful.to_valid::<P>(transaction)?;
     let mut vm = SeqTransactionVM::<P>::new(valid, HeaderParams::from(&block.header));
@@ -218,16 +244,24 @@ pub fn replay_transaction<P: Patch>(
 
                         for account in machine.state().account_state.accounts() {
                             match account {
-                                &AccountChange::Full { address, ref changing_storage, .. } => {
+                                &AccountChange::Full {
+                                    address,
+                                    ref changing_storage,
+                                    ..
+                                } => {
                                     if address == context_address {
                                         for_storage = Some(changing_storage.clone());
                                     }
-                                },
-                                &AccountChange::Create { address, ref storage, .. } => {
+                                }
+                                &AccountChange::Create {
+                                    address,
+                                    ref storage,
+                                    ..
+                                } => {
                                     if address == context_address {
                                         for_storage = Some(storage.clone());
                                     }
-                                },
+                                }
                                 _ => (),
                             }
                         }
@@ -244,10 +278,14 @@ pub fn replay_transaction<P: Patch>(
                     };
 
                     if let &Some(RPCBreakpointConfig {
-                        ref source_map, ref breakpoints
-                    }) = &config.breakpoints {
-                        if let Some(&RPCSourceMapConfig { ref source_map, ref source_list }) =
-                            source_map.get(&Hex(code_hash))
+                        ref source_map,
+                        ref breakpoints,
+                    }) = &config.breakpoints
+                    {
+                        if let Some(&RPCSourceMapConfig {
+                            ref source_map,
+                            ref source_list,
+                        }) = source_map.get(&Hex(code_hash))
                         {
                             let source_map = parse_source_map(source_map, source_list)?;
                             let source_map = &source_map[opcode_pc];
@@ -263,14 +301,17 @@ pub fn replay_transaction<P: Patch>(
                                     gas_cost: Hex(gas_cost),
                                     breakpoint_index: Some(breakpoint_index),
                                     breakpoint: Some(format!(
-                                        "{}:{}:{}", breakpoint.offset, breakpoint.length,
-                                        breakpoint.file_name)),
+                                        "{}:{}:{}",
+                                        breakpoint.offset, breakpoint.length, breakpoint.file_name
+                                    )),
                                     code_hash: Hex(code_hash),
                                     address: Hex(address),
                                     memory,
-                                    op, pc, opcode_pc,
+                                    op,
+                                    pc,
+                                    opcode_pc,
                                     stack,
-                                    storage
+                                    storage,
                                 });
                             }
                         }
@@ -285,13 +326,15 @@ pub fn replay_transaction<P: Patch>(
                             code_hash: Hex(code_hash),
                             address: Hex(address),
                             memory,
-                            op, pc, opcode_pc,
+                            op,
+                            pc,
+                            opcode_pc,
                             stack,
-                            storage
+                            storage,
                         });
                     }
                 }
-            },
+            }
         }
     }
 

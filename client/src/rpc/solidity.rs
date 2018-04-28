@@ -13,11 +13,13 @@ impl SourceItem {
         let self_end = self.offset + self.length;
         let other_end = other.offset + other.length;
 
-        self.file_name == other.file_name &&
-            self_end > other_start && self_start < other_end
+        self.file_name == other.file_name && self_end > other_start && self_start < other_end
     }
 
-    pub fn find_intersection<'a>(&self, others: &'a [SourceItem]) -> Option<(usize, &'a SourceItem)> {
+    pub fn find_intersection<'a>(
+        &self,
+        others: &'a [SourceItem],
+    ) -> Option<(usize, &'a SourceItem)> {
         for (index, item) in others.iter().enumerate() {
             if self.has_intersection(item) {
                 return Some((index, item));
@@ -30,7 +32,7 @@ impl SourceItem {
 pub enum JumpType {
     FunctionIn,
     FunctionOut,
-    Regular
+    Regular,
 }
 
 pub struct SourceMapItem {
@@ -66,7 +68,11 @@ pub fn parse_source(s: &str) -> Result<Vec<SourceItem>, Error> {
             return Err(Error::InvalidParams);
         }
 
-        ret.push(SourceItem { offset: values[0], length: values[1], file_name: file_name.unwrap() });
+        ret.push(SourceItem {
+            offset: values[0],
+            length: values[1],
+            file_name: file_name.unwrap(),
+        });
     }
     Ok(ret)
 }
@@ -97,7 +103,11 @@ pub fn parse_source_map(s: &str, l: &[String]) -> Result<Vec<SourceMapItem>, Err
 
         let file_index = values[2];
         ret.push(SourceMapItem {
-            source: SourceItem { offset: values[0], length: values[1], file_name: l[file_index].clone() },
+            source: SourceItem {
+                offset: values[0],
+                length: values[1],
+                file_name: l[file_index].clone(),
+            },
             jump: if let Some(jump_value) = jump_value {
                 Some(match jump_value {
                     "i" => JumpType::FunctionIn,

@@ -19,10 +19,10 @@ extern crate evm_api;
 
 extern crate rlp;
 
-use evm_api::{with_api, ExecuteTransactionRequest, ExecuteTransactionResponse,
-              InitStateRequest, InitStateResponse, Transaction};
+use evm_api::{with_api, ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateRequest,
+              InitStateResponse, Transaction};
 
-use sputnikvm::{TransactionAction, ValidTransaction, VM, VMStatus};
+use sputnikvm::{TransactionAction, VMStatus, ValidTransaction, VM};
 
 use bigint::{Address, Gas, H256, U256};
 use hexutil::{read_hex, to_hex};
@@ -31,7 +31,7 @@ use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
-use evm::{fire_transaction, update_state_from_vm, get_nonce};
+use evm::{fire_transaction, get_nonce, update_state_from_vm};
 
 use ekiden_core::error::Result;
 use ekiden_trusted::enclave::enclave_init;
