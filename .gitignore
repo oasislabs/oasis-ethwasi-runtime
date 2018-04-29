@@ -14,9 +14,11 @@ Enclave_t.h
 
 # IDE.
 .idea/*
+*.iml
 
 # Temporary files.
 *.swp
 
 # Helper/test scripts
 test
+*.sh
