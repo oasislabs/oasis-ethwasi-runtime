@@ -1,14 +1,15 @@
 {
   "jsonrpc": "2.0",
-  "id": 355,
-  "method": "eth_sendTransaction",
+  "id": 3468,
+  "method": "eth_call",
   "params": [
     {
       "from": "0x7110316b618d20d0c44728ac2a3d683536ea682b",
       "to": "0x556b3371709f7d3df2d575ce3601db4f20bf80b7",
-      "data": "0xc72c59d6",
+      "data": "0x7afd81f5",
       "value": "0x0",
-      "gas": "0x100000000"
-    }
+      "gas": "0x22dc6c0"
+    },
+    "latest"
   ]
 }

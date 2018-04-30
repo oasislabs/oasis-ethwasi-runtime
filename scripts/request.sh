@@ -5,4 +5,4 @@ if [[ -z "$1" ]]; then
   exit 1
 fi
 
-curl -X POST http://localhost:8545 -d @$1 --header "Content-Type: application/json"
+curl -s -X POST http://localhost:8545 -d @$1 --header "Content-Type: application/json"
