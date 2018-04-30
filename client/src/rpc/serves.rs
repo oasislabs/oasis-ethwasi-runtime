@@ -10,6 +10,7 @@ use evm_api::ExecuteTransactionRequest;
 use sputnikvm::Patch;
 use std::marker::PhantomData;
 use std::sync::{Arc, Mutex};
+use std::str::FromStr;
 
 use jsonrpc_macros::Trailing;
 
@@ -437,39 +438,20 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         transaction: RPCTransaction,
         block: Trailing<String>,
     ) -> Result<Hex<Gas>, Error> {
-        /*
         println!("\n*** estimate_gas");
+        let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        if true
-            {   return Ok(Hex(Gas::max_value())); }
+        let mut client = self.client.lock().unwrap();
 
+        // just simulate the transaction and return used_gas
+        let mut request = ExecuteTransactionRequest::new();
+        request.set_transaction(_transaction);
+        request.set_simulate(true);
 
-        let state = self.state.lock().unwrap();
+        let response = client.execute_transaction(request).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        let stateful = state.stateful();
-
-        let valid = to_valid_transaction(&state, transaction, &stateful)?;
-
-        println!("    t: {:?}", valid);
-
-        let block = from_block_number(&state, block)?;
-        let mut block = state.get_block_by_number(block);
-
-        block.header.beneficiary = Address::from_str(
-            "0x7110316b618d20d0c44728ac2a3d683536ea682b").unwrap();
-
-        println!("    block: {:?}", block);
-
-        let vm: SeqTransactionVM<P> = stateful.call(
-            valid, HeaderParams::from(&block.header),
-            &state.get_last_256_block_hashes());
-
-        let result = Hex(vm.used_gas());
-
-        println!("    Result: {:?}", result);
-        Ok(result)
-        */
-        Err(Error::TODO)
+        Ok(Hex(Gas::from_str(response.get_used_gas()).unwrap()))
     }
 
     fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {

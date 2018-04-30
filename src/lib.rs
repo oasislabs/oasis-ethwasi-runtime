@@ -122,5 +122,7 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     };
     response.set_result(result);
 
+    response.set_used_gas(format!("{:x}", vm.used_gas()));
+
     Ok(response)
 }
