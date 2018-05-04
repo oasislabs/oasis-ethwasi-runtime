@@ -38,7 +38,7 @@ use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
-use evm::{fire_transaction, get_balance, get_nonce, update_state_from_vm};
+use evm::{fire_transaction, get_balance, get_nonce, update_state_from_vm, StateDb};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
@@ -57,21 +57,28 @@ with_api! {
     create_contract!(api);
 }
 
-fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> {
-    println!("*** Init genesis state");
+fn genesis_block_initialized(request: &bool) -> Result<bool> {
+    Ok(StateDb::new().genesis_initialized.is_present())
+}
 
-    /*
-    let mut genesis = Vec::new();
-    // add account address 7110316b618d20d0c44728ac2a3d683536ea682b. TODO: move this to a genesis config file
-    genesis.push((SecretKey::from_slice(&SECP256K1, &read_hex("533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c").unwrap()).unwrap(), U256::from_dec_str("200000000000000000000").unwrap()));
-    let miner_state = miner::make_state::<ByzantiumPatch>(genesis);
-    */
+// TODO: secure this method so it can't be called by any client.
+fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
+    println!("*** Init genesis block");
+    let state = StateDb::new();
 
-    let response = InitStateResponse::new();
-    // TODO: insert genesis state
-    //let db = Db::new();
-    //db.state.insert(&EthState::new());
-    Ok(response)
+    if state.genesis_initialized.is_present() {
+        return Err(Error::new("Genesis block already created"));
+    }
+
+    // Insert account states from genesis block
+    for account_state in block.get_accounts() {
+        state
+            .accounts
+            .insert(account_state.get_address(), &account_state);
+    }
+
+    state.genesis_initialized.insert(&true);
+    Ok(InitStateResponse::new())
 }
 
 // validates transaction and returns a ValidTransaction on success

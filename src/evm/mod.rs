@@ -23,6 +23,7 @@ use std::rc::Rc;
 // Create database schema.
 database_schema! {
     pub struct StateDb {
+        pub genesis_initialized: bool,
         pub accounts: Map<String, AccountState>,
     }
 }

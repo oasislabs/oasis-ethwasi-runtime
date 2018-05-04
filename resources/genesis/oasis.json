@@ -1,0 +1,58 @@
+{
+    "accounts": {
+        "0x7110316b618d20d0c44728ac2a3d683536ea682b": {
+            "nonce": "0",
+            "balance": "100000000000000000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0x101376dab62b389Cbcbd0c6d0565Ae67bA3Df78B": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0xFC07ecE496E5dE7503860107E1b9fDb743Cbcb65": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0xf09B406B1fD6802d3Abfb619ce9EB290A93b5A34": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0x609B11A433381801322067129F57510Cb4743a9B": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0xdd796400Cc7255B5d2A7Cf93BF1a2238fe1230A4": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0xE9b2bE2AC72cF81b531D5FAeD9FdA9CD80655c8d": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0x53D25e8430d16A924340bF57f7D47913bdA2Ba03": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        },
+        "0x1C20a5E03c029c24B4e900363479c81F8e8003eA": {
+            "nonce": "0",
+            "balance": "12345000000",
+            "storage": {},
+            "code": "0x"
+        }
+    }
+}

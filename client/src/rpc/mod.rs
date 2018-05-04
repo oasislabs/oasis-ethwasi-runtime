@@ -336,5 +336,7 @@ pub fn rpc_loop<P: 'static + Patch + Send>(
         .start_http(addr)
         .expect("Expect to build HTTP RPC server");
 
+    println!("Started HTTP RPC server at {}", addr);
+
     server.wait();
 }

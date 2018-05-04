@@ -3,6 +3,7 @@ syntax = "proto3";
 package api;
 
 message InitStateRequest {
+    repeated AccountState accounts = 1;
 }
 
 message InitStateResponse {
