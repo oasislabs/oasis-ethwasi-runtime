@@ -15,12 +15,12 @@ use std::str::FromStr;
 use jsonrpc_macros::Trailing;
 
 use ekiden_rpc_client;
-use ekiden_rpc_client::backend::Web3ContractClientBackend;
+use ekiden_rpc_client::backend::Web3RpcClientBackend;
 use evm;
 use futures::future::Future;
 
 pub struct MinerEthereumRPC<P: Patch + Send> {
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
+    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
     _patch: PhantomData<P>,
 }
 
@@ -38,7 +38,7 @@ unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> {}
 
 impl<P: Patch + Send> MinerEthereumRPC<P> {
     pub fn new(
-        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
+        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
     ) -> Self {
         MinerEthereumRPC {
             client,

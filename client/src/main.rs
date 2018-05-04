@@ -52,6 +52,7 @@ extern crate rand;
 
 #[macro_use]
 extern crate client_utils;
+extern crate ekiden_contract_client;
 extern crate ekiden_core;
 extern crate ekiden_rpc_client;
 
@@ -60,15 +61,27 @@ extern crate evm_api;
 use clap::{App, Arg};
 use futures::future::Future;
 
-use ekiden_rpc_client::create_client_rpc;
+use ekiden_contract_client::create_contract_client;
+use ekiden_core::bytes::B256;
+use ekiden_core::ring::signature::Ed25519KeyPair;
+use ekiden_core::signature::InMemorySigner;
+use ekiden_core::untrusted;
 use evm_api::{with_api, InitStateRequest};
 
 with_api! {
-    create_client_rpc!(evm, evm_api, api);
+    create_contract_client!(evm, evm_api, api);
+}
+
+/// Generate client key pair.
+fn create_key_pair() -> Arc<InMemorySigner> {
+    let key_pair =
+        Ed25519KeyPair::from_seed_unchecked(untrusted::Input::from(&B256::random())).unwrap();
+    Arc::new(InMemorySigner::new(key_pair))
 }
 
 fn main() {
-    let mut client = contract_client!(evm);
+    let signer = create_key_pair();
+    let mut client = contract_client!(signer, evm);
 
     println!("Initializing genesis state");
     client

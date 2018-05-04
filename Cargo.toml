@@ -9,18 +9,19 @@ etcommon-bigint = { version = "0.2", features = ["string", "rlp"], default-featu
 etcommon-hexutil = { version = "0.2", default-features = false }
 etcommon-rlp = "0.2"
 #etcommon-block = { version = "0.3", default-features = false }
+#etcommon-block = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx" }
 #etcommon-trie = "0.3"
 #etcommon-bloom = "0.2"
-#secp256k1-plus = "0.5" or #libsecp256k1 = "0.1"
+#eth-secp256k1 = { git = "https://github.com/peterjgilbert/rust-secp256k1", branch = "rand_optional" }
 #sputnikvm-network-foundation = { version = "0.10", default-features = false }
 #sputnikvm-stateful = "0.10"
 sha3 = "0.6"
 sputnikvm = { version = "0.9", default-features = false }
 evm-api = { path = "./api" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.3" }
-ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.3" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 protobuf = "1.4.3"
 
 [build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.3" }
-ekiden-edl = { git = "https://github.com/oasislabs/ekiden", tag = "0.1.0-alpha.3" }
+ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

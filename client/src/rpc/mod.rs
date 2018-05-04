@@ -315,7 +315,7 @@ build_rpc_trait! {
 }
 
 pub fn rpc_loop<P: 'static + Patch + Send>(
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3ContractClientBackend>>>,
+    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
     addr: &SocketAddr,
 ) {
     let rpc = serves::MinerEthereumRPC::<P>::new(client);

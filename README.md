@@ -30,9 +30,9 @@ $ echo "https://<username>:<token>@github.com" > ~/.git-credentials
 You should install the correct versions (e.g., the same that you build against in `Cargo.toml`)
 of the Ekiden compute and consensus nodes:
 ```bash
-$ cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-tools
-$ cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-compute
-$ cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-consensus
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-consensus
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
@@ -47,7 +47,7 @@ To build it:
 ```bash
 $ cargo ekiden build-contract \
     --git https://github.com/oasislabs/ekiden \
-    --tag 0.1.0-alpha.3 \
+    --branch master \
     --output target/contract \
     ekiden-key-manager
 ```
