@@ -6,11 +6,11 @@ use super::util::*;
 use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
-use evm_api::ExecuteTransactionRequest;
+use evm_api::{ExecuteRawTransactionRequest, ExecuteTransactionRequest};
 use sputnikvm::Patch;
 use std::marker::PhantomData;
-use std::sync::{Arc, Mutex};
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
 use jsonrpc_macros::Trailing;
 
@@ -18,6 +18,8 @@ use ekiden_rpc_client;
 use ekiden_rpc_client::backend::Web3RpcClientBackend;
 use evm;
 use futures::future::Future;
+
+use hexutil::to_hex;
 
 pub struct MinerEthereumRPC<P: Patch + Send> {
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
@@ -393,8 +395,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
-        /*
         println!("\n*** send_raw_transaction *** data = {:?}", data);
+
+        let mut client = self.client.lock().unwrap();
+
+        let mut request = ExecuteRawTransactionRequest::new();
+        request.set_data(to_hex(&data.0));
+
+        let response = client.execute_raw_transaction(request).wait().unwrap();
+        println!("HASH: {:?}", response.get_hash());
+
+        /*
 
         let mut state = self.state.lock().unwrap();
 
@@ -411,7 +422,9 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         println!("    Result: {:?}", result);
         Ok(result)
         */
-        Err(Error::TODO)
+
+        // PJG: TODO: should be tx_id
+        Ok(Hex(H256::new()))
     }
 
     fn call(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Bytes, Error> {

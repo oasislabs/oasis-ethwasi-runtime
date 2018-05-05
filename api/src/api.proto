@@ -32,6 +32,10 @@ message ExecuteTransactionRequest {
     bool simulate = 2; // true for eth_call
 }
 
+message ExecuteRawTransactionRequest {
+    string data = 1;
+}
+
 message Log {
     // Todo: add logs from VM
 }

@@ -7,9 +7,8 @@ build = "build.rs"
 [dependencies]
 etcommon-bigint = { version = "0.2", features = ["string", "rlp"], default-features = false }
 etcommon-hexutil = { version = "0.2", default-features = false }
-etcommon-rlp = "0.2"
-#etcommon-block = { version = "0.3", default-features = false }
-#etcommon-block = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx" }
+etcommon-rlp = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx" }
+etcommon-block = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx" }
 #etcommon-trie = "0.3"
 #etcommon-bloom = "0.2"
 #eth-secp256k1 = { git = "https://github.com/peterjgilbert/rust-secp256k1", branch = "rand_optional" }

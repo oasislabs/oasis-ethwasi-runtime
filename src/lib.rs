@@ -8,6 +8,7 @@ extern crate protobuf;
 
 extern crate alloc;
 extern crate bigint;
+extern crate block;
 extern crate hexutil;
 extern crate sha3;
 extern crate sputnikvm;
@@ -19,13 +20,16 @@ extern crate evm_api;
 
 extern crate rlp;
 
-use evm_api::{with_api, ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateRequest,
-              InitStateResponse, Transaction};
+use evm_api::{with_api, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
+              ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
+              Transaction as EVMTransaction};
 
 use sputnikvm::{TransactionAction, VMStatus, ValidTransaction, VM};
 
 use bigint::{Address, Gas, H256, U256};
+use block::{Block, Transaction};
 use hexutil::{read_hex, to_hex};
+use sha3::{Digest, Keccak256};
 
 use std::rc::Rc;
 use std::str;
@@ -37,6 +41,8 @@ use ekiden_core::error::Result;
 use ekiden_trusted::contract::create_contract;
 use ekiden_trusted::enclave::enclave_init;
 use ekiden_trusted::key_manager::use_key_manager_contract;
+
+use rlp::UntrustedRlp;
 
 enclave_init!();
 
@@ -65,7 +71,7 @@ fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> 
     Ok(response)
 }
 
-fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
+fn to_valid_transaction(transaction: &EVMTransaction) -> ValidTransaction {
     let action = if transaction.get_is_call() {
         TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
     } else {
@@ -90,6 +96,25 @@ fn to_valid_transaction(transaction: &Transaction) -> ValidTransaction {
         input: Rc::new(read_hex(transaction.get_input()).unwrap()),
         nonce: nonce,
     }
+}
+
+fn execute_raw_transaction(
+    request: &ExecuteRawTransactionRequest,
+) -> Result<ExecuteTransactionResponse> {
+    println!("*** Execute raw transaction");
+    println!("Data: {:?}", request.get_data());
+
+    let value = read_hex(request.get_data()).unwrap();
+    let hash = H256::from(Keccak256::digest(&value).as_slice());
+
+    let rlp = UntrustedRlp::new(&value);
+
+    // TODO: handle errors
+    let mut transaction: Transaction = rlp.as_val().unwrap();
+
+    let mut response = ExecuteTransactionResponse::new();
+    response.set_hash(format!("{:x}", hash));
+    Ok(response)
 }
 
 fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
