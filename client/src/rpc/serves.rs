@@ -403,28 +403,8 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         request.set_data(to_hex(&data.0));
 
         let response = client.execute_raw_transaction(request).wait().unwrap();
-        println!("HASH: {:?}", response.get_hash());
 
-        /*
-
-        let mut state = self.state.lock().unwrap();
-
-        let rlp = UntrustedRlp::new(&data.0);
-        let mut transaction: Transaction = rlp.as_val()?;
-
-        println!("     t: {:?}", transaction);
-
-        let hash = state.append_pending_transaction(transaction);
-        self.channel.send(true);
-
-        let result = Hex(hash);
-
-        println!("    Result: {:?}", result);
-        Ok(result)
-        */
-
-        // PJG: TODO: should be tx_id
-        Ok(Hex(H256::new()))
+        Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
     }
 
     fn call(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Bytes, Error> {
