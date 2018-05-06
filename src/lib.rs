@@ -74,6 +74,7 @@ fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> 
     Ok(response)
 }
 
+// validates transaction and returns a ValidTransaction on success
 fn to_valid<P: Patch>(
     transaction: Transaction,
 ) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
@@ -102,7 +103,6 @@ fn to_valid<P: Patch>(
     };
 
     // check balance
-
     if valid.gas_limit < valid.intrinsic_gas::<P>() {
         return Err(PreExecutionError::InsufficientGasLimit);
     }
@@ -171,6 +171,9 @@ fn execute_raw_transaction(
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
+
+    let vm = fire_transaction(&valid, 1);
+    update_state_from_vm(&vm);
 
     let mut response = ExecuteTransactionResponse::new();
     response.set_hash(format!("{:x}", hash));
