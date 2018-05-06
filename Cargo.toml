@@ -5,17 +5,18 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-etcommon-bigint = { version = "0.2", features = ["string", "rlp"], default-features = false }
-etcommon-hexutil = { version = "0.2", default-features = false }
+etcommon-bigint = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx", features = ["string", "rlp"], default-features = false }
+etcommon-hexutil = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx", default-features = false }
 etcommon-rlp = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx" }
 etcommon-block = { git = "https://github.com/peterjgilbert/etcommon-rs", branch = "feature/sgx" }
 #etcommon-trie = "0.3"
 #etcommon-bloom = "0.2"
 #eth-secp256k1 = { git = "https://github.com/peterjgilbert/rust-secp256k1", branch = "rand_optional" }
 #sputnikvm-network-foundation = { version = "0.10", default-features = false }
+sputnikvm-network-classic = { git = "https://github.com/peterjgilbert/sputnikvm", branch = "feature/sgx" }
 #sputnikvm-stateful = "0.10"
 sha3 = "0.6"
-sputnikvm = { version = "0.9", default-features = false }
+sputnikvm = { git = "https://github.com/peterjgilbert/sputnikvm", branch = "feature/sgx", default-features = false }
 evm-api = { path = "./api" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

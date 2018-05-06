@@ -20,14 +20,16 @@ extern crate evm_api;
 
 extern crate rlp;
 
+extern crate sputnikvm_network_classic;
+
 use evm_api::{with_api, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
               ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
               Transaction as EVMTransaction};
 
-use sputnikvm::{TransactionAction, VMStatus, ValidTransaction, VM};
+use sputnikvm::{PreExecutionError, TransactionAction, VMStatus, ValidTransaction, VM};
 
 use bigint::{Address, Gas, H256, U256};
-use block::{Block, Transaction};
+use block::Transaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
@@ -35,7 +37,7 @@ use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
-use evm::{fire_transaction, get_nonce, update_state_from_vm};
+use evm::{fire_transaction, get_balance, get_nonce, update_state_from_vm};
 
 use ekiden_core::error::Result;
 use ekiden_trusted::contract::create_contract;

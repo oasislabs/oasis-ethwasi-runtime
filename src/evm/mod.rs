@@ -13,8 +13,9 @@ use bigint::{Address, Gas, H256, M256, Sign, U256};
 use evm_api::AccountState;
 use hexutil::{read_hex, to_hex};
 
-use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, MainnetEIP160Patch, RequireError,
-                SeqTransactionVM, Storage, ValidTransaction, VM};
+use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
+                Storage, ValidTransaction, VM};
+use sputnikvm_network_classic::MainnetEIP160Patch;
 use std::str::FromStr;
 
 use std::rc::Rc;
@@ -92,6 +93,15 @@ pub fn get_nonce(address: String) -> U256 {
         None => U256::zero(),
     };
     nonce
+}
+
+pub fn get_balance(address: String) -> U256 {
+    let state = StateDb::new();
+    let balance = match state.accounts.get(&address) {
+        Some(b) => U256::from_dec_str(b.get_balance()).unwrap(),
+        None => U256::zero(),
+    };
+    balance
 }
 
 fn create_account_state(
@@ -197,11 +207,6 @@ pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {
             &AccountChange::IncreaseBalance(address, amount) => {
                 let address_str = address.hex();
                 let new_account = update_account_balance(&address_str, amount, Sign::Plus, &state);
-                state.accounts.insert(&address_str, &new_account);
-            }
-            &AccountChange::DecreaseBalance(address, amount) => {
-                let address_str = address.hex();
-                let new_account = update_account_balance(&address_str, amount, Sign::Minus, &state);
                 state.accounts.insert(&address_str, &new_account);
             }
             &AccountChange::Nonexist(address) => {
