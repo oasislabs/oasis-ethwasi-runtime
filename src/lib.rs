@@ -26,7 +26,8 @@ use evm_api::{with_api, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
               ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
               Transaction as EVMTransaction};
 
-use sputnikvm::{PreExecutionError, TransactionAction, VMStatus, ValidTransaction, VM};
+use sputnikvm::{Patch, PreExecutionError, TransactionAction, VMStatus, ValidTransaction, VM};
+use sputnikvm_network_classic::MainnetEIP160Patch;
 
 use bigint::{Address, Gas, H256, U256};
 use block::Transaction;
@@ -39,7 +40,7 @@ use std::str::FromStr;
 
 use evm::{fire_transaction, get_balance, get_nonce, update_state_from_vm};
 
-use ekiden_core::error::Result;
+use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
 use ekiden_trusted::enclave::enclave_init;
 use ekiden_trusted::key_manager::use_key_manager_contract;
@@ -71,6 +72,58 @@ fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> 
     //let db = Db::new();
     //db.state.insert(&EthState::new());
     Ok(response)
+}
+
+fn to_valid<P: Patch>(
+    transaction: Transaction,
+) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
+    // check caller signature
+    let caller = match transaction.caller() {
+        Ok(val) => val,
+        Err(_) => return Err(PreExecutionError::InvalidCaller),
+    };
+    let caller_str = caller.to_string();
+
+    // check nonce
+    // TODO: what if account doesn't exist?
+    let nonce = get_nonce(caller_str.clone());
+    if nonce != transaction.nonce {
+        return Err(PreExecutionError::InvalidNonce);
+    }
+
+    let valid = ValidTransaction {
+        caller: Some(caller),
+        gas_price: transaction.gas_price,
+        gas_limit: transaction.gas_limit,
+        action: transaction.action.clone(),
+        value: transaction.value,
+        input: Rc::new(transaction.input.clone()),
+        nonce: nonce,
+    };
+
+    // check balance
+
+    if valid.gas_limit < valid.intrinsic_gas::<P>() {
+        return Err(PreExecutionError::InsufficientGasLimit);
+    }
+
+    // TODO: what if account doesn't exist?
+    let balance = get_balance(caller_str);
+
+    let gas_limit: U256 = valid.gas_limit.into();
+    let gas_price: U256 = valid.gas_price.into();
+
+    let (preclaimed_value, overflowed1) = gas_limit.overflowing_mul(gas_price);
+    let (total, overflowed2) = preclaimed_value.overflowing_add(valid.value);
+    if overflowed1 || overflowed2 {
+        return Err(PreExecutionError::InsufficientBalance);
+    }
+
+    if balance < total {
+        return Err(PreExecutionError::InsufficientBalance);
+    }
+
+    Ok(valid)
 }
 
 fn to_valid_transaction(transaction: &EVMTransaction) -> ValidTransaction {
@@ -113,6 +166,11 @@ fn execute_raw_transaction(
 
     // TODO: handle errors
     let mut transaction: Transaction = rlp.as_val().unwrap();
+
+    let valid = match to_valid::<MainnetEIP160Patch>(transaction) {
+        Ok(val) => val,
+        Err(err) => return Err(Error::new(format!("{:?}", err))),
+    };
 
     let mut response = ExecuteTransactionResponse::new();
     response.set_hash(format!("{:x}", hash));
