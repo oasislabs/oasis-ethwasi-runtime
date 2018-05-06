@@ -402,7 +402,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let mut request = ExecuteRawTransactionRequest::new();
         request.set_data(to_hex(&data.0));
 
-        let response = client.execute_raw_transaction(request).wait().unwrap();
+        let response = match client.execute_raw_transaction(request).wait() {
+            Ok(val) => val,
+            Err(err) => return Err(Error::CallError),
+        };
 
         Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
     }
