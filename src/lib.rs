@@ -78,6 +78,10 @@ fn init_genesis_state(_request: &InitStateRequest) -> Result<InitStateResponse> 
 fn to_valid<P: Patch>(
     transaction: Transaction,
 ) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
+    // debugging
+    println!("*** Validate block transaction");
+    println!("Data: {:?}", transaction);
+
     // check caller signature
     let caller = match transaction.caller() {
         Ok(val) => val,
@@ -102,11 +106,12 @@ fn to_valid<P: Patch>(
         nonce: nonce,
     };
 
-    // check balance
+    // check gas limit
     if valid.gas_limit < valid.intrinsic_gas::<P>() {
         return Err(PreExecutionError::InsufficientGasLimit);
     }
 
+    // check balance
     // TODO: what if account doesn't exist?
     let balance = get_balance(caller_str);
 
