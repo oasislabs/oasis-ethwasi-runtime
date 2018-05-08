@@ -72,9 +72,14 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
 
     // Insert account states from genesis block
     for account_state in block.get_accounts() {
+        // remove "0x" prefix and lowercase address
+        let mut account = account_state.clone();
+        let address = account_state.get_address().trim_left_matches("0x").to_lowercase();
+        account.set_address(address);
+
         state
             .accounts
-            .insert(account_state.get_address(), &account_state);
+            .insert(account.get_address(), &account);
     }
 
     state.genesis_initialized.insert(&true);
