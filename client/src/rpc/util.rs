@@ -1,5 +1,4 @@
-use super::{Either, RPCBlock, RPCBreakpointConfig, RPCLog, RPCLogFilter, RPCReceipt,
-            RPCSourceMapConfig, RPCStep, RPCTopicFilter, RPCTraceConfig, RPCTransaction};
+use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use super::serialize::*;
 use error::Error;
 
@@ -8,8 +7,6 @@ use block::{Block, Receipt, TotalHeader, Transaction, TransactionAction};
 use blockchain::chain::HeaderHash;
 use hexutil::to_hex;
 use rlp::{self};
-use sha3::{Digest, Keccak256};
-use std::collections::HashMap;
 
 use evm_api::Transaction as EVMTransaction;
 

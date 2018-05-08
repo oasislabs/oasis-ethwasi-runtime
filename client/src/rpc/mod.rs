@@ -11,7 +11,6 @@ use std::sync::{Arc, Mutex};
 mod serves;
 mod util;
 mod serialize;
-mod solidity;
 
 use self::serialize::*;
 use error::Error;

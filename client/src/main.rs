@@ -27,13 +27,11 @@ extern crate hex;
 mod error;
 mod rpc;
 
-use sputnikvm::Patch;
 use sputnikvm_network_foundation::ByzantiumPatch;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Receiver, Sender};
 
 // Ekiden client packages
 
