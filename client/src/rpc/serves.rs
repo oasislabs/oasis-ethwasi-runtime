@@ -15,7 +15,6 @@ use std::sync::{Arc, Mutex};
 use jsonrpc_macros::Trailing;
 
 use ekiden_rpc_client;
-use ekiden_rpc_client::backend::Web3RpcClientBackend;
 use evm;
 use futures::future::Future;
 

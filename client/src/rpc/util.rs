@@ -1,18 +1,14 @@
 use super::{Either, RPCBlock, RPCBreakpointConfig, RPCLog, RPCLogFilter, RPCReceipt,
             RPCSourceMapConfig, RPCStep, RPCTopicFilter, RPCTraceConfig, RPCTransaction};
 use super::serialize::*;
-use super::solidity::*;
 use error::Error;
 
 use bigint::{Gas, H2048, H256, M256, U256};
 use block::{Block, Receipt, TotalHeader, Transaction, TransactionAction};
 use blockchain::chain::HeaderHash;
 use hexutil::to_hex;
-use rlp::{self, UntrustedRlp};
+use rlp::{self};
 use sha3::{Digest, Keccak256};
-use sputnikvm::{AccountChange, HeaderParams, MachineStatus, Memory, Patch, SeqTransactionVM,
-                VMStatus, VM};
-use sputnikvm_stateful::MemoryStateful;
 use std::collections::HashMap;
 
 use evm_api::Transaction as EVMTransaction;
@@ -182,161 +178,3 @@ pub fn to_rpc_block(block: Block, total_header: TotalHeader, full_transactions: 
     }
 }
 
-pub fn replay_transaction<P: Patch>(
-    stateful: &MemoryStateful<'static>,
-    transaction: Transaction,
-    block: &Block,
-    last_hashes: &[H256],
-    config: &RPCTraceConfig,
-) -> Result<(Vec<RPCStep>, SeqTransactionVM<P>), Error> {
-    let valid = stateful.to_valid::<P>(transaction)?;
-    let mut vm = SeqTransactionVM::<P>::new(valid, HeaderParams::from(&block.header));
-    let mut steps = Vec::new();
-    let mut last_gas = Gas::zero();
-
-    loop {
-        match vm.status() {
-            VMStatus::ExitedOk | VMStatus::ExitedErr(_) => break,
-            VMStatus::ExitedNotSupported(_) => panic!(),
-            VMStatus::Running => {
-                stateful.step(&mut vm, block.header.number, &last_hashes);
-                let gas = vm.used_gas();
-                let gas_cost = gas - last_gas;
-
-                last_gas = gas;
-
-                if let Some(machine) = vm.current_machine() {
-                    let depth = machine.state().depth;
-                    let error = match machine.status() {
-                        MachineStatus::ExitedErr(err) => format!("{:?}", err),
-                        _ => "".to_string(),
-                    };
-                    let pc = machine.pc().position();
-                    let opcode_pc = machine.pc().opcode_position();
-                    let op = machine.pc().code()[pc];
-                    let code_hash = H256::from(Keccak256::digest(machine.pc().code()).as_slice());
-                    let address = machine.state().context.address;
-
-                    let memory = if config.disable_memory {
-                        None
-                    } else {
-                        let mut ret = Vec::new();
-                        for i in 0..machine.state().memory.len() {
-                            ret.push(machine.state().memory.read_raw(U256::from(i)));
-                        }
-                        Some(vec![Bytes(ret)])
-                    };
-                    let stack = if config.disable_stack {
-                        None
-                    } else {
-                        let mut ret = Vec::new();
-
-                        for i in 0..machine.state().stack.len() {
-                            ret.push(Hex(machine.state().stack.peek(i).unwrap()));
-                        }
-                        Some(ret)
-                    };
-                    let storage = if config.disable_storage {
-                        None
-                    } else {
-                        let mut for_storage = None;
-                        let context_address = machine.state().context.address;
-
-                        for account in machine.state().account_state.accounts() {
-                            match account {
-                                &AccountChange::Full {
-                                    address,
-                                    ref changing_storage,
-                                    ..
-                                } => {
-                                    if address == context_address {
-                                        for_storage = Some(changing_storage.clone());
-                                    }
-                                }
-                                &AccountChange::Create {
-                                    address,
-                                    ref storage,
-                                    ..
-                                } => {
-                                    if address == context_address {
-                                        for_storage = Some(storage.clone());
-                                    }
-                                }
-                                _ => (),
-                            }
-                        }
-
-                        let storage = for_storage;
-                        let mut ret = HashMap::new();
-                        if let Some(storage) = storage {
-                            let storage: HashMap<U256, M256> = storage.clone().into();
-                            for (key, value) in storage {
-                                ret.insert(Hex(key), Hex(value));
-                            }
-                        }
-                        Some(ret)
-                    };
-
-                    if let &Some(RPCBreakpointConfig {
-                        ref source_map,
-                        ref breakpoints,
-                    }) = &config.breakpoints
-                    {
-                        if let Some(&RPCSourceMapConfig {
-                            ref source_map,
-                            ref source_list,
-                        }) = source_map.get(&Hex(code_hash))
-                        {
-                            let source_map = parse_source_map(source_map, source_list)?;
-                            let source_map = &source_map[opcode_pc];
-
-                            let breakpoints = parse_source(breakpoints)?;
-                            if let Some((breakpoint_index, breakpoint)) =
-                                source_map.source.find_intersection(&breakpoints)
-                            {
-                                steps.push(RPCStep {
-                                    depth,
-                                    error,
-                                    gas: Hex(gas),
-                                    gas_cost: Hex(gas_cost),
-                                    breakpoint_index: Some(breakpoint_index),
-                                    breakpoint: Some(format!(
-                                        "{}:{}:{}",
-                                        breakpoint.offset, breakpoint.length, breakpoint.file_name
-                                    )),
-                                    code_hash: Hex(code_hash),
-                                    address: Hex(address),
-                                    memory,
-                                    op,
-                                    pc,
-                                    opcode_pc,
-                                    stack,
-                                    storage,
-                                });
-                            }
-                        }
-                    } else {
-                        steps.push(RPCStep {
-                            depth,
-                            error,
-                            gas: Hex(gas),
-                            gas_cost: Hex(gas_cost),
-                            breakpoint_index: None,
-                            breakpoint: None,
-                            code_hash: Hex(code_hash),
-                            address: Hex(address),
-                            memory,
-                            op,
-                            pc,
-                            opcode_pc,
-                            stack,
-                            storage,
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    Ok((steps, vm))
-}

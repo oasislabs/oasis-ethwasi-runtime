@@ -1,19 +1,11 @@
 #![feature(use_extern_macros)]
 
 // Sputnik/Ethereum packages
-
-extern crate sputnikvm_network_classic;
-extern crate sputnikvm_network_ellaism;
-extern crate sputnikvm_network_expanse;
 extern crate sputnikvm_network_foundation;
-extern crate sputnikvm_network_musicoin;
-extern crate sputnikvm_network_ubiq;
 
 extern crate bigint;
 extern crate block;
 extern crate blockchain;
-extern crate bloom;
-extern crate env_logger;
 extern crate hexutil;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
@@ -29,11 +21,8 @@ extern crate serde_derive;
 extern crate serde_json;
 extern crate sha3;
 extern crate sputnikvm;
-extern crate sputnikvm_stateful;
-extern crate trie;
 
 extern crate hex;
-extern crate tokio_core;
 
 mod error;
 mod rpc;
@@ -43,7 +32,6 @@ use sputnikvm_network_foundation::ByzantiumPatch;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
-use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
@@ -108,8 +96,6 @@ fn main() {
     } else {
         init_genesis_block(&mut client);
     }
-
-    env_logger::init();
 
     let client_arc = Arc::new(Mutex::new(client));
     let addr = "0.0.0.0:8545".parse().unwrap();
