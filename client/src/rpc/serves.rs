@@ -389,9 +389,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let response = client.execute_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        // PJG: TODO: handle this error
-        //Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
-        Ok(Hex(H256::new()))
+        Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
     }
 
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {

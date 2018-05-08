@@ -117,9 +117,7 @@ fn main() {
     rpc::rpc_loop::<ByzantiumPatch>(client_arc, &addr);
 }
 
-fn init_genesis_block(
-    client: &mut evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>,
-) {
+fn init_genesis_block(client: &mut evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
     let mut init_state_request = evm::InitStateRequest::new();
 
@@ -151,6 +149,9 @@ fn init_genesis_block(
         }
     }
 
-    let result = client.init_genesis_block(init_state_request).wait().unwrap();
+    let result = client
+        .init_genesis_block(init_state_request)
+        .wait()
+        .unwrap();
     println!("  {:?}", result);
 }

@@ -30,7 +30,7 @@ use sputnikvm::{Patch, PreExecutionError, TransactionAction, VMStatus, ValidTran
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
 use bigint::{Address, Gas, H256, U256};
-use block::Transaction;
+use block::{RlpHash, Transaction, TransactionSignature};
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
@@ -38,7 +38,7 @@ use std::rc::Rc;
 use std::str;
 use std::str::FromStr;
 
-use evm::{fire_transaction, get_balance, get_nonce, update_state_from_vm, StateDb};
+use evm::{fire_transaction, get_balance, get_nonce, store_receipt, update_state_from_vm, StateDb};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
@@ -74,12 +74,13 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     for account_state in block.get_accounts() {
         // remove "0x" prefix and lowercase address
         let mut account = account_state.clone();
-        let address = account_state.get_address().trim_left_matches("0x").to_lowercase();
+        let address = account_state
+            .get_address()
+            .trim_left_matches("0x")
+            .to_lowercase();
         account.set_address(address);
 
-        state
-            .accounts
-            .insert(account.get_address(), &account);
+        state.accounts.insert(account.get_address(), &account);
     }
 
     state.genesis_initialized.insert(&true);
@@ -88,7 +89,7 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
 
 // validates transaction and returns a ValidTransaction on success
 fn to_valid<P: Patch>(
-    transaction: Transaction,
+    transaction: &Transaction,
 ) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
     // debugging
     println!("*** Validate block transaction");
@@ -99,7 +100,7 @@ fn to_valid<P: Patch>(
         Ok(val) => val,
         Err(_) => return Err(PreExecutionError::InvalidCaller),
     };
-    let caller_str = caller.to_string();
+    let caller_str = caller.hex();
 
     // check nonce
     // TODO: what if account doesn't exist?
@@ -170,6 +171,30 @@ fn to_valid_transaction(transaction: &EVMTransaction) -> ValidTransaction {
     }
 }
 
+// FOR DEVELOPMENT+TESTING ONLY
+// computes transaction hash from an unsigned web3 sendTransaction/call
+// signature is fake, but unique per account
+fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
+    // unique per-account fake "signature"
+    let signature = TransactionSignature {
+        v: 0,
+        r: H256::from(transaction.caller.unwrap()),
+        s: H256::new(),
+    };
+
+    let block_transaction = Transaction {
+        nonce: transaction.nonce,
+        gas_price: transaction.gas_price,
+        gas_limit: transaction.gas_limit,
+        action: transaction.action,
+        value: transaction.value,
+        signature: signature,
+        input: Rc::new(transaction.input.clone()).to_vec(),
+    };
+
+    block_transaction.rlp_hash()
+}
+
 fn execute_raw_transaction(
     request: &ExecuteRawTransactionRequest,
 ) -> Result<ExecuteTransactionResponse> {
@@ -184,13 +209,22 @@ fn execute_raw_transaction(
     // TODO: handle errors
     let mut transaction: Transaction = rlp.as_val().unwrap();
 
-    let valid = match to_valid::<MainnetEIP160Patch>(transaction) {
+    let valid = match to_valid::<MainnetEIP160Patch>(&transaction) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
+    // TODO: block number, from and to addresses
+    store_receipt(
+        hash,
+        1.into(),
+        0,
+        Address::default(),
+        Address::default(),
+        &vm,
+    );
 
     let mut response = ExecuteTransactionResponse::new();
     response.set_hash(format!("{:x}", hash));
@@ -201,19 +235,30 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let transaction = to_valid_transaction(request.get_transaction());
-    let vm = fire_transaction(&transaction, 1);
+    let valid = to_valid_transaction(request.get_transaction());
+    let hash = unsigned_transaction_hash(&valid);
+
+    let vm = fire_transaction(&valid, 1);
     if !request.get_simulate() {
-        println!(" Not eth_call, updating state");
-        update_state_from_vm(&vm)
+        println!("Not eth_call, updating state");
+        update_state_from_vm(&vm);
+
+        // TODO: block number, from and to addresses
+        store_receipt(
+            hash,
+            1.into(),
+            0,
+            Address::default(),
+            Address::default(),
+            &vm,
+        );
     } else {
         println!("eth_call, not updating state");
     }
 
     let mut response = ExecuteTransactionResponse::new();
 
-    // TODO: set transaction hash
-    response.set_hash(String::new());
+    response.set_hash(format!("{:x}", hash));
 
     // TODO: return error info to client
     match vm.status() {
@@ -227,7 +272,7 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     };
     response.set_result(result);
 
-    response.set_used_gas(format!("{:x}", vm.used_gas()));
+    response.set_used_gas(format!("{:?}", vm.used_gas()));
 
     Ok(response)
 }

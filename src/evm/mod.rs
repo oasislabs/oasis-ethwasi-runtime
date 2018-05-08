@@ -10,11 +10,11 @@ use std::collections::HashMap;
 
 use bigint::{Address, Gas, H256, M256, Sign, U256};
 
-use evm_api::AccountState;
+use evm_api::{AccountState, Receipt};
 use hexutil::{read_hex, to_hex};
 
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
-                Storage, ValidTransaction, VM};
+                Storage, VMStatus, ValidTransaction, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 use std::str::FromStr;
 
@@ -25,6 +25,7 @@ database_schema! {
     pub struct StateDb {
         pub genesis_initialized: bool,
         pub accounts: Map<String, AccountState>,
+        pub receipts: Map<String, Receipt>,
     }
 }
 
@@ -164,6 +165,50 @@ fn update_account_balance(
             account_state
         }
     }
+}
+
+pub fn store_receipt(
+    hash: H256,
+    block_number: U256,
+    index: u32,
+    from: Address,
+    to: Address,
+    vm: &SeqTransactionVM<MainnetEIP160Patch>,
+) {
+    let mut receipt = Receipt::new();
+    receipt.set_hash(format!("{:x}", hash));
+    receipt.set_block_number(format!("{}", block_number));
+    receipt.set_index(index);
+    receipt.set_from(from.hex());
+    receipt.set_to(to.hex());
+    receipt.set_gas_used(format!("{:?}", vm.used_gas()));
+    receipt.set_cumulative_gas_used(format!("{:?}", vm.used_gas()));
+
+    for account in vm.accounts() {
+        match account {
+            &AccountChange::Create {
+                nonce,
+                address,
+                balance,
+                ref storage,
+                ref code,
+            } => {
+                if code.len() > 0 {
+                    receipt.set_is_create(true);
+                    receipt.set_contract_address(address.hex());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    match vm.status() {
+        VMStatus::ExitedOk => receipt.set_status(true),
+        _ => receipt.set_status(false),
+    }
+
+    let state = StateDb::new();
+    state.receipts.insert(&format!("{:x}", hash), &receipt);
 }
 
 pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {

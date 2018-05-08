@@ -19,6 +19,20 @@ message AccountState {
     string code = 5;
 }
 
+message Receipt {
+    string hash = 1;                // transaction hash
+    string block_number = 2;        // U256
+    uint32 index = 3;               // txn index in block, always 0 for single-txn blocks
+    bool is_create = 4;             // is this a create transacation?
+    string from = 5;                // sender address
+    string to = 6;                  // receiver address, defined if !is_create
+    string gas_used = 7;            // gas used to execute this txn
+    string cumulative_gas_used = 8; // always equal to gas_used for single-txn blocks
+    string contract_address = 9;    // address of created contract, defined if is_create
+    bool status = 10;               // true for success
+    // TODO: add logs
+}
+
 message Transaction {
     bool use_nonce = 1;
     string nonce = 2; // optional
@@ -47,5 +61,5 @@ message ExecuteTransactionResponse {
     string used_gas = 3;
     bool status = 4;  // ExitedOk = true
     string result = 5;
-    string hash = 6; // returned by eth_sendTransaction
+    string hash = 6; // returned by sendTransaction and sendRawTransaction
 }
