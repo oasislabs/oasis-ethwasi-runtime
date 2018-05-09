@@ -2,7 +2,7 @@
 #![feature(alloc)]
 
 mod evm;
-//mod miner;
+mod util;
 
 extern crate protobuf;
 
@@ -22,21 +22,19 @@ extern crate rlp;
 
 extern crate sputnikvm_network_classic;
 
-use evm_api::{with_api, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
-              ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
-              Transaction as EVMTransaction};
+use evm_api::{with_api, AccountBalanceResponse, AccountNonceResponse, AccountRequest,
+              ExecuteRawTransactionRequest, ExecuteTransactionRequest, ExecuteTransactionResponse,
+              InitStateRequest, InitStateResponse, ReceiptRequest, ReceiptResponse};
 
-use sputnikvm::{Patch, PreExecutionError, TransactionAction, VMStatus, ValidTransaction, VM};
+use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{Address, Gas, H256, U256};
-use block::{RlpHash, Transaction, TransactionSignature};
-use hexutil::{read_hex, to_hex};
+use bigint::{Address, H256};
+use block::Transaction;
+use hexutil::read_hex;
 use sha3::{Digest, Keccak256};
 
-use std::rc::Rc;
 use std::str;
-use std::str::FromStr;
 
 use evm::{fire_transaction, get_balance, get_nonce, store_receipt, update_state_from_vm, StateDb};
 
@@ -46,6 +44,8 @@ use ekiden_trusted::enclave::enclave_init;
 use ekiden_trusted::key_manager::use_key_manager_contract;
 
 use rlp::UntrustedRlp;
+
+use util::{normalize_hex_str, to_valid, to_valid_unsigned, unsigned_transaction_hash};
 
 enclave_init!();
 
@@ -72,14 +72,8 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
 
     // Insert account states from genesis block
     for account_state in block.get_accounts() {
-        // remove "0x" prefix and lowercase address
         let mut account = account_state.clone();
-        let address = account_state
-            .get_address()
-            .trim_left_matches("0x")
-            .to_lowercase();
-        account.set_address(address);
-
+        account.set_address(normalize_hex_str(account_state.get_address()));
         state.accounts.insert(account.get_address(), &account);
     }
 
@@ -87,112 +81,47 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     Ok(InitStateResponse::new())
 }
 
-// validates transaction and returns a ValidTransaction on success
-fn to_valid<P: Patch>(
-    transaction: &Transaction,
-) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
-    // debugging
-    println!("*** Validate block transaction");
-    println!("Data: {:?}", transaction);
+fn get_transaction_receipt(request: &ReceiptRequest) -> Result<ReceiptResponse> {
+    println!("*** Get transaction receipt");
+    println!("Hash: {:?}", request.get_hash());
 
-    // check caller signature
-    let caller = match transaction.caller() {
-        Ok(val) => val,
-        Err(_) => return Err(PreExecutionError::InvalidCaller),
-    };
-    let caller_str = caller.hex();
+    let hash = normalize_hex_str(request.get_hash());
 
-    // check nonce
-    // TODO: what if account doesn't exist?
-    let nonce = get_nonce(caller_str.clone());
-    if nonce != transaction.nonce {
-        return Err(PreExecutionError::InvalidNonce);
-    }
+    let mut response = ReceiptResponse::new();
 
-    let valid = ValidTransaction {
-        caller: Some(caller),
-        gas_price: transaction.gas_price,
-        gas_limit: transaction.gas_limit,
-        action: transaction.action.clone(),
-        value: transaction.value,
-        input: Rc::new(transaction.input.clone()),
-        nonce: nonce,
+    let state = StateDb::new();
+    match state.receipts.get(&hash) {
+        Some(b) => response.set_receipt(b),
+        None => {}
     };
 
-    // check gas limit
-    if valid.gas_limit < valid.intrinsic_gas::<P>() {
-        return Err(PreExecutionError::InsufficientGasLimit);
-    }
-
-    // check balance
-    // TODO: what if account doesn't exist?
-    let balance = get_balance(caller_str);
-
-    let gas_limit: U256 = valid.gas_limit.into();
-    let gas_price: U256 = valid.gas_price.into();
-
-    let (preclaimed_value, overflowed1) = gas_limit.overflowing_mul(gas_price);
-    let (total, overflowed2) = preclaimed_value.overflowing_add(valid.value);
-    if overflowed1 || overflowed2 {
-        return Err(PreExecutionError::InsufficientBalance);
-    }
-
-    if balance < total {
-        return Err(PreExecutionError::InsufficientBalance);
-    }
-
-    Ok(valid)
+    Ok(response)
 }
 
-fn to_valid_transaction(transaction: &EVMTransaction) -> ValidTransaction {
-    let action = if transaction.get_is_call() {
-        TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
-    } else {
-        TransactionAction::Create
-    };
+fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceResponse> {
+    println!("*** Get account balance");
+    println!("Address: {:?}", request.get_address());
 
-    let caller_str = transaction.get_caller();
+    let address = normalize_hex_str(request.get_address());
+    let balance = get_balance(address);
 
-    // TODO: verify that nonce matches?
-    let nonce = if transaction.get_use_nonce() {
-        U256::from_str(transaction.get_nonce().clone()).unwrap()
-    } else {
-        get_nonce(caller_str.to_string())
-    };
+    let mut response = AccountBalanceResponse::new();
+    response.set_balance(format!("{}", balance));
 
-    ValidTransaction {
-        caller: Some(Address::from_str(caller_str.clone()).unwrap()),
-        action: action,
-        gas_price: Gas::zero(),
-        gas_limit: Gas::max_value(),
-        value: U256::zero(),
-        input: Rc::new(read_hex(transaction.get_input()).unwrap()),
-        nonce: nonce,
-    }
+    Ok(response)
 }
 
-// FOR DEVELOPMENT+TESTING ONLY
-// computes transaction hash from an unsigned web3 sendTransaction/call
-// signature is fake, but unique per account
-fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
-    // unique per-account fake "signature"
-    let signature = TransactionSignature {
-        v: 0,
-        r: H256::from(transaction.caller.unwrap()),
-        s: H256::new(),
-    };
+fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
+    println!("*** Get account nonce");
+    println!("Address: {:?}", request.get_address());
 
-    let block_transaction = Transaction {
-        nonce: transaction.nonce,
-        gas_price: transaction.gas_price,
-        gas_limit: transaction.gas_limit,
-        action: transaction.action,
-        value: transaction.value,
-        signature: signature,
-        input: Rc::new(transaction.input.clone()).to_vec(),
-    };
+    let address = normalize_hex_str(request.get_address());
+    let nonce = get_nonce(address);
 
-    block_transaction.rlp_hash()
+    let mut response = AccountNonceResponse::new();
+    response.set_nonce(format!("{}", nonce));
+
+    Ok(response)
 }
 
 fn execute_raw_transaction(
@@ -207,7 +136,7 @@ fn execute_raw_transaction(
     let rlp = UntrustedRlp::new(&value);
 
     // TODO: handle errors
-    let mut transaction: Transaction = rlp.as_val().unwrap();
+    let transaction: Transaction = rlp.as_val().unwrap();
 
     let valid = match to_valid::<MainnetEIP160Patch>(&transaction) {
         Ok(val) => val,
@@ -235,7 +164,7 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let valid = to_valid_transaction(request.get_transaction());
+    let valid = to_valid_unsigned(request.get_transaction());
     let hash = unsigned_transaction_hash(&valid);
 
     let vm = fire_transaction(&valid, 1);
@@ -272,7 +201,7 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     };
     response.set_result(result);
 
-    response.set_used_gas(format!("{:?}", vm.used_gas()));
+    response.set_used_gas(format!("{:x}", vm.used_gas()));
 
     Ok(response)
 }

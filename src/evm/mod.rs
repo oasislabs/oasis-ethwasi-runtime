@@ -181,8 +181,8 @@ pub fn store_receipt(
     receipt.set_index(index);
     receipt.set_from(from.hex());
     receipt.set_to(to.hex());
-    receipt.set_gas_used(format!("{:?}", vm.used_gas()));
-    receipt.set_cumulative_gas_used(format!("{:?}", vm.used_gas()));
+    receipt.set_gas_used(format!("{:x}", vm.used_gas()));
+    receipt.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
 
     for account in vm.accounts() {
         match account {

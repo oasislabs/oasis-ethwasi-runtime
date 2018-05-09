@@ -6,7 +6,8 @@ use super::util::*;
 use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
-use evm_api::{ExecuteRawTransactionRequest, ExecuteTransactionRequest};
+use evm_api::{AccountRequest, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
+              ReceiptRequest};
 use sputnikvm::Patch;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -152,28 +153,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
-        /*
-       // println!("\n*** balance *** address = {:?}", address);
+        println!("\n*** balance *** address = {:?}", address);
 
-        let state = self.state.lock().unwrap();
+        let mut client = self.client.lock().unwrap();
 
-        let block = from_block_number(&state, block)?;
+        let mut request = AccountRequest::new();
+        request.set_address(address.0.hex());
 
-        let block = state.get_block_by_number(block);
-        let stateful = state.stateful();
-        let trie = stateful.state_of(block.header.state_root);
+        let response = client.get_account_balance(request).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        let account: Option<Account> = trie.get(&address.0);
-        match account {
-            Some(account) => {
-                Ok(Hex(account.balance))
-            },
-            None => {
-                Ok(Hex(U256::zero()))
-            },
-        }
-        */
-        Err(Error::TODO)
+        Ok(Hex(U256::from_dec_str(response.get_balance()).unwrap()))
     }
 
     fn storage_at(
@@ -212,28 +202,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         address: Hex<Address>,
         block: Trailing<String>,
     ) -> Result<Hex<U256>, Error> {
-        /*
         println!("\n*** transaction_count *** address = {:?}", address);
 
-        let state = self.state.lock().unwrap();
+        let mut client = self.client.lock().unwrap();
 
-        let block = from_block_number(&state, block)?;
+        let mut request = AccountRequest::new();
+        request.set_address(address.0.hex());
 
-        let block = state.get_block_by_number(block);
-        let stateful = state.stateful();
-        let trie = stateful.state_of(block.header.state_root);
+        let response = client.get_account_nonce(request).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        let account: Option<Account> = trie.get(&address.0);
-        match account {
-            Some(account) => {
-                Ok(Hex(account.nonce))
-            },
-            None => {
-                Ok(Hex(U256::zero()))
-            },
-        }
-        */
-        Err(Error::TODO)
+        Ok(Hex(U256::from_dec_str(response.get_nonce()).unwrap()))
     }
 
     fn block_transaction_count_by_hash(
@@ -575,39 +554,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn transaction_receipt(&self, hash: Hex<H256>) -> Result<Option<RPCReceipt>, Error> {
-        /*
-        println!("\n*** Transaction receipt: {:?}", hash);
+        println!("\n*** transaction_receipt");
 
-        let state = self.state.lock().unwrap();
+        let mut client = self.client.lock().unwrap();
 
-        let receipt = match state.get_receipt_by_transaction_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
+        let mut request = ReceiptRequest::new();
+        request.set_hash(format!("{:x}", hash.0));
 
-        let transaction = match state.get_transaction_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
-        let block = match state.get_transaction_block_hash_by_hash(hash.0) {
-            Ok(val) => state.get_block_by_hash(val).ok(),
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
+        let response = client.get_transaction_receipt(request).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        let result =
-            if block.is_none() {
-                Ok(None)
-            } else {
-                Ok(Some(to_rpc_receipt(&state, receipt, &transaction, &block.unwrap())?))
-            };
-
-        println!("    Result: {:?}", result);
-        result
-        */
-        Err(Error::TODO)
+        Ok(Some(to_rpc_receipt(response.get_receipt())?))
     }
 
     fn uncle_by_block_hash_and_index(
