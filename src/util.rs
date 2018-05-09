@@ -5,7 +5,7 @@ use sputnikvm::{Patch, PreExecutionError, TransactionAction, ValidTransaction};
 use std::rc::Rc;
 use std::str::FromStr;
 
-use hexutil::read_hex;
+use hexutil::{read_hex, ParseHexError};
 
 use evm::{get_balance, get_nonce};
 use evm_api::Transaction as EVMTransaction;
@@ -21,7 +21,10 @@ pub fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
     // unique per-account fake "signature"
     let signature = TransactionSignature {
         v: 0,
-        r: H256::from(transaction.caller.unwrap()),
+        r: match transaction.caller {
+            Some(val) => H256::from(val),
+            None => H256::new(),
+        },
         s: H256::new(),
     };
 
@@ -97,9 +100,11 @@ pub fn to_valid<P: Patch>(
 
 // constructs a "valid" transaction from an unsigned transaction
 // used for eth_call and the non-validating eth_sendTransaction testing interface
-pub fn to_valid_unsigned(transaction: &EVMTransaction) -> ValidTransaction {
+pub fn to_valid_unsigned(
+    transaction: &EVMTransaction,
+) -> ::std::result::Result<ValidTransaction, ParseHexError> {
     let action = if transaction.get_is_call() {
-        TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
+        TransactionAction::Call(Address::from_str(transaction.get_address().clone())?)
     } else {
         TransactionAction::Create
     };
@@ -108,18 +113,18 @@ pub fn to_valid_unsigned(transaction: &EVMTransaction) -> ValidTransaction {
 
     // we're not actually validating, so don't need to verify that nonce matches
     let nonce = if transaction.get_use_nonce() {
-        U256::from_str(transaction.get_nonce().clone()).unwrap()
+        U256::from_str(transaction.get_nonce().clone())?
     } else {
         get_nonce(caller_str.to_string())
     };
 
-    ValidTransaction {
-        caller: Some(Address::from_str(caller_str.clone()).unwrap()),
+    Ok(ValidTransaction {
+        caller: Some(Address::from_str(caller_str.clone())?),
         action: action,
         gas_price: Gas::zero(),
         gas_limit: Gas::max_value(),
         value: U256::zero(),
-        input: Rc::new(read_hex(transaction.get_input()).unwrap()),
+        input: Rc::new(read_hex(transaction.get_input())?),
         nonce: nonce,
-    }
+    })
 }

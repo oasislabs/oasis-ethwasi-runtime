@@ -142,7 +142,7 @@ fn update_account_balance(
         Some(b) => {
             // Found account. Update balance.
             let mut updated_account = b.clone();
-            let prev_balance: U256 = U256::from_str(b.get_balance()).unwrap();
+            let prev_balance: U256 = U256::from_dec_str(b.get_balance()).unwrap();
             let new_balance = match sign {
                 Sign::Plus => prev_balance + amount,
                 Sign::Minus => prev_balance - amount,

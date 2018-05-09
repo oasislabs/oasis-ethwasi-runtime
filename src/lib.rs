@@ -132,13 +132,16 @@ fn execute_raw_transaction(
     println!("*** Execute raw transaction");
     println!("Data: {:?}", request.get_data());
 
-    let value = read_hex(request.get_data()).unwrap();
+    let value = match read_hex(request.get_data()) {
+        Ok(val) => val,
+        Err(err) => return Err(Error::new(format!("{:?}", err))),
+    };
     let hash = H256::from(Keccak256::digest(&value).as_slice());
 
     let rlp = UntrustedRlp::new(&value);
 
     // TODO: handle errors
-    let transaction: Transaction = rlp.as_val().unwrap();
+    let transaction: Transaction = rlp.as_val()?;
 
     let valid = match to_valid::<MainnetEIP160Patch>(&transaction) {
         Ok(val) => val,
@@ -166,7 +169,10 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
     println!("*** Simulate transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let valid = to_valid_unsigned(request.get_transaction());
+    let valid = match to_valid_unsigned(request.get_transaction()) {
+        Ok(val) => val,
+        Err(err) => return Err(Error::new(format!("{:?}", err))),
+    };
 
     let vm = fire_transaction(&valid, 1);
     let mut response = ExecuteTransactionResponse::new();
@@ -197,7 +203,11 @@ fn debug_execute_unsigned_transaction(
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let valid = to_valid_unsigned(request.get_transaction());
+    let valid = match to_valid_unsigned(request.get_transaction()) {
+        Ok(val) => val,
+        Err(err) => return Err(Error::new(format!("{:?}", err))),
+    };
+
     let hash = unsigned_transaction_hash(&valid);
 
     let vm = fire_transaction(&valid, 1);
