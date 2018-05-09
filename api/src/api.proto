@@ -63,12 +63,18 @@ message TransactionRecord {
     // TODO: add logs
 }
 
+// An unsigned transaction (deprecated).
 message Transaction {
     bool use_nonce = 1;
+    // The nonce from web3. It's a monotonic counter per account.
     string nonce = 2;               // (dec) optional
+    // The "from" addr.
     string caller = 3;              // (hex)
+    // True if it's a call to a contract, with a "to" addr. If it's not a call, it's a "create."
     bool is_call = 4;
+    // The "to" addr for a call to a contractx.
     string address = 5;             // (hex) defined if is_call = true
+    // Opaque call input.
     string input = 6;               // (hex)
 }
 
@@ -77,6 +83,7 @@ message ExecuteTransactionRequest {
 }
 
 message ExecuteRawTransactionRequest {
+    // A signed transaction (using Ethereum's own format).
     string data = 1;                // (hex)
 }
 
