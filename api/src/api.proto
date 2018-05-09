@@ -69,7 +69,6 @@ message Transaction {
 
 message ExecuteTransactionRequest {
     Transaction transaction = 1;
-    bool simulate = 2;              // true for eth_call
 }
 
 message ExecuteRawTransactionRequest {

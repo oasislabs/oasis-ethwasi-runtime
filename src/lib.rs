@@ -162,34 +162,14 @@ fn execute_raw_transaction(
     Ok(response)
 }
 
-fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
-    println!("*** Execute transaction");
+fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
+    println!("*** Simulate transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
     let valid = to_valid_unsigned(request.get_transaction());
-    let hash = unsigned_transaction_hash(&valid);
 
     let vm = fire_transaction(&valid, 1);
-    if !request.get_simulate() {
-        println!("Not eth_call, updating state");
-        update_state_from_vm(&vm);
-
-        // TODO: block number, from and to addresses
-        save_transaction_record(
-            hash,
-            1.into(),
-            0,
-            Address::default(),
-            Address::default(),
-            &vm,
-        );
-    } else {
-        println!("eth_call, not updating state");
-    }
-
     let mut response = ExecuteTransactionResponse::new();
-
-    response.set_hash(format!("{:x}", hash));
 
     // TODO: return error info to client
     match vm.status() {
@@ -204,6 +184,35 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
     response.set_result(result);
 
     response.set_used_gas(format!("{:x}", vm.used_gas()));
+
+    Ok(response)
+}
+
+// WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
+// executes an unsigned transaction from a web3 sendTransaction
+// no validation is performed
+fn debug_execute_unsigned_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
+    println!("*** Execute transaction");
+    println!("Transaction: {:?}", request.get_transaction());
+
+    let valid = to_valid_unsigned(request.get_transaction());
+    let hash = unsigned_transaction_hash(&valid);
+
+    let vm = fire_transaction(&valid, 1);
+    update_state_from_vm(&vm);
+
+    // TODO: block number, from and to addresses
+    save_transaction_record(
+        hash,
+        1.into(),
+        0,
+        Address::default(),
+        Address::default(),
+        &vm,
+    );
+
+    let mut response = ExecuteTransactionResponse::new();
+    response.set_hash(format!("{:x}", hash));
 
     Ok(response)
 }

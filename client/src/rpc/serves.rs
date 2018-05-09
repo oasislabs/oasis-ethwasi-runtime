@@ -362,9 +362,8 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
-        request.set_simulate(false);
 
-        let response = client.execute_transaction(request).wait().unwrap();
+        let response = client.debug_execute_unsigned_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
@@ -394,12 +393,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
-        request.set_simulate(true);
 
         println!("*** Call transaction");
         println!("Transaction: {:?}", request.get_transaction());
 
-        let response = client.execute_transaction(request).wait().unwrap();
+        let response = client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Bytes(response.get_result().as_bytes().to_vec()))
@@ -418,9 +416,8 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         // just simulate the transaction and return used_gas
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
-        request.set_simulate(true);
 
-        let response = client.execute_transaction(request).wait().unwrap();
+        let response = client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(Gas::from_str(response.get_used_gas()).unwrap()))

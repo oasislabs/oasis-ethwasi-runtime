@@ -14,8 +14,8 @@ pub fn normalize_hex_str(hex: &str) -> String {
     hex.to_lowercase().trim_left_matches("0x").to_string()
 }
 
-// FOR DEVELOPMENT+TESTING ONLY
-// computes transaction hash from an unsigned web3 sendTransaction/call
+// WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
+// computes transaction hash from an unsigned web3 sendTransaction
 // signature is fake, but unique per account
 pub fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
     // unique per-account fake "signature"
@@ -95,6 +95,8 @@ pub fn to_valid<P: Patch>(
     Ok(valid)
 }
 
+// constructs a "valid" transaction from an unsigned transaction
+// used for eth_call and the non-validating eth_sendTransaction testing interface
 pub fn to_valid_unsigned(transaction: &EVMTransaction) -> ValidTransaction {
     let action = if transaction.get_is_call() {
         TransactionAction::Call(Address::from_str(transaction.get_address().clone()).unwrap())
@@ -104,7 +106,7 @@ pub fn to_valid_unsigned(transaction: &EVMTransaction) -> ValidTransaction {
 
     let caller_str = transaction.get_caller();
 
-    // TODO: verify that nonce matches?
+    // we're not actually validating, so don't need to verify that nonce matches
     let nonce = if transaction.get_use_nonce() {
         U256::from_str(transaction.get_nonce().clone()).unwrap()
     } else {
