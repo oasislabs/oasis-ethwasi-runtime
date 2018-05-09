@@ -14,7 +14,7 @@ use evm_api::{AccountState, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
-                Storage, VMStatus, ValidTransaction, VM};
+                Storage, TransactionAction, VMStatus, ValidTransaction, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 use std::str::FromStr;
 
@@ -71,10 +71,12 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
                 }).unwrap();
             }
             Err(RequireError::AccountCode(address)) => {
+                // TODO: enable loading external code
                 vm.commit_account(AccountCommitment::Nonexist(address))
                     .unwrap();
             }
             Err(RequireError::Blockhash(number)) => {
+                // TODO: maintain block state (including blockhash)
                 let result = match number.as_u32() {
                     4976641 => H256::from_str(
                         "0x4f5bf1c9fc97e2c17a34859bb885a67519c19e2a0d9176da45fcfee758fadf82",
@@ -88,6 +90,8 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
     }
 }
 
+// TODO: currently returns 0 for nonexistent accounts
+//       specified behavior is different for more recent patches
 pub fn get_nonce(address: String) -> U256 {
     let state = StateDb::new();
     let nonce = match state.accounts.get(&address) {
@@ -97,6 +101,8 @@ pub fn get_nonce(address: String) -> U256 {
     nonce
 }
 
+// TODO: currently returns 0 for nonexistent accounts
+//       specified behavior is different for more recent patches
 pub fn get_balance(address: String) -> U256 {
     let state = StateDb::new();
     let balance = match state.accounts.get(&address) {
@@ -171,18 +177,28 @@ pub fn save_transaction_record(
     hash: H256,
     block_number: U256,
     index: u32,
-    from: Address,
-    to: Address,
+    transaction: ValidTransaction,
     vm: &SeqTransactionVM<MainnetEIP160Patch>,
 ) {
     let mut record = TransactionRecord::new();
     record.set_hash(format!("{:x}", hash));
     record.set_block_number(format!("{}", block_number));
     record.set_index(index);
-    record.set_from(from.hex());
-    record.set_to(to.hex());
+    match transaction.caller {
+        Some(address) => record.set_from(address.hex()),
+        None => {},
+    }
+    match transaction.action {
+        TransactionAction::Call(address) => record.set_to(address.hex()),
+        TransactionAction::Create => {},
+    };
     record.set_gas_used(format!("{:x}", vm.used_gas()));
     record.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
+    record.set_value(format!("{:x}", transaction.value));
+    record.set_gas_price(format!("{:x}", transaction.gas_price));
+    // TODO: assuming this is gas limit rather than gas used, need to confirm
+    record.set_gas_provided(format!("{:x}", transaction.gas_limit));
+    record.set_input(to_hex(&transaction.input.clone()));
 
     for account in vm.accounts() {
         match account {

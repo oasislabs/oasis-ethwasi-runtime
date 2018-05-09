@@ -57,7 +57,7 @@ pub fn to_valid<P: Patch>(
     let caller_str = caller.hex();
 
     // check nonce
-    // TODO: what if account doesn't exist?
+    // TODO: what if account doesn't exist? for now returning 0
     let nonce = get_nonce(caller_str.clone());
     if nonce != transaction.nonce {
         return Err(PreExecutionError::InvalidNonce);
@@ -79,7 +79,7 @@ pub fn to_valid<P: Patch>(
     }
 
     // check balance
-    // TODO: what if account doesn't exist?
+    // TODO: what if account doesn't exist? for now returning 0
     let balance = get_balance(caller_str);
 
     let gas_limit: U256 = valid.gas_limit.into();
@@ -100,7 +100,7 @@ pub fn to_valid<P: Patch>(
 
 // constructs a "valid" transaction from an unsigned transaction
 // used for eth_call and the non-validating eth_sendTransaction testing interface
-pub fn to_valid_unsigned(
+pub fn unsigned_to_valid(
     transaction: &EVMTransaction,
 ) -> ::std::result::Result<ValidTransaction, ParseHexError> {
     let action = if transaction.get_is_call() {

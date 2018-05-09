@@ -47,7 +47,7 @@ use ekiden_trusted::key_manager::use_key_manager_contract;
 
 use rlp::UntrustedRlp;
 
-use util::{normalize_hex_str, to_valid, to_valid_unsigned, unsigned_transaction_hash};
+use util::{normalize_hex_str, to_valid, unsigned_to_valid, unsigned_transaction_hash};
 
 enclave_init!();
 
@@ -140,7 +140,6 @@ fn execute_raw_transaction(
 
     let rlp = UntrustedRlp::new(&value);
 
-    // TODO: handle errors
     let transaction: Transaction = rlp.as_val()?;
 
     let valid = match to_valid::<MainnetEIP160Patch>(&transaction) {
@@ -155,8 +154,7 @@ fn execute_raw_transaction(
         hash,
         1.into(),
         0,
-        Address::default(),
-        Address::default(),
+        valid,
         &vm,
     );
 
@@ -169,7 +167,7 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
     println!("*** Simulate transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let valid = match to_valid_unsigned(request.get_transaction()) {
+    let valid = match unsigned_to_valid(request.get_transaction()) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
@@ -203,7 +201,7 @@ fn debug_execute_unsigned_transaction(
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 
-    let valid = match to_valid_unsigned(request.get_transaction()) {
+    let valid = match unsigned_to_valid(request.get_transaction()) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
@@ -218,8 +216,7 @@ fn debug_execute_unsigned_transaction(
         hash,
         1.into(),
         0,
-        Address::default(),
-        Address::default(),
+        valid,
         &vm,
     );
 
