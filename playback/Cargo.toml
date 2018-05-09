@@ -10,6 +10,9 @@ futures = "0.1.18"
 grpcio = "0.2.2"
 hex = "0.3.1"
 rlp = "0.2.1"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
 
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
