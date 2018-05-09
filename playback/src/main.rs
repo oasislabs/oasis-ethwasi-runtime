@@ -41,7 +41,8 @@ struct ExportedState {
 fn main() {
     let seed = ekiden_core::bytes::B256::random();
     let seed_input = ekiden_core::untrusted::Input::from(&seed);
-    let key_pair = ekiden_core::ring::signature::Ed25519KeyPair::from_seed_unchecked(seed_input).unwrap();
+    let key_pair =
+        ekiden_core::ring::signature::Ed25519KeyPair::from_seed_unchecked(seed_input).unwrap();
     let signer = std::sync::Arc::new(ekiden_core::signature::InMemorySigner::new(key_pair));
     let args = App::new("playback client")
         .arg(
@@ -54,45 +55,59 @@ fn main() {
                 .takes_value(true)
                 .required(true),
         )
-        .arg(Arg::with_name("host")
-             .long("host")
-             .short("h")
-             .takes_value(true)
-             .default_value("127.0.0.1")
-             .display_order(1))
-        .arg(Arg::with_name("port")
-             .long("port")
-             .short("p")
-             .takes_value(true)
-             .default_value("9001")
-             .display_order(2))
-        .arg(Arg::with_name("nodes")
-             .long("nodes")
-             .help("A list of comma-separated compute node addresses (e.g. host1:9001,host2:9004)")
-             .takes_value(true))
-        .arg(Arg::with_name("mr-enclave")
-             .long("mr-enclave")
-             .value_name("MRENCLAVE")
-             .help("MRENCLAVE in hex format")
-             .takes_value(true)
-             .required(true)
-             .display_order(3))
+        .arg(
+            Arg::with_name("host")
+                .long("host")
+                .short("h")
+                .takes_value(true)
+                .default_value("127.0.0.1")
+                .display_order(1),
+        )
+        .arg(
+            Arg::with_name("port")
+                .long("port")
+                .short("p")
+                .takes_value(true)
+                .default_value("9001")
+                .display_order(2),
+        )
+        .arg(
+            Arg::with_name("nodes")
+                .long("nodes")
+                .help(
+                    "A list of comma-separated compute node addresses (e.g. host1:9001,host2:9004)",
+                )
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("mr-enclave")
+                .long("mr-enclave")
+                .value_name("MRENCLAVE")
+                .help("MRENCLAVE in hex format")
+                .takes_value(true)
+                .required(true)
+                .display_order(3),
+        )
         .get_matches();
     let mut client = contract_client!(signer, evm, args);
 
     let state_path = args.value_of("exported_state").unwrap();
-    let state: ExportedState = serde_json::from_reader(std::fs::File::open(state_path).unwrap()).unwrap();
-    let res = client.init_genesis_block({
-        let mut req = evm_api::InitStateRequest::new();
-        for (addr, account) in state.state {
-            let mut account_state = evm_api::AccountState::new();
-            account_state.set_nonce(account.nonce);
-            account_state.set_address(addr);
-            account_state.set_balance(account.balance);
-            req.accounts.push(account_state);
-        }
-        req
-    }).wait().unwrap();
+    let state: ExportedState =
+        serde_json::from_reader(std::fs::File::open(state_path).unwrap()).unwrap();
+    let res = client
+        .init_genesis_block({
+            let mut req = evm_api::InitStateRequest::new();
+            for (addr, account) in state.state {
+                let mut account_state = evm_api::AccountState::new();
+                account_state.set_nonce(account.nonce);
+                account_state.set_address(addr);
+                account_state.set_balance(account.balance);
+                req.accounts.push(account_state);
+            }
+            req
+        })
+        .wait()
+        .unwrap();
     println!("init_genesis_block: {:?}", res);
 
     let blocks_path = args.value_of("exported_blocks").unwrap();
@@ -112,11 +127,14 @@ fn main() {
         let transactions = block.at(1);
         for transaction in transactions.iter() {
             let transaction_raw = transaction.as_raw();
-            let res = client.execute_raw_transaction({
-                let mut req = evm_api::ExecuteRawTransactionRequest::new();
-                req.set_data(hex::encode(transaction_raw));
-                req
-            }).wait().unwrap();
+            let res = client
+                .execute_raw_transaction({
+                    let mut req = evm_api::ExecuteRawTransactionRequest::new();
+                    req.set_data(hex::encode(transaction_raw));
+                    req
+                })
+                .wait()
+                .unwrap();
             println!("execute_raw_transaction: {:?}", res);
         }
     }
