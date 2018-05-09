@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use bigint::{Address, Gas, H256, M256, Sign, U256};
 
-use evm_api::{AccountState, Receipt};
+use evm_api::{AccountState, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
@@ -25,7 +25,7 @@ database_schema! {
     pub struct StateDb {
         pub genesis_initialized: bool,
         pub accounts: Map<String, AccountState>,
-        pub receipts: Map<String, Receipt>,
+        pub transactions: Map<String, TransactionRecord>,
     }
 }
 
@@ -167,7 +167,7 @@ fn update_account_balance(
     }
 }
 
-pub fn store_receipt(
+pub fn save_transaction_record(
     hash: H256,
     block_number: U256,
     index: u32,
@@ -175,14 +175,14 @@ pub fn store_receipt(
     to: Address,
     vm: &SeqTransactionVM<MainnetEIP160Patch>,
 ) {
-    let mut receipt = Receipt::new();
-    receipt.set_hash(format!("{:x}", hash));
-    receipt.set_block_number(format!("{}", block_number));
-    receipt.set_index(index);
-    receipt.set_from(from.hex());
-    receipt.set_to(to.hex());
-    receipt.set_gas_used(format!("{:x}", vm.used_gas()));
-    receipt.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
+    let mut record = TransactionRecord::new();
+    record.set_hash(format!("{:x}", hash));
+    record.set_block_number(format!("{}", block_number));
+    record.set_index(index);
+    record.set_from(from.hex());
+    record.set_to(to.hex());
+    record.set_gas_used(format!("{:x}", vm.used_gas()));
+    record.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
 
     for account in vm.accounts() {
         match account {
@@ -194,8 +194,8 @@ pub fn store_receipt(
                 ref code,
             } => {
                 if code.len() > 0 {
-                    receipt.set_is_create(true);
-                    receipt.set_contract_address(address.hex());
+                    record.set_is_create(true);
+                    record.set_contract_address(address.hex());
                 }
             }
             _ => {}
@@ -203,12 +203,12 @@ pub fn store_receipt(
     }
 
     match vm.status() {
-        VMStatus::ExitedOk => receipt.set_status(true),
-        _ => receipt.set_status(false),
+        VMStatus::ExitedOk => record.set_status(true),
+        _ => record.set_status(false),
     }
 
     let state = StateDb::new();
-    state.receipts.insert(&format!("{:x}", hash), &receipt);
+    state.transactions.insert(&format!("{:x}", hash), &record);
 }
 
 pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {

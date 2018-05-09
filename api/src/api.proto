@@ -31,25 +31,30 @@ message AccountNonceResponse {
     string nonce = 1;                // (dec)
 }
 
-message ReceiptRequest {
+message TransactionRecordRequest {
     string hash = 1;                 // (hex) transaction hash
 }
 
-message ReceiptResponse {
-    Receipt receipt = 1;
+message TransactionRecordResponse {
+    TransactionRecord record = 1;
 }
 
-message Receipt {
+message TransactionRecord {
     string hash = 1;                // (hex) transaction hash
-    string block_number = 2;        // (hex)
-    uint32 index = 3;               // txn index in block, always 0 for single-txn blocks
-    bool is_create = 4;             // is this a create transacation?
-    string from = 5;                // (hex) sender address
-    string to = 6;                  // (hex) receiver address, defined if !is_create
-    string gas_used = 7;            // (hex) gas used to execute this txn
-    string cumulative_gas_used = 8; // (hex) always equal to gas_used for single-txn blocks
-    string contract_address = 9;    // (hex) address of created contract, defined if is_create
-    bool status = 10;               // true for success
+    string nonce = 2;               // (dec)
+    string block_number = 3;        // (hex)
+    uint32 index = 4;               // txn index in block, always 0 for single-txn blocks
+    bool is_create = 5;             // is this a create transacation?
+    string from = 6;                // (hex) sender address
+    string to = 7;                  // (hex) receiver address, defined if !is_create
+    string gas_used = 8;            // (hex) gas used to execute this txn
+    string cumulative_gas_used = 9; // (hex) always equal to gas_used for single-txn blocks
+    string contract_address = 10;   // (hex) address of created contract, defined if is_create
+    string value = 11;              // (hex)
+    string gas_price = 12;          // (hex)
+    string gas_provided = 13;       // (hex)
+    string input = 14;              // (hex)
+    bool status = 15;               // true for success
     // TODO: add logs
 }
 

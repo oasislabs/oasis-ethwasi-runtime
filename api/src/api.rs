@@ -8,7 +8,7 @@ contract_api! {
 
     pub fn execute_raw_transaction(ExecuteRawTransactionRequest) -> ExecuteTransactionResponse;
 
-    pub fn get_transaction_receipt(ReceiptRequest) -> ReceiptResponse;
+    pub fn get_transaction_record(TransactionRecordRequest) -> TransactionRecordResponse;
 
     pub fn get_account_balance(AccountRequest) -> AccountBalanceResponse;
 

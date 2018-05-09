@@ -24,7 +24,8 @@ extern crate sputnikvm_network_classic;
 
 use evm_api::{with_api, AccountBalanceResponse, AccountNonceResponse, AccountRequest,
               ExecuteRawTransactionRequest, ExecuteTransactionRequest, ExecuteTransactionResponse,
-              InitStateRequest, InitStateResponse, ReceiptRequest, ReceiptResponse};
+              InitStateRequest, InitStateResponse, TransactionRecordRequest,
+              TransactionRecordResponse};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -36,7 +37,8 @@ use sha3::{Digest, Keccak256};
 
 use std::str;
 
-use evm::{fire_transaction, get_balance, get_nonce, store_receipt, update_state_from_vm, StateDb};
+use evm::{fire_transaction, get_balance, get_nonce, save_transaction_record, update_state_from_vm,
+          StateDb};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
@@ -81,17 +83,17 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     Ok(InitStateResponse::new())
 }
 
-fn get_transaction_receipt(request: &ReceiptRequest) -> Result<ReceiptResponse> {
-    println!("*** Get transaction receipt");
+fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
+    println!("*** Get transaction record");
     println!("Hash: {:?}", request.get_hash());
 
     let hash = normalize_hex_str(request.get_hash());
 
-    let mut response = ReceiptResponse::new();
+    let mut response = TransactionRecordResponse::new();
 
     let state = StateDb::new();
-    match state.receipts.get(&hash) {
-        Some(b) => response.set_receipt(b),
+    match state.transactions.get(&hash) {
+        Some(b) => response.set_record(b),
         None => {}
     };
 
@@ -146,7 +148,7 @@ fn execute_raw_transaction(
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
     // TODO: block number, from and to addresses
-    store_receipt(
+    save_transaction_record(
         hash,
         1.into(),
         0,
@@ -173,7 +175,7 @@ fn execute_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTra
         update_state_from_vm(&vm);
 
         // TODO: block number, from and to addresses
-        store_receipt(
+        save_transaction_record(
             hash,
             1.into(),
             0,

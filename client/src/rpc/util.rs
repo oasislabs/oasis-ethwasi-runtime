@@ -5,33 +5,51 @@ use error::Error;
 use bigint::{Address, Gas, H2048, H256, M256, U256};
 use block::{Block, TotalHeader, Transaction, TransactionAction};
 use blockchain::chain::HeaderHash;
-use hexutil::to_hex;
+use hexutil::{read_hex, to_hex};
 use rlp;
 
-use evm_api::{Receipt, Transaction as EVMTransaction};
+use evm_api::{Transaction as EVMTransaction, TransactionRecord};
 
 use std::str::FromStr;
 
-pub fn to_rpc_receipt(
-    receipt: &Receipt,
-) -> Result<RPCReceipt, Error> {
+pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
     Ok(RPCReceipt {
-        transaction_hash: Hex(H256::from_str(receipt.get_hash()).unwrap()),
-        transaction_index: Hex(receipt.get_index() as usize),
+        transaction_hash: Hex(H256::from_str(record.get_hash())?),
+        transaction_index: Hex(record.get_index() as usize),
         // TODO: block hash
         block_hash: Hex(H256::new()),
-        block_number: Hex(U256::from_str(receipt.get_block_number()).unwrap()),
-        cumulative_gas_used: Hex(Gas::from_str(receipt.get_cumulative_gas_used()).unwrap()),
-        gas_used: Hex(Gas::from_str(receipt.get_gas_used()).unwrap()),
-        contract_address: Some(Hex(Address::from_str(receipt.get_contract_address()).unwrap())),
+        block_number: Hex(U256::from_str(record.get_block_number())?),
+        cumulative_gas_used: Hex(Gas::from_str(record.get_cumulative_gas_used())?),
+        gas_used: Hex(Gas::from_str(record.get_gas_used())?),
+        contract_address: Some(Hex(Address::from_str(record.get_contract_address())?)),
         // TODO: logs
         logs: Vec::new(),
         root: Hex(H256::new()),
-        status: if receipt.get_status() {
-            1
-        } else {
-            0
+        status: if record.get_status() { 1 } else { 0 },
+    })
+}
+
+pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, Error> {
+    Ok(RPCTransaction {
+        from: Some(Hex(Address::from_str(record.get_from())?)),
+        to: {
+            if record.get_is_create() {
+                None
+            } else {
+                Some(Hex(Address::from_str(record.get_to())?))
+            }
         },
+        gas: Some(Hex(Gas::from_str(record.get_gas_provided())?)),
+        gas_price: Some(Hex(Gas::from_str(record.get_gas_price())?)),
+        value: Some(Hex(U256::from_str(record.get_value())?)),
+        data: Some(Bytes(read_hex(record.get_input())?)),
+        nonce: Some(Hex(U256::from_str(record.get_nonce())?)),
+
+        hash: Some(Hex(H256::from_str(record.get_hash())?)),
+        // TODO: block hash
+        block_hash: Some(Hex(H256::new())),
+        block_number: Some(Hex(U256::from_str(record.get_block_number())?)),
+        transaction_index: Some(Hex(record.get_index() as usize)),
     })
 }
 
@@ -66,4 +84,3 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
 
     Ok(_transaction)
 }
-

@@ -7,7 +7,7 @@ use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::{AccountRequest, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
-              ReceiptRequest};
+              TransactionRecordRequest};
 use sputnikvm::Patch;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -472,34 +472,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {
-        /*
-        println!("\n*** Transaction by hash: {:?}", hash);
+        println!("\n*** transaction_by_hash");
 
-        let state = self.state.lock().unwrap();
+        let mut client = self.client.lock().unwrap();
 
-        let transaction = match state.get_transaction_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => {
-                println!("    Result: Ok(None)");
-                return Ok(None);
-            },
-            Err(e) => {
-                let result = e.into();
-                println!("    Result: Err({:?})", result);
-                return Err(result);
-            },
-        };
-        let block = match state.get_transaction_block_hash_by_hash(hash.0) {
-            Ok(block_hash) => state.get_block_by_hash(block_hash).ok(),
-            Err(_) => None,
-        };
+        let mut request = TransactionRecordRequest::new();
+        request.set_hash(format!("{:x}", hash.0));
 
-        let result = Some(to_rpc_transaction(transaction, block.as_ref()));
+        let response = client.get_transaction_record(request).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        println!("    Result: Ok({:?})", result);
-        Ok(result)
-        */
-        Err(Error::TODO)
+        Ok(Some(to_rpc_transaction(response.get_record())?))
     }
 
     fn transaction_by_block_hash_and_index(
@@ -558,13 +541,13 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         let mut client = self.client.lock().unwrap();
 
-        let mut request = ReceiptRequest::new();
+        let mut request = TransactionRecordRequest::new();
         request.set_hash(format!("{:x}", hash.0));
 
-        let response = client.get_transaction_receipt(request).wait().unwrap();
+        let response = client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Some(to_rpc_receipt(response.get_receipt())?))
+        Ok(Some(to_rpc_receipt(response.get_record())?))
     }
 
     fn uncle_by_block_hash_and_index(
