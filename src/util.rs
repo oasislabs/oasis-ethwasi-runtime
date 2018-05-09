@@ -14,33 +14,6 @@ pub fn normalize_hex_str(hex: &str) -> String {
     hex.to_lowercase().trim_left_matches("0x").to_string()
 }
 
-// WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
-// computes transaction hash from an unsigned web3 sendTransaction
-// signature is fake, but unique per account
-pub fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
-    // unique per-account fake "signature"
-    let signature = TransactionSignature {
-        v: 0,
-        r: match transaction.caller {
-            Some(val) => H256::from(val),
-            None => H256::new(),
-        },
-        s: H256::new(),
-    };
-
-    let block_transaction = Transaction {
-        nonce: transaction.nonce,
-        gas_price: transaction.gas_price,
-        gas_limit: transaction.gas_limit,
-        action: transaction.action,
-        value: transaction.value,
-        signature: signature,
-        input: Rc::new(transaction.input.clone()).to_vec(),
-    };
-
-    block_transaction.rlp_hash()
-}
-
 // validates transaction and returns a ValidTransaction on success
 pub fn to_valid<P: Patch>(
     transaction: &Transaction,
@@ -96,6 +69,33 @@ pub fn to_valid<P: Patch>(
     }
 
     Ok(valid)
+}
+
+// WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
+// computes transaction hash from an unsigned web3 sendTransaction
+// signature is fake, but unique per account
+pub fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
+    // unique per-account fake "signature"
+    let signature = TransactionSignature {
+        v: 0,
+        r: match transaction.caller {
+            Some(val) => H256::from(val),
+            None => H256::new(),
+        },
+        s: H256::new(),
+    };
+
+    let block_transaction = Transaction {
+        nonce: transaction.nonce,
+        gas_price: transaction.gas_price,
+        gas_limit: transaction.gas_limit,
+        action: transaction.action,
+        value: transaction.value,
+        signature: signature,
+        input: Rc::new(transaction.input.clone()).to_vec(),
+    };
+
+    block_transaction.rlp_hash()
 }
 
 // constructs a "valid" transaction from an unsigned transaction

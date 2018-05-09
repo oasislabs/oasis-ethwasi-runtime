@@ -186,11 +186,11 @@ pub fn save_transaction_record(
     record.set_index(index);
     match transaction.caller {
         Some(address) => record.set_from(address.hex()),
-        None => {},
+        None => {}
     }
     match transaction.action {
         TransactionAction::Call(address) => record.set_to(address.hex()),
-        TransactionAction::Create => {},
+        TransactionAction::Create => {}
     };
     record.set_gas_used(format!("{:x}", vm.used_gas()));
     record.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
