@@ -191,7 +191,9 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
 // WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
 // executes an unsigned transaction from a web3 sendTransaction
 // no validation is performed
-fn debug_execute_unsigned_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
+fn debug_execute_unsigned_transaction(
+    request: &ExecuteTransactionRequest,
+) -> Result<ExecuteTransactionResponse> {
     println!("*** Execute transaction");
     println!("Transaction: {:?}", request.get_transaction());
 

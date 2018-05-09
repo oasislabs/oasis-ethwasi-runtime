@@ -363,7 +363,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
-        let response = client.debug_execute_unsigned_transaction(request).wait().unwrap();
+        let response = client
+            .debug_execute_unsigned_transaction(request)
+            .wait()
+            .unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(H256::from_str(response.get_hash()).unwrap()))
