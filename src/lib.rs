@@ -149,7 +149,7 @@ fn execute_raw_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    // TODO: block number, from and to addresses
+    // TODO: block number
     save_transaction_record(hash, 1.into(), 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();
@@ -204,8 +204,7 @@ fn debug_execute_unsigned_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-
-    // TODO: block number, from and to addresses
+    // TODO: block number
     save_transaction_record(hash, 1.into(), 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();

@@ -10,6 +10,8 @@ use hexutil::{read_hex, ParseHexError};
 use evm::{get_balance, get_nonce};
 use evm_api::Transaction as EVMTransaction;
 
+// canonical representation for a fixed-length hex string
+// remove leading "0x" and lowercase
 pub fn normalize_hex_str(hex: &str) -> String {
     hex.to_lowercase().trim_left_matches("0x").to_string()
 }
