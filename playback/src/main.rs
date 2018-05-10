@@ -1,4 +1,6 @@
 #![feature(use_extern_macros)]
+use std::collections::HashMap;
+
 extern crate clap;
 use clap::App;
 use clap::Arg;
@@ -32,10 +34,12 @@ with_api! {
 struct ExportedAccount {
     balance: String,
     nonce: String,
+    code: Option<String>,
+    storage: Option<HashMap<String, String>>,
 }
 #[derive(Deserialize)]
 struct ExportedState {
-    state: std::collections::HashMap<String, ExportedAccount>,
+    state: HashMap<String, ExportedAccount>,
 }
 
 fn main() {
@@ -102,6 +106,12 @@ fn main() {
                 account_state.set_nonce(account.nonce);
                 account_state.set_address(addr);
                 account_state.set_balance(account.balance);
+                if let Some(code) = account.code {
+                    account_state.set_code(code);
+                }
+                if let Some(storage) = account.storage {
+                    account_state.set_storage(storage);
+                }
                 req.accounts.push(account_state);
             }
             req
