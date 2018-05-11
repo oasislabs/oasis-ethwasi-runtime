@@ -6,7 +6,7 @@ build = "build.rs"
 
 [dependencies]
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-protobuf = "1.4.3"
+protobuf = "~1.4"
 serde = "1.0"
 
 [build-dependencies]
