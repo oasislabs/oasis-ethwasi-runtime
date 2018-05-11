@@ -2,8 +2,14 @@ syntax = "proto3";
 
 package api;
 
-message InitStateRequest {
+message InjectAccountsRequest {
     repeated AccountState accounts = 1;
+}
+
+message InjectAccountsResponse {
+}
+
+message InitStateRequest {
 }
 
 message InitStateResponse {

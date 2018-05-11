@@ -30,6 +30,9 @@ with_api! {
     create_contract_client!(evm, evm_api, api);
 }
 
+/// When restoring an exported state, inject this many accounts at a time.
+const INJECT_CHUNK_SIZE: usize = 100;
+
 #[derive(Deserialize)]
 struct ExportedAccount {
     balance: String,
@@ -98,24 +101,31 @@ fn main() {
     let state_path = args.value_of("exported_state").unwrap();
     let state: ExportedState =
         serde_json::from_reader(std::fs::File::open(state_path).unwrap()).unwrap();
-    let res = client
-        .init_genesis_block({
-            let mut req = evm_api::InitStateRequest::new();
-            for (addr, account) in state.state {
-                let mut account_state = evm_api::AccountState::new();
-                account_state.set_nonce(account.nonce);
-                account_state.set_address(addr);
-                account_state.set_balance(account.balance);
-                if let Some(code) = account.code {
-                    account_state.set_code(code);
-                }
-                if let Some(storage) = account.storage {
-                    account_state.set_storage(storage);
-                }
-                req.accounts.push(account_state);
+    let mut accounts = state.state.into_iter();
+    loop {
+        let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
+        let mut req = evm_api::InjectAccountsRequest::new();
+        for (addr, account) in chunk {
+            let mut account_state = evm_api::AccountState::new();
+            account_state.set_nonce(account.nonce);
+            account_state.set_address(addr);
+            account_state.set_balance(account.balance);
+            if let Some(code) = account.code {
+                account_state.set_code(code);
             }
-            req
-        })
+            if let Some(storage) = account.storage {
+                account_state.set_storage(storage);
+            }
+            req.accounts.push(account_state);
+        }
+        if req.accounts.is_empty() {
+            break;
+        }
+        let res = client.inject_accounts(req).wait().unwrap();
+        println!("inject_accounts: {:?}", res); // %%%
+    }
+    let res = client
+        .init_genesis_block(evm_api::InitStateRequest::new())
         .wait()
         .unwrap();
     println!("init_genesis_block: {:?}", res);
