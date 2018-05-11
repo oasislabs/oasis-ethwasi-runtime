@@ -182,7 +182,9 @@ pub fn save_transaction_record(
 ) {
     let mut record = TransactionRecord::new();
     record.set_hash(format!("{:x}", hash));
-    record.set_block_number(format!("{}", block_number));
+    // TODO: use actual block hash
+    record.set_block_hash(format!("{:x}", H256::new()));
+    record.set_block_number(format!("{:x}", block_number));
     record.set_index(index);
     match transaction.caller {
         Some(address) => record.set_from(address.hex()),

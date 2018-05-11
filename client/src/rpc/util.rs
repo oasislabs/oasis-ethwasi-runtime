@@ -16,8 +16,7 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
     Ok(RPCReceipt {
         transaction_hash: Hex(H256::from_str(record.get_hash())?),
         transaction_index: Hex(record.get_index() as usize),
-        // TODO: block hash
-        block_hash: Hex(H256::new()),
+        block_hash: Hex(H256::from_str(record.get_block_hash())?),
         block_number: Hex(U256::from_str(record.get_block_number())?),
         cumulative_gas_used: Hex(Gas::from_str(record.get_cumulative_gas_used())?),
         gas_used: Hex(Gas::from_str(record.get_gas_used())?),
@@ -32,12 +31,10 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
 pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, Error> {
     Ok(RPCTransaction {
         from: Some(Hex(Address::from_str(record.get_from())?)),
-        to: {
-            if record.get_is_create() {
-                None
-            } else {
-                Some(Hex(Address::from_str(record.get_to())?))
-            }
+        to: if record.get_is_create() {
+            None
+        } else {
+            Some(Hex(Address::from_str(record.get_to())?))
         },
         gas: Some(Hex(Gas::from_str(record.get_gas_provided())?)),
         gas_price: Some(Hex(Gas::from_str(record.get_gas_price())?)),
@@ -46,8 +43,7 @@ pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, 
         nonce: Some(Hex(U256::from_str(record.get_nonce())?)),
 
         hash: Some(Hex(H256::from_str(record.get_hash())?)),
-        // TODO: block hash
-        block_hash: Some(Hex(H256::new())),
+        block_hash: Some(Hex(H256::from_str(record.get_block_hash())?)),
         block_number: Some(Hex(U256::from_str(record.get_block_number())?)),
         transaction_index: Some(Hex(record.get_index() as usize)),
     })
