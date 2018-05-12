@@ -14,7 +14,6 @@ jobs:
       # Install Ekiden binaries.
       - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
       - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
-      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-consensus
       # Build key manager contract.
       - run: |
           cargo ekiden build-contract \

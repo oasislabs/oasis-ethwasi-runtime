@@ -32,7 +32,6 @@ of the Ekiden compute and consensus nodes:
 ```bash
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
-$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-consensus
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
