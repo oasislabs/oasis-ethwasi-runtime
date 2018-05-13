@@ -59,11 +59,18 @@ with_api! {
     create_contract!(api);
 }
 
+#[cfg(debug_assertions)]
 fn genesis_block_initialized(request: &bool) -> Result<bool> {
     Ok(StateDb::new().genesis_initialized.is_present())
 }
 
+#[cfg(not(debug_assertions))]
+fn genesis_block_initialized(request: &bool) -> Result<bool> {
+    Err(Error::new("API available only in debug builds"))
+}
+
 // TODO: secure this method so it can't be called by any client.
+#[cfg(debug_assertions)]
 fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     println!("*** Init genesis block");
     let state = StateDb::new();
@@ -81,6 +88,11 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
 
     state.genesis_initialized.insert(&true);
     Ok(InitStateResponse::new())
+}
+
+#[cfg(not(debug_assertions))]
+fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
+    Err(Error::new("API available only in debug builds"))
 }
 
 fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
@@ -186,9 +198,9 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
     Ok(response)
 }
 
-// WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
-// executes an unsigned transaction from a web3 sendTransaction
-// no validation is performed
+// for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
+// attempts to execute the transaction without performing any validation
+#[cfg(debug_assertions)]
 fn debug_execute_unsigned_transaction(
     request: &ExecuteTransactionRequest,
 ) -> Result<ExecuteTransactionResponse> {
@@ -211,4 +223,11 @@ fn debug_execute_unsigned_transaction(
     response.set_hash(format!("{:x}", hash));
 
     Ok(response)
+}
+
+#[cfg(not(debug_assertions))]
+fn debug_execute_unsigned_transaction(
+    request: &ExecuteTransactionRequest,
+) -> Result<ExecuteTransactionResponse> {
+    Err(Error::new("API available only in debug builds"))
 }
