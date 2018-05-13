@@ -47,7 +47,10 @@ use ekiden_trusted::key_manager::use_key_manager_contract;
 
 use rlp::UntrustedRlp;
 
-use util::{normalize_hex_str, to_valid, unsigned_to_valid, unsigned_transaction_hash};
+use util::{normalize_hex_str, to_valid, unsigned_to_valid};
+
+#[cfg(debug_assertions)]
+use util::unsigned_transaction_hash;
 
 enclave_init!();
 

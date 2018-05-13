@@ -73,9 +73,9 @@ pub fn to_valid<P: Patch>(
     Ok(valid)
 }
 
-// WARNING: FOR DEVELOPMENT+TESTING ONLY. DISABLE IN PRODUCTION!
-// computes transaction hash from an unsigned web3 sendTransaction
+// for debugging and testing: computes transaction hash from an unsigned web3 sendTransaction
 // signature is fake, but unique per account
+#[cfg(debug_assertions)]
 pub fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
     // unique per-account fake "signature"
     let signature = TransactionSignature {
