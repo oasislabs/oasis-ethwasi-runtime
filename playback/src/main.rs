@@ -1,6 +1,8 @@
 #![feature(use_extern_macros)]
 use std::collections::HashMap;
+use std::str::FromStr;
 
+extern crate bigint;
 extern crate clap;
 use clap::App;
 use clap::Arg;
@@ -107,9 +109,13 @@ fn main() {
         let mut req = evm_api::InjectAccountsRequest::new();
         for (addr, account) in chunk {
             let mut account_state = evm_api::AccountState::new();
-            account_state.set_nonce(account.nonce);
+            let nonce = bigint::U256::from_str(&account.nonce).unwrap();
+            let nonce_dec = format!("{}", nonce);
+            account_state.set_nonce(nonce_dec);
             account_state.set_address(addr);
-            account_state.set_balance(account.balance);
+            let balance = bigint::U256::from_str(&account.balance).unwrap();
+            let balance_dec = format!("{}", balance);
+            account_state.set_balance(balance_dec);
             if let Some(code) = account.code {
                 account_state.set_code(code);
             }
