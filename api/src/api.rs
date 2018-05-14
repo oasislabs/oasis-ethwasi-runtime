@@ -15,4 +15,6 @@ contract_api! {
     pub fn get_account_balance(AccountRequest) -> AccountBalanceResponse;
 
     pub fn get_account_nonce(AccountRequest) -> AccountNonceResponse;
+
+    pub fn get_account_code(AccountRequest) -> AccountCodeResponse;
 }

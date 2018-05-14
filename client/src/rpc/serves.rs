@@ -19,7 +19,7 @@ use ekiden_rpc_client;
 use evm;
 use futures::future::Future;
 
-use hexutil::to_hex;
+use hexutil::{read_hex, to_hex};
 
 pub struct MinerEthereumRPC<P: Patch + Send> {
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
@@ -290,28 +290,18 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn code(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Bytes, Error> {
-        /*
+        // currently supports only "latest" block semantics
         println!("\n*** code *** address = {:?}", address);
 
-        let state = self.state.lock().unwrap();
+        let mut client = self.client.lock().unwrap();
 
-        let block = from_block_number(&state, block)?;
+        let mut request = AccountRequest::new();
+        request.set_address(address.0.hex());
 
-        let block = state.get_block_by_number(block);
-        let stateful = state.stateful();
-        let trie = stateful.state_of(block.header.state_root);
+        let response = client.get_account_code(request).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        let account: Option<Account> = trie.get(&address.0);
-        match account {
-            Some(account) => {
-                Ok(Bytes(stateful.code(account.code_hash).unwrap()))
-            },
-            None => {
-                Ok(Bytes(Vec::new()))
-            },
-        }
-        */
-        Err(Error::TODO)
+        Ok(Bytes(read_hex(response.get_code())?))
     }
 
     fn sign(&self, address: Hex<Address>, message: Bytes) -> Result<Bytes, Error> {

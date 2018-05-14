@@ -22,10 +22,10 @@ extern crate rlp;
 
 extern crate sputnikvm_network_classic;
 
-use evm_api::{with_api, AccountBalanceResponse, AccountNonceResponse, AccountRequest,
-              ExecuteRawTransactionRequest, ExecuteTransactionRequest, ExecuteTransactionResponse,
-              InitStateRequest, InitStateResponse, TransactionRecordRequest,
-              TransactionRecordResponse};
+use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
+              AccountRequest, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
+              ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
+              TransactionRecordRequest, TransactionRecordResponse};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -37,8 +37,8 @@ use sha3::{Digest, Keccak256};
 
 use std::str;
 
-use evm::{fire_transaction, get_balance, get_nonce, save_transaction_record, update_state_from_vm,
-          StateDb};
+use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,
+          update_state_from_vm, StateDb};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
@@ -137,6 +137,19 @@ fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
 
     let mut response = AccountNonceResponse::new();
     response.set_nonce(format!("{}", nonce));
+
+    Ok(response)
+}
+
+fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
+    println!("*** Get account code");
+    println!("Address: {:?}", request.get_address());
+
+    let address = normalize_hex_str(request.get_address());
+    let code = get_code_string(address);
+
+    let mut response = AccountCodeResponse::new();
+    response.set_code(code);
 
     Ok(response)
 }

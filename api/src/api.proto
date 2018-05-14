@@ -31,6 +31,10 @@ message AccountNonceResponse {
     string nonce = 1;                // (dec)
 }
 
+message AccountCodeResponse {
+    string code = 1;                 // (hex)
+}
+
 message TransactionRecordRequest {
     string hash = 1;                 // (hex) transaction hash
 }

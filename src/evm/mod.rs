@@ -112,6 +112,16 @@ pub fn get_balance(address: String) -> U256 {
     balance
 }
 
+// returns a hex-encoded string directly from storage to avoid unnecessary conversions
+pub fn get_code_string(address: String) -> String {
+    let state = StateDb::new();
+    let code = match state.accounts.get(&address) {
+        Some(val) => val.get_code().to_string(),
+        None => String::new(),
+    };
+    code
+}
+
 fn create_account_state(
     nonce: U256,
     address: Address,
