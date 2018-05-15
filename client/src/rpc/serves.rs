@@ -444,7 +444,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         request.set_number(number);
         request.set_full(full);
 
-        let response = client.get_block_by_number(request).wait().unwrap();
+        let response = match client.get_block_by_number(request).wait() {
+            Ok(val) => val,
+            Err(e) => return Err(Error::InvalidParams),
+        };
         println!("    Response: {:?}", response);
 
         if response.has_block() {
