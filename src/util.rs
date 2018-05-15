@@ -114,14 +114,22 @@ pub fn unsigned_to_valid(
     let caller_str = transaction.get_caller();
 
     // we're not actually validating, so don't need to verify that nonce matches
-    let nonce = if transaction.get_use_nonce() {
-        U256::from_str(transaction.get_nonce().clone())?
+    let (caller, nonce) = if caller_str.is_empty() {
+        (None, U256::zero())
     } else {
-        get_nonce(caller_str.to_string())
+        // Request specified a caller. Look up the nonce for this address if not defined in the transaction.
+        let address = Address::from_str(caller_str.clone())?;
+        let nonce = if transaction.get_use_nonce() {
+            U256::from_str(transaction.get_nonce().clone())?
+        } else {
+            get_nonce(caller_str.to_string())
+        };
+
+        (Some(address), nonce)
     };
 
     Ok(ValidTransaction {
-        caller: Some(Address::from_str(caller_str.clone())?),
+        caller: caller,
         action: action,
         gas_price: Gas::zero(),
         gas_limit: Gas::max_value(),
