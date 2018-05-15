@@ -93,6 +93,9 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
         state.accounts.insert(account.get_address(), &account);
     }
 
+    // Mine block 0 with no transactions
+    mine_block(Vec::new());
+
     state.genesis_initialized.insert(&true);
     Ok(InitStateResponse::new())
 }
@@ -203,7 +206,7 @@ fn execute_raw_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = mine_block(hash);
+    let (block_number, block_hash) = mine_block(vec![hash]);
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();
@@ -258,7 +261,7 @@ fn debug_execute_unsigned_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = mine_block(hash);
+    let (block_number, block_hash) = mine_block(vec![hash]);
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();

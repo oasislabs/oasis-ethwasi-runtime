@@ -4,23 +4,30 @@ use evm_api::Block;
 use sha3::{Digest, Keccak256};
 use std::str::FromStr;
 
-// "mine" a block containing a single transaction
+// "mine" a block containing 0 or more transactions
 // returns block number and hash
-pub fn mine_block(transaction_hash: H256) -> (U256, H256) {
+pub fn mine_block(transaction_hashes: Vec<H256>) -> (U256, H256) {
     let number = next_block_number();
 
     // create a new block
     let mut block = Block::new();
     block.set_number(format!("{:x}", number));
-    block
-        .transaction_hashes
-        .push(format!("{:x}", transaction_hash));
+    for transaction_hash in &transaction_hashes {
+        block
+            .transaction_hashes
+            .push(format!("{:x}", transaction_hash));
+    }
 
-    // set parent hash
-    block.set_parent_hash(match get_block(number - U256::one()) {
-        Some(val) => val.get_hash().to_string(),
-        None => format!("{:x}", H256::new()),
-    });
+    let parent_hash = if number > U256::zero() {
+        get_block(number - U256::one())
+            .unwrap()
+            .get_hash()
+            .to_string()
+    } else {
+        // genesis block
+        format!("{:x}", H256::new())
+    };
+    block.set_parent_hash(parent_hash);
 
     // compute a unique block hash
     // WARNING: the value is deterministic and guessable!
@@ -31,7 +38,7 @@ pub fn mine_block(transaction_hash: H256) -> (U256, H256) {
     let state = StateDb::new();
     state.blocks.insert(&format!("{:x}", number), &block);
 
-    println!("Mining block {:?}", block);
+    println!("Mining block number {:?} {:?}", number, block);
 
     (number, hash)
 }
@@ -53,14 +60,14 @@ pub fn get_latest_block_number() -> U256 {
 fn next_block_number() -> U256 {
     let state = StateDb::new();
 
-    // get latest block number
-    let latest = match state.latest_block_number.get() {
-        Some(val) => U256::from_str(&val).unwrap(),
-        None => U256::zero(),
+    let next = if (state.latest_block_number.is_present()) {
+        U256::from_str(&state.latest_block_number.get().unwrap()).unwrap() + U256::one()
+    } else {
+        // genesis block
+        U256::zero()
     };
 
-    // increment block number and store new value
-    let next = latest + U256::one();
+    //  store new value
     state.latest_block_number.insert(&format!("{:x}", next));
     next
 }
