@@ -29,7 +29,8 @@ pub fn to_rpc_block(block: &Block, full_transactions: bool) -> Result<RPCBlock, 
         extra_data: Bytes(Vec::new()),
 
         size: Hex(0),
-        gas_limit: Hex(Gas::max_value()),
+        // FIXME: gas_limits that are too high overflow metamask, so pick an arbitrary not-too-large number
+        gas_limit: Hex(Gas::from_str("0x10000000000000").unwrap()),
         gas_used: Hex(Gas::zero()),
         timestamp: Hex(0),
         transactions: Either::Left(Vec::new()),
