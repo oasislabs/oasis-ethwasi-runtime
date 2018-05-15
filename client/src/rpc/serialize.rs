@@ -1,8 +1,8 @@
-use serde::{Serialize, Serializer, Deserializer, Deserialize, de};
+use hexutil::*;
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, LowerHex};
 use std::marker::PhantomData;
 use std::str::FromStr;
-use hexutil::*;
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Hex<T>(pub T);
@@ -11,7 +11,8 @@ pub struct Bytes(pub Vec<u8>);
 
 impl<T: LowerHex> Serialize for Hex<T> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         let value = format!("0x{:x}", self.0);
         if &value == "0x" {
@@ -24,7 +25,8 @@ impl<T: LowerHex> Serialize for Hex<T> {
 
 impl Serialize for Bytes {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&to_hex(&self.0))
     }
@@ -42,7 +44,8 @@ impl<'de, T: FromStr> de::Visitor<'de> for HexVisitor<T> {
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         match T::from_str(s) {
             Ok(s) => Ok(Hex(s)),
@@ -61,7 +64,8 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
     }
 
     fn visit_str<E>(self, s: &str) -> Result<Self::Value, E>
-        where E: de::Error
+    where
+        E: de::Error,
     {
         match read_hex(s) {
             Ok(s) => Ok(Bytes(s)),
@@ -72,17 +76,19 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
 
 impl<'de, T: FromStr> Deserialize<'de> for Hex<T> {
     fn deserialize<D>(deserializer: D) -> Result<Hex<T>, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_str(HexVisitor {
-            _marker: PhantomData
+            _marker: PhantomData,
         })
     }
 }
 
 impl<'de> Deserialize<'de> for Bytes {
     fn deserialize<D>(deserializer: D) -> Result<Bytes, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         deserializer.deserialize_str(BytesVisitor)
     }
@@ -101,7 +107,10 @@ mod tests {
 
     #[test]
     fn hex_zero() {
-        assert_eq!("\"0x0\"", serde_json::to_string(&Hex(U256::zero())).unwrap());
+        assert_eq!(
+            "\"0x0\"",
+            serde_json::to_string(&Hex(U256::zero())).unwrap()
+        );
     }
 
     #[test]

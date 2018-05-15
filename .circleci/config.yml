@@ -8,17 +8,17 @@ jobs:
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
       - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
       - checkout
 
       # Install Ekiden binaries.
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-tools
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-compute
-      - run: cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-consensus
+      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
+      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
       # Build key manager contract.
       - run: |
           cargo ekiden build-contract \
               --git https://github.com/oasislabs/ekiden \
-              --tag 0.1.0-alpha.3 \
+              --branch master \
               --output target/contract \
               ekiden-key-manager
       # Build the contract.
@@ -34,15 +34,6 @@ jobs:
 
       # Contract end-to-end tests.
 
-      # Start the consensus node.
-      - run:
-          command: ekiden-consensus
-          background: true
-      # Start tendermint node.
-      - run: tendermint init
-      - run:
-          command: tendermint node --consensus.create_empty_blocks=false --rpc.laddr tcp://0.0.0.0:46666 --rpc.grpc_laddr tcp://0.0.0.0:46657
-          background: true
       # Start key manager compute node.
       - run:
           command: ekiden-compute target/contract/ekiden-key-manager.so -p 9003 --disable-key-manager --identity-file identity-km.pb
@@ -84,7 +75,6 @@ jobs:
           REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-contract-evm:latest)
           mkdir -p ~/.kube
           echo "$KUBECONFIG_CONTENT_BASE64" | base64 -di >~/.kube/config
-          kubectl set image deployments/evm-consensus ekiden-consensus=$REPO_DIGEST
           kubectl set image deployments/evm-key-manager ekiden-compute=$REPO_DIGEST
           kubectl set image deployments/evm ekiden-compute=$REPO_DIGEST
           kubectl set image deployments/web3-client web3-client=$REPO_DIGEST

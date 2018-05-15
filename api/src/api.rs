@@ -1,13 +1,20 @@
-use ekiden_core::rpc::rpc_api;
+use ekiden_core::contract::contract_api;
 
-rpc_api! {
-    metadata {
-        name = evm;
-        version = "0.1.0";
-        client_attestation_required = false;
-    }
+contract_api! {
+    pub fn genesis_block_initialized(bool) -> bool;
+    pub fn init_genesis_block(InitStateRequest) -> InitStateResponse;
 
-    rpc init_genesis_state(InitStateRequest) -> InitStateResponse;
+    pub fn debug_execute_unsigned_transaction(ExecuteTransactionRequest) -> ExecuteTransactionResponse;
 
-    rpc execute_transaction(ExecuteTransactionRequest) -> ExecuteTransactionResponse;
+    pub fn simulate_transaction(ExecuteTransactionRequest) -> ExecuteTransactionResponse;
+
+    pub fn execute_raw_transaction(ExecuteRawTransactionRequest) -> ExecuteTransactionResponse;
+
+    pub fn get_transaction_record(TransactionRecordRequest) -> TransactionRecordResponse;
+
+    pub fn get_account_balance(AccountRequest) -> AccountBalanceResponse;
+
+    pub fn get_account_nonce(AccountRequest) -> AccountNonceResponse;
+
+    pub fn get_account_code(AccountRequest) -> AccountCodeResponse;
 }

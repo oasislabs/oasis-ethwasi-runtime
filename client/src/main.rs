@@ -1,71 +1,49 @@
 #![feature(use_extern_macros)]
 
 // Sputnik/Ethereum packages
-
-extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
-extern crate sputnikvm_network_ubiq;
-extern crate sputnikvm_network_ellaism;
-extern crate sputnikvm_network_expanse;
-extern crate sputnikvm_network_musicoin;
 
-extern crate sputnikvm;
-extern crate sputnikvm_stateful;
-extern crate secp256k1;
-extern crate sha3;
-extern crate blockchain;
 extern crate bigint;
-extern crate rlp;
-extern crate bloom;
 extern crate block;
-extern crate trie;
+extern crate blockchain;
 extern crate hexutil;
-#[macro_use]
-extern crate lazy_static;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
 #[macro_use]
 extern crate jsonrpc_macros;
+extern crate lazy_static;
+extern crate log;
+extern crate rlp;
+extern crate secp256k1;
 extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-#[macro_use]
-extern crate log;
-extern crate env_logger;
+extern crate serde_json;
+extern crate sha3;
+extern crate sputnikvm;
 
 extern crate hex;
-extern crate tokio_core;
 
 mod error;
-mod miner;
 mod rpc;
 
-use miner::MinerState;
-use rand::os::OsRng;
-use secp256k1::key::{PublicKey, SecretKey};
-use secp256k1::SECP256K1;
-use bigint::U256;
-use hexutil::*;
-use std::thread;
-use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{channel, Sender, Receiver};
-use sputnikvm::Patch;
-
 use sputnikvm_network_foundation::ByzantiumPatch;
-
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::BufReader;
+use std::sync::{Arc, Mutex};
 
 // Ekiden client packages
 
 #[macro_use]
 extern crate clap;
 extern crate futures;
-extern crate rand;
 extern crate grpcio;
+extern crate rand;
 
 #[macro_use]
 extern crate client_utils;
+extern crate ekiden_contract_client;
 extern crate ekiden_core;
 extern crate ekiden_rpc_client;
 
@@ -73,58 +51,91 @@ extern crate evm_api;
 
 use clap::{App, Arg};
 use futures::future::Future;
+use std::fs;
 
-use ekiden_rpc_client::create_client_rpc;
-use evm_api::{with_api, InitStateRequest};
+use ekiden_contract_client::create_contract_client;
+use ekiden_core::bytes::B256;
+use ekiden_core::ring::signature::Ed25519KeyPair;
+use ekiden_core::signature::InMemorySigner;
+use ekiden_core::untrusted;
+use evm_api::{with_api, AccountState, InitStateRequest};
 
 with_api! {
-    create_client_rpc!(evm, evm_api, api);
+    create_contract_client!(evm, evm_api, api);
+}
+
+/// Generate client key pair.
+fn create_key_pair() -> Arc<InMemorySigner> {
+    let key_pair =
+        Ed25519KeyPair::from_seed_unchecked(untrusted::Input::from(&B256::random())).unwrap();
+    Arc::new(InMemorySigner::new(key_pair))
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Account {
+    nonce: String,
+    balance: String,
+    storage: HashMap<String, String>,
+    code: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct AccountMap {
+    accounts: HashMap<String, Account>,
 }
 
 fn main() {
-    let mut client = contract_client!(evm);
-    let mut call_client = contract_client!(evm);
+    let signer = create_key_pair();
+    let mut client = contract_client!(signer, evm);
 
-    println!("Initializing genesis state");
-    client
-        .init_genesis_state(evm::InitStateRequest::new())
-        .wait()
-        .unwrap();
+    let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
+    if is_genesis_initialized {
+        println!("Genesis block already initialized");
+    } else {
+        init_genesis_block(&mut client);
+    }
 
-    env_logger::init();
-
-    // Initial account for testing. Hardcoded here for simplicity; we should move this to separate config.
-    let private_key = "C87509A1C067BBDE78BEB793E6FA76530B6382A4C0241E5E4A9EC0A0F44DC0D3";
-    let balance = "100000000000000000000";
-    let chain = "foundation";
+    let client_arc = Arc::new(Mutex::new(client));
     let addr = "0.0.0.0:8545".parse().unwrap();
 
-    let mut rng = OsRng::new().unwrap();
+    rpc::rpc_loop::<ByzantiumPatch>(client_arc, &addr);
+}
 
-    let secret_key = SecretKey::from_slice(&SECP256K1, &read_hex(private_key).unwrap()).unwrap();
+fn init_genesis_block(client: &mut evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
+    println!("Initializing genesis block");
+    let mut init_state_request = evm::InitStateRequest::new();
 
-    let balance = U256::from_dec_str(balance).unwrap();
+    // Read in all the files in resources/genesis/
+    for path in fs::read_dir("../resources/genesis").unwrap() {
+        let path = path.unwrap().path();
+        let br = BufReader::new(File::open(path.clone()).unwrap());
 
-    let mut genesis = Vec::new();
-    genesis.push((secret_key, balance));
+        // Parse the JSON file.
+        let accounts: AccountMap = serde_json::from_reader(br).unwrap();
+        println!(
+            "  {:?} -> {} accounts",
+            path.file_name().unwrap(),
+            accounts.accounts.len()
+        );
 
-    // add account address 7110316b618d20d0c44728ac2a3d683536ea682b. TODO: move this to a genesis config file
-    genesis.push((SecretKey::from_slice(&SECP256K1, &read_hex("533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c").unwrap()).unwrap(), U256::from_dec_str("200000000000000000000").unwrap()));
+        for (addr, account) in accounts.accounts {
+            let mut account_state = AccountState::new();
+            account_state.set_nonce(account.nonce);
+            account_state.set_address(addr);
+            account_state.set_balance(account.balance);
+            if account.code != "0x" {
+                account_state.set_code(account.code);
+            }
+            for (key, value) in account.storage {
+                account_state.storage.insert(key, value);
+            }
+            init_state_request.accounts.push(account_state);
+        }
+    }
 
-    let (sender, receiver) = channel::<bool>();
-
-    let state = miner::make_state::<ByzantiumPatch>(genesis);
-
-    let client_arc = Arc::new(Mutex::new(call_client));
-
-    let miner_arc = Arc::new(Mutex::new(state));
-    let rpc_arc = miner_arc.clone();
-
-    println!("Started RPC server");
-
-    thread::spawn(move || {
-        miner::mine_loop::<ByzantiumPatch, ekiden_rpc_client::backend::Web3ContractClientBackend>(&mut client, miner_arc, receiver);
-    });
-
-    rpc::rpc_loop::<ByzantiumPatch>(client_arc, rpc_arc, &addr, sender);
+    let result = client
+        .init_genesis_block(init_state_request)
+        .wait()
+        .unwrap();
+    println!("  {:?}", result);
 }

@@ -28,11 +28,10 @@ $ echo "https://<username>:<token>@github.com" > ~/.git-credentials
 *In the future, these will already be part of the development container.*
 
 You should install the correct versions (e.g., the same that you build against in `Cargo.toml`)
-of the Ekiden compute and consensus nodes:
+of the Ekiden compute node:
 ```bash
-$ cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-tools
-$ cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-compute
-$ cargo install --git https://github.com/oasislabs/ekiden --tag 0.1.0-alpha.3 ekiden-consensus
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
@@ -47,7 +46,7 @@ To build it:
 ```bash
 $ cargo ekiden build-contract \
     --git https://github.com/oasislabs/ekiden \
-    --tag 0.1.0-alpha.3 \
+    --branch master \
     --output target/contract \
     ekiden-key-manager
 ```
@@ -65,13 +64,6 @@ The built contract will be stored under `target/contract/evm.so`.
 
 You need to run multiple Ekiden services, so it is recommended to run each of these in a
 separate container shell, attached to the same container.
-
-To start the dummy consensus node:
-```bash
-$ ekiden-consensus -x
-```
-
-The `-x` flag tells the consensus node to not depend on Tendermint.
 
 To start the compute node for the key manager contract:
 ```bash
@@ -94,7 +86,6 @@ The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `900
 Development notes:
 
 * If you are developing a contract and changing things, be sure to remove the referenced identity file (e.g., `/tmp/evm.identity.pb`) as it will otherwise fail to start as it will be impossible to unseal the old identity.
-* Also, when the contract hash changes, the contract will be unable to decrypt and old state as the key manager will give it fresh keys. So be sure to also clear (if you are using a Tendermint node) and restart the consensus node.
 
 ## Building the example client
 

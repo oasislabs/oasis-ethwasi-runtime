@@ -9,12 +9,14 @@ METHOD="$1"
 IFS=','
 shift
 
+PARAMS="$*"
+
 PAYLOAD=`cat <<EOF
 {
   "id": 12345,
   "jsonrpc": "2.0",
   "params": [
-    $@
+    $PARAMS
   ],
   "method": "$METHOD"
 }

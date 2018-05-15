@@ -3,45 +3,92 @@ syntax = "proto3";
 package api;
 
 message InitStateRequest {
+    repeated AccountState accounts = 1;
 }
 
 message InitStateResponse {
 }
 
 // We have to use strings/bytes for everything since protobuf doesn't support wide enough integers (e.g., addresses
-// in ethereum are 160-bit hashes)
+// in ethereum are 160-bit hashes). Encoded numerical values are annotated as (dec) or (hex).
 message AccountState {
-    string nonce = 1;
-    string address = 2;
-    string balance = 3;
+    string nonce = 1;                // (dec)
+    string address = 2;              // (hex)
+    string balance = 3;              // (dec)
     map<string, string> storage = 4;
-    string code = 5;
+    string code = 5;                 // (hex)
 }
 
-message EthState {
-    map<string, AccountState> accounts = 1;
+message AccountRequest {
+    string address = 1;              // (hex)
+}
+
+message AccountBalanceResponse {
+    string balance = 1;              // (dec)
+}
+
+message AccountNonceResponse {
+    string nonce = 1;                // (dec)
+}
+
+message AccountCodeResponse {
+    string code = 1;                 // (hex)
+}
+
+message TransactionRecordRequest {
+    string hash = 1;                 // (hex) transaction hash
+}
+
+message TransactionRecordResponse {
+    TransactionRecord record = 1;
+}
+
+message TransactionRecord {
+    string hash = 1;                 // (hex) transaction hash
+    string nonce = 2;                // (dec)
+    string block_hash = 3;           // (hex)
+    string block_number = 4;         // (hex)
+    uint32 index = 5;                // txn index in block, always 0 for single-txn blocks
+    bool is_create = 6;              // is this a create transacation?
+    string from = 7;                 // (hex) sender address
+    string to = 8;                   // (hex) receiver address, defined if !is_create
+    string gas_used = 9;             // (hex) gas used to execute this txn
+    string cumulative_gas_used = 10; // (hex) always equal to gas_used for single-txn blocks
+    string contract_address = 11;    // (hex) address of created contract, defined if is_create
+    string value = 12;               // (hex)
+    string gas_price = 13;           // (hex)
+    string gas_provided = 14;        // (hex)
+    string input = 15;               // (hex)
+    bool status = 16;                // true for success
+    // TODO: add logs
 }
 
 message Transaction {
-    string caller = 1;
-    bool is_call = 2;
-    string address = 3; // defined if is_call = true
-    string input = 4;
+    bool use_nonce = 1;
+    string nonce = 2;               // (dec) optional
+    string caller = 3;              // (hex)
+    bool is_call = 4;
+    string address = 5;             // (hex) defined if is_call = true
+    string input = 6;               // (hex)
 }
 
 message ExecuteTransactionRequest {
     Transaction transaction = 1;
 }
 
+message ExecuteRawTransactionRequest {
+    string data = 1;                // (hex)
+}
+
 message Log {
-    // Todo: add logs from VM
+    // TODO: add logs from VM
 }
 
 message ExecuteTransactionResponse {
     string request = 1;
     Log log = 2;
-    string used_gas = 3;
-
-    bool status = 4;  // ExitedOk = true
-    string result = 5;
+    string used_gas = 3;            // (hex)
+    bool status = 4;                // ExitedOk => true
+    string result = 5;              // (hex)
+    string hash = 6;                // (hex) returned by sendTransaction and sendRawTransaction
 }

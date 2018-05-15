@@ -4,20 +4,32 @@ extern crate hexutil;
 extern crate sha3;
 extern crate sputnikvm;
 
+use ekiden_trusted::db::database_schema;
+
 use std::collections::HashMap;
 
 use bigint::{Address, Gas, H256, M256, Sign, U256};
 
-use evm_api::{AccountState, EthState};
+use evm_api::{AccountState, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
-use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, MainnetEIP160Patch, RequireError,
-                SeqTransactionVM, Storage, ValidTransaction, VM};
+use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
+                Storage, TransactionAction, VMStatus, ValidTransaction, VM};
+use sputnikvm_network_classic::MainnetEIP160Patch;
 use std::str::FromStr;
 
 use std::rc::Rc;
 
-fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &EthState) {
+// Create database schema.
+database_schema! {
+    pub struct StateDb {
+        pub genesis_initialized: bool,
+        pub accounts: Map<String, AccountState>,
+        pub transactions: Map<String, TransactionRecord>,
+    }
+}
+
+fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
     loop {
         match vm.fire() {
             Ok(()) => break,
@@ -59,10 +71,12 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &EthState) 
                 }).unwrap();
             }
             Err(RequireError::AccountCode(address)) => {
+                // TODO: enable loading external code
                 vm.commit_account(AccountCommitment::Nonexist(address))
                     .unwrap();
             }
             Err(RequireError::Blockhash(number)) => {
+                // TODO: maintain block state (including blockhash)
                 let result = match number.as_u32() {
                     4976641 => H256::from_str(
                         "0x4f5bf1c9fc97e2c17a34859bb885a67519c19e2a0d9176da45fcfee758fadf82",
@@ -74,6 +88,38 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &EthState) 
             }
         }
     }
+}
+
+// TODO: currently returns 0 for nonexistent accounts
+//       specified behavior is different for more recent patches
+pub fn get_nonce(address: String) -> U256 {
+    let state = StateDb::new();
+    let nonce = match state.accounts.get(&address) {
+        Some(b) => U256::from_dec_str(b.get_nonce()).unwrap(),
+        None => U256::zero(),
+    };
+    nonce
+}
+
+// TODO: currently returns 0 for nonexistent accounts
+//       specified behavior is different for more recent patches
+pub fn get_balance(address: String) -> U256 {
+    let state = StateDb::new();
+    let balance = match state.accounts.get(&address) {
+        Some(b) => U256::from_dec_str(b.get_balance()).unwrap(),
+        None => U256::zero(),
+    };
+    balance
+}
+
+// returns a hex-encoded string directly from storage to avoid unnecessary conversions
+pub fn get_code_string(address: String) -> String {
+    let state = StateDb::new();
+    let code = match state.accounts.get(&address) {
+        Some(val) => val.get_code().to_string(),
+        None => String::new(),
+    };
+    code
 }
 
 fn create_account_state(
@@ -106,13 +152,13 @@ fn update_account_balance(
     address_str: &String,
     amount: U256,
     sign: Sign,
-    state: &EthState,
+    state: &StateDb,
 ) -> AccountState {
     match state.accounts.get(address_str) {
         Some(b) => {
             // Found account. Update balance.
             let mut updated_account = b.clone();
-            let prev_balance: U256 = U256::from_str(b.get_balance()).unwrap();
+            let prev_balance: U256 = U256::from_dec_str(b.get_balance()).unwrap();
             let new_balance = match sign {
                 Sign::Plus => prev_balance + amount,
                 Sign::Minus => prev_balance - amount,
@@ -137,8 +183,64 @@ fn update_account_balance(
     }
 }
 
-fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>, _state: &EthState) -> EthState {
-    let mut state = _state.clone();
+pub fn save_transaction_record(
+    hash: H256,
+    block_number: U256,
+    index: u32,
+    transaction: ValidTransaction,
+    vm: &SeqTransactionVM<MainnetEIP160Patch>,
+) {
+    let mut record = TransactionRecord::new();
+    record.set_hash(format!("{:x}", hash));
+    // TODO: use actual block hash
+    record.set_block_hash(format!("{:x}", H256::new()));
+    record.set_block_number(format!("{:x}", block_number));
+    record.set_index(index);
+    match transaction.caller {
+        Some(address) => record.set_from(address.hex()),
+        None => {}
+    }
+    match transaction.action {
+        TransactionAction::Call(address) => record.set_to(address.hex()),
+        TransactionAction::Create => {}
+    };
+    record.set_gas_used(format!("{:x}", vm.used_gas()));
+    record.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
+    record.set_value(format!("{:x}", transaction.value));
+    record.set_gas_price(format!("{:x}", transaction.gas_price));
+    // TODO: assuming this is gas limit rather than gas used, need to confirm
+    record.set_gas_provided(format!("{:x}", transaction.gas_limit));
+    record.set_input(to_hex(&transaction.input.clone()));
+
+    for account in vm.accounts() {
+        match account {
+            &AccountChange::Create {
+                nonce,
+                address,
+                balance,
+                ref storage,
+                ref code,
+            } => {
+                if code.len() > 0 {
+                    record.set_is_create(true);
+                    record.set_contract_address(address.hex());
+                }
+            }
+            _ => {}
+        }
+    }
+
+    match vm.status() {
+        VMStatus::ExitedOk => record.set_status(true),
+        _ => record.set_status(false),
+    }
+
+    let state = StateDb::new();
+    state.transactions.insert(&format!("{:x}", hash), &record);
+}
+
+pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {
+    let state = StateDb::new();
 
     for account in vm.accounts() {
         match account {
@@ -151,7 +253,7 @@ fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>, _state: &EthS
             } => {
                 let (addr_str, account_state) =
                     create_account_state(nonce, address, balance, storage, code);
-                state.accounts.insert(addr_str, account_state);
+                state.accounts.insert(&addr_str, &account_state);
             }
             &AccountChange::Full {
                 nonce,
@@ -162,7 +264,7 @@ fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>, _state: &EthS
             } => {
                 let (addr_str, mut account_state) =
                     create_account_state(nonce, address, balance, changing_storage, code);
-                let prev_storage = &_state.accounts.get(&addr_str).unwrap().storage;
+                let prev_storage = state.accounts.get(&addr_str).unwrap().storage;
 
                 // This type of change registers a *diff* of the storage, so place previous values
                 // in the new map.
@@ -174,32 +276,55 @@ fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>, _state: &EthS
                     }
                 }
 
-                state.mut_accounts().insert(addr_str, account_state);
+                state.accounts.insert(&addr_str, &account_state);
             }
             &AccountChange::IncreaseBalance(address, amount) => {
                 let address_str = address.hex();
                 let new_account = update_account_balance(&address_str, amount, Sign::Plus, &state);
-                state.accounts.insert(address_str, new_account);
-            }
-            &AccountChange::DecreaseBalance(address, amount) => {
-                let address_str = address.hex();
-                let new_account = update_account_balance(&address_str, amount, Sign::Minus, &state);
-                state.accounts.insert(address_str, new_account);
+                state.accounts.insert(&address_str, &new_account);
             }
             &AccountChange::Nonexist(address) => {
                 panic!("Unexpected nonexistent address: {:?}", address)
             }
         }
     }
-
-    state
 }
 
+pub fn fire_transaction(
+    transaction: &ValidTransaction,
+    block_number: u64,
+) -> SeqTransactionVM<MainnetEIP160Patch> {
+    let state = StateDb::new();
+
+    let block_header = HeaderParams {
+        beneficiary: Address::default(),
+        timestamp: 0,
+        number: U256::from(block_number),
+        difficulty: U256::zero(),
+        gas_limit: Gas::zero(),
+    };
+
+    let mut vm = SeqTransactionVM::new(transaction.clone(), block_header.clone());
+
+    handle_fire(&mut vm, &state);
+
+    println!("    VM returned: {:?}", vm.status());
+    println!("    VM out: {:?}", vm.out());
+
+    for account in vm.accounts() {
+        println!("        {:?}", account);
+    }
+
+    vm
+}
+
+/*
 pub fn fire_transactions_and_update_state(
     transactions: &[ValidTransaction],
-    state: &EthState,
     block_number: u64,
-) -> (EthState, Vec<u8>) {
+) -> Vec<u8> {
+    let state = StateDb::new();
+
     let block_header = HeaderParams {
         beneficiary: Address::default(),
         timestamp: 0,
@@ -220,7 +345,7 @@ pub fn fire_transactions_and_update_state(
             )
         };
 
-        handle_fire(&mut vm, state);
+        handle_fire(&mut vm, &state);
 
         println!("    VM returned: {:?}", vm.status());
         println!("    VM out: {:?}", vm.out());
@@ -234,6 +359,8 @@ pub fn fire_transactions_and_update_state(
 
     let vm_result = last_vm.as_ref().unwrap().out();
 
-    let new_state = update_state_from_vm(&last_vm.as_ref().unwrap(), state);
-    (new_state, vm_result.to_vec())
+    // TODO: do not update if this is eth_call
+    update_state_from_vm(&last_vm.as_ref().unwrap());
+    vm_result.to_vec()
 }
+*/
