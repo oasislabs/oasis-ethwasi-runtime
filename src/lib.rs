@@ -25,7 +25,8 @@ extern crate sputnikvm_network_classic;
 use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
               AccountRequest, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
               ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
-              TransactionRecordRequest, TransactionRecordResponse};
+              InjectAccountsRequest, InjectAccountsResponse, TransactionRecordRequest,
+              TransactionRecordResponse};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -74,19 +75,31 @@ fn genesis_block_initialized(request: &bool) -> Result<bool> {
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
-    println!("*** Init genesis block");
+fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResponse> {
     let state = StateDb::new();
 
     if state.genesis_initialized.is_present() {
         return Err(Error::new("Genesis block already created"));
     }
 
-    // Insert account states from genesis block
-    for account_state in block.get_accounts() {
+    // Insert account states
+    for account_state in request.get_accounts() {
         let mut account = account_state.clone();
         account.set_address(normalize_hex_str(account_state.get_address()));
         state.accounts.insert(account.get_address(), &account);
+    }
+
+    Ok(InjectAccountsResponse::new())
+}
+
+// TODO: secure this method so it can't be called by any client.
+#[cfg(debug_assertions)]
+fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
+    println!("*** Init genesis block");
+    let state = StateDb::new();
+
+    if state.genesis_initialized.is_present() {
+        return Err(Error::new("Genesis block already created"));
     }
 
     state.genesis_initialized.insert(&true);
