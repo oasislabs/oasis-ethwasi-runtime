@@ -12,23 +12,42 @@ jobs:
       - checkout
 
       # Install Ekiden binaries.
-      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
-      - run: cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
+      - run:
+          environment:
+            CARGO_TARGET_DIR: target
+          command: >-
+            cargo install
+            --git https://github.com/oasislabs/ekiden
+            --branch master
+            --debug
+            ekiden-tools
+      - run:
+          environment:
+            CARGO_TARGET_DIR: target
+          command: >-
+            cargo install
+            --git https://github.com/oasislabs/ekiden
+            --branch master
+            --debug
+            ekiden-compute
       # Build key manager contract.
-      - run: |
-          cargo ekiden build-contract \
-              --git https://github.com/oasislabs/ekiden \
-              --branch master \
-              --output target/contract \
-              ekiden-key-manager
+      - run: >-
+          cargo ekiden build-contract
+          --git https://github.com/oasislabs/ekiden
+          --branch master
+          --output target/contract
+          --target-dir "$PWD/target"
+          ekiden-key-manager
       # Build the contract.
       - run: cargo ekiden build-contract --output-identity
       # Run the contract tests.
       - run: cargo test
       # Build the client.
       - run:
-          command: cargo build
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
           working_directory: client
+          command: cargo build
       # Check style. This needs to be after everything is built.
       - run: cargo fmt -- --write-mode=diff
 
@@ -45,7 +64,6 @@ jobs:
       # Start web3 proxy.
       - run:
           command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
-          working_directory: client
           background: true
       # TODO: Run a test script.
       # - run:
