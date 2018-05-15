@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 # Our development image sets up the PATH in .bashrc. Source that.
 PS1='\$'
@@ -25,6 +25,7 @@ mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/l
 ln target/contract/ekiden-key-manager.so target/docker-deployment/context/lib/evm-key-manager.so
 ln target/contract/evm.so target/docker-deployment/context/lib
 ln target/contract/evm.mrenclave target/docker-deployment/context/res
+cp -r resources/genesis target/docker-deployment/context/res
 ln target/debug/web3-client target/docker-deployment/context/bin
 ln docker/deployment/Dockerfile target/docker-deployment/context/Dockerfile
 tar cvzhf target/docker-deployment/context.tar.gz -C target/docker-deployment/context .
