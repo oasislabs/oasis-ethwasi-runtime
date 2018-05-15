@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use bigint::{Address, Gas, H256, M256, Sign, U256};
 
-use evm_api::{AccountState, TransactionRecord};
+use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
@@ -26,6 +26,8 @@ database_schema! {
         pub genesis_initialized: bool,
         pub accounts: Map<String, AccountState>,
         pub transactions: Map<String, TransactionRecord>,
+        pub latest_block_number: String,
+        pub blocks: Map<String, Block>,
     }
 }
 
@@ -185,6 +187,7 @@ fn update_account_balance(
 
 pub fn save_transaction_record(
     hash: H256,
+    block_hash: H256,
     block_number: U256,
     index: u32,
     transaction: ValidTransaction,
@@ -192,8 +195,7 @@ pub fn save_transaction_record(
 ) {
     let mut record = TransactionRecord::new();
     record.set_hash(format!("{:x}", hash));
-    // TODO: use actual block hash
-    record.set_block_hash(format!("{:x}", H256::new()));
+    record.set_block_hash(format!("{:x}", block_hash));
     record.set_block_number(format!("{:x}", block_number));
     record.set_index(index);
     match transaction.caller {

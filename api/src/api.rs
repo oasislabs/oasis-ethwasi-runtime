@@ -17,4 +17,6 @@ contract_api! {
     pub fn get_account_nonce(AccountRequest) -> AccountNonceResponse;
 
     pub fn get_account_code(AccountRequest) -> AccountCodeResponse;
+
+    pub fn get_block_by_number(BlockRequest) -> BlockResponse;
 }

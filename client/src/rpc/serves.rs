@@ -6,8 +6,8 @@ use super::util::*;
 use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
-use evm_api::{AccountRequest, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
-              TransactionRecordRequest};
+use evm_api::{AccountRequest, BlockRequest, ExecuteRawTransactionRequest,
+              ExecuteTransactionRequest, TransactionRecordRequest};
 use sputnikvm::Patch;
 use std::marker::PhantomData;
 use std::str::FromStr;
@@ -419,9 +419,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
         /*
         println!("\n*** block_by_hash *** hash = {:?}", hash);
-
         let state = self.state.lock().unwrap();
-
         let block = match state.get_block_by_hash(hash.0) {
             Ok(val) => val,
             Err(Error::NotFound) => return Ok(None),
@@ -432,33 +430,29 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
             Err(Error::NotFound) => return Ok(None),
             Err(e) => return Err(e.into()),
         };
-
         Ok(Some(to_rpc_block(block, total, full)))
         */
         Err(Error::TODO)
     }
 
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
-        /*
-        let state = self.state.lock().unwrap();
+        println!("\n*** block_by_number");
 
-        let number = match from_block_number(&state, Some(number)) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
-        let block = state.get_block_by_number(number);
-        let total = match state.get_total_header_by_hash(block.header.header_hash()) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
+        let mut client = self.client.lock().unwrap();
 
-        let result = to_rpc_block(block, total, full);
-       // println!("\n*** block_by_number ({:?}) -> {:?}", number, result);
-        Ok(Some(result))
-        */
-        Err(Error::TODO)
+        let mut request = BlockRequest::new();
+        request.set_number(number);
+        request.set_full(full);
+
+        let response = client.get_block_by_number(request).wait().unwrap();
+        println!("    Response: {:?}", response);
+
+        if response.has_block() {
+            Ok(Some(to_rpc_block(response.get_block(), full)?))
+        } else {
+            // return null if block doesn't exist
+            Ok(None)
+        }
     }
 
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {

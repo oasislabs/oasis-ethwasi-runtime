@@ -63,6 +63,23 @@ message TransactionRecord {
     // TODO: add logs
 }
 
+message Block {
+    string number = 1;               // (hex)
+    string hash = 2;                 // (hex)
+    string parent_hash = 3;          // (hex)
+    repeated string transaction_hashes = 4;
+}
+
+message BlockRequest {
+    string hash = 1;                 // (hex) block hash
+    string number = 2;               // (hex) block number
+    bool full = 3;                   // if true, return full transaction objects, otherwise hashes
+}
+
+message BlockResponse {
+    Block block = 1;
+}
+
 message Transaction {
     bool use_nonce = 1;
     string nonce = 2;               // (dec) optional
