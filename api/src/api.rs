@@ -2,6 +2,7 @@ use ekiden_core::contract::contract_api;
 
 contract_api! {
     pub fn genesis_block_initialized(bool) -> bool;
+    pub fn inject_accounts(InjectAccountsRequest) -> InjectAccountsResponse;
     pub fn init_genesis_block(InitStateRequest) -> InitStateResponse;
 
     pub fn debug_execute_unsigned_transaction(ExecuteTransactionRequest) -> ExecuteTransactionResponse;
