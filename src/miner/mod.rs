@@ -7,15 +7,17 @@ use std::str::FromStr;
 // "mine" a block containing 0 or 1 transactions
 // returns block number and hash
 pub fn mine_block(transaction_hash: Option<H256>) -> (U256, H256) {
+    // get the next block number
     let number = next_block_number();
 
-    // create a new block
+    // create a block
     let mut block = Block::new();
     block.set_number(format!("{:x}", number));
     if let Some(val) = transaction_hash {
         block.set_transaction_hash(format!("{:x}", val));
     }
 
+    // set parent hash
     let parent_hash = if number > U256::zero() {
         get_block(number - U256::one())
             .unwrap()
@@ -35,8 +37,6 @@ pub fn mine_block(transaction_hash: Option<H256>) -> (U256, H256) {
     // store the block
     let state = StateDb::new();
     state.blocks.insert(&format!("{:x}", number), &block);
-
-    println!("Mining block number {:?} {:?}", number, block);
 
     (number, hash)
 }
