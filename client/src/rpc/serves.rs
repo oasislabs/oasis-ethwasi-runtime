@@ -393,7 +393,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         let response = client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Bytes(response.get_result().as_bytes().to_vec()))
+        Ok(Bytes(read_hex(response.get_result())?))
     }
 
     fn estimate_gas(

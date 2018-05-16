@@ -33,7 +33,7 @@ use sputnikvm_network_classic::MainnetEIP160Patch;
 
 use bigint::{Address, H256, U256};
 use block::Transaction;
-use hexutil::read_hex;
+use hexutil::{to_hex, read_hex};
 use sha3::{Digest, Keccak256};
 
 use std::str;
@@ -232,10 +232,9 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
         _ => response.set_status(false),
     }
 
-    let result = match str::from_utf8(&vm.out().to_vec()) {
-        Ok(val) => val.to_string(),
-        Err(_err) => String::new(),
-    };
+    let result = to_hex(&vm.out());
+    println!("*** Result: {:?}", result);
+
     response.set_result(result);
 
     response.set_used_gas(format!("{:x}", vm.used_gas()));
