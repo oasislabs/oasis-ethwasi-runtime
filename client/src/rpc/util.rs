@@ -2,15 +2,51 @@ use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use super::serialize::*;
 use error::Error;
 
-use bigint::{Address, Gas, H2048, H256, M256, U256};
-use block::{Block, TotalHeader, Transaction, TransactionAction};
+use bigint::{Address, Gas, H2048, H256, H64, M256, U256};
+use block::{TotalHeader, Transaction, TransactionAction};
 use blockchain::chain::HeaderHash;
 use hexutil::{read_hex, to_hex};
 use rlp;
 
-use evm_api::{Transaction as EVMTransaction, TransactionRecord};
+use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
 
 use std::str::FromStr;
+
+pub fn to_rpc_block(block: &Block, full_transactions: bool) -> Result<RPCBlock, Error> {
+    Ok(RPCBlock {
+        number: Hex(U256::from_str(block.get_number())?),
+        hash: Hex(H256::from_str(block.get_hash())?),
+        parent_hash: Hex(H256::from_str(block.get_parent_hash())?),
+        nonce: Hex(H64::new()),
+        sha3_uncles: Hex(H256::new()),
+        logs_bloom: Hex(H2048::new()),
+        transactions_root: Hex(H256::new()),
+        state_root: Hex(H256::new()),
+        receipts_root: Hex(H256::new()),
+        miner: Hex(Address::default()),
+        difficulty: Hex(U256::zero()),
+        total_difficulty: Hex(U256::zero()),
+        extra_data: Bytes(Vec::new()),
+
+        size: Hex(0),
+        // FIXME: gas_limits that are too high overflow metamask, so pick an arbitrary not-too-large number
+        gas_limit: Hex(Gas::from_str("0x10000000000000").unwrap()),
+        gas_used: Hex(Gas::zero()),
+        timestamp: Hex(0),
+        transactions: if full_transactions {
+            Either::Right(match to_rpc_transaction(block.get_transaction()) {
+                Ok(val) => vec![val],
+                Err(_) => Vec::new(),
+            })
+        } else {
+            Either::Left(match H256::from_str(block.get_transaction_hash()) {
+                Ok(val) => vec![Hex(val)],
+                Err(_) => Vec::new(),
+            })
+        },
+        uncles: Vec::new(),
+    })
+}
 
 pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
     Ok(RPCReceipt {

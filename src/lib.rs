@@ -2,6 +2,7 @@
 #![feature(alloc)]
 
 mod evm;
+mod miner;
 mod util;
 
 extern crate protobuf;
@@ -23,23 +24,26 @@ extern crate rlp;
 extern crate sputnikvm_network_classic;
 
 use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
-              AccountRequest, ExecuteRawTransactionRequest, ExecuteTransactionRequest,
-              ExecuteTransactionResponse, InitStateRequest, InitStateResponse,
-              InjectAccountsRequest, InjectAccountsResponse, TransactionRecordRequest,
-              TransactionRecordResponse};
+              AccountRequest, Block, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
+              ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateRequest,
+              InitStateResponse, InjectAccountsRequest, InjectAccountsResponse,
+              TransactionRecordRequest, TransactionRecordResponse};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{Address, H256};
+use bigint::{Address, H256, U256};
 use block::Transaction;
-use hexutil::read_hex;
+use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
 use std::str;
+use std::str::FromStr;
 
 use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,
           update_state_from_vm, StateDb};
+
+use miner::{get_block, get_latest_block_number, mine_block};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
@@ -102,6 +106,9 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
         return Err(Error::new("Genesis block already created"));
     }
 
+    // Mine block 0 with no transactions
+    mine_block(None);
+
     state.genesis_initialized.insert(&true);
     Ok(InitStateResponse::new())
 }
@@ -109,6 +116,40 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
 #[cfg(not(debug_assertions))]
 fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     Err(Error::new("API available only in debug builds"))
+}
+
+fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
+    //println!("*** Get block by number");
+    //println!("Request: {:?}", request);
+
+    let number = if request.get_number() == "latest" {
+        get_latest_block_number()
+    } else {
+        match U256::from_str(request.get_number()) {
+            Ok(val) => val,
+            Err(err) => return Err(Error::new(format!("{:?}", err))),
+        }
+    };
+
+    let mut response = BlockResponse::new();
+
+    let mut block = match get_block(number) {
+        Some(val) => val,
+        None => return Ok(response),
+    };
+
+    // if full transactions are requested, attach the TransactionRecord
+    if request.get_full() {
+        if let Some(val) = StateDb::new()
+            .transactions
+            .get(block.get_transaction_hash())
+        {
+            block.set_transaction(val);
+        }
+    }
+
+    response.set_block(block);
+    Ok(response)
 }
 
 fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
@@ -120,10 +161,9 @@ fn get_transaction_record(request: &TransactionRecordRequest) -> Result<Transact
     let mut response = TransactionRecordResponse::new();
 
     let state = StateDb::new();
-    match state.transactions.get(&hash) {
-        Some(b) => response.set_record(b),
-        None => {}
-    };
+    if let Some(val) = state.transactions.get(&hash) {
+        response.set_record(val);
+    }
 
     Ok(response)
 }
@@ -190,8 +230,8 @@ fn execute_raw_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    // TODO: block number
-    save_transaction_record(hash, 1.into(), 0, valid, &vm);
+    let (block_number, block_hash) = mine_block(Some(hash));
+    save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();
     response.set_hash(format!("{:x}", hash));
@@ -216,10 +256,9 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
         _ => response.set_status(false),
     }
 
-    let result = match str::from_utf8(&vm.out().to_vec()) {
-        Ok(val) => val.to_string(),
-        Err(_err) => String::new(),
-    };
+    let result = to_hex(&vm.out());
+    println!("*** Result: {:?}", result);
+
     response.set_result(result);
 
     response.set_used_gas(format!("{:x}", vm.used_gas()));
@@ -245,8 +284,8 @@ fn debug_execute_unsigned_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    // TODO: block number
-    save_transaction_record(hash, 1.into(), 0, valid, &vm);
+    let (block_number, block_hash) = mine_block(Some(hash));
+    save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();
     response.set_hash(format!("{:x}", hash));

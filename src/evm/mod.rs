@@ -10,7 +10,7 @@ use std::collections::HashMap;
 
 use bigint::{Address, Gas, H256, M256, Sign, U256};
 
-use evm_api::{AccountState, TransactionRecord};
+use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
@@ -26,6 +26,8 @@ database_schema! {
         pub genesis_initialized: bool,
         pub accounts: Map<String, AccountState>,
         pub transactions: Map<String, TransactionRecord>,
+        pub latest_block_number: String,
+        pub blocks: Map<String, Block>,
     }
 }
 
@@ -34,24 +36,29 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
         match vm.fire() {
             Ok(()) => break,
             Err(RequireError::Account(address)) => {
+                println!("> Require Account: {:x}", address);
                 let addr_str = address.hex();
                 let commit = match state.accounts.get(&addr_str) {
                     Some(b) => {
-                        let result = AccountCommitment::Full {
+                        println!("  -> Found account");
+                        AccountCommitment::Full {
                             nonce: U256::from_dec_str(b.get_nonce()).unwrap(),
                             address: address,
                             balance: U256::from_dec_str(b.get_balance()).unwrap(),
                             code: Rc::new(read_hex(b.get_code()).unwrap()),
-                        };
-                        result
+                        }
                     }
-                    None => AccountCommitment::Nonexist(address),
+                    None => {
+                        println!("  -> Nonexistent");
+                        AccountCommitment::Nonexist(address)
+                    }
                 };
                 vm.commit_account(commit).unwrap();
             }
             Err(RequireError::AccountStorage(address, index)) => {
+                println!("> Require Account Storage: {:x} @ {:x}", address, index);
                 let addr_str = address.hex();
-                let index_str = format!("{}", index);
+                let index_str = format!("{:x}", index);
 
                 let value = match state
                     .accounts
@@ -64,6 +71,7 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
                     None => M256::zero(),
                 };
 
+                println!("  -> {:?}", value);
                 vm.commit_account(AccountCommitment::Storage {
                     address: address,
                     index: index,
@@ -71,11 +79,25 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
                 }).unwrap();
             }
             Err(RequireError::AccountCode(address)) => {
-                // TODO: enable loading external code
-                vm.commit_account(AccountCommitment::Nonexist(address))
-                    .unwrap();
+                println!("> Require Account Code: {:x}", address);
+                let addr_str = address.hex();
+                let commit = match state.accounts.get(&addr_str) {
+                    Some(b) => {
+                        println!("  -> Found code");
+                        AccountCommitment::Code {
+                            address: address,
+                            code: Rc::new(read_hex(b.get_code()).unwrap()),
+                        }
+                    }
+                    None => {
+                        println!("  -> Nonexistent");
+                        AccountCommitment::Nonexist(address)
+                    }
+                };
+                vm.commit_account(commit).unwrap();
             }
             Err(RequireError::Blockhash(number)) => {
+                println!("> Require Blockhash @ {:x}", number);
                 // TODO: maintain block state (including blockhash)
                 let result = match number.as_u32() {
                     4976641 => H256::from_str(
@@ -133,7 +155,7 @@ fn create_account_state(
     let vm_storage_as_map: alloc::BTreeMap<U256, M256> = storage.clone().into();
     for (key, val) in vm_storage_as_map.iter() {
         let val_as_u256: U256 = val.clone().into();
-        storage_map.insert(format!("{}", key), format!("{}", val_as_u256));
+        storage_map.insert(format!("{:x}", key), format!("{}", val_as_u256));
     }
 
     let address_str = address.hex();
@@ -185,6 +207,7 @@ fn update_account_balance(
 
 pub fn save_transaction_record(
     hash: H256,
+    block_hash: H256,
     block_number: U256,
     index: u32,
     transaction: ValidTransaction,
@@ -192,8 +215,7 @@ pub fn save_transaction_record(
 ) {
     let mut record = TransactionRecord::new();
     record.set_hash(format!("{:x}", hash));
-    // TODO: use actual block hash
-    record.set_block_hash(format!("{:x}", H256::new()));
+    record.set_block_hash(format!("{:x}", block_hash));
     record.set_block_number(format!("{:x}", block_number));
     record.set_index(index);
     match transaction.caller {
