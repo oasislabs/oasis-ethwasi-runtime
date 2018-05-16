@@ -436,7 +436,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
-        println!("\n*** block_by_number");
+        //println!("\n*** block_by_number");
 
         let mut client = self.client.lock().unwrap();
 

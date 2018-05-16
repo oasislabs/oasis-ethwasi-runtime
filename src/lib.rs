@@ -106,8 +106,8 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
 }
 
 fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
-    println!("*** Get block by number");
-    println!("Request: {:?}", request);
+    //println!("*** Get block by number");
+    //println!("Request: {:?}", request);
 
     let number = if request.get_number() == "latest" {
         get_latest_block_number()
