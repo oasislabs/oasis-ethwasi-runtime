@@ -33,7 +33,7 @@ use sputnikvm_network_classic::MainnetEIP160Patch;
 
 use bigint::{Address, H256, U256};
 use block::Transaction;
-use hexutil::{to_hex, read_hex};
+use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
 use std::str;
@@ -94,7 +94,7 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     }
 
     // Mine block 0 with no transactions
-    mine_block(Vec::new());
+    mine_block(None);
 
     state.genesis_initialized.insert(&true);
     Ok(InitStateResponse::new())
@@ -119,11 +119,23 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
     };
 
     let mut response = BlockResponse::new();
-    match get_block(number) {
-        Some(block) => response.set_block(block),
-        None => {}
+
+    let mut block = match get_block(number) {
+        Some(val) => val,
+        None => return Ok(response),
     };
 
+    // if full transactions are requested, attach the TransactionRecord
+    if request.get_full() {
+        if let Some(val) = StateDb::new()
+            .transactions
+            .get(block.get_transaction_hash())
+        {
+            block.set_transaction(val);
+        }
+    }
+
+    response.set_block(block);
     Ok(response)
 }
 
@@ -136,10 +148,9 @@ fn get_transaction_record(request: &TransactionRecordRequest) -> Result<Transact
     let mut response = TransactionRecordResponse::new();
 
     let state = StateDb::new();
-    match state.transactions.get(&hash) {
-        Some(b) => response.set_record(b),
-        None => {}
-    };
+    if let Some(val) = state.transactions.get(&hash) {
+        response.set_record(val);
+    }
 
     Ok(response)
 }
@@ -206,7 +217,7 @@ fn execute_raw_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = mine_block(vec![hash]);
+    let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();
@@ -260,7 +271,7 @@ fn debug_execute_unsigned_transaction(
 
     let vm = fire_transaction(&valid, 1);
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = mine_block(vec![hash]);
+    let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     let mut response = ExecuteTransactionResponse::new();

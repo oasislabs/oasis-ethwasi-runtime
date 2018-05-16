@@ -67,7 +67,8 @@ message Block {
     string number = 1;               // (hex)
     string hash = 2;                 // (hex)
     string parent_hash = 3;          // (hex)
-    repeated string transaction_hashes = 4;
+    string transaction_hash = 4;     // (hex)
+    TransactionRecord transaction = 5;
 }
 
 message BlockRequest {

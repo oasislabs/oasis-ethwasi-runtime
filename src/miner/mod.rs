@@ -4,18 +4,16 @@ use evm_api::Block;
 use sha3::{Digest, Keccak256};
 use std::str::FromStr;
 
-// "mine" a block containing 0 or more transactions
+// "mine" a block containing 0 or 1 transactions
 // returns block number and hash
-pub fn mine_block(transaction_hashes: Vec<H256>) -> (U256, H256) {
+pub fn mine_block(transaction_hash: Option<H256>) -> (U256, H256) {
     let number = next_block_number();
 
     // create a new block
     let mut block = Block::new();
     block.set_number(format!("{:x}", number));
-    for transaction_hash in &transaction_hashes {
-        block
-            .transaction_hashes
-            .push(format!("{:x}", transaction_hash));
+    if let Some(val) = transaction_hash {
+        block.set_transaction_hash(format!("{:x}", val));
     }
 
     let parent_hash = if number > U256::zero() {

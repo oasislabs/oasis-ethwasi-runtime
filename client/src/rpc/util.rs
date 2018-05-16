@@ -33,7 +33,17 @@ pub fn to_rpc_block(block: &Block, full_transactions: bool) -> Result<RPCBlock, 
         gas_limit: Hex(Gas::from_str("0x10000000000000").unwrap()),
         gas_used: Hex(Gas::zero()),
         timestamp: Hex(0),
-        transactions: Either::Left(Vec::new()),
+        transactions: if full_transactions {
+            Either::Right(match to_rpc_transaction(block.get_transaction()) {
+                Ok(val) => vec![val],
+                Err(_) => Vec::new(),
+            })
+        } else {
+            Either::Left(match H256::from_str(block.get_transaction_hash()) {
+                Ok(val) => vec![Hex(val)],
+                Err(_) => Vec::new(),
+            })
+        },
         uncles: Vec::new(),
     })
 }
