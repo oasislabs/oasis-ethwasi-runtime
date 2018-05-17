@@ -1,6 +1,8 @@
 #![feature(use_extern_macros)]
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::time::Duration;
+use std::time::Instant;
 
 extern crate bigint;
 extern crate clap;
@@ -12,6 +14,13 @@ extern crate futures;
 use futures::future::Future;
 extern crate grpcio;
 extern crate hex;
+extern crate log;
+use log::LevelFilter;
+use log::debug;
+use log::info;
+use log::log;
+use log::trace;
+extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
 extern crate serde_derive;
@@ -45,6 +54,10 @@ struct ExportedAccount {
 #[derive(Deserialize)]
 struct ExportedState {
     state: HashMap<String, ExportedAccount>,
+}
+
+fn to_ms(d: Duration) -> f64 {
+    d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
 fn main() {
@@ -98,6 +111,13 @@ fn main() {
                 .display_order(3),
         )
         .get_matches();
+
+    // Initialize logger.
+    pretty_env_logger::formatted_builder()
+        .unwrap()
+        .filter(None, LevelFilter::Trace)
+        .init();
+
     let mut client = contract_client!(signer, evm, args);
 
     let state_path = args.value_of("exported_state").unwrap();
@@ -128,19 +148,22 @@ fn main() {
             break;
         }
         let res = client.inject_accounts(req).wait().unwrap();
-        println!("inject_accounts: {:?}", res); // %%%
+        debug!("inject_accounts result: {:?}", res); // %%%
     }
     let res = client
         .init_genesis_block(evm_api::InitStateRequest::new())
         .wait()
         .unwrap();
-    println!("init_genesis_block: {:?}", res);
+    debug!("init_genesis_block result: {:?}", res);
 
     let blocks_path = args.value_of("exported_blocks").unwrap();
     // Blocks are written one after another into the exported blocks file.
     // https://github.com/paritytech/parity/blob/v1.9.7/parity/blockchain.rs#L595
     let blocks_raw = filebuffer::FileBuffer::open(blocks_path).unwrap();
     let mut offset = 0;
+    let mut num_transactions = 0;
+    let mut transaction_durs = vec![];
+    let playback_start = Instant::now();
     while offset < blocks_raw.len() {
         // Each block is a 3-list of (header, transactions, uncles).
         // https://github.com/paritytech/parity/blob/v1.9.7/ethcore/src/encoded.rs#L188
@@ -149,10 +172,12 @@ fn main() {
         let end = start + payload_info.total();
         let block = rlp::Rlp::new(&blocks_raw[start..end]);
         offset = end;
+        trace!("Processing block at offset {}", start);
         // https://github.com/paritytech/parity/blob/v1.9.7/ethcore/src/views/block.rs#L101
         let transactions = block.at(1);
         for transaction in transactions.iter() {
             let transaction_raw = transaction.as_raw();
+            let transaction_start = Instant::now();
             let res = client
                 .execute_raw_transaction({
                     let mut req = evm_api::ExecuteRawTransactionRequest::new();
@@ -161,7 +186,26 @@ fn main() {
                 })
                 .wait()
                 .unwrap();
-            println!("execute_raw_transaction: {:?}", res);
+            let transaction_end = Instant::now();
+            let transaction_dur = transaction_end - transaction_start;
+            debug!("execute_raw_transaction result: {:?}", res);
+            num_transactions += 1;
+            transaction_durs.push(transaction_dur);
         }
+    }
+    let playback_end = Instant::now();
+    let playback_dur = playback_end - playback_start;
+    info!("Played back {} transactions over {:.3} ms", num_transactions, to_ms(playback_dur));
+    if num_transactions > 0 {
+        info!("Throughput: {:.3} ms/tx", to_ms(playback_dur) / num_transactions as f64);
+        info!("Throughput: {:.3} tx/sec", num_transactions as f64 / to_ms(playback_dur) * 1000.);
+
+        transaction_durs.sort();
+        info!("Latency: min {:.3} ms", to_ms(*transaction_durs.first().unwrap()));
+        for pct in [1, 10, 50, 90, 99].iter() {
+            let index = std::cmp::min(num_transactions - 1, (*pct as f64 / 100. * transaction_durs.len() as f64).ceil() as usize);
+            info!("Latency: {:2}% {:?} ms", pct, to_ms(transaction_durs[index]));
+        }
+        info!("Latency: max {:?} ms", to_ms(*transaction_durs.last().unwrap()));
     }
 }
