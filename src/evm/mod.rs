@@ -304,8 +304,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 let new_account = update_account_balance(&address_str, amount, Sign::Plus, &state);
                 state.accounts.insert(&address_str, &new_account);
             }
-            &AccountChange::Nonexist(address) => {
-            }
+            &AccountChange::Nonexist(address) => {}
         }
     }
 }
