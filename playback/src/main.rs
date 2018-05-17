@@ -121,9 +121,13 @@ fn main() {
     let mut client = contract_client!(signer, evm, args);
 
     let state_path = args.value_of("exported_state").unwrap();
+    trace!("Parsing state JSON");
     let state: ExportedState =
         serde_json::from_reader(std::fs::File::open(state_path).unwrap()).unwrap();
+    trace!("Done parsing state JSON");
+    trace!("Injecting {} accounts", state.state.len());
     let mut accounts = state.state.into_iter();
+    let mut num_accounts_injected = 0;
     loop {
         let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
         let mut req = evm_api::InjectAccountsRequest::new();
@@ -147,9 +151,13 @@ fn main() {
         if req.accounts.is_empty() {
             break;
         }
+        let accounts_len = req.accounts.len();
         let res = client.inject_accounts(req).wait().unwrap();
+        num_accounts_injected += accounts_len;
         debug!("inject_accounts result: {:?}", res); // %%%
+        trace!("Injected {} accounts", num_accounts_injected);
     }
+    trace!("Done injecting accounts");
     let res = client
         .init_genesis_block(evm_api::InitStateRequest::new())
         .wait()
