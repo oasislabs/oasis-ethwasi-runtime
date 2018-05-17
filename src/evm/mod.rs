@@ -13,7 +13,7 @@ use bigint::{Address, Gas, H256, M256, Sign, U256};
 use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
-use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
+use sputnikvm::{AccountChange, AccountCommitment, AccountPatch, HeaderParams, Patch, RequireError,
                 SeqTransactionVM, Storage, TransactionAction, VMStatus, ValidTransaction, VM};
 use std::str::FromStr;
 
@@ -169,7 +169,7 @@ fn create_account_state(
     (address_str, account_state)
 }
 
-fn update_account_balance(
+fn update_account_balance<P: Patch>(
     address_str: &String,
     amount: U256,
     sign: Sign,
@@ -196,7 +196,7 @@ fn update_account_balance(
                 "Can't decrease balance of nonexistent account"
             );
             let mut account_state = AccountState::new();
-            account_state.set_nonce("0".to_string());
+            account_state.set_nonce(format!("{}", P::Account::initial_nonce()));
             account_state.set_address(address_str.clone());
             account_state.set_balance(format!("{}", amount));
             account_state
@@ -301,7 +301,8 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
             }
             &AccountChange::IncreaseBalance(address, amount) => {
                 let address_str = address.hex();
-                let new_account = update_account_balance(&address_str, amount, Sign::Plus, &state);
+                let new_account =
+                    update_account_balance::<P>(&address_str, amount, Sign::Plus, &state);
                 state.accounts.insert(&address_str, &new_account);
             }
             &AccountChange::Nonexist(address) => {}
