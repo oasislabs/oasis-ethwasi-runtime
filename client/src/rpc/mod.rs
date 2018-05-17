@@ -3,7 +3,6 @@ use jsonrpc_http_server::*;
 use jsonrpc_macros::Trailing;
 
 use bigint::{Address, Gas, H2048, H256, H64, M256, U256};
-use sputnikvm::Patch;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
@@ -313,13 +312,13 @@ build_rpc_trait! {
     }
 }
 
-pub fn rpc_loop<P: 'static + Patch + Send>(
+pub fn rpc_loop(
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
     addr: &SocketAddr,
 ) {
-    let rpc = serves::MinerEthereumRPC::<P>::new(client);
-    let filter = serves::MinerFilterRPC::<P>::new();
-    let debug = serves::MinerDebugRPC::<P>::new();
+    let rpc = serves::MinerEthereumRPC::new(client);
+    let filter = serves::MinerFilterRPC::new();
+    let debug = serves::MinerDebugRPC::new();
 
     let mut io = IoHandler::default();
 
