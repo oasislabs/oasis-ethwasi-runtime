@@ -25,7 +25,7 @@ extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
 use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
-              AccountRequest, Block, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
+              AccountRequest, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
               ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateRequest,
               InitStateResponse, InjectAccountsRequest, InjectAccountsResponse,
               TransactionRecordRequest, TransactionRecordResponse};
@@ -34,12 +34,11 @@ use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 use sputnikvm_network_foundation::ByzantiumPatch;
 
-use bigint::{Address, H256, U256};
+use bigint::{H256, U256};
 use block::Transaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
-use std::str;
 use std::str::FromStr;
 
 use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,

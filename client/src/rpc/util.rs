@@ -1,12 +1,9 @@
-use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
+use super::{Either, RPCBlock, RPCReceipt, RPCTransaction};
 use super::serialize::*;
 use error::Error;
 
-use bigint::{Address, Gas, H2048, H256, H64, M256, U256};
-use block::{TotalHeader, Transaction, TransactionAction};
-use blockchain::chain::HeaderHash;
+use bigint::{Address, Gas, H2048, H256, H64, U256};
 use hexutil::{read_hex, to_hex};
-use rlp;
 
 use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
 
