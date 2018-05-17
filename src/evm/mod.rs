@@ -305,7 +305,6 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 state.accounts.insert(&address_str, &new_account);
             }
             &AccountChange::Nonexist(address) => {
-                panic!("Unexpected nonexistent address: {:?}", address)
             }
         }
     }

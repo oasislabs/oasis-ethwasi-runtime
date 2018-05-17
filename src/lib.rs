@@ -22,6 +22,7 @@ extern crate evm_api;
 extern crate rlp;
 
 extern crate sputnikvm_network_classic;
+extern crate sputnikvm_network_foundation;
 
 use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
               AccountRequest, Block, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
@@ -31,6 +32,7 @@ use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonc
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
+use sputnikvm_network_foundation::ByzantiumPatch;
 
 use bigint::{Address, H256, U256};
 use block::Transaction;
@@ -223,12 +225,12 @@ fn execute_raw_transaction(
 
     let transaction: Transaction = rlp.as_val()?;
 
-    let valid = match to_valid::<MainnetEIP160Patch>(&transaction) {
+    let valid = match to_valid::<ByzantiumPatch>(&transaction) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction::<MainnetEIP160Patch>(&valid, 1);
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, 1);
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
@@ -247,7 +249,7 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction::<MainnetEIP160Patch>(&valid, 1);
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, 1);
     let mut response = ExecuteTransactionResponse::new();
 
     // TODO: return error info to client
@@ -282,7 +284,7 @@ fn debug_execute_unsigned_transaction(
 
     let hash = unsigned_transaction_hash(&valid);
 
-    let vm = fire_transaction::<MainnetEIP160Patch>(&valid, 1);
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, 1);
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
