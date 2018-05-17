@@ -32,7 +32,6 @@ use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonc
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
-use sputnikvm_network_foundation::ByzantiumPatch;
 
 use bigint::{H256, U256};
 use block::Transaction;
@@ -43,6 +42,8 @@ use std::str::FromStr;
 
 use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,
           update_state_from_vm, StateDb};
+
+use evm::patch::ByzantiumPatch;
 
 use miner::{get_block, get_latest_block_number, mine_block};
 

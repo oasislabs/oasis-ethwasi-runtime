@@ -19,6 +19,8 @@ use std::str::FromStr;
 
 use std::rc::Rc;
 
+pub mod patch;
+
 // Create database schema.
 database_schema! {
     pub struct StateDb {
@@ -174,7 +176,7 @@ fn update_account_balance<P: Patch>(
     amount: U256,
     sign: Sign,
     state: &StateDb,
-) -> AccountState {
+) -> Option<AccountState> {
     match state.accounts.get(address_str) {
         Some(b) => {
             // Found account. Update balance.
@@ -186,7 +188,7 @@ fn update_account_balance<P: Patch>(
                 _ => panic!(),
             };
             updated_account.set_balance(format!("{}", new_balance));
-            updated_account
+            Some(updated_account)
         }
         None => {
             // Account doesn't exist; create it.
@@ -195,11 +197,21 @@ fn update_account_balance<P: Patch>(
                 Sign::Plus,
                 "Can't decrease balance of nonexistent account"
             );
-            let mut account_state = AccountState::new();
-            account_state.set_nonce(format!("{}", P::Account::initial_nonce()));
-            account_state.set_address(address_str.clone());
-            account_state.set_balance(format!("{}", amount));
-            account_state
+
+            // EIP-161d forbids creating accounts with empty (nonce, code, balance)
+            if !P::Account::empty_considered_exists() && amount == U256::from(0) {
+                println!(
+                    "EIP-161d: NOT creating account {} with balance {}",
+                    address_str, amount
+                );
+                None
+            } else {
+                let mut account_state = AccountState::new();
+                account_state.set_nonce(format!("{}", P::Account::initial_nonce()));
+                account_state.set_address(address_str.clone());
+                account_state.set_balance(format!("{}", amount));
+                Some(account_state)
+            }
         }
     }
 }
@@ -301,9 +313,11 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
             }
             &AccountChange::IncreaseBalance(address, amount) => {
                 let address_str = address.hex();
-                let new_account =
-                    update_account_balance::<P>(&address_str, amount, Sign::Plus, &state);
-                state.accounts.insert(&address_str, &new_account);
+                if let Some(new_account) =
+                    update_account_balance::<P>(&address_str, amount, Sign::Plus, &state)
+                {
+                    state.accounts.insert(&address_str, &new_account);
+                }
             }
             &AccountChange::Nonexist(address) => {}
         }
