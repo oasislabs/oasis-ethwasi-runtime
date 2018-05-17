@@ -228,7 +228,7 @@ fn execute_raw_transaction(
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction(&valid, 1);
+    let vm = fire_transaction::<MainnetEIP160Patch>(&valid, 1);
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
@@ -247,7 +247,7 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction(&valid, 1);
+    let vm = fire_transaction::<MainnetEIP160Patch>(&valid, 1);
     let mut response = ExecuteTransactionResponse::new();
 
     // TODO: return error info to client
@@ -282,7 +282,7 @@ fn debug_execute_unsigned_transaction(
 
     let hash = unsigned_transaction_hash(&valid);
 
-    let vm = fire_transaction(&valid, 1);
+    let vm = fire_transaction::<MainnetEIP160Patch>(&valid, 1);
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);

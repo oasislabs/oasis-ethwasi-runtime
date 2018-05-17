@@ -13,9 +13,8 @@ use bigint::{Address, Gas, H256, M256, Sign, U256};
 use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
-use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
-                Storage, TransactionAction, VMStatus, ValidTransaction, VM};
-use sputnikvm_network_classic::MainnetEIP160Patch;
+use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
+                SeqTransactionVM, Storage, TransactionAction, VMStatus, ValidTransaction, VM};
 use std::str::FromStr;
 
 use std::rc::Rc;
@@ -31,7 +30,7 @@ database_schema! {
     }
 }
 
-fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
+fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
     loop {
         match vm.fire() {
             Ok(()) => break,
@@ -205,13 +204,13 @@ fn update_account_balance(
     }
 }
 
-pub fn save_transaction_record(
+pub fn save_transaction_record<P: Patch>(
     hash: H256,
     block_hash: H256,
     block_number: U256,
     index: u32,
     transaction: ValidTransaction,
-    vm: &SeqTransactionVM<MainnetEIP160Patch>,
+    vm: &SeqTransactionVM<P>,
 ) {
     let mut record = TransactionRecord::new();
     record.set_hash(format!("{:x}", hash));
@@ -261,7 +260,7 @@ pub fn save_transaction_record(
     state.transactions.insert(&format!("{:x}", hash), &record);
 }
 
-pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {
+pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
     let state = StateDb::new();
 
     for account in vm.accounts() {
@@ -312,10 +311,10 @@ pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {
     }
 }
 
-pub fn fire_transaction(
+pub fn fire_transaction<P: Patch>(
     transaction: &ValidTransaction,
     block_number: u64,
-) -> SeqTransactionVM<MainnetEIP160Patch> {
+) -> SeqTransactionVM<P> {
     let state = StateDb::new();
 
     let block_header = HeaderParams {
