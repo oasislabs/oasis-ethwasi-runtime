@@ -106,7 +106,7 @@ pub fn unsigned_to_valid(
     transaction: &EVMTransaction,
 ) -> ::std::result::Result<ValidTransaction, ParseHexError> {
     let action = if transaction.get_is_call() {
-        TransactionAction::Call(Address::from_str(transaction.get_address().clone())?)
+        TransactionAction::Call(Address::from_str(transaction.get_address())?)
     } else {
         TransactionAction::Create
     };
@@ -118,9 +118,9 @@ pub fn unsigned_to_valid(
         (None, U256::zero())
     } else {
         // Request specified a caller. Look up the nonce for this address if not defined in the transaction.
-        let address = Address::from_str(caller_str.clone())?;
+        let address = Address::from_str(caller_str)?;
         let nonce = if transaction.get_use_nonce() {
-            U256::from_str(transaction.get_nonce().clone())?
+            U256::from_str(transaction.get_nonce())?
         } else {
             get_nonce(caller_str.to_string())
         };
@@ -128,12 +128,17 @@ pub fn unsigned_to_valid(
         (Some(address), nonce)
     };
 
+    let value = match U256::from_str(transaction.get_value()) {
+        Ok(val) => val,
+        Err(_) => U256::zero(),
+    };
+
     Ok(ValidTransaction {
         caller: caller,
         action: action,
         gas_price: Gas::zero(),
         gas_limit: Gas::max_value(),
-        value: U256::zero(),
+        value: value,
         input: Rc::new(read_hex(transaction.get_input())?),
         nonce: nonce,
     })
