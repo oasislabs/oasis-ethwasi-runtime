@@ -17,6 +17,8 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
   name: evm-key-manager
+  labels:
+    app: ekiden
 spec:
   selector:
     matchLabels:
@@ -42,6 +44,8 @@ spec:
             - --no-persist-identity
             - --max-batch-size
             - "1"
+            - --metrics-addr
+            - "0.0.0.0:3000"
             - ekiden/lib/evm-key-manager.so
 ---
 kind: Service
@@ -62,6 +66,8 @@ kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
   name: evm
+  labels:
+    app: ekiden
 spec:
   selector:
     matchLabels:
@@ -82,6 +88,8 @@ spec:
             - ekiden-compute
           args:
             - --no-persist-identity
+            - --metrics-addr
+            - "0.0.0.0:3000"
             - --consensus-host
             - $(EVM_CONSENSUS_SERVICE_HOST)
             - --consensus-port
@@ -91,6 +99,7 @@ spec:
             - --key-manager-port
             - $(EVM_KEY_MANAGER_SERVICE_PORT_CONTRACT_GRPC)
             - ekiden/lib/evm.so
+
 ---
 kind: Service
 apiVersion: v1
