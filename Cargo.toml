@@ -10,6 +10,7 @@ etcommon-hexutil = { git = "https://github.com/ekiden/etcommon-rs", branch = "fe
 etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "feature/no_rand" }
 etcommon-block = { git = "https://github.com/ekiden/etcommon-rs", branch = "feature/no_rand" }
 sputnikvm-network-classic = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
+sputnikvm-network-foundation = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
 sha3 = "0.6"
 sputnikvm = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden", default-features = false }
 evm-api = { path = "./api" }

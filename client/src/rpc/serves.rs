@@ -8,8 +8,6 @@ use error::Error;
 use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::{AccountRequest, BlockRequest, ExecuteRawTransactionRequest,
               ExecuteTransactionRequest, TransactionRecordRequest};
-use sputnikvm::Patch;
-use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
@@ -21,51 +19,45 @@ use futures::future::Future;
 
 use hexutil::{read_hex, to_hex};
 
-pub struct MinerEthereumRPC<P: Patch + Send> {
+pub struct MinerEthereumRPC {
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
-    _patch: PhantomData<P>,
 }
 
-pub struct MinerFilterRPC<P: Patch + Send> {
-    _patch: PhantomData<P>,
+pub struct MinerFilterRPC {
 }
 
-pub struct MinerDebugRPC<P: Patch + Send> {
-    _patch: PhantomData<P>,
+pub struct MinerDebugRPC {
 }
 
-unsafe impl<P: Patch + Send> Sync for MinerEthereumRPC<P> {}
-unsafe impl<P: Patch + Send> Sync for MinerFilterRPC<P> {}
-unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> {}
+unsafe impl Sync for MinerEthereumRPC {}
+unsafe impl Sync for MinerFilterRPC {}
+unsafe impl Sync for MinerDebugRPC {}
 
-impl<P: Patch + Send> MinerEthereumRPC<P> {
+impl MinerEthereumRPC {
     pub fn new(
         client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
     ) -> Self {
         MinerEthereumRPC {
             client,
-            _patch: PhantomData,
         }
     }
 }
 
-impl<P: Patch + Send> MinerFilterRPC<P> {
+impl MinerFilterRPC {
     pub fn new() -> Self {
         MinerFilterRPC {
-            _patch: PhantomData,
         }
     }
 }
 
-impl<P: Patch + Send> MinerDebugRPC<P> {
+impl MinerDebugRPC {
     pub fn new() -> Self {
         MinerDebugRPC {
-            _patch: PhantomData,
         }
     }
 }
 
-impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
+impl EthereumRPC for MinerEthereumRPC {
     fn client_version(&self) -> Result<String, Error> {
         println!("\n*** client_version");
         Ok("sputnikvm-dev/v0.1".to_string())
@@ -626,7 +618,7 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 }
 
-impl<P: 'static + Patch + Send> FilterRPC for MinerFilterRPC<P> {
+impl FilterRPC for MinerFilterRPC {
     fn new_filter(&self, log: RPCLogFilter) -> Result<String, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
@@ -658,7 +650,7 @@ impl<P: 'static + Patch + Send> FilterRPC for MinerFilterRPC<P> {
     }
 }
 
-impl<P: 'static + Patch + Send> DebugRPC for MinerDebugRPC<P> {
+impl DebugRPC for MinerDebugRPC {
     fn block_rlp(&self, number: usize) -> Result<Bytes, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)

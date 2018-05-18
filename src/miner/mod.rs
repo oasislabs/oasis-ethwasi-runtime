@@ -58,7 +58,7 @@ pub fn get_latest_block_number() -> U256 {
 fn next_block_number() -> U256 {
     let state = StateDb::new();
 
-    let next = if (state.latest_block_number.is_present()) {
+    let next = if state.latest_block_number.is_present() {
         U256::from_str(&state.latest_block_number.get().unwrap()).unwrap() + U256::one()
     } else {
         // genesis block

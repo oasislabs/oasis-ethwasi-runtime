@@ -1,8 +1,5 @@
 #![feature(use_extern_macros)]
 
-// Sputnik/Ethereum packages
-extern crate sputnikvm_network_foundation;
-
 extern crate bigint;
 extern crate block;
 extern crate blockchain;
@@ -27,7 +24,6 @@ extern crate hex;
 mod error;
 mod rpc;
 
-use sputnikvm_network_foundation::ByzantiumPatch;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
@@ -98,7 +94,7 @@ fn main() {
     let client_arc = Arc::new(Mutex::new(client));
     let addr = "0.0.0.0:8545".parse().unwrap();
 
-    rpc::rpc_loop::<ByzantiumPatch>(client_arc, &addr);
+    rpc::rpc_loop(client_arc, &addr);
 }
 
 fn init_genesis_block(client: &mut evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
