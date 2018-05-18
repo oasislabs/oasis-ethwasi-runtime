@@ -200,10 +200,6 @@ fn update_account_balance<P: Patch>(
 
             // EIP-161d forbids creating accounts with empty (nonce, code, balance)
             if !P::Account::empty_considered_exists() && amount == U256::from(0) {
-                println!(
-                    "EIP-161d: NOT creating account {} with balance {}",
-                    address_str, amount
-                );
                 None
             } else {
                 let mut account_state = AccountState::new();
