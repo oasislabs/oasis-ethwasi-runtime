@@ -4,6 +4,45 @@
 kind: Service
 apiVersion: v1
 metadata:
+  name: evm-node-dummy
+spec:
+  ports:
+    - name: dummy-grpc
+      port: 42261
+  selector:
+    copper: evm-node-dummy
+  # type: ClusterIP
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: evm-node-dummy
+  labels:
+    app: ekiden
+spec:
+  selector:
+    matchLabels:
+      copper: evm-node-dummy
+  # replicas: 1
+  template:
+    metadata:
+      labels:
+        copper: evm-node-dummy
+    spec:
+      containers:
+        - name: ekiden-node-dummy
+          image: docker.io/oasislabs/testnet:latest
+          command:
+            - ekiden-node-dummy
+          args:
+            - --time-source
+            - mock
+            - --mock-epoch-interval
+            - "60"
+---
+kind: Service
+apiVersion: v1
+metadata:
   name: evm-key-manager
 spec:
   ports:
@@ -40,6 +79,10 @@ spec:
           args:
             - --port
             - "9003"
+            - --dummy-host
+            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - --dummy-port
+            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - --disable-key-manager
             - --no-persist-identity
             - --max-batch-size
@@ -90,10 +133,10 @@ spec:
             - --no-persist-identity
             - --metrics-addr
             - "0.0.0.0:3000"
-            - --consensus-host
-            - $(EVM_CONSENSUS_SERVICE_HOST)
-            - --consensus-port
-            - $(EVM_CONSENSUS_SERVICE_PORT_CONSENSUS_GRPC)
+            - --dummy-host
+            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - --dummy-port
+            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - --key-manager-host
             - $(EVM_KEY_MANAGER_SERVICE_HOST)
             - --key-manager-port
@@ -135,6 +178,6 @@ spec:
             - -c
             - >-
               exec web3-client
-              --host $(EVM_SERVICE_HOST)
-              --port $(EVM_SERVICE_PORT_CONTRACT_GRPC)
               --mr-enclave $$(cat ekiden/res/evm.mrenclave)
+              --dummy-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --dummy-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
