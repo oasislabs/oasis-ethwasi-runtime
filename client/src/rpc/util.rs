@@ -85,15 +85,13 @@ pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, 
 pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction, Error> {
     let mut _transaction = EVMTransaction::new();
 
-    match transaction.from {
-        Some(val) => _transaction.set_caller(val.0.hex()),
-        None => {}
-    };
+    if let Some(val) = transaction.from {
+        _transaction.set_caller(val.0.hex());
+    }
 
-    match transaction.data.clone() {
-        Some(val) => _transaction.set_input(to_hex(&val.0)),
-        None => {}
-    };
+    if let Some(val) = transaction.data.clone() {
+        _transaction.set_input(to_hex(&val.0));
+    }
 
     match transaction.nonce {
         Some(val) => {
@@ -110,6 +108,10 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
         }
         None => _transaction.set_is_call(false),
     };
+
+    if let Some(val) = transaction.value {
+        _transaction.set_value(format!("{:x}", val.0));
+    }
 
     Ok(_transaction)
 }

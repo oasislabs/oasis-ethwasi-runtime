@@ -322,14 +322,14 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
 
 pub fn fire_transaction<P: Patch>(
     transaction: &ValidTransaction,
-    block_number: u64,
+    block_number: U256,
 ) -> SeqTransactionVM<P> {
     let state = StateDb::new();
 
     let block_header = HeaderParams {
         beneficiary: Address::default(),
         timestamp: 0,
-        number: U256::from(block_number),
+        number: block_number,
         difficulty: U256::zero(),
         gas_limit: Gas::zero(),
     };
