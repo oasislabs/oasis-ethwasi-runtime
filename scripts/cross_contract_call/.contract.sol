@@ -1,13 +1,14 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.18;
 contract Deployed {
+    uint public a = 1;
     
-    function setA(uint) public returns (uint) {}
-    
-    function a() public pure returns (uint) {}
-    
+    function setA(uint _a) public returns (uint) {
+        a = _a;
+        return a;
+    }
 }
+
 contract Existing  {
-    
     Deployed dc;
     
     function Existing(address _t) public {
