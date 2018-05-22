@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 mod serves;
 mod util;
 mod serialize;
+mod filter;
 
 use self::serialize::*;
 use error::Error;
@@ -316,8 +317,8 @@ pub fn rpc_loop(
     client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
     addr: &SocketAddr,
 ) {
-    let rpc = serves::MinerEthereumRPC::new(client);
-    let filter = serves::MinerFilterRPC::new();
+    let rpc = serves::MinerEthereumRPC::new(client.clone());
+    let filter = serves::MinerFilterRPC::new(client);
     let debug = serves::MinerDebugRPC::new();
 
     let mut io = IoHandler::default();

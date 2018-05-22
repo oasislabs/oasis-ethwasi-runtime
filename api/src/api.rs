@@ -11,6 +11,10 @@ contract_api! {
 
     pub fn execute_raw_transaction(ExecuteRawTransactionRequest) -> ExecuteTransactionResponse;
 
+    pub fn get_block_height(bool) -> String;
+
+    pub fn get_latest_block_hashes(String) -> Vec<String>;
+
     pub fn get_transaction_record(TransactionRecordRequest) -> TransactionRecordResponse;
 
     pub fn get_account_balance(AccountRequest) -> AccountBalanceResponse;

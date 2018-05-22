@@ -120,6 +120,27 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     Err(Error::new("API available only in debug builds"))
 }
 
+/// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
+fn get_block_height(request: &bool) -> Result<String> {
+    Ok(format!("0x{:x}", get_latest_block_number()))
+}
+
+/// TODO: replace strings with U256 datatypes once they are serializable.
+fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
+    let mut result = Vec::new();
+
+    let current_block_height = get_latest_block_number();
+    let mut next_start = U256::from_str(block_height).unwrap();
+
+    while next_start <= current_block_height {
+        let transaction_hash = get_block(next_start).unwrap().get_transaction_hash().to_string();
+        result.push(transaction_hash);
+        next_start = next_start + U256::one();
+    }
+
+    Ok(result)
+}
+
 fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
