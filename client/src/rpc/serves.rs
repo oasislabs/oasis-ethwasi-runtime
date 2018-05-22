@@ -2,6 +2,7 @@ use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, R
             RPCLogFilter, RPCReceipt, RPCTrace, RPCTraceConfig, RPCTransaction};
 use super::serialize::*;
 use super::util::*;
+use super::filter::*;
 
 use error::Error;
 
@@ -24,6 +25,7 @@ pub struct MinerEthereumRPC {
 }
 
 pub struct MinerFilterRPC {
+    filter: Mutex<FilterManager>,
 }
 
 pub struct MinerDebugRPC {
@@ -44,8 +46,11 @@ impl MinerEthereumRPC {
 }
 
 impl MinerFilterRPC {
-    pub fn new() -> Self {
+    pub fn new(
+        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
+    ) -> Self {
         MinerFilterRPC {
+            filter: Mutex::new(FilterManager::new(client)),
         }
     }
 }
@@ -625,8 +630,10 @@ impl FilterRPC for MinerFilterRPC {
     }
 
     fn new_block_filter(&self) -> Result<String, Error> {
-        // FIXME: implement
-        Err(Error::NotImplemented)
+        println!("*** new_block_filter");
+
+        let id = self.filter.lock().unwrap().install_block_filter();
+        Ok(format!("0x{:x}", id))
     }
 
     fn new_pending_transaction_filter(&self) -> Result<String, Error> {
@@ -635,13 +642,20 @@ impl FilterRPC for MinerFilterRPC {
     }
 
     fn uninstall_filter(&self, id: String) -> Result<bool, Error> {
-        // FIXME: implement
-        Err(Error::NotImplemented)
+        println!("*** uninstall filter");
+        let id = U256::from_str(&id)?.as_usize();
+        self.filter.lock().unwrap().uninstall_filter(id);
+        Ok(true)
     }
 
     fn filter_changes(&self, id: String) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
-        // FIXME: implement
-        Err(Error::NotImplemented)
+        println!("*** filter_changes");
+
+        let id = U256::from_str(&id)?.as_usize();
+        let result = self.filter.lock().unwrap().get_changes(id)?;
+
+        println!("    Response: {:?}", result);
+        Ok(result)
     }
 
     fn filter_logs(&self, id: String) -> Result<Vec<RPCLog>, Error> {
