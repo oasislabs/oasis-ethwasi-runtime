@@ -53,7 +53,7 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
         block_number: Hex(U256::from_str(record.get_block_number())?),
         cumulative_gas_used: Hex(Gas::from_str(record.get_cumulative_gas_used())?),
         gas_used: Hex(Gas::from_str(record.get_gas_used())?),
-        contract_address: Some(Hex(Address::from_str(record.get_contract_address())?)),
+        contract_address: if record.get_is_create() { Some(Hex(Address::from_str(record.get_contract_address())?)) } else { None },
         // TODO: logs
         logs: Vec::new(),
         root: Hex(H256::new()),
