@@ -175,17 +175,40 @@ fn main() {
     }
     let playback_end = Instant::now();
     let playback_dur = playback_end - playback_start;
-    info!("Played back {} transactions over {:.3} ms", num_transactions, to_ms(playback_dur));
+    info!(
+        "Played back {} transactions over {:.3} ms",
+        num_transactions,
+        to_ms(playback_dur)
+    );
     if num_transactions > 0 {
-        info!("Throughput: {:.3} ms/tx", to_ms(playback_dur) / num_transactions as f64);
-        info!("Throughput: {:.3} tx/sec", num_transactions as f64 / to_ms(playback_dur) * 1000.);
+        info!(
+            "Throughput: {:.3} ms/tx",
+            to_ms(playback_dur) / num_transactions as f64
+        );
+        info!(
+            "Throughput: {:.3} tx/sec",
+            num_transactions as f64 / to_ms(playback_dur) * 1000.
+        );
 
         transaction_durs.sort();
-        info!("Latency: min {:.3} ms", to_ms(*transaction_durs.first().unwrap()));
+        info!(
+            "Latency: min {:.3} ms",
+            to_ms(*transaction_durs.first().unwrap())
+        );
         for pct in [1, 10, 50, 90, 99].iter() {
-            let index = std::cmp::min(num_transactions - 1, (*pct as f64 / 100. * transaction_durs.len() as f64).ceil() as usize);
-            info!("Latency: {:2}% {:?} ms", pct, to_ms(transaction_durs[index]));
+            let index = std::cmp::min(
+                num_transactions - 1,
+                (*pct as f64 / 100. * transaction_durs.len() as f64).ceil() as usize,
+            );
+            info!(
+                "Latency: {:2}% {:?} ms",
+                pct,
+                to_ms(transaction_durs[index])
+            );
         }
-        info!("Latency: max {:?} ms", to_ms(*transaction_durs.last().unwrap()));
+        info!(
+            "Latency: max {:?} ms",
+            to_ms(*transaction_durs.last().unwrap())
+        );
     }
 }
