@@ -136,7 +136,10 @@ fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
     };
 
     while next_start <= current_block_height {
-        let transaction_hash = get_block(next_start).unwrap().get_transaction_hash().to_string();
+        let transaction_hash = get_block(next_start)
+            .unwrap()
+            .get_transaction_hash()
+            .to_string();
         result.push(transaction_hash);
         next_start = next_start + U256::one();
     }
