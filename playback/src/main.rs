@@ -95,7 +95,7 @@ fn main() {
     let state_path = args.value_of("exported_state").unwrap();
     trace!("Parsing state JSON");
     let state: ExportedState =
-        serde_json::from_reader(std::fs::File::open(state_path).unwrap()).unwrap();
+        serde_json::from_slice(&filebuffer::FileBuffer::open(state_path).unwrap()).unwrap();
     trace!("Done parsing state JSON");
     trace!("Injecting {} accounts", state.state.len());
     let mut accounts = state.state.into_iter();
