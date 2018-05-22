@@ -130,7 +130,10 @@ fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
     let mut result = Vec::new();
 
     let current_block_height = get_latest_block_number();
-    let mut next_start = U256::from_str(block_height).unwrap();
+    let mut next_start = match U256::from_str(block_height) {
+        Ok(val) => val,
+        Err(err) => return Err(Error::new(format!("{:?}", err))),
+    };
 
     while next_start <= current_block_height {
         let transaction_hash = get_block(next_start).unwrap().get_transaction_hash().to_string();
