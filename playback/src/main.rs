@@ -8,6 +8,10 @@ extern crate bigint;
 extern crate clap;
 use clap::App;
 use clap::Arg;
+use clap::crate_authors;
+use clap::crate_description;
+use clap::crate_name;
+use clap::crate_version;
 use clap::value_t;
 extern crate filebuffer;
 extern crate futures;
@@ -28,6 +32,7 @@ extern crate serde_json;
 
 extern crate client_utils;
 use client_utils::contract_client;
+use client_utils::default_app;
 use client_utils::default_backend;
 extern crate ekiden_contract_client;
 use ekiden_contract_client::create_contract_client;
@@ -66,7 +71,7 @@ fn main() {
     let key_pair =
         ekiden_core::ring::signature::Ed25519KeyPair::from_seed_unchecked(seed_input).unwrap();
     let signer = std::sync::Arc::new(ekiden_core::signature::InMemorySigner::new(key_pair));
-    let args = App::new("playback client")
+    let args = default_app!()
         .arg(
             Arg::with_name("exported_state")
                 .takes_value(true)
@@ -76,39 +81,6 @@ fn main() {
             Arg::with_name("exported_blocks")
                 .takes_value(true)
                 .required(true),
-        )
-        .arg(
-            Arg::with_name("host")
-                .long("host")
-                .short("h")
-                .takes_value(true)
-                .default_value("127.0.0.1")
-                .display_order(1),
-        )
-        .arg(
-            Arg::with_name("port")
-                .long("port")
-                .short("p")
-                .takes_value(true)
-                .default_value("9001")
-                .display_order(2),
-        )
-        .arg(
-            Arg::with_name("nodes")
-                .long("nodes")
-                .help(
-                    "A list of comma-separated compute node addresses (e.g. host1:9001,host2:9004)",
-                )
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("mr-enclave")
-                .long("mr-enclave")
-                .value_name("MRENCLAVE")
-                .help("MRENCLAVE in hex format")
-                .takes_value(true)
-                .required(true)
-                .display_order(3),
         )
         .get_matches();
 
