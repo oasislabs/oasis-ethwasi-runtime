@@ -4,7 +4,7 @@ use block::{Log, Receipt};
 use sha3::{Digest, Keccak256};
 use std::str::FromStr;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use blockchain::chain::HeaderHash;
 use rpc::RPCLogFilter;
 use std::time::{Duration, SystemTime};
@@ -97,13 +97,13 @@ pub fn get_logs(state: &MinerState, filter: LogFilter) -> Result<Vec<RPCLog>, Er
 */
 
 pub struct FilterManager {
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
+    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
     filters: HashMap<usize, Filter>,
     unmodified_filters: HashMap<usize, Filter>,
 }
 
 impl FilterManager {
-    pub fn new(client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>) -> Self {
+    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
         FilterManager {
             client,
             filters: HashMap::new(),
@@ -127,9 +127,7 @@ impl FilterManager {
     }
 
     pub fn install_block_filter(&mut self) -> usize {
-        let mut client = self.client.lock().unwrap();
-
-        let block_height_str = client.get_block_height(true).wait().unwrap();
+        let block_height_str = self.client.get_block_height(true).wait().unwrap();
         let block_height = U256::from_str(&block_height_str).unwrap().as_usize();
 
         let id = self.filters.len();
@@ -194,9 +192,8 @@ impl FilterManager {
                 }
 
                 *last_checked = SystemTime::now();
-                let mut client = self.client.lock().unwrap();
 
-                let block_hashes = client.get_latest_block_hashes(format!("0x{:x}", *next_start)).wait().unwrap();
+                let block_hashes = self.client.get_latest_block_hashes(format!("0x{:x}", *next_start)).wait().unwrap();
                 *next_start += block_hashes.len();
                 Ok(Either::Left(block_hashes))
             },
