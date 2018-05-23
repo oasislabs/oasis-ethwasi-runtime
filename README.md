@@ -84,6 +84,7 @@ To start the compute node for the EVM contract:
 ```bash
 $ ekiden-compute \
     --no-persist-identity \
+    --max-batch-timeout 100 \
     target/contract/evm.so
 ```
 
@@ -96,7 +97,7 @@ The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `900
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/token.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Building the client
 
