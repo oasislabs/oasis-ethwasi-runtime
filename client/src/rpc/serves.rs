@@ -1,8 +1,8 @@
 use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, RPCDump, RPCLog,
             RPCLogFilter, RPCReceipt, RPCTrace, RPCTraceConfig, RPCTransaction};
+use super::filter::*;
 use super::serialize::*;
 use super::util::*;
-use super::filter::*;
 
 use error::Error;
 
@@ -21,34 +21,27 @@ use futures::future::Future;
 use hexutil::{read_hex, to_hex};
 
 pub struct MinerEthereumRPC {
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
+    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
 }
 
 pub struct MinerFilterRPC {
     filter: Mutex<FilterManager>,
 }
 
-pub struct MinerDebugRPC {
-}
+pub struct MinerDebugRPC {}
 
 unsafe impl Sync for MinerEthereumRPC {}
 unsafe impl Sync for MinerFilterRPC {}
 unsafe impl Sync for MinerDebugRPC {}
 
 impl MinerEthereumRPC {
-    pub fn new(
-        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
-    ) -> Self {
-        MinerEthereumRPC {
-            client,
-        }
+    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
+        MinerEthereumRPC { client }
     }
 }
 
 impl MinerFilterRPC {
-    pub fn new(
-        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
-    ) -> Self {
+    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
         MinerFilterRPC {
             filter: Mutex::new(FilterManager::new(client)),
         }
@@ -57,8 +50,7 @@ impl MinerFilterRPC {
 
 impl MinerDebugRPC {
     pub fn new() -> Self {
-        MinerDebugRPC {
-        }
+        MinerDebugRPC {}
     }
 }
 
@@ -152,12 +144,10 @@ impl EthereumRPC for MinerEthereumRPC {
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
         println!("\n*** balance *** address = {:?}", address);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = AccountRequest::new();
         request.set_address(address.0.hex());
 
-        let response = client.get_account_balance(request).wait().unwrap();
+        let response = self.client.get_account_balance(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(U256::from_dec_str(response.get_balance()).unwrap()))
@@ -201,12 +191,10 @@ impl EthereumRPC for MinerEthereumRPC {
     ) -> Result<Hex<U256>, Error> {
         println!("\n*** transaction_count *** address = {:?}", address);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = AccountRequest::new();
         request.set_address(address.0.hex());
 
-        let response = client.get_account_nonce(request).wait().unwrap();
+        let response = self.client.get_account_nonce(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(U256::from_dec_str(response.get_nonce()).unwrap()))
@@ -290,12 +278,10 @@ impl EthereumRPC for MinerEthereumRPC {
         // currently supports only "latest" block semantics
         println!("\n*** code *** address = {:?}", address);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = AccountRequest::new();
         request.set_address(address.0.hex());
 
-        let response = client.get_account_code(request).wait().unwrap();
+        let response = self.client.get_account_code(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Bytes(read_hex(response.get_code())?))
@@ -345,12 +331,10 @@ impl EthereumRPC for MinerEthereumRPC {
 
         let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
-        let response = client
+        let response = self.client
             .debug_execute_unsigned_transaction(request)
             .wait()
             .unwrap();
@@ -362,12 +346,10 @@ impl EthereumRPC for MinerEthereumRPC {
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
         println!("\n*** send_raw_transaction *** data = {:?}", data);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = ExecuteRawTransactionRequest::new();
         request.set_data(to_hex(&data.0));
 
-        let response = match client.execute_raw_transaction(request).wait() {
+        let response = match self.client.execute_raw_transaction(request).wait() {
             Ok(val) => val,
             Err(_) => return Err(Error::CallError),
         };
@@ -379,15 +361,13 @@ impl EthereumRPC for MinerEthereumRPC {
         println!("\n*** Call contract");
         let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
         println!("*** Call transaction");
         println!("Transaction: {:?}", request.get_transaction());
 
-        let response = client.simulate_transaction(request).wait().unwrap();
+        let response = self.client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Bytes(read_hex(response.get_result())?))
@@ -401,13 +381,11 @@ impl EthereumRPC for MinerEthereumRPC {
         println!("\n*** estimate_gas");
         let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut client = self.client.lock().unwrap();
-
         // just simulate the transaction and return used_gas
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
-        let response = client.simulate_transaction(request).wait().unwrap();
+        let response = self.client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(Gas::from_str(response.get_used_gas()).unwrap()))
@@ -435,13 +413,11 @@ impl EthereumRPC for MinerEthereumRPC {
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
         //println!("\n*** block_by_number");
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = BlockRequest::new();
         request.set_number(number);
         request.set_full(full);
 
-        let response = match client.get_block_by_number(request).wait() {
+        let response = match self.client.get_block_by_number(request).wait() {
             Ok(val) => val,
             Err(e) => return Err(Error::InvalidParams),
         };
@@ -458,12 +434,10 @@ impl EthereumRPC for MinerEthereumRPC {
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {
         println!("\n*** transaction_by_hash");
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = TransactionRecordRequest::new();
         request.set_hash(format!("{:x}", hash.0));
 
-        let response = client.get_transaction_record(request).wait().unwrap();
+        let response = self.client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Some(to_rpc_transaction(response.get_record())?))
@@ -523,12 +497,10 @@ impl EthereumRPC for MinerEthereumRPC {
     fn transaction_receipt(&self, hash: Hex<H256>) -> Result<Option<RPCReceipt>, Error> {
         println!("\n*** transaction_receipt");
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = TransactionRecordRequest::new();
         request.set_hash(format!("{:x}", hash.0));
 
-        let response = client.get_transaction_record(request).wait().unwrap();
+        let response = self.client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Some(to_rpc_receipt(response.get_record())?))

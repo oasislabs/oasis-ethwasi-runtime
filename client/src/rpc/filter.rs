@@ -4,10 +4,9 @@ use block::{Log, Receipt};
 use sha3::{Digest, Keccak256};
 use std::str::FromStr;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use blockchain::chain::HeaderHash;
 use rpc::RPCLogFilter;
-use std::time::{Duration, SystemTime};
 use std::thread;
 
 use super::{RPCLog, Either};
@@ -36,7 +35,7 @@ pub struct LogFilter {
 #[derive(Clone, Debug)]
 pub enum Filter {
     PendingTransaction(usize),
-    Block(usize, SystemTime),
+    Block(usize),
     Log(LogFilter),
 }
 
@@ -97,13 +96,13 @@ pub fn get_logs(state: &MinerState, filter: LogFilter) -> Result<Vec<RPCLog>, Er
 */
 
 pub struct FilterManager {
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
+    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
     filters: HashMap<usize, Filter>,
     unmodified_filters: HashMap<usize, Filter>,
 }
 
 impl FilterManager {
-    pub fn new(client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>) -> Self {
+    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
         FilterManager {
             client,
             filters: HashMap::new(),
@@ -127,15 +126,12 @@ impl FilterManager {
     }
 
     pub fn install_block_filter(&mut self) -> usize {
-        let mut client = self.client.lock().unwrap();
-
-        let block_height_str = client.get_block_height(true).wait().unwrap();
+        let block_height_str = self.client.get_block_height(true).wait().unwrap();
         let block_height = U256::from_str(&block_height_str).unwrap().as_usize();
 
         let id = self.filters.len();
-        let current_time = SystemTime::now();
-        self.filters.insert(id, Filter::Block(block_height, current_time));
-        self.unmodified_filters.insert(id, Filter::Block(block_height, current_time));
+        self.filters.insert(id, Filter::Block(block_height));
+        self.unmodified_filters.insert(id, Filter::Block(block_height));
         id
     }
 
@@ -178,25 +174,8 @@ impl FilterManager {
         let filter = self.filters.get_mut(&id).ok_or(Error::NotFound)?;
 
         match filter {
-            &mut Filter::Block(ref mut next_start, ref mut last_checked) => {
-                /// If we have called into the contract within the last 3 seconds for this filter,
-                /// short-circuit to return no new blocks.
-                ///
-                /// NOTE: this is temporary workaround to prevent spamming, since tools such as
-                /// truffle will request new changes every second and it currently takes more than
-                /// a second to service each request, creating a backlog that prevents us from
-                /// processing any other requests.
-                ///
-                /// TODO: figure out a better caching system for this method as well as others (tracked at #252)
-                let since_last_check = last_checked.elapsed().unwrap().as_secs();
-                if since_last_check < 3 {
-                    return Ok(Either::Left(Vec::new()))
-                }
-
-                *last_checked = SystemTime::now();
-                let mut client = self.client.lock().unwrap();
-
-                let block_hashes = client.get_latest_block_hashes(format!("0x{:x}", *next_start)).wait().unwrap();
+            &mut Filter::Block(ref mut next_start) => {
+                let block_hashes = self.client.get_latest_block_hashes(format!("0x{:x}", *next_start)).wait().unwrap();
                 *next_start += block_hashes.len();
                 Ok(Either::Left(block_hashes))
             },

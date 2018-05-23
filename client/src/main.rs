@@ -27,7 +27,7 @@ mod rpc;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 // Ekiden client packages
 
@@ -82,22 +82,22 @@ struct AccountMap {
 
 fn main() {
     let signer = create_key_pair();
-    let mut client = contract_client!(signer, evm);
+    let client = contract_client!(signer, evm);
 
     let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
     if is_genesis_initialized {
         println!("Genesis block already initialized");
     } else {
-        init_genesis_block(&mut client);
+        init_genesis_block(&client);
     }
 
-    let client_arc = Arc::new(Mutex::new(client));
+    let client_arc = Arc::new(client);
     let addr = "0.0.0.0:8545".parse().unwrap();
 
     rpc::rpc_loop(client_arc, &addr);
 }
 
-fn init_genesis_block(client: &mut evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
+fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
     let mut inject_accounts_request = evm::InjectAccountsRequest::new();
 

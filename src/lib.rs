@@ -50,7 +50,6 @@ use miner::{get_block, get_latest_block_number, mine_block};
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
 use ekiden_trusted::enclave::enclave_init;
-use ekiden_trusted::key_manager::use_key_manager_contract;
 
 use rlp::UntrustedRlp;
 
@@ -60,9 +59,6 @@ use util::{normalize_hex_str, to_valid, unsigned_to_valid};
 use util::unsigned_transaction_hash;
 
 enclave_init!();
-
-// Configure the key manager contract to use.
-use_key_manager_contract!("generated/key-manager.identity");
 
 // Create enclave contract interface.
 with_api! {

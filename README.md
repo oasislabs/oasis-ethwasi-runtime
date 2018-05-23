@@ -37,21 +37,6 @@ $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden
 
 If you later need to update them to a new version use the `--force` flag to update.
 
-## Building the key manager contract
-
-Before you can build your contract, you need to choose a key manager contract to manage
-keys for your contract's state. A key manager contract is provided with Ekiden core in
-the `ekiden-key-manager` crate.
-
-To build it:
-```bash
-$ cargo ekiden build-contract \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --output target/contract \
-    ekiden-key-manager
-```
-
 ## Building the EVM contract
 
 To build the EVM contract simply run:
@@ -71,19 +56,11 @@ To start the shared dummy node:
 $ ekiden-node-dummy --time-source mockrpc
 ```
 
-To start the compute node for the key manager contract:
-```bash
-$ ekiden-compute \
-    -p 9003 \
-    --disable-key-manager \
-    --no-persist-identity \
-    target/contract/ekiden-key-manager.so
-```
-
 To start the compute node for the EVM contract:
 ```bash
 $ ekiden-compute \
     --no-persist-identity \
+    --max-batch-timeout 10 \
     target/contract/evm.so
 ```
 
@@ -96,7 +73,7 @@ The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `900
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/token.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Building the client
 
