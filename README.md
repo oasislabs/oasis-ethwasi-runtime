@@ -37,21 +37,6 @@ $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden
 
 If you later need to update them to a new version use the `--force` flag to update.
 
-## Building the key manager contract
-
-Before you can build your contract, you need to choose a key manager contract to manage
-keys for your contract's state. A key manager contract is provided with Ekiden core in
-the `ekiden-key-manager` crate.
-
-To build it:
-```bash
-$ cargo ekiden build-contract \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --output target/contract \
-    ekiden-key-manager
-```
-
 ## Building the EVM contract
 
 To build the EVM contract simply run:
@@ -69,15 +54,6 @@ separate container shell, attached to the same container.
 To start the shared dummy node:
 ```
 $ ekiden-node-dummy --time-source mockrpc
-```
-
-To start the compute node for the key manager contract:
-```bash
-$ ekiden-compute \
-    -p 9003 \
-    --disable-key-manager \
-    --no-persist-identity \
-    target/contract/ekiden-key-manager.so
 ```
 
 To start the compute node for the EVM contract:
