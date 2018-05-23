@@ -60,7 +60,7 @@ To start the compute node for the EVM contract:
 ```bash
 $ ekiden-compute \
     --no-persist-identity \
-    --max-batch-timeout 100 \
+    --max-batch-timeout 10 \
     target/contract/evm.so
 ```
 
