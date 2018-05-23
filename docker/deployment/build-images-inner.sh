@@ -16,13 +16,11 @@ fi
 
 # Build all Ekiden binaries and resources.
 CARGO_TARGET_DIR=target cargo install --force --git https://github.com/oasislabs/ekiden --branch master --debug ekiden-tools
-cargo ekiden build-contract --git https://github.com/oasislabs/ekiden --branch master --output target/contract --target-dir target ekiden-key-manager
 cargo ekiden build-contract --output-identity
 (cd client && CARGO_BUILD_TARGET_DIR=../target cargo build)
 
 # Package all binaries and resources.
 mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib target/docker-deployment/context/res
-ln target/contract/ekiden-key-manager.so target/docker-deployment/context/lib/evm-key-manager.so
 ln target/contract/evm.so target/docker-deployment/context/lib
 ln target/contract/evm.mrenclave target/docker-deployment/context/res
 cp -r resources/genesis target/docker-deployment/context/res

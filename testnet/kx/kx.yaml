@@ -43,57 +43,6 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: evm-key-manager
-spec:
-  ports:
-    - name: contract-grpc
-      port: 9003
-  selector:
-    copper: evm-key-manager
-  # type: ClusterIP
----
-kind: Deployment
-apiVersion: extensions/v1beta1
-metadata:
-  name: evm-key-manager
-  labels:
-    app: ekiden
-spec:
-  selector:
-    matchLabels:
-      copper: evm-key-manager
-  # replicas: 1
-  template:
-    metadata:
-      labels:
-        copper: evm-key-manager
-    spec:
-      containers:
-        - name: ekiden-compute
-          image: docker.io/oasislabs/ekiden-contract-evm:latest
-          env:
-            - name: LD_LIBRARY_PATH
-              value: /opt/intel/sgxsdk/lib64
-          command:
-            - ekiden-compute
-          args:
-            - --port
-            - "9003"
-            - --dummy-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
-            - --dummy-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - --disable-key-manager
-            - --no-persist-identity
-            - --max-batch-size
-            - "1"
-            - --metrics-addr
-            - "0.0.0.0:3000"
-            - ekiden/lib/evm-key-manager.so
----
-kind: Service
-apiVersion: v1
-metadata:
   name: evm
 spec:
   ports:
@@ -131,16 +80,14 @@ spec:
             - ekiden-compute
           args:
             - --no-persist-identity
+            - --max-batch-timeout
+            - "10"
             - --metrics-addr
             - "0.0.0.0:3000"
             - --dummy-host
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
             - --dummy-port
             - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - --key-manager-host
-            - $(EVM_KEY_MANAGER_SERVICE_HOST)
-            - --key-manager-port
-            - $(EVM_KEY_MANAGER_SERVICE_PORT_CONTRACT_GRPC)
             - ekiden/lib/evm.so
 
 ---
