@@ -99,6 +99,7 @@ spec:
   ports:
     - name: web3
       port: 8545
+      nodePort: 8545
   selector:
     copper: web3-client
   type: NodePort
