@@ -37,11 +37,11 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
         match vm.fire() {
             Ok(()) => break,
             Err(RequireError::Account(address)) => {
-                println!("> Require Account: {:x}", address);
+                trace!("> Require Account: {:x}", address);
                 let addr_str = address.hex();
                 let commit = match state.accounts.get(&addr_str) {
                     Some(b) => {
-                        println!("  -> Found account");
+                        trace!("  -> Found account");
                         AccountCommitment::Full {
                             nonce: U256::from_dec_str(b.get_nonce()).unwrap(),
                             address: address,
@@ -50,14 +50,14 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
                         }
                     }
                     None => {
-                        println!("  -> Nonexistent");
+                        trace!("  -> Nonexistent");
                         AccountCommitment::Nonexist(address)
                     }
                 };
                 vm.commit_account(commit).unwrap();
             }
             Err(RequireError::AccountStorage(address, index)) => {
-                println!("> Require Account Storage: {:x} @ {:x}", address, index);
+                trace!("> Require Account Storage: {:x} @ {:x}", address, index);
                 let addr_str = address.hex();
                 let index_str = format!("{:x}", index);
 
@@ -72,7 +72,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
                     None => M256::zero(),
                 };
 
-                println!("  -> {:?}", value);
+                trace!("  -> {:?}", value);
                 vm.commit_account(AccountCommitment::Storage {
                     address: address,
                     index: index,
@@ -80,25 +80,25 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
                 }).unwrap();
             }
             Err(RequireError::AccountCode(address)) => {
-                println!("> Require Account Code: {:x}", address);
+                trace!("> Require Account Code: {:x}", address);
                 let addr_str = address.hex();
                 let commit = match state.accounts.get(&addr_str) {
                     Some(b) => {
-                        println!("  -> Found code");
+                        trace!("  -> Found code");
                         AccountCommitment::Code {
                             address: address,
                             code: Rc::new(read_hex(b.get_code()).unwrap()),
                         }
                     }
                     None => {
-                        println!("  -> Nonexistent");
+                        trace!("  -> Nonexistent");
                         AccountCommitment::Nonexist(address)
                     }
                 };
                 vm.commit_account(commit).unwrap();
             }
             Err(RequireError::Blockhash(number)) => {
-                println!("> Require Blockhash @ {:x}", number);
+                trace!("> Require Blockhash @ {:x}", number);
                 // TODO: maintain block state (including blockhash)
                 let result = match number.as_u32() {
                     4976641 => H256::from_str(
@@ -338,11 +338,11 @@ pub fn fire_transaction<P: Patch>(
 
     handle_fire(&mut vm, &state);
 
-    println!("    VM returned: {:?}", vm.status());
-    println!("    VM out: {:?}", vm.out());
+    trace!("    VM returned: {:?}", vm.status());
+    trace!("    VM out: {:?}", vm.out());
 
     for account in vm.accounts() {
-        println!("        {:?}", account);
+        trace!("        {:?}", account);
     }
 
     vm
