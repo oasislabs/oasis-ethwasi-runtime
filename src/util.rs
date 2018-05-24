@@ -21,8 +21,8 @@ pub fn to_valid<P: Patch>(
     transaction: &Transaction,
 ) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
     // debugging
-    println!("*** Validate block transaction");
-    println!("Data: {:?}", transaction);
+    debug!("*** Validate block transaction");
+    debug!("Data: {:?}", transaction);
 
     // check caller signature
     let caller = match transaction.caller() {

@@ -17,6 +17,7 @@ evm-api = { path = "./api" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 protobuf = "~1.4"
+log = "0.4"
 
 [build-dependencies]
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
