@@ -100,6 +100,7 @@ message Transaction {
     string address = 5;             // (hex) defined if is_call = true
     // Opaque call input.
     string input = 6;               // (hex)
+    string value = 7;               // (hex)
 }
 
 message ExecuteTransactionRequest {
