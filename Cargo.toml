@@ -5,10 +5,10 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-etcommon-bigint = { git = "https://github.com/ekiden/etcommon-rs", branch = "feature/no_rand", features = ["string", "rlp"], default-features = false }
-etcommon-hexutil = { git = "https://github.com/ekiden/etcommon-rs", branch = "feature/no_rand", default-features = false }
-etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "feature/no_rand" }
-etcommon-block = { git = "https://github.com/ekiden/etcommon-rs", branch = "feature/no_rand" }
+etcommon-bigint = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden", features = ["string", "rlp", "serialize"], default-features = false }
+etcommon-hexutil = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden", default-features = false }
+etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
+etcommon-block = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
 sputnikvm-network-classic = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
 sputnikvm-network-foundation = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
 sha3 = "0.6"
