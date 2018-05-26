@@ -116,13 +116,9 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn block_number(&self) -> Result<Hex<usize>, Error> {
-        /*
-        println!("\n*** block_number");
-        let state = self.state.lock().unwrap();
-
-        Ok(Hex(state.block_height()))
-        */
-        Err(Error::TODO)
+        let block_height = self.client.get_block_height(false).wait().unwrap();
+        let result = U256::from_str(&block_height)?.as_usize();
+        Ok(Hex(result))
     }
 
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
