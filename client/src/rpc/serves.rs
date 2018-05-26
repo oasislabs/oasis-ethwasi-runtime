@@ -112,23 +112,7 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn accounts(&self) -> Result<Vec<Hex<Address>>, Error> {
-        /*
-        let state = self.state.lock().unwrap();
-
-         println!("\n*** Accounts");
-
-        let result = Ok(state.accounts().iter().map(|key| {
-            println!("    Key: {:?}", key);
-            Address::from_secret_key(key).unwrap()
-        }).map(|address| {
-            println!("    Address: {:?}", Hex(address));
-            Hex(address)
-        }).collect());
-
-        //println!("Result: {:?}", result);
-        result
-        */
-        Err(Error::TODO)
+        Ok(Vec::new())
     }
 
     fn block_number(&self) -> Result<Hex<usize>, Error> {
