@@ -393,9 +393,10 @@ impl EthereumRPC for MinerEthereumRPC {
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
         //println!("\n*** block_by_number");
 
-        let mut request = BlockRequest::new();
-        request.set_number(number);
-        request.set_full(full);
+        let request = BlockRequest {
+            number: number,
+            full: full,
+        };
 
         let response = match self.client.get_block_by_number(request).wait() {
             Ok(val) => val,
@@ -403,11 +404,9 @@ impl EthereumRPC for MinerEthereumRPC {
         };
         println!("    Response: {:?}", response);
 
-        if response.has_block() {
-            Ok(Some(to_rpc_block(response.get_block(), full)?))
-        } else {
-            // return null if block doesn't exist
-            Ok(None)
+        match response.block {
+            Some(val) => Ok(Some(to_rpc_block(val, full)?)),
+            None => Ok(None),
         }
     }
 

@@ -36,7 +36,7 @@ use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonc
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{H256, U256};
+use bigint::{Address, H256, U256};
 use block::Transaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
@@ -91,7 +91,7 @@ fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResp
     for account_state in request.get_accounts() {
         let mut account = account_state.clone();
         account.set_address(normalize_hex_str(account_state.get_address()));
-        state.accounts.insert(account.get_address(), &account);
+        state.accounts.insert(&Address::from_str(account.get_address()).unwrap(), &account);
     }
 
     Ok(InjectAccountsResponse::new())
@@ -137,7 +137,7 @@ fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
     while next_start <= current_block_height {
         let transaction_hash = get_block(next_start)
             .unwrap()
-            .get_transaction_hash()
+            .transaction_hash
             .to_string();
         result.push(transaction_hash);
         next_start = next_start + U256::one();
@@ -150,33 +150,31 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
 
-    let number = if request.get_number() == "latest" {
+    let number = if request.number == "latest" {
         get_latest_block_number()
     } else {
-        match U256::from_str(request.get_number()) {
+        match U256::from_str(&request.number) {
             Ok(val) => val,
             Err(err) => return Err(Error::new(format!("{:?}", err))),
         }
     };
 
-    let mut response = BlockResponse::new();
-
     let mut block = match get_block(number) {
         Some(val) => val,
-        None => return Ok(response),
+        None => return Ok(BlockResponse { block: None }),
     };
 
     // if full transactions are requested, attach the TransactionRecord
-    if request.get_full() {
+    if request.full {
         if let Some(val) = StateDb::new()
             .transactions
-            .get(block.get_transaction_hash())
+            .get(&block.transaction_hash)
         {
-            block.set_transaction(val);
+            block.transaction = Some(val);
         }
     }
 
-    response.set_block(block);
+    let response = BlockResponse { block: Some(block) };
     Ok(response)
 }
 
@@ -184,12 +182,10 @@ fn get_transaction_record(request: &TransactionRecordRequest) -> Result<Transact
     info!("*** Get transaction record");
     info!("Hash: {:?}", request.get_hash());
 
-    let hash = normalize_hex_str(request.get_hash());
-
     let mut response = TransactionRecordResponse::new();
 
     let state = StateDb::new();
-    if let Some(val) = state.transactions.get(&hash) {
+    if let Some(val) = state.transactions.get(&H256::from_str(request.get_hash()).unwrap()) {
         response.set_record(val);
     }
 
@@ -200,8 +196,7 @@ fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceRespons
     info!("*** Get account balance");
     info!("Address: {:?}", request.get_address());
 
-    let address = normalize_hex_str(request.get_address());
-    let balance = get_balance(address);
+    let balance = get_balance(Address::from_str(request.get_address()).unwrap());
 
     let mut response = AccountBalanceResponse::new();
     response.set_balance(format!("{}", balance));
@@ -213,8 +208,7 @@ fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
     info!("*** Get account nonce");
     info!("Address: {:?}", request.get_address());
 
-    let address = normalize_hex_str(request.get_address());
-    let nonce = get_nonce(address);
+    let nonce = get_nonce(Address::from_str(request.get_address()).unwrap());
 
     let mut response = AccountNonceResponse::new();
     response.set_nonce(format!("{}", nonce));
@@ -226,8 +220,7 @@ fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
     info!("*** Get account code");
     info!("Address: {:?}", request.get_address());
 
-    let address = normalize_hex_str(request.get_address());
-    let code = get_code_string(address);
+    let code = get_code_string(Address::from_str(request.get_address()).unwrap());
 
     let mut response = AccountCodeResponse::new();
     response.set_code(code);

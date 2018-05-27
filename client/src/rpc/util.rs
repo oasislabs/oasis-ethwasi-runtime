@@ -9,11 +9,11 @@ use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
 
 use std::str::FromStr;
 
-pub fn to_rpc_block(block: &Block, full_transactions: bool) -> Result<RPCBlock, Error> {
+pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, Error> {
     Ok(RPCBlock {
-        number: Hex(U256::from_str(block.get_number())?),
-        hash: Hex(H256::from_str(block.get_hash())?),
-        parent_hash: Hex(H256::from_str(block.get_parent_hash())?),
+        number: Hex(block.number),
+        hash: Hex(block.hash),
+        parent_hash: Hex(block.parent_hash),
         nonce: Hex(H64::new()),
         sha3_uncles: Hex(H256::new()),
         logs_bloom: Hex(H2048::new()),
@@ -31,15 +31,15 @@ pub fn to_rpc_block(block: &Block, full_transactions: bool) -> Result<RPCBlock, 
         gas_used: Hex(Gas::zero()),
         timestamp: Hex(0),
         transactions: if full_transactions {
-            Either::Right(match to_rpc_transaction(block.get_transaction()) {
-                Ok(val) => vec![val],
-                Err(_) => Vec::new(),
+            Either::Right(match block.transaction {
+                Some(transaction) => match to_rpc_transaction(&transaction) {
+                    Ok(val) => vec![val],
+                    Err(_) => Vec::new(),
+                },
+                None => Vec::new(),
             })
         } else {
-            Either::Left(match H256::from_str(block.get_transaction_hash()) {
-                Ok(val) => vec![Hex(val)],
-                Err(_) => Vec::new(),
-            })
+            Either::Left(vec![Hex(block.transaction_hash)])
         },
         uncles: Vec::new(),
     })
@@ -53,7 +53,11 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
         block_number: Hex(U256::from_str(record.get_block_number())?),
         cumulative_gas_used: Hex(Gas::from_str(record.get_cumulative_gas_used())?),
         gas_used: Hex(Gas::from_str(record.get_gas_used())?),
-        contract_address: if record.get_is_create() { Some(Hex(Address::from_str(record.get_contract_address())?)) } else { None },
+        contract_address: if record.get_is_create() {
+            Some(Hex(Address::from_str(record.get_contract_address())?))
+        } else {
+            None
+        },
         // TODO: logs
         logs: Vec::new(),
         root: Hex(H256::new()),

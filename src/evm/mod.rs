@@ -25,10 +25,10 @@ pub mod patch;
 database_schema! {
     pub struct StateDb {
         pub genesis_initialized: bool,
-        pub accounts: Map<String, AccountState>,
-        pub transactions: Map<String, TransactionRecord>,
-        pub latest_block_number: String,
-        pub blocks: Map<String, Block>,
+        pub accounts: Map<Address, AccountState>,
+        pub transactions: Map<H256, TransactionRecord>,
+        pub latest_block_number: U256,
+        pub blocks: Map<U256, Block>,
     }
 }
 
@@ -39,7 +39,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             Err(RequireError::Account(address)) => {
                 trace!("> Require Account: {:x}", address);
                 let addr_str = address.hex();
-                let commit = match state.accounts.get(&addr_str) {
+                let commit = match state.accounts.get(&address) {
                     Some(b) => {
                         trace!("  -> Found account");
                         AccountCommitment::Full {
@@ -63,7 +63,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
 
                 let value = match state
                     .accounts
-                    .get(&addr_str)
+                    .get(&address)
                     .unwrap()
                     .storage
                     .get(&index_str)
@@ -82,7 +82,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             Err(RequireError::AccountCode(address)) => {
                 trace!("> Require Account Code: {:x}", address);
                 let addr_str = address.hex();
-                let commit = match state.accounts.get(&addr_str) {
+                let commit = match state.accounts.get(&address) {
                     Some(b) => {
                         trace!("  -> Found code");
                         AccountCommitment::Code {
@@ -115,7 +115,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
 
 // TODO: currently returns 0 for nonexistent accounts
 //       specified behavior is different for more recent patches
-pub fn get_nonce(address: String) -> U256 {
+pub fn get_nonce(address: Address) -> U256 {
     let state = StateDb::new();
     let nonce = match state.accounts.get(&address) {
         Some(b) => U256::from_dec_str(b.get_nonce()).unwrap(),
@@ -126,7 +126,7 @@ pub fn get_nonce(address: String) -> U256 {
 
 // TODO: currently returns 0 for nonexistent accounts
 //       specified behavior is different for more recent patches
-pub fn get_balance(address: String) -> U256 {
+pub fn get_balance(address: Address) -> U256 {
     let state = StateDb::new();
     let balance = match state.accounts.get(&address) {
         Some(b) => U256::from_dec_str(b.get_balance()).unwrap(),
@@ -136,7 +136,7 @@ pub fn get_balance(address: String) -> U256 {
 }
 
 // returns a hex-encoded string directly from storage to avoid unnecessary conversions
-pub fn get_code_string(address: String) -> String {
+pub fn get_code_string(address: Address) -> String {
     let state = StateDb::new();
     let code = match state.accounts.get(&address) {
         Some(val) => val.get_code().to_string(),
@@ -172,12 +172,12 @@ fn create_account_state(
 }
 
 fn update_account_balance<P: Patch>(
-    address_str: &String,
+    address: &Address,
     amount: U256,
     sign: Sign,
     state: &StateDb,
 ) -> Option<AccountState> {
-    match state.accounts.get(address_str) {
+    match state.accounts.get(&address) {
         Some(b) => {
             // Found account. Update balance.
             let mut updated_account = b.clone();
@@ -204,7 +204,8 @@ fn update_account_balance<P: Patch>(
             } else {
                 let mut account_state = AccountState::new();
                 account_state.set_nonce(format!("{}", P::Account::initial_nonce()));
-                account_state.set_address(address_str.clone());
+                let address_str = address.hex();
+                account_state.set_address(address_str);
                 account_state.set_balance(format!("{}", amount));
                 Some(account_state)
             }
@@ -265,7 +266,7 @@ pub fn save_transaction_record<P: Patch>(
     }
 
     let state = StateDb::new();
-    state.transactions.insert(&format!("{:x}", hash), &record);
+    state.transactions.insert(&hash, &record);
 }
 
 pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
@@ -282,7 +283,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
             } => {
                 let (addr_str, account_state) =
                     create_account_state(nonce, address, balance, storage, code);
-                state.accounts.insert(&addr_str, &account_state);
+                state.accounts.insert(&address, &account_state);
             }
             &AccountChange::Full {
                 nonce,
@@ -293,7 +294,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
             } => {
                 let (addr_str, mut account_state) =
                     create_account_state(nonce, address, balance, changing_storage, code);
-                let prev_storage = state.accounts.get(&addr_str).unwrap().storage;
+                let prev_storage = state.accounts.get(&address).unwrap().storage;
 
                 // This type of change registers a *diff* of the storage, so place previous values
                 // in the new map.
@@ -305,14 +306,14 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                     }
                 }
 
-                state.accounts.insert(&addr_str, &account_state);
+                state.accounts.insert(&address, &account_state);
             }
             &AccountChange::IncreaseBalance(address, amount) => {
                 let address_str = address.hex();
                 if let Some(new_account) =
-                    update_account_balance::<P>(&address_str, amount, Sign::Plus, &state)
+                    update_account_balance::<P>(&address, amount, Sign::Plus, &state)
                 {
-                    state.accounts.insert(&address_str, &new_account);
+                    state.accounts.insert(&address, &new_account);
                 }
             }
             &AccountChange::Nonexist(address) => {}
