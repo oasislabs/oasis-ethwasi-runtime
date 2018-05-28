@@ -17,5 +17,6 @@ mod api;
 //pub use generated::api::*;
 
 extern crate bigint;
+pub use bigint::{H256, U256};
 mod state;
 pub use state::*;

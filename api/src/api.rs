@@ -11,9 +11,9 @@ contract_api! {
 
     pub fn execute_raw_transaction(ExecuteRawTransactionRequest) -> TransactionHashResponse;
 
-    pub fn get_block_height(bool) -> String;
+    pub fn get_block_height(bool) -> U256;
 
-    pub fn get_latest_block_hashes(String) -> Vec<String>;
+    pub fn get_latest_block_hashes(U256) -> Vec<H256>;
 
     pub fn get_transaction_record(TransactionRecordRequest) -> TransactionRecordResponse;
 

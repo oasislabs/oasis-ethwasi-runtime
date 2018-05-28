@@ -118,21 +118,18 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-fn get_block_height(request: &bool) -> Result<String> {
-    Ok(format!("0x{:x}", get_latest_block_number()))
+fn get_block_height(request: &bool) -> Result<U256> {
+    Ok(get_latest_block_number())
 }
 
-fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
+fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     let mut result = Vec::new();
 
     let current_block_height = get_latest_block_number();
-    let mut next_start = match U256::from_str(block_height) {
-        Ok(val) => val,
-        Err(err) => return Err(Error::new(format!("{:?}", err))),
-    };
+    let mut next_start = block_height.clone();
 
     while next_start <= current_block_height {
-        let transaction_hash = get_block(next_start).unwrap().transaction_hash.to_string();
+        let transaction_hash = get_block(next_start).unwrap().transaction_hash;
         result.push(transaction_hash);
         next_start = next_start + U256::one();
     }

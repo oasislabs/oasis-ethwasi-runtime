@@ -127,8 +127,11 @@ impl FilterManager {
     }
 
     pub fn install_block_filter(&mut self) -> usize {
-        let block_height_str = self.client.get_block_height(true).wait().unwrap();
-        let block_height = U256::from_str(&block_height_str).unwrap().as_usize();
+        let block_height = self.client
+            .get_block_height(true)
+            .wait()
+            .unwrap()
+            .as_usize();
 
         let id = self.filters.len();
         self.filters.insert(id, Filter::Block(block_height));
@@ -178,11 +181,13 @@ impl FilterManager {
         match filter {
             &mut Filter::Block(ref mut next_start) => {
                 let block_hashes = self.client
-                    .get_latest_block_hashes(format!("0x{:x}", *next_start))
+                    .get_latest_block_hashes(U256::from(*next_start))
                     .wait()
                     .unwrap();
                 *next_start += block_hashes.len();
-                Ok(Either::Left(block_hashes))
+                Ok(Either::Left(
+                    block_hashes.iter().map(|h| h.to_string()).collect(),
+                ))
             }
             /*
             &mut Filter::PendingTransaction(ref mut next_start) => {
