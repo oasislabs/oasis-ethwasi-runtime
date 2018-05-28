@@ -186,8 +186,6 @@ fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceRespons
     info!("Address: {:?}", request.address);
 
     let balance = get_balance(request.address);
-    info!("Got balance: {:?}", balance);
-
     let response = AccountBalanceResponse { balance: balance };
     Ok(response)
 }
@@ -197,7 +195,6 @@ fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
     info!("Address: {:?}", request.address);
 
     let nonce = get_nonce(request.address);
-
     let response = AccountNonceResponse { nonce: nonce };
     Ok(response)
 }
@@ -207,7 +204,6 @@ fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
     info!("Address: {:?}", request.address);
 
     let code = get_code_string(request.address);
-
     let response = AccountCodeResponse { code: code };
     Ok(response)
 }
