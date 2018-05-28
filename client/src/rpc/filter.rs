@@ -186,7 +186,7 @@ impl FilterManager {
                     .unwrap();
                 *next_start += block_hashes.len();
                 Ok(Either::Left(
-                    block_hashes.iter().map(|h| h.to_string()).collect(),
+                    block_hashes.iter().map(|h| format!("{:x}", h)).collect(),
                 ))
             }
             /*
