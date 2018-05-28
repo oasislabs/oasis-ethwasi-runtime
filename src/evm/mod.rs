@@ -208,26 +208,28 @@ pub fn save_transaction_record<P: Patch>(
     transaction: ValidTransaction,
     vm: &SeqTransactionVM<P>,
 ) {
-    let mut record = TransactionRecord::new();
-    record.set_hash(format!("{:x}", hash));
-    record.set_block_hash(format!("{:x}", block_hash));
-    record.set_block_number(format!("{:x}", block_number));
-    record.set_index(index);
-    match transaction.caller {
-        Some(address) => record.set_from(address.hex()),
-        None => {}
-    }
-    match transaction.action {
-        TransactionAction::Call(address) => record.set_to(address.hex()),
-        TransactionAction::Create => {}
+    let mut record = TransactionRecord {
+        hash: hash,
+        nonce: transaction.nonce,
+        block_hash: block_hash,
+        block_number: block_number,
+        index: index,
+        from: transaction.caller,
+        to: match transaction.action {
+            TransactionAction::Call(address) => Some(address),
+            TransactionAction::Create => None,
+        },
+        gas_used: vm.used_gas(),
+        cumulative_gas_used: vm.used_gas(),
+        value: transaction.value,
+        gas_price: transaction.gas_price,
+        // TODO: assuming this is gas limit rather than gas used, need to confirm
+        gas_provided: transaction.gas_limit,
+        input: to_hex(&transaction.input.clone()),
+        is_create: false,
+        contract_address: None,
+        status: false,
     };
-    record.set_gas_used(format!("{:x}", vm.used_gas()));
-    record.set_cumulative_gas_used(format!("{:x}", vm.used_gas()));
-    record.set_value(format!("{:x}", transaction.value));
-    record.set_gas_price(format!("{:x}", transaction.gas_price));
-    // TODO: assuming this is gas limit rather than gas used, need to confirm
-    record.set_gas_provided(format!("{:x}", transaction.gas_limit));
-    record.set_input(to_hex(&transaction.input.clone()));
 
     for account in vm.accounts() {
         match account {
@@ -239,8 +241,8 @@ pub fn save_transaction_record<P: Patch>(
                 ref code,
             } => {
                 if code.len() > 0 {
-                    record.set_is_create(true);
-                    record.set_contract_address(address.hex());
+                    record.is_create = true;
+                    record.contract_address = Some(address);
                 }
             }
             _ => {}
@@ -248,8 +250,8 @@ pub fn save_transaction_record<P: Patch>(
     }
 
     match vm.status() {
-        VMStatus::ExitedOk => record.set_status(true),
-        _ => record.set_status(false),
+        VMStatus::ExitedOk => record.status = true,
+        _ => record.status = false,
     }
 
     let state = StateDb::new();

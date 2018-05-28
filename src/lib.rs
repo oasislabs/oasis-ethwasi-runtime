@@ -172,17 +172,11 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
 
 fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
     info!("*** Get transaction record");
-    info!("Hash: {:?}", request.get_hash());
+    info!("Hash: {:?}", request.hash);
 
-    let mut response = TransactionRecordResponse::new();
-
-    let state = StateDb::new();
-    if let Some(val) = state
-        .transactions
-        .get(&H256::from_str(request.get_hash()).unwrap())
-    {
-        response.set_record(val);
-    }
+    let response = TransactionRecordResponse {
+        record: StateDb::new().transactions.get(&request.hash),
+    };
 
     Ok(response)
 }

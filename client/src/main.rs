@@ -55,8 +55,8 @@ use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 
-use evm_api::{with_api, AccountState, InitStateRequest};
 use bigint::{Address, H256, U256};
+use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
 
 with_api! {
@@ -102,7 +102,9 @@ fn main() {
 
 fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
-    let mut inject_accounts_request = evm::InjectAccountsRequest { accounts: Vec::new() };
+    let mut inject_accounts_request = evm::InjectAccountsRequest {
+        accounts: Vec::new(),
+    };
 
     // Read in all the files in resources/genesis/
     for path in fs::read_dir("../resources/genesis").unwrap() {
@@ -130,7 +132,10 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
                 storage: HashMap::new(),
             };
             for (key, value) in account.storage {
-                account_state.storage.insert(U256::from_str(&key).unwrap(), U256::from_str(&value).unwrap());
+                account_state.storage.insert(
+                    U256::from_str(&key).unwrap(),
+                    U256::from_str(&value).unwrap(),
+                );
             }
             inject_accounts_request.accounts.push(account_state);
         }

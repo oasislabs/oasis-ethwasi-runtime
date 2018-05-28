@@ -410,13 +410,15 @@ impl EthereumRPC for MinerEthereumRPC {
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {
         println!("\n*** transaction_by_hash");
 
-        let mut request = TransactionRecordRequest::new();
-        request.set_hash(format!("{:x}", hash.0));
+        let request = TransactionRecordRequest { hash: hash.0 };
 
         let response = self.client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Some(to_rpc_transaction(response.get_record())?))
+        Ok(match response.record {
+            Some(record) => Some(to_rpc_transaction(&record)?),
+            None => None,
+        })
     }
 
     fn transaction_by_block_hash_and_index(
@@ -473,13 +475,15 @@ impl EthereumRPC for MinerEthereumRPC {
     fn transaction_receipt(&self, hash: Hex<H256>) -> Result<Option<RPCReceipt>, Error> {
         println!("\n*** transaction_receipt");
 
-        let mut request = TransactionRecordRequest::new();
-        request.set_hash(format!("{:x}", hash.0));
+        let request = TransactionRecordRequest { hash: hash.0 };
 
         let response = self.client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Some(to_rpc_receipt(response.get_record())?))
+        Ok(match response.record {
+            Some(record) => Some(to_rpc_receipt(&record)?),
+            None => None,
+        })
     }
 
     fn uncle_by_block_hash_and_index(

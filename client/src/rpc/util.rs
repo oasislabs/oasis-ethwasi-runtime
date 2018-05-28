@@ -47,42 +47,51 @@ pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, E
 
 pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
     Ok(RPCReceipt {
-        transaction_hash: Hex(H256::from_str(record.get_hash())?),
-        transaction_index: Hex(record.get_index() as usize),
-        block_hash: Hex(H256::from_str(record.get_block_hash())?),
-        block_number: Hex(U256::from_str(record.get_block_number())?),
-        cumulative_gas_used: Hex(Gas::from_str(record.get_cumulative_gas_used())?),
-        gas_used: Hex(Gas::from_str(record.get_gas_used())?),
-        contract_address: if record.get_is_create() {
-            Some(Hex(Address::from_str(record.get_contract_address())?))
+        transaction_hash: Hex(record.hash),
+        transaction_index: Hex(record.index as usize),
+        block_hash: Hex(record.block_hash),
+        block_number: Hex(record.block_number),
+        cumulative_gas_used: Hex(record.cumulative_gas_used),
+        gas_used: Hex(record.gas_used),
+        contract_address: if record.is_create {
+            match record.contract_address {
+                Some(address) => Some(Hex(address)),
+                None => None,
+            }
         } else {
             None
         },
         // TODO: logs
         logs: Vec::new(),
         root: Hex(H256::new()),
-        status: if record.get_status() { 1 } else { 0 },
+        status: if record.status { 1 } else { 0 },
     })
 }
 
 pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, Error> {
     Ok(RPCTransaction {
-        from: Some(Hex(Address::from_str(record.get_from())?)),
-        to: if record.get_is_create() {
+        from: match record.from {
+            Some(address) => Some(Hex(address)),
+            None => None,
+        },
+        to: if record.is_create {
             None
         } else {
-            Some(Hex(Address::from_str(record.get_to())?))
+            match record.to {
+                Some(address) => Some(Hex(address)),
+                None => None,
+            }
         },
-        gas: Some(Hex(Gas::from_str(record.get_gas_provided())?)),
-        gas_price: Some(Hex(Gas::from_str(record.get_gas_price())?)),
-        value: Some(Hex(U256::from_str(record.get_value())?)),
-        data: Some(Bytes(read_hex(record.get_input())?)),
-        nonce: Some(Hex(U256::from_str(record.get_nonce())?)),
+        gas: Some(Hex(record.gas_provided)),
+        gas_price: Some(Hex(record.gas_price)),
+        value: Some(Hex(record.value)),
+        data: Some(Bytes(read_hex(&record.input)?)),
+        nonce: Some(Hex(record.nonce)),
 
-        hash: Some(Hex(H256::from_str(record.get_hash())?)),
-        block_hash: Some(Hex(H256::from_str(record.get_block_hash())?)),
-        block_number: Some(Hex(U256::from_str(record.get_block_number())?)),
-        transaction_index: Some(Hex(record.get_index() as usize)),
+        hash: Some(Hex(record.hash)),
+        block_hash: Some(Hex(record.block_hash)),
+        block_number: Some(Hex(record.block_number)),
+        transaction_index: Some(Hex(record.index as usize)),
     })
 }
 
