@@ -2,7 +2,6 @@ use bigint::{H256, U256};
 use evm::StateDb;
 use evm_api::Block;
 use sha3::{Digest, Keccak256};
-use std::str::FromStr;
 
 // "mine" a block containing 0 or 1 transactions
 // returns block number and hash

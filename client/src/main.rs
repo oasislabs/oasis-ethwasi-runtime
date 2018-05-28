@@ -146,7 +146,7 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
         .unwrap();
     println!("  {:?}", result);
 
-    let mut init_state_request = evm::InitStateRequest::new();
+    let mut init_state_request = evm::InitStateRequest {};
     let result = client
         .init_genesis_block(init_state_request)
         .wait()

@@ -96,35 +96,29 @@ pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, 
 }
 
 pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction, Error> {
-    let mut _transaction = EVMTransaction::new();
-
-    if let Some(val) = transaction.from {
-        _transaction.set_caller(val.0.hex());
-    }
-
-    if let Some(val) = transaction.data.clone() {
-        _transaction.set_input(to_hex(&val.0));
-    }
-
-    match transaction.nonce {
-        Some(val) => {
-            _transaction.set_use_nonce(true);
-            _transaction.set_nonce(format!("{}", val.0));
-        }
-        None => _transaction.set_use_nonce(false),
+    let _transaction = EVMTransaction {
+        caller: match transaction.from {
+            Some(val) => Some(val.0),
+            None => None,
+        },
+        input: match transaction.data.clone() {
+            Some(val) => to_hex(&val.0),
+            None => String::new(),
+        },
+        nonce: match transaction.nonce {
+            Some(val) => Some(val.0),
+            None => None,
+        },
+        is_call: transaction.to.is_some(),
+        address: match transaction.to {
+            Some(val) => Some(val.0),
+            None => None,
+        },
+        value: match transaction.value {
+            Some(val) => Some(val.0),
+            None => None,
+        },
     };
-
-    match transaction.to {
-        Some(val) => {
-            _transaction.set_is_call(true);
-            _transaction.set_address(val.0.hex());
-        }
-        None => _transaction.set_is_call(false),
-    };
-
-    if let Some(val) = transaction.value {
-        _transaction.set_value(format!("{:x}", val.0));
-    }
 
     Ok(_transaction)
 }

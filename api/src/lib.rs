@@ -11,9 +11,10 @@ extern crate ekiden_core;
 
 #[macro_use]
 mod api;
-mod generated;
 
-pub use generated::api::*;
+// not using protobufs
+//mod generated;
+//pub use generated::api::*;
 
 extern crate bigint;
 mod state;
