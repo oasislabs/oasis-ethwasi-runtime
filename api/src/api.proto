@@ -2,43 +2,13 @@ syntax = "proto3";
 
 package api;
 
-message InjectAccountsRequest {
-    repeated AccountState accounts = 1;
-}
-
-message InjectAccountsResponse {
-}
-
 message InitStateRequest {
 }
 
 message InitStateResponse {
 }
 
-// We have to use strings/bytes for everything since protobuf doesn't support wide enough integers (e.g., addresses
-// in ethereum are 160-bit hashes). Encoded numerical values are annotated as (dec) or (hex).
-message AccountState {
-    string nonce = 1;                // (dec)
-    string address = 2;              // (hex)
-    string balance = 3;              // (dec)
-    map<string, string> storage = 4;
-    string code = 5;                 // (hex)
-}
-
-message AccountRequest {
-    string address = 1;              // (hex)
-}
-
-message AccountBalanceResponse {
-    string balance = 1;              // (dec)
-}
-
-message AccountNonceResponse {
-    string nonce = 1;                // (dec)
-}
-
-message AccountCodeResponse {
-    string code = 1;                 // (hex)
+message InjectAccountsResponse {
 }
 
 message TransactionRecordRequest {

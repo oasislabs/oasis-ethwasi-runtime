@@ -54,7 +54,10 @@ use ekiden_core::bytes::B256;
 use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
+
 use evm_api::{with_api, AccountState, InitStateRequest};
+use bigint::{Address, H256, U256};
+use std::str::FromStr;
 
 with_api! {
     create_contract_client!(evm, evm_api, api);
@@ -99,7 +102,7 @@ fn main() {
 
 fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
-    let mut inject_accounts_request = evm::InjectAccountsRequest::new();
+    let mut inject_accounts_request = evm::InjectAccountsRequest { accounts: Vec::new() };
 
     // Read in all the files in resources/genesis/
     for path in fs::read_dir("../resources/genesis").unwrap() {
@@ -115,15 +118,19 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
         );
 
         for (addr, account) in accounts.accounts {
-            let mut account_state = AccountState::new();
-            account_state.set_nonce(account.nonce);
-            account_state.set_address(addr);
-            account_state.set_balance(account.balance);
-            if account.code != "0x" {
-                account_state.set_code(account.code);
-            }
+            let mut account_state = AccountState {
+                nonce: U256::from_dec_str(&account.nonce).unwrap(),
+                address: Address::from_str(&addr).unwrap(),
+                balance: U256::from_dec_str(&account.balance).unwrap(),
+                code: if account.code == "0x" {
+                    String::new()
+                } else {
+                    account.code
+                },
+                storage: HashMap::new(),
+            };
             for (key, value) in account.storage {
-                account_state.storage.insert(key, value);
+                account_state.storage.insert(U256::from_str(&key).unwrap(), U256::from_str(&value).unwrap());
             }
             inject_accounts_request.accounts.push(account_state);
         }

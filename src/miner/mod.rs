@@ -26,9 +26,20 @@ pub fn mine_block(transaction_hash: Option<H256>) -> (U256, H256) {
 
     // compute a unique block hash
     // WARNING: the value is deterministic and guessable!
-    let hash = H256::from(Keccak256::digest_str(&format!("{:x} {:x} {:x}", number, transaction_hash, parent_hash)).as_slice());
+    let hash = H256::from(
+        Keccak256::digest_str(&format!(
+            "{:x} {:x} {:x}",
+            number, transaction_hash, parent_hash
+        )).as_slice(),
+    );
 
-    let block = Block { number: number, transaction_hash: transaction_hash, parent_hash: parent_hash, hash: hash, transaction: None };
+    let block = Block {
+        number: number,
+        transaction_hash: transaction_hash,
+        parent_hash: parent_hash,
+        hash: hash,
+        transaction: None,
+    };
 
     // store the block
     let state = StateDb::new();
@@ -43,7 +54,10 @@ pub fn get_block(number: U256) -> Option<Block> {
 }
 
 pub fn get_latest_block_number() -> U256 {
-    StateDb::new().latest_block_number.get().unwrap_or(U256::zero())
+    StateDb::new()
+        .latest_block_number
+        .get()
+        .unwrap_or(U256::zero())
 }
 
 fn next_block_number() -> U256 {

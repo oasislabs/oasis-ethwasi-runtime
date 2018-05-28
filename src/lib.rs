@@ -88,10 +88,8 @@ fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResp
     }
 
     // Insert account states
-    for account_state in request.get_accounts() {
-        let mut account = account_state.clone();
-        account.set_address(normalize_hex_str(account_state.get_address()));
-        state.accounts.insert(&Address::from_str(account.get_address()).unwrap(), &account);
+    for account in &request.accounts {
+        state.accounts.insert(&account.address, &account);
     }
 
     Ok(InjectAccountsResponse::new())
@@ -135,10 +133,7 @@ fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
     };
 
     while next_start <= current_block_height {
-        let transaction_hash = get_block(next_start)
-            .unwrap()
-            .transaction_hash
-            .to_string();
+        let transaction_hash = get_block(next_start).unwrap().transaction_hash.to_string();
         result.push(transaction_hash);
         next_start = next_start + U256::one();
     }
@@ -166,10 +161,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
 
     // if full transactions are requested, attach the TransactionRecord
     if request.full {
-        if let Some(val) = StateDb::new()
-            .transactions
-            .get(&block.transaction_hash)
-        {
+        if let Some(val) = StateDb::new().transactions.get(&block.transaction_hash) {
             block.transaction = Some(val);
         }
     }
@@ -185,7 +177,10 @@ fn get_transaction_record(request: &TransactionRecordRequest) -> Result<Transact
     let mut response = TransactionRecordResponse::new();
 
     let state = StateDb::new();
-    if let Some(val) = state.transactions.get(&H256::from_str(request.get_hash()).unwrap()) {
+    if let Some(val) = state
+        .transactions
+        .get(&H256::from_str(request.get_hash()).unwrap())
+    {
         response.set_record(val);
     }
 
@@ -194,37 +189,32 @@ fn get_transaction_record(request: &TransactionRecordRequest) -> Result<Transact
 
 fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceResponse> {
     info!("*** Get account balance");
-    info!("Address: {:?}", request.get_address());
+    info!("Address: {:?}", request.address);
 
-    let balance = get_balance(Address::from_str(request.get_address()).unwrap());
+    let balance = get_balance(request.address);
+    info!("Got balance: {:?}", balance);
 
-    let mut response = AccountBalanceResponse::new();
-    response.set_balance(format!("{}", balance));
-
+    let response = AccountBalanceResponse { balance: balance };
     Ok(response)
 }
 
 fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
     info!("*** Get account nonce");
-    info!("Address: {:?}", request.get_address());
+    info!("Address: {:?}", request.address);
 
-    let nonce = get_nonce(Address::from_str(request.get_address()).unwrap());
+    let nonce = get_nonce(request.address);
 
-    let mut response = AccountNonceResponse::new();
-    response.set_nonce(format!("{}", nonce));
-
+    let response = AccountNonceResponse { nonce: nonce };
     Ok(response)
 }
 
 fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
     info!("*** Get account code");
-    info!("Address: {:?}", request.get_address());
+    info!("Address: {:?}", request.address);
 
-    let code = get_code_string(Address::from_str(request.get_address()).unwrap());
+    let code = get_code_string(request.address);
 
-    let mut response = AccountCodeResponse::new();
-    response.set_code(code);
-
+    let response = AccountCodeResponse { code: code };
     Ok(response)
 }
 

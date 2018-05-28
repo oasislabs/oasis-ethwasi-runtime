@@ -38,15 +38,14 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             Ok(()) => break,
             Err(RequireError::Account(address)) => {
                 trace!("> Require Account: {:x}", address);
-                let addr_str = address.hex();
                 let commit = match state.accounts.get(&address) {
-                    Some(b) => {
+                    Some(account) => {
                         trace!("  -> Found account");
                         AccountCommitment::Full {
-                            nonce: U256::from_dec_str(b.get_nonce()).unwrap(),
+                            nonce: account.nonce,
                             address: address,
-                            balance: U256::from_dec_str(b.get_balance()).unwrap(),
-                            code: Rc::new(read_hex(b.get_code()).unwrap()),
+                            balance: account.balance,
+                            code: Rc::new(read_hex(&account.code).unwrap()),
                         }
                     }
                     None => {
@@ -58,17 +57,8 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             }
             Err(RequireError::AccountStorage(address, index)) => {
                 trace!("> Require Account Storage: {:x} @ {:x}", address, index);
-                let addr_str = address.hex();
-                let index_str = format!("{:x}", index);
-
-                let value = match state
-                    .accounts
-                    .get(&address)
-                    .unwrap()
-                    .storage
-                    .get(&index_str)
-                {
-                    Some(b) => M256(U256::from_dec_str(b).unwrap()),
+                let value = match state.accounts.get(&address).unwrap().storage.get(&index) {
+                    Some(b) => M256(b.clone()),
                     None => M256::zero(),
                 };
 
@@ -83,11 +73,11 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
                 trace!("> Require Account Code: {:x}", address);
                 let addr_str = address.hex();
                 let commit = match state.accounts.get(&address) {
-                    Some(b) => {
+                    Some(account) => {
                         trace!("  -> Found code");
                         AccountCommitment::Code {
                             address: address,
-                            code: Rc::new(read_hex(b.get_code()).unwrap()),
+                            code: Rc::new(read_hex(&account.code).unwrap()),
                         }
                     }
                     None => {
@@ -118,7 +108,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
 pub fn get_nonce(address: Address) -> U256 {
     let state = StateDb::new();
     let nonce = match state.accounts.get(&address) {
-        Some(b) => U256::from_dec_str(b.get_nonce()).unwrap(),
+        Some(account) => account.nonce,
         None => U256::zero(),
     };
     nonce
@@ -129,7 +119,7 @@ pub fn get_nonce(address: Address) -> U256 {
 pub fn get_balance(address: Address) -> U256 {
     let state = StateDb::new();
     let balance = match state.accounts.get(&address) {
-        Some(b) => U256::from_dec_str(b.get_balance()).unwrap(),
+        Some(account) => account.balance,
         None => U256::zero(),
     };
     balance
@@ -139,7 +129,7 @@ pub fn get_balance(address: Address) -> U256 {
 pub fn get_code_string(address: Address) -> String {
     let state = StateDb::new();
     let code = match state.accounts.get(&address) {
-        Some(val) => val.get_code().to_string(),
+        Some(account) => account.code.to_string(),
         None => String::new(),
     };
     code
@@ -151,24 +141,23 @@ fn create_account_state(
     balance: U256,
     storage: &Storage,
     code: &Rc<Vec<u8>>,
-) -> (String, AccountState) {
-    let mut storage_map: HashMap<String, String> = HashMap::new();
+) -> (Address, AccountState) {
+    let mut storage_map: HashMap<U256, U256> = HashMap::new();
     let vm_storage_as_map: alloc::BTreeMap<U256, M256> = storage.clone().into();
     for (key, val) in vm_storage_as_map.iter() {
         let val_as_u256: U256 = val.clone().into();
-        storage_map.insert(format!("{:x}", key), format!("{}", val_as_u256));
+        storage_map.insert(key.clone(), val_as_u256);
     }
 
-    let address_str = address.hex();
-    let mut account_state = AccountState::new();
+    let account_state = AccountState {
+        nonce: nonce,
+        address: address,
+        balance: balance,
+        storage: storage_map,
+        code: to_hex(code),
+    };
 
-    account_state.set_nonce(format!("{}", nonce));
-    account_state.set_address(address_str.clone());
-    account_state.set_balance(format!("{}", balance));
-    account_state.set_storage(storage_map);
-    account_state.set_code(to_hex(code));
-
-    (address_str, account_state)
+    (address, account_state)
 }
 
 fn update_account_balance<P: Patch>(
@@ -178,17 +167,14 @@ fn update_account_balance<P: Patch>(
     state: &StateDb,
 ) -> Option<AccountState> {
     match state.accounts.get(&address) {
-        Some(b) => {
+        Some(mut account) => {
             // Found account. Update balance.
-            let mut updated_account = b.clone();
-            let prev_balance: U256 = U256::from_dec_str(b.get_balance()).unwrap();
-            let new_balance = match sign {
-                Sign::Plus => prev_balance + amount,
-                Sign::Minus => prev_balance - amount,
+            account.balance = match sign {
+                Sign::Plus => account.balance + amount,
+                Sign::Minus => account.balance - amount,
                 _ => panic!(),
             };
-            updated_account.set_balance(format!("{}", new_balance));
-            Some(updated_account)
+            Some(account)
         }
         None => {
             // Account doesn't exist; create it.
@@ -202,12 +188,13 @@ fn update_account_balance<P: Patch>(
             if !P::Account::empty_considered_exists() && amount == U256::from(0) {
                 None
             } else {
-                let mut account_state = AccountState::new();
-                account_state.set_nonce(format!("{}", P::Account::initial_nonce()));
-                let address_str = address.hex();
-                account_state.set_address(address_str);
-                account_state.set_balance(format!("{}", amount));
-                Some(account_state)
+                Some(AccountState {
+                    nonce: P::Account::initial_nonce(),
+                    address: address.clone(),
+                    balance: amount,
+                    storage: HashMap::new(),
+                    code: String::new(),
+                })
             }
         }
     }
@@ -300,9 +287,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 // in the new map.
                 for (key, value) in prev_storage.iter() {
                     if !account_state.storage.contains_key(key) {
-                        account_state
-                            .mut_storage()
-                            .insert(key.clone(), value.clone());
+                        account_state.storage.insert(key.clone(), value.clone());
                     }
                 }
 

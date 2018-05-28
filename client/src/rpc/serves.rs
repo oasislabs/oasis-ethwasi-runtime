@@ -124,13 +124,12 @@ impl EthereumRPC for MinerEthereumRPC {
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
         println!("\n*** balance *** address = {:?}", address);
 
-        let mut request = AccountRequest::new();
-        request.set_address(address.0.hex());
+        let request = AccountRequest { address: address.0 };
 
         let response = self.client.get_account_balance(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Hex(U256::from_dec_str(response.get_balance()).unwrap()))
+        Ok(Hex(response.balance))
     }
 
     fn storage_at(
@@ -171,13 +170,12 @@ impl EthereumRPC for MinerEthereumRPC {
     ) -> Result<Hex<U256>, Error> {
         println!("\n*** transaction_count *** address = {:?}", address);
 
-        let mut request = AccountRequest::new();
-        request.set_address(address.0.hex());
+        let request = AccountRequest { address: address.0 };
 
         let response = self.client.get_account_nonce(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Hex(U256::from_dec_str(response.get_nonce()).unwrap()))
+        Ok(Hex(response.nonce))
     }
 
     fn block_transaction_count_by_hash(
@@ -258,13 +256,12 @@ impl EthereumRPC for MinerEthereumRPC {
         // currently supports only "latest" block semantics
         println!("\n*** code *** address = {:?}", address);
 
-        let mut request = AccountRequest::new();
-        request.set_address(address.0.hex());
+        let request = AccountRequest { address: address.0 };
 
         let response = self.client.get_account_code(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
-        Ok(Bytes(read_hex(response.get_code())?))
+        Ok(Bytes(read_hex(&response.code)?))
     }
 
     fn sign(&self, address: Hex<Address>, message: Bytes) -> Result<Bytes, Error> {

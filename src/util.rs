@@ -29,7 +29,6 @@ pub fn to_valid<P: Patch>(
         Ok(val) => val,
         Err(_) => return Err(PreExecutionError::InvalidCaller),
     };
-    let caller_str = caller.hex();
 
     // check nonce
     // TODO: what if account doesn't exist? for now returning 0
