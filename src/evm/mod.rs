@@ -71,7 +71,6 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             }
             Err(RequireError::AccountCode(address)) => {
                 trace!("> Require Account Code: {:x}", address);
-                let addr_str = address.hex();
                 let commit = match state.accounts.get(&address) {
                     Some(account) => {
                         trace!("  -> Found code");
@@ -141,7 +140,7 @@ fn create_account_state(
     balance: U256,
     storage: &Storage,
     code: &Rc<Vec<u8>>,
-) -> (Address, AccountState) {
+) -> AccountState {
     let mut storage_map: HashMap<U256, U256> = HashMap::new();
     let vm_storage_as_map: alloc::BTreeMap<U256, M256> = storage.clone().into();
     for (key, val) in vm_storage_as_map.iter() {
@@ -149,15 +148,13 @@ fn create_account_state(
         storage_map.insert(key.clone(), val_as_u256);
     }
 
-    let account_state = AccountState {
+    AccountState {
         nonce: nonce,
         address: address,
         balance: balance,
         storage: storage_map,
         code: to_hex(code),
-    };
-
-    (address, account_state)
+    }
 }
 
 fn update_account_balance<P: Patch>(
@@ -270,8 +267,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 ref storage,
                 ref code,
             } => {
-                let (addr_str, account_state) =
-                    create_account_state(nonce, address, balance, storage, code);
+                let account_state = create_account_state(nonce, address, balance, storage, code);
                 state.accounts.insert(&address, &account_state);
             }
             &AccountChange::Full {
@@ -281,7 +277,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 ref changing_storage,
                 ref code,
             } => {
-                let (addr_str, mut account_state) =
+                let mut account_state =
                     create_account_state(nonce, address, balance, changing_storage, code);
                 let prev_storage = state.accounts.get(&address).unwrap().storage;
 
@@ -296,7 +292,6 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 state.accounts.insert(&address, &account_state);
             }
             &AccountChange::IncreaseBalance(address, amount) => {
-                let address_str = address.hex();
                 if let Some(new_account) =
                     update_account_balance::<P>(&address, amount, Sign::Plus, &state)
                 {

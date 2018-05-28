@@ -1,14 +1,10 @@
-use bigint::{Address, Gas, H256, U256};
+use bigint::{Gas, H256, U256};
 use block::{RlpHash, Transaction, TransactionSignature};
-use sputnikvm::{Patch, PreExecutionError, TransactionAction, ValidTransaction};
-
-use std::rc::Rc;
-use std::str::FromStr;
-
-use hexutil::{read_hex, ParseHexError};
-
 use evm::{get_balance, get_nonce};
 use evm_api::Transaction as EVMTransaction;
+use hexutil::{read_hex, ParseHexError};
+use sputnikvm::{Patch, PreExecutionError, TransactionAction, ValidTransaction};
+use std::rc::Rc;
 
 // validates transaction and returns a ValidTransaction on success
 pub fn to_valid<P: Patch>(

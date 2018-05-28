@@ -303,7 +303,7 @@ impl EthereumRPC for MinerEthereumRPC {
         Err(Error::TODO)
     }
 
-    fn send_transaction(&self, mut transaction: RPCTransaction) -> Result<Hex<H256>, Error> {
+    fn send_transaction(&self, transaction: RPCTransaction) -> Result<Hex<H256>, Error> {
         println!("\n*** send_transaction");
 
         let mut _transaction = to_evm_transaction(transaction).unwrap();

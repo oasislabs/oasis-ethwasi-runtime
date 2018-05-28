@@ -36,7 +36,7 @@ use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonc
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{Address, H256, U256};
+use bigint::{H256, U256};
 use block::Transaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};

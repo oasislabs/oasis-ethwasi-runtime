@@ -55,7 +55,7 @@ use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 
-use bigint::{Address, H256, U256};
+use bigint::{Address, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
 
@@ -146,7 +146,7 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
         .unwrap();
     println!("  {:?}", result);
 
-    let mut init_state_request = evm::InitStateRequest {};
+    let init_state_request = evm::InitStateRequest {};
     let result = client
         .init_genesis_block(init_state_request)
         .wait()
