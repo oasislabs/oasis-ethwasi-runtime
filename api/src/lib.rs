@@ -2,6 +2,7 @@
 
 extern crate protobuf;
 extern crate serde;
+extern crate sputnikvm;
 
 #[macro_use]
 extern crate serde_derive;

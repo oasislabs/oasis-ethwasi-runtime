@@ -226,6 +226,7 @@ pub fn save_transaction_record<P: Patch>(
         is_create: false,
         contract_address: None,
         status: false,
+        logs: vm.logs().to_vec(),
     };
 
     for account in vm.accounts() {

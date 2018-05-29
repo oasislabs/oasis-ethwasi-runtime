@@ -1,6 +1,7 @@
 use bigint::{Address, Gas, H256, U256};
 
 use std::collections::HashMap;
+use sputnikvm::Log;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountState {
@@ -44,7 +45,7 @@ pub struct TransactionRecord {
     pub gas_provided: Gas,
     pub input: String,
     pub status: bool,                       // true for success
-    // TODO: add logs
+    pub logs: Vec<Log>,
 }
 
 // An unsigned transaction.
@@ -68,11 +69,6 @@ pub struct SimulateTransactionResponse {
     pub used_gas: Gas,
     pub status: bool,               // ExitedOk => true
     pub result: String,             // (hex)
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Log {
-    // TODO: add logs from VM
 }
 
 #[derive(Serialize, Deserialize, Debug)]

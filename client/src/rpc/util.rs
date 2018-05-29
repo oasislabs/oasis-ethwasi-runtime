@@ -1,4 +1,4 @@
-use super::{Either, RPCBlock, RPCReceipt, RPCTransaction};
+use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use super::serialize::*;
 use error::Error;
 
@@ -8,6 +8,19 @@ use hexutil::{read_hex, to_hex};
 use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
 
 use std::str::FromStr;
+
+pub fn to_rpc_log(record: &TransactionRecord, index: usize) -> RPCLog {
+    RPCLog {
+        removed: false,
+        log_index: Hex(index),
+        transaction_index: Hex(0),
+        transaction_hash: Hex(record.hash),
+        block_hash: Hex(record.block_hash),
+        block_number: Hex(record.block_number),
+        data: Bytes(record.logs[index].data.clone()),
+        topics: record.logs[index].topics.iter().map(|t| Hex(*t)).collect(),
+    }
+}
 
 pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, Error> {
     Ok(RPCBlock {
@@ -61,8 +74,13 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
         } else {
             None
         },
-        // TODO: logs
-        logs: Vec::new(),
+        logs: {
+            let mut ret = Vec::new();
+            for i in 0..record.logs.len() {
+                ret.push(to_rpc_log(&record, i));
+            }
+            ret
+        },
         root: Hex(H256::new()),
         status: if record.status { 1 } else { 0 },
     })
