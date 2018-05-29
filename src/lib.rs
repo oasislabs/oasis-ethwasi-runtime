@@ -27,17 +27,14 @@ extern crate rlp;
 extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
-use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
-              AccountRequest, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
-              ExecuteTransactionRequest, InitStateRequest, InjectAccountsRequest,
-              SimulateTransactionResponse, TransactionHashResponse, TransactionRecordRequest,
-              TransactionRecordResponse};
+use evm_api::{with_api, Block, BlockRequest, ExecuteRawTransactionRequest, InitStateRequest,
+              InjectAccountsRequest, SimulateTransactionResponse, Transaction, TransactionRecord};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{H256, U256};
-use block::Transaction;
+use bigint::{Address, H256, U256};
+use block::Transaction as BlockTransaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
@@ -137,7 +134,7 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     Ok(result)
 }
 
-fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
+fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
 
@@ -152,7 +149,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
 
     let mut block = match get_block(number) {
         Some(val) => val,
-        None => return Ok(BlockResponse { block: None }),
+        None => return Ok(None),
     };
 
     // if full transactions are requested, attach the TransactionRecord
@@ -162,51 +159,38 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
         }
     }
 
-    let response = BlockResponse { block: Some(block) };
-    Ok(response)
+    Ok(Some(block))
 }
 
-fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
+fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
     info!("*** Get transaction record");
-    info!("Hash: {:?}", request.hash);
+    info!("Hash: {:?}", hash);
 
-    let response = TransactionRecordResponse {
-        record: StateDb::new().transactions.get(&request.hash),
-    };
-
-    Ok(response)
+    Ok(StateDb::new().transactions.get(hash))
 }
 
-fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceResponse> {
+fn get_account_balance(address: &Address) -> Result<U256> {
     info!("*** Get account balance");
-    info!("Address: {:?}", request.address);
+    info!("Address: {:?}", address);
 
-    let balance = get_balance(request.address);
-    let response = AccountBalanceResponse { balance: balance };
-    Ok(response)
+    Ok(get_balance(address))
 }
 
-fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
+fn get_account_nonce(address: &Address) -> Result<U256> {
     info!("*** Get account nonce");
-    info!("Address: {:?}", request.address);
+    info!("Address: {:?}", address);
 
-    let nonce = get_nonce(request.address);
-    let response = AccountNonceResponse { nonce: nonce };
-    Ok(response)
+    Ok(get_nonce(address))
 }
 
-fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
+fn get_account_code(address: &Address) -> Result<String> {
     info!("*** Get account code");
-    info!("Address: {:?}", request.address);
+    info!("Address: {:?}", address);
 
-    let code = get_code_string(request.address);
-    let response = AccountCodeResponse { code: code };
-    Ok(response)
+    Ok(get_code_string(address))
 }
 
-fn execute_raw_transaction(
-    request: &ExecuteRawTransactionRequest,
-) -> Result<TransactionHashResponse> {
+fn execute_raw_transaction(request: &ExecuteRawTransactionRequest) -> Result<H256> {
     info!("*** Execute raw transaction");
     info!("Data: {:?}", request.data);
 
@@ -218,7 +202,7 @@ fn execute_raw_transaction(
 
     let rlp = UntrustedRlp::new(&value);
 
-    let transaction: Transaction = rlp.as_val()?;
+    let transaction: BlockTransaction = rlp.as_val()?;
 
     let valid = match to_valid::<ByzantiumPatch>(&transaction) {
         Ok(val) => val,
@@ -230,17 +214,14 @@ fn execute_raw_transaction(
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
-    let response = TransactionHashResponse { hash: hash };
-    Ok(response)
+    Ok(hash)
 }
 
-fn simulate_transaction(
-    request: &ExecuteTransactionRequest,
-) -> Result<SimulateTransactionResponse> {
+fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
     info!("*** Simulate transaction");
-    info!("Transaction: {:?}", request.transaction);
+    info!("Transaction: {:?}", request);
 
-    let valid = match unsigned_to_valid(&request.transaction) {
+    let valid = match unsigned_to_valid(&request) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
@@ -264,13 +245,11 @@ fn simulate_transaction(
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
 // attempts to execute the transaction without performing any validation
 #[cfg(debug_assertions)]
-fn debug_execute_unsigned_transaction(
-    request: &ExecuteTransactionRequest,
-) -> Result<TransactionHashResponse> {
+fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     info!("*** Execute transaction");
-    info!("Transaction: {:?}", request.transaction);
+    info!("Transaction: {:?}", request);
 
-    let valid = match unsigned_to_valid(&request.transaction) {
+    let valid = match unsigned_to_valid(&request) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
@@ -282,13 +261,10 @@ fn debug_execute_unsigned_transaction(
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
-    let response = TransactionHashResponse { hash: hash };
-    Ok(response)
+    Ok(hash)
 }
 
 #[cfg(not(debug_assertions))]
-fn debug_execute_unsigned_transaction(
-    request: &ExecuteTransactionRequest,
-) -> Result<TransactionHashResponse> {
+fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     Err(Error::new("API available only in debug builds"))
 }

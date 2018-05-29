@@ -22,7 +22,7 @@ pub fn to_valid<P: Patch>(
 
     // check nonce
     // TODO: what if account doesn't exist? for now returning 0
-    let nonce = get_nonce(caller);
+    let nonce = get_nonce(&caller);
     if nonce != transaction.nonce {
         return Err(PreExecutionError::InvalidNonce);
     }
@@ -44,7 +44,7 @@ pub fn to_valid<P: Patch>(
 
     // check balance
     // TODO: what if account doesn't exist? for now returning 0
-    let balance = get_balance(caller);
+    let balance = get_balance(&caller);
 
     let gas_limit: U256 = valid.gas_limit.into();
     let gas_price: U256 = valid.gas_price.into();
@@ -108,7 +108,7 @@ pub fn unsigned_to_valid(
         // Request specified a caller. Look up the nonce for this address if not defined in the transaction.
         Some(address) => match transaction.nonce {
             Some(nonce) => nonce,
-            None => get_nonce(address),
+            None => get_nonce(&address),
         },
         None => U256::zero(),
     };

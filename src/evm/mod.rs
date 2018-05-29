@@ -104,9 +104,9 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
 
 // TODO: currently returns 0 for nonexistent accounts
 //       specified behavior is different for more recent patches
-pub fn get_nonce(address: Address) -> U256 {
+pub fn get_nonce(address: &Address) -> U256 {
     let state = StateDb::new();
-    let nonce = match state.accounts.get(&address) {
+    let nonce = match state.accounts.get(address) {
         Some(account) => account.nonce,
         None => U256::zero(),
     };
@@ -115,9 +115,9 @@ pub fn get_nonce(address: Address) -> U256 {
 
 // TODO: currently returns 0 for nonexistent accounts
 //       specified behavior is different for more recent patches
-pub fn get_balance(address: Address) -> U256 {
+pub fn get_balance(address: &Address) -> U256 {
     let state = StateDb::new();
-    let balance = match state.accounts.get(&address) {
+    let balance = match state.accounts.get(address) {
         Some(account) => account.balance,
         None => U256::zero(),
     };
@@ -125,9 +125,9 @@ pub fn get_balance(address: Address) -> U256 {
 }
 
 // returns a hex-encoded string directly from storage to avoid unnecessary conversions
-pub fn get_code_string(address: Address) -> String {
+pub fn get_code_string(address: &Address) -> String {
     let state = StateDb::new();
-    let code = match state.accounts.get(&address) {
+    let code = match state.accounts.get(address) {
         Some(account) => account.code.to_string(),
         None => String::new(),
     };

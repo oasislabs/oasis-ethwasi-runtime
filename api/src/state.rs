@@ -3,26 +3,6 @@ use bigint::{Address, Gas, H256, U256};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct AccountRequest {
-    pub address: Address,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AccountBalanceResponse {
-    pub balance: U256,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AccountNonceResponse {
-    pub nonce: U256,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AccountCodeResponse {
-    pub code: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct InjectAccountsRequest {
     pub accounts: Vec<AccountState>,
 }
@@ -49,21 +29,6 @@ pub struct Block {
 pub struct BlockRequest {
     pub number: String,
     pub full: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BlockResponse {
-    pub block: Option<Block>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TransactionRecordRequest {
-    pub hash: H256,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TransactionRecordResponse {
-    pub record: Option<TransactionRecord>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -104,19 +69,9 @@ pub struct Transaction {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ExecuteTransactionRequest {
-    pub transaction: Transaction,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct ExecuteRawTransactionRequest {
     // A signed transaction (using Ethereum's own format).
     pub data: String,               // (hex)
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct TransactionHashResponse {
-    pub hash: H256,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
