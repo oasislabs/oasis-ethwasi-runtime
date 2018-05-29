@@ -3,11 +3,6 @@ use bigint::{Address, Gas, H256, U256};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct InjectAccountsRequest {
-    pub accounts: Vec<AccountState>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct AccountState {
     pub nonce: U256,
     pub address: Address,
@@ -66,12 +61,6 @@ pub struct Transaction {
     // Opaque call input.
     pub input: String,              // (hex)
     pub value: Option<U256>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ExecuteRawTransactionRequest {
-    // A signed transaction (using Ethereum's own format).
-    pub data: String,               // (hex)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

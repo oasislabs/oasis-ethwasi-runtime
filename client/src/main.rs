@@ -102,9 +102,7 @@ fn main() {
 
 fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
-    let mut inject_accounts_request = evm::InjectAccountsRequest {
-        accounts: Vec::new(),
-    };
+    let mut request = Vec::new();
 
     // Read in all the files in resources/genesis/
     for path in fs::read_dir("../resources/genesis").unwrap() {
@@ -137,13 +135,10 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
                     U256::from_str(&value).unwrap(),
                 );
             }
-            inject_accounts_request.accounts.push(account_state);
+            request.push(account_state);
         }
     }
-    let result = client
-        .inject_accounts(inject_accounts_request)
-        .wait()
-        .unwrap();
+    let result = client.inject_accounts(request).wait().unwrap();
 
     let init_state_request = evm::InitStateRequest {};
     let result = client

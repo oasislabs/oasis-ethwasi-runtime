@@ -7,7 +7,7 @@ use super::util::*;
 use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
-use evm_api::{BlockRequest, ExecuteRawTransactionRequest};
+use evm_api::BlockRequest;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
@@ -312,11 +312,7 @@ impl EthereumRPC for MinerEthereumRPC {
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
         println!("\n*** send_raw_transaction *** data = {:?}", data);
 
-        let request = ExecuteRawTransactionRequest {
-            data: to_hex(&data.0),
-        };
-
-        let response = match self.client.execute_raw_transaction(request).wait() {
+        let response = match self.client.execute_raw_transaction(to_hex(&data.0)).wait() {
             Ok(val) => val,
             Err(_) => return Err(Error::CallError),
         };

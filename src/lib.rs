@@ -27,8 +27,8 @@ extern crate rlp;
 extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
-use evm_api::{with_api, Block, BlockRequest, ExecuteRawTransactionRequest, InitStateRequest,
-              InjectAccountsRequest, SimulateTransactionResponse, Transaction, TransactionRecord};
+use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
+              SimulateTransactionResponse, Transaction, TransactionRecord};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -77,7 +77,7 @@ fn genesis_block_initialized(request: &bool) -> Result<bool> {
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn inject_accounts(request: &InjectAccountsRequest) -> Result<()> {
+fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     let state = StateDb::new();
 
     if state.genesis_initialized.is_present() {
@@ -85,7 +85,7 @@ fn inject_accounts(request: &InjectAccountsRequest) -> Result<()> {
     }
 
     // Insert account states
-    for account in &request.accounts {
+    for account in accounts {
         state.accounts.insert(&account.address, &account);
     }
 
@@ -190,11 +190,11 @@ fn get_account_code(address: &Address) -> Result<String> {
     Ok(get_code_string(address))
 }
 
-fn execute_raw_transaction(request: &ExecuteRawTransactionRequest) -> Result<H256> {
+fn execute_raw_transaction(request: &String) -> Result<H256> {
     info!("*** Execute raw transaction");
-    info!("Data: {:?}", request.data);
+    info!("Data: {:?}", request);
 
-    let value = match read_hex(&request.data) {
+    let value = match read_hex(request) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
