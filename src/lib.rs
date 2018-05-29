@@ -126,8 +126,8 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     let mut next_start = block_height.clone();
 
     while next_start <= current_block_height {
-        let transaction_hash = get_block(next_start).unwrap().transaction_hash;
-        result.push(transaction_hash);
+        let hash = get_block(next_start).unwrap().hash;
+        result.push(hash);
         next_start = next_start + U256::one();
     }
 
