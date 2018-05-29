@@ -135,13 +135,3 @@ pub struct Log {
 pub struct InitStateRequest {
     // TODO: unnecessary struct
 }
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct InitStateResponse {
-    // TODO: unnecessary struct
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct InjectAccountsResponse {
-    // TODO: unnecessary struct
-}

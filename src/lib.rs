@@ -29,9 +29,9 @@ extern crate sputnikvm_network_foundation;
 
 use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
               AccountRequest, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
-              ExecuteTransactionRequest, InitStateRequest, InitStateResponse,
-              InjectAccountsRequest, InjectAccountsResponse, SimulateTransactionResponse,
-              TransactionHashResponse, TransactionRecordRequest, TransactionRecordResponse};
+              ExecuteTransactionRequest, InitStateRequest, InjectAccountsRequest,
+              SimulateTransactionResponse, TransactionHashResponse, TransactionRecordRequest,
+              TransactionRecordResponse};
 
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -80,7 +80,7 @@ fn genesis_block_initialized(request: &bool) -> Result<bool> {
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResponse> {
+fn inject_accounts(request: &InjectAccountsRequest) -> Result<()> {
     let state = StateDb::new();
 
     if state.genesis_initialized.is_present() {
@@ -92,12 +92,12 @@ fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResp
         state.accounts.insert(&account.address, &account);
     }
 
-    Ok(InjectAccountsResponse {})
+    Ok(())
 }
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
+fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
     info!("*** Init genesis block");
     let state = StateDb::new();
 
@@ -109,11 +109,11 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
     mine_block(None);
 
     state.genesis_initialized.insert(&true);
-    Ok(InitStateResponse {})
+    Ok(())
 }
 
 #[cfg(not(debug_assertions))]
-fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
+fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
 
