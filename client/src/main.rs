@@ -55,7 +55,7 @@ use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 
-use bigint::{Address, U256};
+use bigint::{Address, M256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
 
@@ -132,7 +132,7 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
             for (key, value) in account.storage {
                 account_state.storage.insert(
                     U256::from_str(&key).unwrap(),
-                    U256::from_str(&value).unwrap(),
+                    M256::from_str(&value).unwrap(),
                 );
             }
             request.push(account_state);

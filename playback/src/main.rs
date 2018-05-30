@@ -6,25 +6,25 @@ use std::time::Instant;
 
 extern crate bigint;
 extern crate clap;
+use clap::App;
+use clap::Arg;
 use clap::crate_authors;
 use clap::crate_description;
 use clap::crate_name;
 use clap::crate_version;
 use clap::value_t;
 use clap::value_t_or_exit;
-use clap::App;
-use clap::Arg;
 extern crate filebuffer;
 extern crate futures;
 use futures::future::Future;
 extern crate grpcio;
 extern crate hex;
 extern crate log;
+use log::LevelFilter;
 use log::debug;
 use log::info;
 use log::log;
 use log::trace;
-use log::LevelFilter;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
@@ -107,20 +107,20 @@ fn main() {
         let mut req = Vec::new();
         for (addr, account) in chunk {
             let mut account_state = AccountState {
-               nonce: bigint::U256::from_str(&account.nonce).unwrap(),
-               address: bigint::Address::from_str(&addr).unwrap(),
-               balance: bigint::U256::from_str(&account.balance).unwrap(),
-               code: match account.code {
-                   Some(code) => code,
-                   None => String::new(),
-               },
-               storage: HashMap::new(),
+                nonce: bigint::U256::from_str(&account.nonce).unwrap(),
+                address: bigint::Address::from_str(&addr).unwrap(),
+                balance: bigint::U256::from_str(&account.balance).unwrap(),
+                code: match account.code {
+                    Some(code) => code,
+                    None => String::new(),
+                },
+                storage: HashMap::new(),
             };
             if let Some(storage) = account.storage {
                 for (key, value) in storage {
                     account_state.storage.insert(
                         bigint::U256::from_str(&key).unwrap(),
-                        bigint::U256::from_str(&value).unwrap(),
+                        bigint::M256::from_str(&value).unwrap(),
                     );
                 }
             }
@@ -165,9 +165,7 @@ fn main() {
             let transaction_raw = transaction.as_raw();
             let transaction_start = Instant::now();
             let res = client
-                .execute_raw_transaction({
-                    hex::encode(transaction_raw)
-                })
+                .execute_raw_transaction({ hex::encode(transaction_raw) })
                 .wait()
                 .unwrap();
             let transaction_end = Instant::now();

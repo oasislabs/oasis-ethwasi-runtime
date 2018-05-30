@@ -44,10 +44,9 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             Err(RequireError::AccountStorage(address, index)) => {
                 trace!("> Require Account Storage: {:x} @ {:x}", address, index);
                 let value = match state.accounts.get(&address).unwrap().storage.get(&index) {
-                    Some(b) => M256(b.clone()),
+                    Some(val) => val.clone(),
                     None => M256::zero(),
                 };
-
                 trace!("  -> {:?}", value);
                 vm.commit_account(AccountCommitment::Storage {
                     address: address,

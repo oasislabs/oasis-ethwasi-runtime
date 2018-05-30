@@ -68,18 +68,11 @@ pub fn create_account_state(
     storage: &Storage,
     code: &Rc<Vec<u8>>,
 ) -> AccountState {
-    let mut storage_map: HashMap<U256, U256> = HashMap::new();
-    let vm_storage_as_map: alloc::BTreeMap<U256, M256> = storage.clone().into();
-    for (key, val) in vm_storage_as_map.iter() {
-        let val_as_u256: U256 = val.clone().into();
-        storage_map.insert(key.clone(), val_as_u256);
-    }
-
     AccountState {
         nonce: nonce,
         address: address,
         balance: balance,
-        storage: storage_map,
+        storage: storage.clone().into(),
         code: to_hex(code),
     }
 }

@@ -12,7 +12,7 @@ etcommon-block = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekid
 sputnikvm-network-classic = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
 sputnikvm-network-foundation = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
 sha3 = "0.6"
-sputnikvm = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden", default-features = false }
+sputnikvm = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden", features = ["std"]}
 evm-api = { path = "./api" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
