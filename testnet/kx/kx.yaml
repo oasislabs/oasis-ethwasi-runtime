@@ -64,7 +64,7 @@ spec:
   selector:
     matchLabels:
       copper: evm
-  # replicas: 1
+  replicas: 24
   template:
     metadata:
       labels:
