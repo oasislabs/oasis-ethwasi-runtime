@@ -13,12 +13,13 @@ use bigint::{Address, Gas, H256, M256, Sign, U256};
 use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::{read_hex, to_hex};
 
-use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, RequireError, SeqTransactionVM,
-                Storage, TransactionAction, VMStatus, ValidTransaction, VM};
-use sputnikvm_network_classic::MainnetEIP160Patch;
+use sputnikvm::{AccountChange, AccountCommitment, AccountPatch, HeaderParams, Patch, RequireError,
+                SeqTransactionVM, Storage, TransactionAction, VMStatus, ValidTransaction, VM};
 use std::str::FromStr;
 
 use std::rc::Rc;
+
+pub mod patch;
 
 // Create database schema.
 database_schema! {
@@ -31,16 +32,16 @@ database_schema! {
     }
 }
 
-fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
+fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
     loop {
         match vm.fire() {
             Ok(()) => break,
             Err(RequireError::Account(address)) => {
-                println!("> Require Account: {:x}", address);
+                trace!("> Require Account: {:x}", address);
                 let addr_str = address.hex();
                 let commit = match state.accounts.get(&addr_str) {
                     Some(b) => {
-                        println!("  -> Found account");
+                        trace!("  -> Found account");
                         AccountCommitment::Full {
                             nonce: U256::from_dec_str(b.get_nonce()).unwrap(),
                             address: address,
@@ -49,14 +50,14 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
                         }
                     }
                     None => {
-                        println!("  -> Nonexistent");
+                        trace!("  -> Nonexistent");
                         AccountCommitment::Nonexist(address)
                     }
                 };
                 vm.commit_account(commit).unwrap();
             }
             Err(RequireError::AccountStorage(address, index)) => {
-                println!("> Require Account Storage: {:x} @ {:x}", address, index);
+                trace!("> Require Account Storage: {:x} @ {:x}", address, index);
                 let addr_str = address.hex();
                 let index_str = format!("{:x}", index);
 
@@ -71,7 +72,7 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
                     None => M256::zero(),
                 };
 
-                println!("  -> {:?}", value);
+                trace!("  -> {:?}", value);
                 vm.commit_account(AccountCommitment::Storage {
                     address: address,
                     index: index,
@@ -79,25 +80,25 @@ fn handle_fire(vm: &mut SeqTransactionVM<MainnetEIP160Patch>, state: &StateDb) {
                 }).unwrap();
             }
             Err(RequireError::AccountCode(address)) => {
-                println!("> Require Account Code: {:x}", address);
+                trace!("> Require Account Code: {:x}", address);
                 let addr_str = address.hex();
                 let commit = match state.accounts.get(&addr_str) {
                     Some(b) => {
-                        println!("  -> Found code");
+                        trace!("  -> Found code");
                         AccountCommitment::Code {
                             address: address,
                             code: Rc::new(read_hex(b.get_code()).unwrap()),
                         }
                     }
                     None => {
-                        println!("  -> Nonexistent");
+                        trace!("  -> Nonexistent");
                         AccountCommitment::Nonexist(address)
                     }
                 };
                 vm.commit_account(commit).unwrap();
             }
             Err(RequireError::Blockhash(number)) => {
-                println!("> Require Blockhash @ {:x}", number);
+                trace!("> Require Blockhash @ {:x}", number);
                 // TODO: maintain block state (including blockhash)
                 let result = match number.as_u32() {
                     4976641 => H256::from_str(
@@ -170,12 +171,12 @@ fn create_account_state(
     (address_str, account_state)
 }
 
-fn update_account_balance(
+fn update_account_balance<P: Patch>(
     address_str: &String,
     amount: U256,
     sign: Sign,
     state: &StateDb,
-) -> AccountState {
+) -> Option<AccountState> {
     match state.accounts.get(address_str) {
         Some(b) => {
             // Found account. Update balance.
@@ -187,7 +188,7 @@ fn update_account_balance(
                 _ => panic!(),
             };
             updated_account.set_balance(format!("{}", new_balance));
-            updated_account
+            Some(updated_account)
         }
         None => {
             // Account doesn't exist; create it.
@@ -196,22 +197,28 @@ fn update_account_balance(
                 Sign::Plus,
                 "Can't decrease balance of nonexistent account"
             );
-            let mut account_state = AccountState::new();
-            account_state.set_nonce("0".to_string());
-            account_state.set_address(address_str.clone());
-            account_state.set_balance(format!("{}", amount));
-            account_state
+
+            // EIP-161d forbids creating accounts with empty (nonce, code, balance)
+            if !P::Account::empty_considered_exists() && amount == U256::from(0) {
+                None
+            } else {
+                let mut account_state = AccountState::new();
+                account_state.set_nonce(format!("{}", P::Account::initial_nonce()));
+                account_state.set_address(address_str.clone());
+                account_state.set_balance(format!("{}", amount));
+                Some(account_state)
+            }
         }
     }
 }
 
-pub fn save_transaction_record(
+pub fn save_transaction_record<P: Patch>(
     hash: H256,
     block_hash: H256,
     block_number: U256,
     index: u32,
     transaction: ValidTransaction,
-    vm: &SeqTransactionVM<MainnetEIP160Patch>,
+    vm: &SeqTransactionVM<P>,
 ) {
     let mut record = TransactionRecord::new();
     record.set_hash(format!("{:x}", hash));
@@ -261,7 +268,7 @@ pub fn save_transaction_record(
     state.transactions.insert(&format!("{:x}", hash), &record);
 }
 
-pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {
+pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
     let state = StateDb::new();
 
     for account in vm.accounts() {
@@ -302,26 +309,27 @@ pub fn update_state_from_vm(vm: &SeqTransactionVM<MainnetEIP160Patch>) {
             }
             &AccountChange::IncreaseBalance(address, amount) => {
                 let address_str = address.hex();
-                let new_account = update_account_balance(&address_str, amount, Sign::Plus, &state);
-                state.accounts.insert(&address_str, &new_account);
+                if let Some(new_account) =
+                    update_account_balance::<P>(&address_str, amount, Sign::Plus, &state)
+                {
+                    state.accounts.insert(&address_str, &new_account);
+                }
             }
-            &AccountChange::Nonexist(address) => {
-                panic!("Unexpected nonexistent address: {:?}", address)
-            }
+            &AccountChange::Nonexist(address) => {}
         }
     }
 }
 
-pub fn fire_transaction(
+pub fn fire_transaction<P: Patch>(
     transaction: &ValidTransaction,
-    block_number: u64,
-) -> SeqTransactionVM<MainnetEIP160Patch> {
+    block_number: U256,
+) -> SeqTransactionVM<P> {
     let state = StateDb::new();
 
     let block_header = HeaderParams {
         beneficiary: Address::default(),
         timestamp: 0,
-        number: U256::from(block_number),
+        number: block_number,
         difficulty: U256::zero(),
         gas_limit: Gas::zero(),
     };
@@ -330,11 +338,11 @@ pub fn fire_transaction(
 
     handle_fire(&mut vm, &state);
 
-    println!("    VM returned: {:?}", vm.status());
-    println!("    VM out: {:?}", vm.out());
+    trace!("    VM returned: {:?}", vm.status());
+    trace!("    VM out: {:?}", vm.out());
 
     for account in vm.accounts() {
-        println!("        {:?}", account);
+        trace!("        {:?}", account);
     }
 
     vm

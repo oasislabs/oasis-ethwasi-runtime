@@ -32,24 +32,10 @@ of the Ekiden compute node:
 ```bash
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-node-dummy
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
-
-## Building the key manager contract
-
-Before you can build your contract, you need to choose a key manager contract to manage
-keys for your contract's state. A key manager contract is provided with Ekiden core in
-the `ekiden-key-manager` crate.
-
-To build it:
-```bash
-$ cargo ekiden build-contract \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --output target/contract \
-    ekiden-key-manager
-```
 
 ## Building the EVM contract
 
@@ -65,33 +51,35 @@ The built contract will be stored under `target/contract/evm.so`.
 You need to run multiple Ekiden services, so it is recommended to run each of these in a
 separate container shell, attached to the same container.
 
-To start the compute node for the key manager contract:
-```bash
-$ ekiden-compute \
-    -p 9003 \
-    --disable-key-manager \
-    --identity-file /tmp/key-manager.identity.pb \
-    target/contract/ekiden-key-manager.so
+To start the shared dummy node:
+```
+$ ekiden-node-dummy --time-source mockrpc
 ```
 
 To start the compute node for the EVM contract:
 ```bash
 $ ekiden-compute \
-    --identity-file /tmp/evm.identity.pb \
+    --no-persist-identity \
+    --max-batch-timeout 10 \
     target/contract/evm.so
+```
+
+After starting the nodes, to manually advance the epoch in the shared dummy node:
+```
+$ ekiden-node-dummy-controller set-epoch --epoch 1
 ```
 
 The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to remove the referenced identity file (e.g., `/tmp/evm.identity.pb`) as it will otherwise fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
-## Building the example client
+## Building the client
 
-The example client is located under `examples/client` and it may be built using:
+The web3 client is located under `client` and it may be built using:
 ```bash
-$ cd examples/client
+$ cd client
 $ cargo build
 ```
 

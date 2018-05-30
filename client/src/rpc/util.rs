@@ -1,12 +1,9 @@
-use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
+use super::{Either, RPCBlock, RPCReceipt, RPCTransaction};
 use super::serialize::*;
 use error::Error;
 
-use bigint::{Address, Gas, H2048, H256, H64, M256, U256};
-use block::{TotalHeader, Transaction, TransactionAction};
-use blockchain::chain::HeaderHash;
+use bigint::{Address, Gas, H2048, H256, H64, U256};
 use hexutil::{read_hex, to_hex};
-use rlp;
 
 use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
 
@@ -56,7 +53,7 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
         block_number: Hex(U256::from_str(record.get_block_number())?),
         cumulative_gas_used: Hex(Gas::from_str(record.get_cumulative_gas_used())?),
         gas_used: Hex(Gas::from_str(record.get_gas_used())?),
-        contract_address: Some(Hex(Address::from_str(record.get_contract_address())?)),
+        contract_address: if record.get_is_create() { Some(Hex(Address::from_str(record.get_contract_address())?)) } else { None },
         // TODO: logs
         logs: Vec::new(),
         root: Hex(H256::new()),
@@ -88,15 +85,13 @@ pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, 
 pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction, Error> {
     let mut _transaction = EVMTransaction::new();
 
-    match transaction.from {
-        Some(val) => _transaction.set_caller(val.0.hex()),
-        None => {}
-    };
+    if let Some(val) = transaction.from {
+        _transaction.set_caller(val.0.hex());
+    }
 
-    match transaction.data.clone() {
-        Some(val) => _transaction.set_input(to_hex(&val.0)),
-        None => {}
-    };
+    if let Some(val) = transaction.data.clone() {
+        _transaction.set_input(to_hex(&val.0));
+    }
 
     match transaction.nonce {
         Some(val) => {
@@ -113,6 +108,10 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
         }
         None => _transaction.set_is_call(false),
     };
+
+    if let Some(val) = transaction.value {
+        _transaction.set_value(format!("{:x}", val.0));
+    }
 
     Ok(_transaction)
 }

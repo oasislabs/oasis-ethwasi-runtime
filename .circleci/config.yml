@@ -30,14 +30,15 @@ jobs:
             --branch master
             --debug
             ekiden-compute
-      # Build key manager contract.
-      - run: >-
-          cargo ekiden build-contract
-          --git https://github.com/oasislabs/ekiden
-          --branch master
-          --output target/contract
-          --target-dir "$PWD/target"
-          ekiden-key-manager
+      - run:
+          environment:
+            CARGO_TARGET_DIR: target
+          command: >-
+            cargo install
+            --git https://github.com/oasislabs/ekiden
+            --branch master
+            --debug
+            ekiden-node-dummy
       # Build the contract.
       - run: cargo ekiden build-contract --output-identity
       # Run the contract tests.
@@ -53,14 +54,24 @@ jobs:
 
       # Contract end-to-end tests.
 
-      # Start key manager compute node.
+      # Start shared dummy node.
       - run:
-          command: ekiden-compute target/contract/ekiden-key-manager.so -p 9003 --disable-key-manager --identity-file identity-km.pb
+          command: ekiden-node-dummy --time-source mockrpc
           background: true
       # Start EVM compute node.
       - run:
-          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb
+          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10
           background: true
+      # Advance epoch.
+      - run: |
+          # Sleep so everything gets ready.
+          sleep 10
+
+          # Advance epoch to elect a new committee.
+          ekiden-node-dummy-controller set-epoch --epoch 1
+
+          # Sleep some more.
+          sleep 5
       # Start web3 proxy.
       - run:
           command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
@@ -94,7 +105,7 @@ jobs:
           REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-contract-evm:latest)
           mkdir -p ~/.kube
           echo "$KUBECONFIG_CONTENT_BASE64" | base64 -di >~/.kube/config
-          kubectl set image deployments/evm-key-manager ekiden-compute=$REPO_DIGEST
+          kubectl set image deployments/evm-node-dummy ekiden-node-dummy=$REPO_DIGEST
           kubectl set image deployments/evm ekiden-compute=$REPO_DIGEST
           kubectl set image deployments/web3-client web3-client=$REPO_DIGEST
 

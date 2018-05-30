@@ -1,5 +1,6 @@
 use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, RPCDump, RPCLog,
             RPCLogFilter, RPCReceipt, RPCTrace, RPCTraceConfig, RPCTransaction};
+use super::filter::*;
 use super::serialize::*;
 use super::util::*;
 
@@ -8,8 +9,6 @@ use error::Error;
 use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::{AccountRequest, BlockRequest, ExecuteRawTransactionRequest,
               ExecuteTransactionRequest, TransactionRecordRequest};
-use sputnikvm::Patch;
-use std::marker::PhantomData;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
@@ -21,51 +20,41 @@ use futures::future::Future;
 
 use hexutil::{read_hex, to_hex};
 
-pub struct MinerEthereumRPC<P: Patch + Send> {
-    client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
-    _patch: PhantomData<P>,
+pub struct MinerEthereumRPC {
+    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
 }
 
-pub struct MinerFilterRPC<P: Patch + Send> {
-    _patch: PhantomData<P>,
+pub struct MinerFilterRPC {
+    filter: Mutex<FilterManager>,
 }
 
-pub struct MinerDebugRPC<P: Patch + Send> {
-    _patch: PhantomData<P>,
-}
+pub struct MinerDebugRPC {}
 
-unsafe impl<P: Patch + Send> Sync for MinerEthereumRPC<P> {}
-unsafe impl<P: Patch + Send> Sync for MinerFilterRPC<P> {}
-unsafe impl<P: Patch + Send> Sync for MinerDebugRPC<P> {}
+unsafe impl Sync for MinerEthereumRPC {}
+unsafe impl Sync for MinerFilterRPC {}
+unsafe impl Sync for MinerDebugRPC {}
 
-impl<P: Patch + Send> MinerEthereumRPC<P> {
-    pub fn new(
-        client: Arc<Mutex<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>>,
-    ) -> Self {
-        MinerEthereumRPC {
-            client,
-            _patch: PhantomData,
-        }
+impl MinerEthereumRPC {
+    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
+        MinerEthereumRPC { client }
     }
 }
 
-impl<P: Patch + Send> MinerFilterRPC<P> {
-    pub fn new() -> Self {
+impl MinerFilterRPC {
+    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
         MinerFilterRPC {
-            _patch: PhantomData,
+            filter: Mutex::new(FilterManager::new(client)),
         }
     }
 }
 
-impl<P: Patch + Send> MinerDebugRPC<P> {
+impl MinerDebugRPC {
     pub fn new() -> Self {
-        MinerDebugRPC {
-            _patch: PhantomData,
-        }
+        MinerDebugRPC {}
     }
 }
 
-impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
+impl EthereumRPC for MinerEthereumRPC {
     fn client_version(&self) -> Result<String, Error> {
         println!("\n*** client_version");
         Ok("sputnikvm-dev/v0.1".to_string())
@@ -123,44 +112,22 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 
     fn accounts(&self) -> Result<Vec<Hex<Address>>, Error> {
-        /*
-        let state = self.state.lock().unwrap();
-
-         println!("\n*** Accounts");
-
-        let result = Ok(state.accounts().iter().map(|key| {
-            println!("    Key: {:?}", key);
-            Address::from_secret_key(key).unwrap()
-        }).map(|address| {
-            println!("    Address: {:?}", Hex(address));
-            Hex(address)
-        }).collect());
-
-        //println!("Result: {:?}", result);
-        result
-        */
-        Err(Error::TODO)
+        Ok(Vec::new())
     }
 
     fn block_number(&self) -> Result<Hex<usize>, Error> {
-        /*
-        println!("\n*** block_number");
-        let state = self.state.lock().unwrap();
-
-        Ok(Hex(state.block_height()))
-        */
-        Err(Error::TODO)
+        let block_height = self.client.get_block_height(false).wait().unwrap();
+        let result = U256::from_str(&block_height)?.as_usize();
+        Ok(Hex(result))
     }
 
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
         println!("\n*** balance *** address = {:?}", address);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = AccountRequest::new();
         request.set_address(address.0.hex());
 
-        let response = client.get_account_balance(request).wait().unwrap();
+        let response = self.client.get_account_balance(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(U256::from_dec_str(response.get_balance()).unwrap()))
@@ -204,12 +171,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     ) -> Result<Hex<U256>, Error> {
         println!("\n*** transaction_count *** address = {:?}", address);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = AccountRequest::new();
         request.set_address(address.0.hex());
 
-        let response = client.get_account_nonce(request).wait().unwrap();
+        let response = self.client.get_account_nonce(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(U256::from_dec_str(response.get_nonce()).unwrap()))
@@ -293,12 +258,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         // currently supports only "latest" block semantics
         println!("\n*** code *** address = {:?}", address);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = AccountRequest::new();
         request.set_address(address.0.hex());
 
-        let response = client.get_account_code(request).wait().unwrap();
+        let response = self.client.get_account_code(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Bytes(read_hex(response.get_code())?))
@@ -348,12 +311,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
 
         let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
-        let response = client
+        let response = self.client
             .debug_execute_unsigned_transaction(request)
             .wait()
             .unwrap();
@@ -365,12 +326,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
         println!("\n*** send_raw_transaction *** data = {:?}", data);
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = ExecuteRawTransactionRequest::new();
         request.set_data(to_hex(&data.0));
 
-        let response = match client.execute_raw_transaction(request).wait() {
+        let response = match self.client.execute_raw_transaction(request).wait() {
             Ok(val) => val,
             Err(_) => return Err(Error::CallError),
         };
@@ -382,15 +341,13 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         println!("\n*** Call contract");
         let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
         println!("*** Call transaction");
         println!("Transaction: {:?}", request.get_transaction());
 
-        let response = client.simulate_transaction(request).wait().unwrap();
+        let response = self.client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Bytes(read_hex(response.get_result())?))
@@ -404,13 +361,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
         println!("\n*** estimate_gas");
         let mut _transaction = to_evm_transaction(transaction).unwrap();
 
-        let mut client = self.client.lock().unwrap();
-
         // just simulate the transaction and return used_gas
         let mut request = ExecuteTransactionRequest::new();
         request.set_transaction(_transaction);
 
-        let response = client.simulate_transaction(request).wait().unwrap();
+        let response = self.client.simulate_transaction(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Hex(Gas::from_str(response.get_used_gas()).unwrap()))
@@ -438,13 +393,11 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
         //println!("\n*** block_by_number");
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = BlockRequest::new();
         request.set_number(number);
         request.set_full(full);
 
-        let response = match client.get_block_by_number(request).wait() {
+        let response = match self.client.get_block_by_number(request).wait() {
             Ok(val) => val,
             Err(e) => return Err(Error::InvalidParams),
         };
@@ -461,12 +414,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {
         println!("\n*** transaction_by_hash");
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = TransactionRecordRequest::new();
         request.set_hash(format!("{:x}", hash.0));
 
-        let response = client.get_transaction_record(request).wait().unwrap();
+        let response = self.client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Some(to_rpc_transaction(response.get_record())?))
@@ -526,12 +477,10 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     fn transaction_receipt(&self, hash: Hex<H256>) -> Result<Option<RPCReceipt>, Error> {
         println!("\n*** transaction_receipt");
 
-        let mut client = self.client.lock().unwrap();
-
         let mut request = TransactionRecordRequest::new();
         request.set_hash(format!("{:x}", hash.0));
 
-        let response = client.get_transaction_record(request).wait().unwrap();
+        let response = self.client.get_transaction_record(request).wait().unwrap();
         println!("    Response: {:?}", response);
 
         Ok(Some(to_rpc_receipt(response.get_record())?))
@@ -626,15 +575,17 @@ impl<P: 'static + Patch + Send> EthereumRPC for MinerEthereumRPC<P> {
     }
 }
 
-impl<P: 'static + Patch + Send> FilterRPC for MinerFilterRPC<P> {
+impl FilterRPC for MinerFilterRPC {
     fn new_filter(&self, log: RPCLogFilter) -> Result<String, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
     fn new_block_filter(&self) -> Result<String, Error> {
-        // FIXME: implement
-        Err(Error::NotImplemented)
+        println!("*** new_block_filter");
+
+        let id = self.filter.lock().unwrap().install_block_filter();
+        Ok(format!("0x{:x}", id))
     }
 
     fn new_pending_transaction_filter(&self) -> Result<String, Error> {
@@ -643,13 +594,20 @@ impl<P: 'static + Patch + Send> FilterRPC for MinerFilterRPC<P> {
     }
 
     fn uninstall_filter(&self, id: String) -> Result<bool, Error> {
-        // FIXME: implement
-        Err(Error::NotImplemented)
+        println!("*** uninstall filter");
+        let id = U256::from_str(&id)?.as_usize();
+        self.filter.lock().unwrap().uninstall_filter(id);
+        Ok(true)
     }
 
     fn filter_changes(&self, id: String) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
-        // FIXME: implement
-        Err(Error::NotImplemented)
+        println!("*** filter_changes");
+
+        let id = U256::from_str(&id)?.as_usize();
+        let result = self.filter.lock().unwrap().get_changes(id)?;
+
+        println!("    Response: {:?}", result);
+        Ok(result)
     }
 
     fn filter_logs(&self, id: String) -> Result<Vec<RPCLog>, Error> {
@@ -658,7 +616,7 @@ impl<P: 'static + Patch + Send> FilterRPC for MinerFilterRPC<P> {
     }
 }
 
-impl<P: 'static + Patch + Send> DebugRPC for MinerDebugRPC<P> {
+impl DebugRPC for MinerDebugRPC {
     fn block_rlp(&self, number: usize) -> Result<Bytes, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)

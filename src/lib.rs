@@ -1,10 +1,13 @@
 #![feature(use_extern_macros)]
 #![feature(alloc)]
 
+#[macro_use]
+mod logger;
 mod evm;
 mod miner;
 mod util;
 
+extern crate log;
 extern crate protobuf;
 
 extern crate alloc;
@@ -22,9 +25,10 @@ extern crate evm_api;
 extern crate rlp;
 
 extern crate sputnikvm_network_classic;
+extern crate sputnikvm_network_foundation;
 
 use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
-              AccountRequest, Block, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
+              AccountRequest, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
               ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateRequest,
               InitStateResponse, InjectAccountsRequest, InjectAccountsResponse,
               TransactionRecordRequest, TransactionRecordResponse};
@@ -32,23 +36,23 @@ use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonc
 use sputnikvm::{VMStatus, VM};
 use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{Address, H256, U256};
+use bigint::{H256, U256};
 use block::Transaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
-use std::str;
 use std::str::FromStr;
 
 use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,
           update_state_from_vm, StateDb};
+
+use evm::patch::ByzantiumPatch;
 
 use miner::{get_block, get_latest_block_number, mine_block};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
 use ekiden_trusted::enclave::enclave_init;
-use ekiden_trusted::key_manager::use_key_manager_contract;
 
 use rlp::UntrustedRlp;
 
@@ -58,9 +62,6 @@ use util::{normalize_hex_str, to_valid, unsigned_to_valid};
 use util::unsigned_transaction_hash;
 
 enclave_init!();
-
-// Configure the key manager contract to use.
-use_key_manager_contract!("generated/key-manager.identity");
 
 // Create enclave contract interface.
 with_api! {
@@ -99,7 +100,7 @@ fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResp
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
 fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
-    println!("*** Init genesis block");
+    info!("*** Init genesis block");
     let state = StateDb::new();
 
     if state.genesis_initialized.is_present() {
@@ -116,6 +117,33 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
 #[cfg(not(debug_assertions))]
 fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
     Err(Error::new("API available only in debug builds"))
+}
+
+/// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
+fn get_block_height(request: &bool) -> Result<String> {
+    Ok(format!("0x{:x}", get_latest_block_number()))
+}
+
+/// TODO: replace strings with U256 datatypes once they are serializable.
+fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
+    let mut result = Vec::new();
+
+    let current_block_height = get_latest_block_number();
+    let mut next_start = match U256::from_str(block_height) {
+        Ok(val) => val,
+        Err(err) => return Err(Error::new(format!("{:?}", err))),
+    };
+
+    while next_start <= current_block_height {
+        let transaction_hash = get_block(next_start)
+            .unwrap()
+            .get_transaction_hash()
+            .to_string();
+        result.push(transaction_hash);
+        next_start = next_start + U256::one();
+    }
+
+    Ok(result)
 }
 
 fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
@@ -153,8 +181,8 @@ fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
 }
 
 fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
-    println!("*** Get transaction record");
-    println!("Hash: {:?}", request.get_hash());
+    info!("*** Get transaction record");
+    info!("Hash: {:?}", request.get_hash());
 
     let hash = normalize_hex_str(request.get_hash());
 
@@ -169,8 +197,8 @@ fn get_transaction_record(request: &TransactionRecordRequest) -> Result<Transact
 }
 
 fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceResponse> {
-    println!("*** Get account balance");
-    println!("Address: {:?}", request.get_address());
+    info!("*** Get account balance");
+    info!("Address: {:?}", request.get_address());
 
     let address = normalize_hex_str(request.get_address());
     let balance = get_balance(address);
@@ -182,8 +210,8 @@ fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceRespons
 }
 
 fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
-    println!("*** Get account nonce");
-    println!("Address: {:?}", request.get_address());
+    info!("*** Get account nonce");
+    info!("Address: {:?}", request.get_address());
 
     let address = normalize_hex_str(request.get_address());
     let nonce = get_nonce(address);
@@ -195,8 +223,8 @@ fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
 }
 
 fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
-    println!("*** Get account code");
-    println!("Address: {:?}", request.get_address());
+    info!("*** Get account code");
+    info!("Address: {:?}", request.get_address());
 
     let address = normalize_hex_str(request.get_address());
     let code = get_code_string(address);
@@ -210,8 +238,8 @@ fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
 fn execute_raw_transaction(
     request: &ExecuteRawTransactionRequest,
 ) -> Result<ExecuteTransactionResponse> {
-    println!("*** Execute raw transaction");
-    println!("Data: {:?}", request.get_data());
+    info!("*** Execute raw transaction");
+    info!("Data: {:?}", request.get_data());
 
     let value = match read_hex(request.get_data()) {
         Ok(val) => val,
@@ -223,12 +251,12 @@ fn execute_raw_transaction(
 
     let transaction: Transaction = rlp.as_val()?;
 
-    let valid = match to_valid::<MainnetEIP160Patch>(&transaction) {
+    let valid = match to_valid::<ByzantiumPatch>(&transaction) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction(&valid, 1);
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
@@ -239,15 +267,15 @@ fn execute_raw_transaction(
 }
 
 fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
-    println!("*** Simulate transaction");
-    println!("Transaction: {:?}", request.get_transaction());
+    info!("*** Simulate transaction");
+    info!("Transaction: {:?}", request.get_transaction());
 
     let valid = match unsigned_to_valid(request.get_transaction()) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction(&valid, 1);
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     let mut response = ExecuteTransactionResponse::new();
 
     // TODO: return error info to client
@@ -257,7 +285,7 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
     }
 
     let result = to_hex(&vm.out());
-    println!("*** Result: {:?}", result);
+    trace!("*** Result: {:?}", result);
 
     response.set_result(result);
 
@@ -272,8 +300,8 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
 fn debug_execute_unsigned_transaction(
     request: &ExecuteTransactionRequest,
 ) -> Result<ExecuteTransactionResponse> {
-    println!("*** Execute transaction");
-    println!("Transaction: {:?}", request.get_transaction());
+    info!("*** Execute transaction");
+    info!("Transaction: {:?}", request.get_transaction());
 
     let valid = match unsigned_to_valid(request.get_transaction()) {
         Ok(val) => val,
@@ -282,7 +310,7 @@ fn debug_execute_unsigned_transaction(
 
     let hash = unsigned_transaction_hash(&valid);
 
-    let vm = fire_transaction(&valid, 1);
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
     save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);

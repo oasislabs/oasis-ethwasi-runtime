@@ -4,50 +4,42 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: evm-key-manager
+  name: evm-node-dummy
 spec:
   ports:
-    - name: contract-grpc
-      port: 9003
+    - name: dummy-grpc
+      port: 42261
   selector:
-    copper: evm-key-manager
+    copper: evm-node-dummy
   # type: ClusterIP
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: evm-key-manager
+  name: evm-node-dummy
   labels:
     app: ekiden
 spec:
   selector:
     matchLabels:
-      copper: evm-key-manager
+      copper: evm-node-dummy
   # replicas: 1
   template:
     metadata:
       labels:
-        copper: evm-key-manager
+        copper: evm-node-dummy
         app: ekiden
     spec:
       containers:
-        - name: ekiden-compute
-          image: docker.io/oasislabs/ekiden-contract-evm:latest
-          env:
-            - name: LD_LIBRARY_PATH
-              value: /opt/intel/sgxsdk/lib64
+        - name: ekiden-node-dummy
+          image: docker.io/oasislabs/testnet:latest
           command:
-            - ekiden-compute
+            - ekiden-node-dummy
           args:
-            - --port
-            - "9003"
-            - --disable-key-manager
-            - --no-persist-identity
-            - --max-batch-size
-            - "1"
-            - --metrics-addr
-            - "0.0.0.0:3000"
-            - ekiden/lib/evm-key-manager.so
+            - --time-source
+            - mock
+            - --mock-epoch-interval
+            - "60"
 ---
 kind: Service
 apiVersion: v1
@@ -90,16 +82,14 @@ spec:
             - ekiden-compute
           args:
             - --no-persist-identity
+            - --max-batch-timeout
+            - "10"
             - --metrics-addr
             - "0.0.0.0:3000"
-            - --consensus-host
-            - $(EVM_CONSENSUS_SERVICE_HOST)
-            - --consensus-port
-            - $(EVM_CONSENSUS_SERVICE_PORT_CONSENSUS_GRPC)
-            - --key-manager-host
-            - $(EVM_KEY_MANAGER_SERVICE_HOST)
-            - --key-manager-port
-            - $(EVM_KEY_MANAGER_SERVICE_PORT_CONTRACT_GRPC)
+            - --dummy-host
+            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - --dummy-port
+            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - ekiden/lib/evm.so
 
 ---
@@ -111,6 +101,7 @@ spec:
   ports:
     - name: web3
       port: 8545
+      nodePort: 8545
   selector:
     copper: web3-client
   type: NodePort
@@ -137,6 +128,6 @@ spec:
             - -c
             - >-
               exec web3-client
-              --host $(EVM_SERVICE_HOST)
-              --port $(EVM_SERVICE_PORT_CONTRACT_GRPC)
               --mr-enclave $$(cat ekiden/res/evm.mrenclave)
+              --dummy-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --dummy-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
