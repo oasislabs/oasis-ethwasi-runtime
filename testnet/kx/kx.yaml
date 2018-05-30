@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
         - name: ekiden-node-dummy
-          image: docker.io/oasislabs/testnet:latest
+          image: docker.io/oasislabs/ekiden-contract-evm:latest
           command:
             - ekiden-node-dummy
           args:
