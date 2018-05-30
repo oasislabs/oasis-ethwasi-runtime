@@ -1,9 +1,9 @@
 use bigint::{Gas, H256, U256};
 use block::{RlpHash, Transaction, TransactionSignature};
-use evm::{get_balance, get_nonce};
 use evm_api::Transaction as EVMTransaction;
 use hexutil::{read_hex, ParseHexError};
 use sputnikvm::{Patch, PreExecutionError, TransactionAction, ValidTransaction};
+use state::{get_balance, get_nonce};
 use std::rc::Rc;
 
 // validates transaction and returns a ValidTransaction on success

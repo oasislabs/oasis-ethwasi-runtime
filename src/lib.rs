@@ -5,6 +5,7 @@
 mod logger;
 mod evm;
 mod miner;
+mod state;
 mod util;
 
 extern crate log;
@@ -40,10 +41,10 @@ use sha3::{Digest, Keccak256};
 
 use std::str::FromStr;
 
-use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,
-          update_state_from_vm, StateDb};
-
+use evm::{fire_transaction, update_state_from_vm};
 use evm::patch::ByzantiumPatch;
+
+use state::{get_balance, get_code_string, get_nonce, save_transaction_record, StateDb};
 
 use miner::{get_block, get_latest_block_number, mine_block};
 
