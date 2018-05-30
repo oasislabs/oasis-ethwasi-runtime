@@ -58,9 +58,9 @@ pub struct Transaction {
     // True if it's a call to a contract, with a "to" addr. If it's not a call, it's a "create."
     pub is_call: bool,
     // The "to" addr for a call to a contract.
-    pub address: Option<Address>,   // defined if is_call = true
+    pub address: Option<Address>,           // defined if is_call = true
     // Opaque call input.
-    pub input: String,              // (hex)
+    pub input: String,                      // hex
     pub value: Option<U256>,
 }
 

@@ -8,7 +8,7 @@ use ekiden_trusted::db::database_schema;
 
 use std::collections::HashMap;
 
-use bigint::{Address, H256, M256, Sign, U256};
+use bigint::{Address, H256, Sign, U256};
 
 use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::to_hex;

@@ -130,7 +130,7 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                     state.accounts.insert(&address, &new_account);
                 }
             }
-            &AccountChange::Nonexist(address) => {}
+            &AccountChange::Nonexist(_address) => {}
         }
     }
 }

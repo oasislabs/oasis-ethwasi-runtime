@@ -32,7 +32,7 @@ use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
               SimulateTransactionResponse, Transaction, TransactionRecord};
 
 use sputnikvm::{VMStatus, VM};
-use sputnikvm_network_classic::MainnetEIP160Patch;
+//use sputnikvm_network_classic::MainnetEIP160Patch;
 
 use bigint::{Address, H256, U256};
 use block::Transaction as BlockTransaction;
@@ -67,12 +67,12 @@ with_api! {
 }
 
 #[cfg(debug_assertions)]
-fn genesis_block_initialized(request: &bool) -> Result<bool> {
+fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Ok(StateDb::new().genesis_initialized.is_present())
 }
 
 #[cfg(not(debug_assertions))]
-fn genesis_block_initialized(request: &bool) -> Result<bool> {
+fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Err(Error::new("API available only in debug builds"))
 }
 
@@ -116,7 +116,7 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-fn get_block_height(request: &bool) -> Result<U256> {
+fn get_block_height(_request: &bool) -> Result<U256> {
     Ok(get_latest_block_number())
 }
 
