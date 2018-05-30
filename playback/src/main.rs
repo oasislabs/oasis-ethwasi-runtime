@@ -6,30 +6,32 @@ use std::time::Instant;
 
 extern crate bigint;
 extern crate clap;
-use clap::App;
-use clap::Arg;
 use clap::crate_authors;
 use clap::crate_description;
 use clap::crate_name;
 use clap::crate_version;
 use clap::value_t;
+use clap::value_t_or_exit;
+use clap::App;
+use clap::Arg;
 extern crate filebuffer;
 extern crate futures;
 use futures::future::Future;
 extern crate grpcio;
 extern crate hex;
 extern crate log;
-use log::LevelFilter;
 use log::debug;
 use log::info;
 use log::log;
 use log::trace;
+use log::LevelFilter;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
+#[macro_use]
 extern crate client_utils;
 use client_utils::contract_client;
 use client_utils::default_app;
@@ -40,7 +42,7 @@ extern crate ekiden_core;
 extern crate ekiden_rpc_client;
 
 extern crate evm_api;
-use evm_api::with_api;
+use evm_api::{with_api, AccountState};
 
 with_api! {
     create_contract_client!(evm, evm_api, api);
@@ -90,7 +92,7 @@ fn main() {
         .filter(None, LevelFilter::Trace)
         .init();
 
-    let mut client = contract_client!(signer, evm, args);
+    let client = contract_client!(signer, evm, args);
 
     let state_path = args.value_of("exported_state").unwrap();
     trace!("Parsing state JSON");
@@ -102,28 +104,32 @@ fn main() {
     let mut num_accounts_injected = 0;
     loop {
         let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
-        let mut req = evm_api::InjectAccountsRequest::new();
+        let mut req = Vec::new();
         for (addr, account) in chunk {
-            let mut account_state = evm_api::AccountState::new();
-            let nonce = bigint::U256::from_str(&account.nonce).unwrap();
-            let nonce_dec = format!("{}", nonce);
-            account_state.set_nonce(nonce_dec);
-            account_state.set_address(addr);
-            let balance = bigint::U256::from_str(&account.balance).unwrap();
-            let balance_dec = format!("{}", balance);
-            account_state.set_balance(balance_dec);
-            if let Some(code) = account.code {
-                account_state.set_code(code);
-            }
+            let mut account_state = AccountState {
+               nonce: bigint::U256::from_str(&account.nonce).unwrap(),
+               address: bigint::Address::from_str(&addr).unwrap(),
+               balance: bigint::U256::from_str(&account.balance).unwrap(),
+               code: match account.code {
+                   Some(code) => code,
+                   None => String::new(),
+               },
+               storage: HashMap::new(),
+            };
             if let Some(storage) = account.storage {
-                account_state.set_storage(storage);
+                for (key, value) in storage {
+                    account_state.storage.insert(
+                        bigint::U256::from_str(&key).unwrap(),
+                        bigint::U256::from_str(&value).unwrap(),
+                    );
+                }
             }
-            req.accounts.push(account_state);
+            req.push(account_state);
         }
-        if req.accounts.is_empty() {
+        if req.is_empty() {
             break;
         }
-        let accounts_len = req.accounts.len();
+        let accounts_len = req.len();
         let res = client.inject_accounts(req).wait().unwrap();
         num_accounts_injected += accounts_len;
         debug!("inject_accounts result: {:?}", res); // %%%
@@ -131,7 +137,7 @@ fn main() {
     }
     trace!("Done injecting accounts");
     let res = client
-        .init_genesis_block(evm_api::InitStateRequest::new())
+        .init_genesis_block(evm_api::InitStateRequest {})
         .wait()
         .unwrap();
     debug!("init_genesis_block result: {:?}", res);
@@ -160,9 +166,7 @@ fn main() {
             let transaction_start = Instant::now();
             let res = client
                 .execute_raw_transaction({
-                    let mut req = evm_api::ExecuteRawTransactionRequest::new();
-                    req.set_data(hex::encode(transaction_raw));
-                    req
+                    hex::encode(transaction_raw)
                 })
                 .wait()
                 .unwrap();
