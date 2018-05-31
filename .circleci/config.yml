@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ekiden/testing:0.1.0-alpha.4
+      - image: ekiden/testing:0.1.0
     steps:
       # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
@@ -50,7 +50,7 @@ jobs:
           working_directory: client
           command: cargo build
       # Check style. This needs to be after everything is built.
-      - run: cargo fmt -- --write-mode=diff
+      - run: cargo fmt -- --write-mode=check
 
       # Contract end-to-end tests.
 

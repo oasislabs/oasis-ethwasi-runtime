@@ -1,4 +1,4 @@
-required_version = "0.3.6"
+required_version = "0.6.1"
 unstable_features = false
 max_width = 100
 hard_tabs = false
