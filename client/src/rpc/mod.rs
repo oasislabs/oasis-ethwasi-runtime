@@ -7,10 +7,10 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+mod filter;
+mod serialize;
 mod serves;
 mod util;
-mod serialize;
-mod filter;
 
 use self::serialize::*;
 use error::Error;

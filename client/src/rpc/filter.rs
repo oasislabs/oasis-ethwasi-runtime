@@ -9,8 +9,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::thread;
 
-use super::{Either, RPCLog};
 use super::util::*;
+use super::{Either, RPCLog};
 use ekiden_rpc_client;
 
 use error::Error;

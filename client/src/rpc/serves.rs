@@ -1,8 +1,8 @@
-use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, RPCDump, RPCLog,
-            RPCLogFilter, RPCReceipt, RPCTrace, RPCTraceConfig, RPCTransaction};
 use super::filter::*;
 use super::serialize::*;
 use super::util::*;
+use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, RPCDump, RPCLog,
+            RPCLogFilter, RPCReceipt, RPCTrace, RPCTraceConfig, RPCTransaction};
 
 use error::Error;
 

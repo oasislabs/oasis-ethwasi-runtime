@@ -1,5 +1,5 @@
-use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use super::serialize::*;
+use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use error::Error;
 
 use bigint::{Address, Gas, H2048, H256, H64, U256};

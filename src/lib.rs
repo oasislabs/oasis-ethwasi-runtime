@@ -41,8 +41,8 @@ use sha3::{Digest, Keccak256};
 
 use std::str::FromStr;
 
-use evm::{fire_transaction, update_state_from_vm};
 use evm::patch::ByzantiumPatch;
+use evm::{fire_transaction, update_state_from_vm};
 
 use state::{get_balance, get_code_string, get_nonce, save_transaction_record, StateDb};
 
