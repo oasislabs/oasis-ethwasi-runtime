@@ -6,24 +6,25 @@ use std::time::Instant;
 
 extern crate bigint;
 extern crate clap;
-use clap::App;
-use clap::Arg;
 use clap::crate_authors;
 use clap::crate_description;
 use clap::crate_name;
 use clap::crate_version;
 use clap::value_t;
+use clap::value_t_or_exit;
+use clap::App;
+use clap::Arg;
 extern crate filebuffer;
 extern crate futures;
 use futures::future::Future;
 extern crate grpcio;
 extern crate hex;
 extern crate log;
-use log::LevelFilter;
 use log::debug;
 use log::info;
 use log::log;
 use log::trace;
+use log::LevelFilter;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
@@ -90,7 +91,7 @@ fn main() {
         .filter(None, LevelFilter::Trace)
         .init();
 
-    let mut client = contract_client!(signer, evm, args);
+    let client = contract_client!(signer, evm, args);
 
     let state_path = args.value_of("exported_state").unwrap();
     trace!("Parsing state JSON");
