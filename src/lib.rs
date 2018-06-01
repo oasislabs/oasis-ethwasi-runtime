@@ -44,7 +44,7 @@ use std::str::FromStr;
 use evm::patch::ByzantiumPatch;
 use evm::{fire_transaction, update_state_from_vm};
 
-use state::{get_code_string, save_transaction_record, StateDb};
+use state::{get_account_storage, get_code_string, save_transaction_record, StateDb};
 
 use miner::{get_block, get_latest_block_number, mine_block};
 
@@ -205,6 +205,14 @@ fn get_account_code(address: &Address) -> Result<String> {
     info!("Address: {:?}", address);
 
     Ok(get_code_string(address))
+}
+
+fn get_storage_at(pair: &(Address, U256)) -> Result<M256> {
+    info!("*** Get storage at");
+    let &(address, index) = pair;
+    info!("Address: {:?} @ {:?}", address, index);
+
+    Ok(get_account_storage(address, index))
 }
 
 fn execute_raw_transaction(request: &String) -> Result<H256> {

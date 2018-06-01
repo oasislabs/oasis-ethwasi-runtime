@@ -134,29 +134,12 @@ impl EthereumRPC for MinerEthereumRPC {
         index: Hex<U256>,
         block: Trailing<String>,
     ) -> Result<Hex<M256>, Error> {
-        /*
         println!("\n*** storage_at *** address = {:?}, index = {:?}", address, index);
 
-        let state = self.state.lock().unwrap();
+        let response = self.client.get_storage_at((address.0, index.0)).wait().unwrap();
+        println!("    Response: {:?}", response);
 
-        let block = from_block_number(&state, block)?;
-
-        let block = state.get_block_by_number(block);
-        let stateful = state.stateful();
-        let trie = stateful.state_of(block.header.state_root);
-
-        let account: Option<Account> = trie.get(&address.0);
-        match account {
-            Some(account) => {
-                let storage = stateful.storage_state_of(account.storage_root);
-                let value = storage.get(&H256::from(index.0)).unwrap_or(M256::zero());
-                Ok(Hex(value))
-            },
-            None => {
-                Ok(Hex(M256::zero()))
-            },
-        }*/
-        Err(Error::TODO)
+        Ok(Hex(response))
     }
 
     fn transaction_count(

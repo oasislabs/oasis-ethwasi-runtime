@@ -25,4 +25,6 @@ contract_api! {
     pub fn get_account_code(Address) -> String;
 
     pub fn get_block_by_number(BlockRequest) -> Option<Block>;
+
+    pub fn get_storage_at((Address, U256)) -> M256;
 }
