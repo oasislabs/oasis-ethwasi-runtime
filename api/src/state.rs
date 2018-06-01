@@ -1,6 +1,5 @@
-use bigint::{Address, Gas, H256, M256, U256};
+use bigint::{Address, Gas, H256, U256};
 
-use std::collections::HashMap;
 use sputnikvm::Log;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -8,7 +7,6 @@ pub struct AccountState {
     pub nonce: U256,
     pub address: Address,
     pub balance: U256,
-    pub storage: HashMap<U256, M256>,
     pub code: String,
 }
 

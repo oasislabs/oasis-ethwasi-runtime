@@ -104,35 +104,40 @@ fn main() {
     let mut num_accounts_injected = 0;
     loop {
         let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
-        let mut req = Vec::new();
+        let mut accounts_req = Vec::new();
+        let mut storage_req = Vec::new();
         for (addr, account) in chunk {
+            let address = bigint::Address::from_str(&addr).unwrap();
+
             let mut account_state = AccountState {
                 nonce: bigint::U256::from_str(&account.nonce).unwrap(),
-                address: bigint::Address::from_str(&addr).unwrap(),
+                address: address,
                 balance: bigint::U256::from_str(&account.balance).unwrap(),
                 code: match account.code {
                     Some(code) => code,
                     None => String::new(),
                 },
-                storage: HashMap::new(),
             };
             if let Some(storage) = account.storage {
                 for (key, value) in storage {
-                    account_state.storage.insert(
+                    storage_req.push((
+                        address,
                         bigint::U256::from_str(&key).unwrap(),
                         bigint::M256::from_str(&value).unwrap(),
-                    );
+                    ));
                 }
             }
-            req.push(account_state);
+            accounts_req.push(account_state);
         }
-        if req.is_empty() {
+        if accounts_req.is_empty() && storage_req.is_empty() {
             break;
         }
-        let accounts_len = req.len();
-        let res = client.inject_accounts(req).wait().unwrap();
-        num_accounts_injected += accounts_len;
+        let accounts_len = accounts_req.len();
+        let res = client.inject_accounts(accounts_req).wait().unwrap();
         debug!("inject_accounts result: {:?}", res); // %%%
+        let res = client.inject_account_storage(storage_req).wait().unwrap();
+        debug!("inject_account_storage result: {:?}", res); // %%%
+        num_accounts_injected += accounts_len;
         trace!("Injected {} accounts", num_accounts_injected);
     }
     trace!("Done injecting accounts");

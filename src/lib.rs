@@ -34,7 +34,7 @@ use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
 use sputnikvm::{VMStatus, VM};
 //use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{Address, H256, U256};
+use bigint::{Address, H256, M256, U256};
 use block::Transaction as BlockTransaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
@@ -88,6 +88,22 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     // Insert account states
     for account in accounts {
         state.accounts.insert(&account.address, &account);
+    }
+
+    Ok(())
+}
+
+// TODO: secure this method so it can't be called by any client.
+#[cfg(debug_assertions)]
+fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
+    let state = StateDb::new();
+
+    if state.genesis_initialized.is_present() {
+        return Err(Error::new("Genesis block already created"));
+    }
+
+    for &(address, index, value) in storage {
+        state.account_storage.insert(&(address, index), &value);
     }
 
     Ok(())

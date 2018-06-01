@@ -18,6 +18,6 @@ mod api;
 //pub use generated::api::*;
 
 extern crate bigint;
-pub use bigint::{Address, H256, U256};
+pub use bigint::{Address, H256, M256, U256};
 mod state;
 pub use state::*;

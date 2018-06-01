@@ -8,7 +8,7 @@ use ekiden_trusted::db::database_schema;
 
 use std::collections::HashMap;
 
-use bigint::{Address, H256, Sign, U256};
+use bigint::{Address, H256, M256, Sign, U256};
 
 use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::to_hex;
@@ -23,6 +23,7 @@ database_schema! {
     pub struct StateDb {
         pub genesis_initialized: bool,
         pub accounts: Map<Address, AccountState>,
+        pub account_storage: Map<(Address, U256), M256>,
         pub transactions: Map<H256, TransactionRecord>,
         pub latest_block_number: U256,
         pub blocks: Map<U256, Block>,
@@ -61,28 +62,27 @@ pub fn get_code_string(address: &Address) -> String {
     code
 }
 
-pub fn create_account_state(
-    nonce: U256,
-    address: Address,
-    balance: U256,
-    storage: &Storage,
-    code: &Rc<Vec<u8>>,
-) -> AccountState {
-    AccountState {
+pub fn update_account_state(nonce: U256, address: Address, balance: U256, code: &Rc<Vec<u8>>) {
+    let account_state = AccountState {
         nonce: nonce,
         address: address,
         balance: balance,
-        storage: storage.clone().into(),
         code: to_hex(code),
+    };
+
+    StateDb::new().accounts.insert(&address, &account_state);
+}
+
+pub fn update_account_storage(address: Address, storage: &Storage) {
+    let state = StateDb::new();
+    let storage: HashMap<U256, M256> = storage.clone().into();
+    for (key, val) in storage {
+        state.account_storage.insert(&(address, key), &val);
     }
 }
 
-pub fn update_account_balance<P: Patch>(
-    address: &Address,
-    amount: U256,
-    sign: Sign,
-    state: &StateDb,
-) -> Option<AccountState> {
+pub fn update_account_balance<P: Patch>(address: &Address, amount: U256, sign: Sign) {
+    let state = StateDb::new();
     match state.accounts.get(&address) {
         Some(mut account) => {
             // Found account. Update balance.
@@ -91,7 +91,7 @@ pub fn update_account_balance<P: Patch>(
                 Sign::Minus => account.balance - amount,
                 _ => panic!(),
             };
-            Some(account)
+            state.accounts.insert(&address, &account);
         }
         None => {
             // Account doesn't exist; create it.
@@ -102,16 +102,14 @@ pub fn update_account_balance<P: Patch>(
             );
 
             // EIP-161d forbids creating accounts with empty (nonce, code, balance)
-            if !P::Account::empty_considered_exists() && amount == U256::from(0) {
-                None
-            } else {
-                Some(AccountState {
+            if P::Account::empty_considered_exists() || amount != U256::from(0) {
+                let account_state = AccountState {
                     nonce: P::Account::initial_nonce(),
                     address: address.clone(),
                     balance: amount,
-                    storage: HashMap::new(),
                     code: String::new(),
-                })
+                };
+                state.accounts.insert(&address, &account_state);
             }
         }
     }

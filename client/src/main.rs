@@ -102,7 +102,8 @@ fn main() {
 
 fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
-    let mut request = Vec::new();
+    let mut account_request = Vec::new();
+    let mut storage_request = Vec::new();
 
     // Read in all the files in resources/genesis/
     for path in fs::read_dir("../resources/genesis").unwrap() {
@@ -118,27 +119,35 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
         );
 
         for (addr, account) in accounts.accounts {
+            let address = Address::from_str(&addr).unwrap();
+
             let mut account_state = AccountState {
                 nonce: U256::from_dec_str(&account.nonce).unwrap(),
-                address: Address::from_str(&addr).unwrap(),
+                address: address,
                 balance: U256::from_dec_str(&account.balance).unwrap(),
                 code: if account.code == "0x" {
                     String::new()
                 } else {
                     account.code
                 },
-                storage: HashMap::new(),
             };
+
             for (key, value) in account.storage {
-                account_state.storage.insert(
+                storage_request.push((
+                    address,
                     U256::from_str(&key).unwrap(),
                     M256::from_str(&value).unwrap(),
-                );
+                ));
             }
-            request.push(account_state);
+
+            account_request.push(account_state);
         }
     }
-    let result = client.inject_accounts(request).wait().unwrap();
+    let result = client.inject_accounts(account_request).wait().unwrap();
+    let result = client
+        .inject_account_storage(storage_request)
+        .wait()
+        .unwrap();
 
     let init_state_request = InitStateRequest {};
     let result = client

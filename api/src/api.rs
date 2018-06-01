@@ -3,6 +3,7 @@ use ekiden_core::contract::contract_api;
 contract_api! {
     pub fn genesis_block_initialized(bool) -> bool;
     pub fn inject_accounts(Vec<AccountState>) -> ();
+    pub fn inject_account_storage(Vec<(Address, U256, M256)>) -> ();
     pub fn init_genesis_block(InitStateRequest) -> ();
 
     pub fn debug_execute_unsigned_transaction(Transaction) -> H256;

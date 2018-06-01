@@ -11,7 +11,7 @@ use hexutil::read_hex;
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
                 SeqTransactionVM, ValidTransaction, VM};
 
-use state::{create_account_state, update_account_balance, StateDb};
+use state::{update_account_balance, update_account_state, update_account_storage, StateDb};
 
 use std::rc::Rc;
 use std::str::FromStr;
@@ -43,7 +43,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             }
             Err(RequireError::AccountStorage(address, index)) => {
                 trace!("> Require Account Storage: {:x} @ {:x}", address, index);
-                let value = match state.accounts.get(&address).unwrap().storage.get(&index) {
+                let value = match state.account_storage.get(&(address, index)) {
                     Some(val) => val.clone(),
                     None => M256::zero(),
                 };
@@ -88,8 +88,6 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
 }
 
 pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
-    let state = StateDb::new();
-
     for account in vm.accounts() {
         match account {
             &AccountChange::Create {
@@ -99,8 +97,8 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 ref storage,
                 ref code,
             } => {
-                let account_state = create_account_state(nonce, address, balance, storage, code);
-                state.accounts.insert(&address, &account_state);
+                update_account_state(nonce, address, balance, code);
+                update_account_storage(address, storage);
             }
             &AccountChange::Full {
                 nonce,
@@ -109,26 +107,11 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 ref changing_storage,
                 ref code,
             } => {
-                let mut account_state =
-                    create_account_state(nonce, address, balance, changing_storage, code);
-                let prev_storage = state.accounts.get(&address).unwrap().storage;
-
-                // This type of change registers a *diff* of the storage, so place previous values
-                // in the new map.
-                for (key, value) in prev_storage.iter() {
-                    if !account_state.storage.contains_key(key) {
-                        account_state.storage.insert(key.clone(), value.clone());
-                    }
-                }
-
-                state.accounts.insert(&address, &account_state);
+                update_account_state(nonce, address, balance, code);
+                update_account_storage(address, changing_storage);
             }
             &AccountChange::IncreaseBalance(address, amount) => {
-                if let Some(new_account) =
-                    update_account_balance::<P>(&address, amount, Sign::Plus, &state)
-                {
-                    state.accounts.insert(&address, &new_account);
-                }
+                update_account_balance::<P>(&address, amount, Sign::Plus);
             }
             &AccountChange::Nonexist(_address) => {}
         }
