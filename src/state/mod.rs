@@ -30,9 +30,22 @@ database_schema! {
     }
 }
 
+pub fn get_account_state(address: Address) -> Option<AccountState> {
+    StateDb::new().accounts.get(&address)
+}
+
+pub fn get_account_storage(address: Address, index: U256) -> M256 {
+    let state = StateDb::new();
+    let value = match state.account_storage.get(&(address, index)) {
+        Some(val) => val.clone(),
+        None => M256::zero(),
+    };
+    value
+}
+
 // TODO: currently returns 0 for nonexistent accounts
 //       specified behavior is different for more recent patches
-pub fn get_nonce(address: &Address) -> U256 {
+pub fn get_account_nonce(address: &Address) -> U256 {
     let state = StateDb::new();
     let nonce = match state.accounts.get(address) {
         Some(account) => account.nonce,
@@ -43,7 +56,7 @@ pub fn get_nonce(address: &Address) -> U256 {
 
 // TODO: currently returns 0 for nonexistent accounts
 //       specified behavior is different for more recent patches
-pub fn get_balance(address: &Address) -> U256 {
+pub fn get_account_balance(address: &Address) -> U256 {
     let state = StateDb::new();
     let balance = match state.accounts.get(address) {
         Some(account) => account.balance,

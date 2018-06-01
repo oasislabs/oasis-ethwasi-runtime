@@ -44,7 +44,7 @@ use std::str::FromStr;
 use evm::patch::ByzantiumPatch;
 use evm::{fire_transaction, update_state_from_vm};
 
-use state::{get_balance, get_code_string, get_nonce, save_transaction_record, StateDb};
+use state::{get_code_string, save_transaction_record, StateDb};
 
 use miner::{get_block, get_latest_block_number, mine_block};
 
@@ -190,14 +190,14 @@ fn get_account_balance(address: &Address) -> Result<U256> {
     info!("*** Get account balance");
     info!("Address: {:?}", address);
 
-    Ok(get_balance(address))
+    Ok(state::get_account_balance(address))
 }
 
 fn get_account_nonce(address: &Address) -> Result<U256> {
     info!("*** Get account nonce");
     info!("Address: {:?}", address);
 
-    Ok(get_nonce(address))
+    Ok(state::get_account_nonce(address))
 }
 
 fn get_account_code(address: &Address) -> Result<String> {

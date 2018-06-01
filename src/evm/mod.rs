@@ -11,20 +11,21 @@ use hexutil::read_hex;
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
                 SeqTransactionVM, ValidTransaction, VM};
 
-use state::{update_account_balance, update_account_state, update_account_storage, StateDb};
+use state::{get_account_state, get_account_storage, update_account_balance, update_account_state,
+            update_account_storage};
 
 use std::rc::Rc;
 use std::str::FromStr;
 
 pub mod patch;
 
-fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
+fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
     loop {
         match vm.fire() {
             Ok(()) => break,
             Err(RequireError::Account(address)) => {
                 trace!("> Require Account: {:x}", address);
-                let commit = match state.accounts.get(&address) {
+                let commit = match get_account_state(address) {
                     Some(account) => {
                         trace!("  -> Found account");
                         AccountCommitment::Full {
@@ -43,10 +44,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             }
             Err(RequireError::AccountStorage(address, index)) => {
                 trace!("> Require Account Storage: {:x} @ {:x}", address, index);
-                let value = match state.account_storage.get(&(address, index)) {
-                    Some(val) => val.clone(),
-                    None => M256::zero(),
-                };
+                let value = get_account_storage(address, index);
                 trace!("  -> {:?}", value);
                 vm.commit_account(AccountCommitment::Storage {
                     address: address,
@@ -56,7 +54,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>, state: &StateDb) {
             }
             Err(RequireError::AccountCode(address)) => {
                 trace!("> Require Account Code: {:x}", address);
-                let commit = match state.accounts.get(&address) {
+                let commit = match get_account_state(address) {
                     Some(account) => {
                         trace!("  -> Found code");
                         AccountCommitment::Code {
@@ -122,8 +120,6 @@ pub fn fire_transaction<P: Patch>(
     transaction: &ValidTransaction,
     block_number: U256,
 ) -> SeqTransactionVM<P> {
-    let state = StateDb::new();
-
     let block_header = HeaderParams {
         beneficiary: Address::default(),
         timestamp: 0,
@@ -133,8 +129,7 @@ pub fn fire_transaction<P: Patch>(
     };
 
     let mut vm = SeqTransactionVM::new(transaction.clone(), block_header.clone());
-
-    handle_fire(&mut vm, &state);
+    handle_fire(&mut vm);
 
     trace!("    VM returned: {:?}", vm.status());
     trace!("    VM out: {:?}", vm.out());
