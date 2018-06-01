@@ -3,7 +3,7 @@ use block::{RlpHash, Transaction, TransactionSignature};
 use evm_api::Transaction as EVMTransaction;
 use hexutil::{read_hex, ParseHexError};
 use sputnikvm::{Patch, PreExecutionError, TransactionAction, ValidTransaction};
-use state::{get_account_balance, get_account_nonce};
+use state::EthState;
 use std::rc::Rc;
 
 // validates transaction and returns a ValidTransaction on success
@@ -20,9 +20,11 @@ pub fn to_valid<P: Patch>(
         Err(_) => return Err(PreExecutionError::InvalidCaller),
     };
 
+    let state = EthState::instance();
+
     // check nonce
     // TODO: what if account doesn't exist? for now returning 0
-    let nonce = get_account_nonce(&caller);
+    let nonce = state.get_account_nonce(&caller);
     if nonce != transaction.nonce {
         return Err(PreExecutionError::InvalidNonce);
     }
@@ -44,7 +46,7 @@ pub fn to_valid<P: Patch>(
 
     // check balance
     // TODO: what if account doesn't exist? for now returning 0
-    let balance = get_account_balance(&caller);
+    let balance = state.get_account_balance(&caller);
 
     let gas_limit: U256 = valid.gas_limit.into();
     let gas_price: U256 = valid.gas_price.into();
@@ -108,7 +110,7 @@ pub fn unsigned_to_valid(
         // Request specified a caller. Look up the nonce for this address if not defined in the transaction.
         Some(address) => match transaction.nonce {
             Some(nonce) => nonce,
-            None => get_account_nonce(&address),
+            None => EthState::instance().get_account_nonce(&address),
         },
         None => U256::zero(),
     };

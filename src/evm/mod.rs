@@ -11,8 +11,7 @@ use hexutil::read_hex;
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
                 SeqTransactionVM, ValidTransaction, VM};
 
-use state::{get_account_state, get_account_storage, update_account_balance, update_account_state,
-            update_account_storage};
+use state::EthState;
 
 use std::rc::Rc;
 use std::str::FromStr;
@@ -20,12 +19,13 @@ use std::str::FromStr;
 pub mod patch;
 
 fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
+    let state = EthState::instance();
     loop {
         match vm.fire() {
             Ok(()) => break,
             Err(RequireError::Account(address)) => {
                 trace!("> Require Account: {:x}", address);
-                let commit = match get_account_state(address) {
+                let commit = match state.get_account_state(address) {
                     Some(account) => {
                         trace!("  -> Found account");
                         AccountCommitment::Full {
@@ -44,7 +44,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
             }
             Err(RequireError::AccountStorage(address, index)) => {
                 trace!("> Require Account Storage: {:x} @ {:x}", address, index);
-                let value = get_account_storage(address, index);
+                let value = state.get_account_storage(address, index);
                 trace!("  -> {:?}", value);
                 vm.commit_account(AccountCommitment::Storage {
                     address: address,
@@ -54,7 +54,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
             }
             Err(RequireError::AccountCode(address)) => {
                 trace!("> Require Account Code: {:x}", address);
-                let commit = match get_account_state(address) {
+                let commit = match state.get_account_state(address) {
                     Some(account) => {
                         trace!("  -> Found code");
                         AccountCommitment::Code {
@@ -86,6 +86,7 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
 }
 
 pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
+    let state = EthState::instance();
     for account in vm.accounts() {
         match account {
             &AccountChange::Create {
@@ -95,8 +96,8 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 ref storage,
                 ref code,
             } => {
-                update_account_state(nonce, address, balance, code);
-                update_account_storage(address, storage);
+                state.update_account_state(nonce, address, balance, code);
+                state.update_account_storage(address, storage);
             }
             &AccountChange::Full {
                 nonce,
@@ -105,11 +106,11 @@ pub fn update_state_from_vm<P: Patch>(vm: &SeqTransactionVM<P>) {
                 ref changing_storage,
                 ref code,
             } => {
-                update_account_state(nonce, address, balance, code);
-                update_account_storage(address, changing_storage);
+                state.update_account_state(nonce, address, balance, code);
+                state.update_account_storage(address, changing_storage);
             }
             &AccountChange::IncreaseBalance(address, amount) => {
-                update_account_balance::<P>(&address, amount, Sign::Plus);
+                state.update_account_balance::<P>(&address, amount, Sign::Plus);
             }
             &AccountChange::Nonexist(_address) => {}
         }

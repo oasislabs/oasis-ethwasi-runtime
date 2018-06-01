@@ -44,7 +44,7 @@ use std::str::FromStr;
 use evm::patch::ByzantiumPatch;
 use evm::{fire_transaction, update_state_from_vm};
 
-use state::{get_account_storage, get_code_string, save_transaction_record, StateDb};
+use state::{EthState, StateDb};
 
 use miner::{get_block, get_latest_block_number, mine_block};
 
@@ -171,7 +171,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
 
     // if full transactions are requested, attach the TransactionRecord
     if request.full {
-        if let Some(val) = StateDb::new().transactions.get(&block.transaction_hash) {
+        if let Some(val) = EthState::instance().get_transaction_record(&block.transaction_hash) {
             block.transaction = Some(val);
         }
     }
@@ -183,28 +183,28 @@ fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
     info!("*** Get transaction record");
     info!("Hash: {:?}", hash);
 
-    Ok(StateDb::new().transactions.get(hash))
+    Ok(EthState::instance().get_transaction_record(hash))
 }
 
 fn get_account_balance(address: &Address) -> Result<U256> {
     info!("*** Get account balance");
     info!("Address: {:?}", address);
 
-    Ok(state::get_account_balance(address))
+    Ok(EthState::instance().get_account_balance(address))
 }
 
 fn get_account_nonce(address: &Address) -> Result<U256> {
     info!("*** Get account nonce");
     info!("Address: {:?}", address);
 
-    Ok(state::get_account_nonce(address))
+    Ok(EthState::instance().get_account_nonce(address))
 }
 
 fn get_account_code(address: &Address) -> Result<String> {
     info!("*** Get account code");
     info!("Address: {:?}", address);
 
-    Ok(get_code_string(address))
+    Ok(EthState::instance().get_code_string(address))
 }
 
 fn get_storage_at(pair: &(Address, U256)) -> Result<M256> {
@@ -212,7 +212,7 @@ fn get_storage_at(pair: &(Address, U256)) -> Result<M256> {
     let &(address, index) = pair;
     info!("Address: {:?} @ {:?}", address, index);
 
-    Ok(get_account_storage(address, index))
+    Ok(EthState::instance().get_account_storage(address, index))
 }
 
 fn execute_raw_transaction(request: &String) -> Result<H256> {
@@ -237,7 +237,7 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
     let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
-    save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
+    EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     Ok(hash)
 }
@@ -284,7 +284,7 @@ fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
-    save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
+    EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     Ok(hash)
 }
