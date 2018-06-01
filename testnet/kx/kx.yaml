@@ -38,7 +38,7 @@ spec:
             - --time-source
             - mock
             - --mock-epoch-interval
-            - "60"
+            - "3600"
 ---
 kind: Service
 apiVersion: v1
