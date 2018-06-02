@@ -31,6 +31,7 @@ extern crate rlp;
 extern crate serde_derive;
 extern crate serde_json;
 
+#[macro_use]
 extern crate client_utils;
 use client_utils::contract_client;
 use client_utils::default_app;
@@ -41,7 +42,7 @@ extern crate ekiden_core;
 extern crate ekiden_rpc_client;
 
 extern crate evm_api;
-use evm_api::with_api;
+use evm_api::{with_api, AccountState};
 
 with_api! {
     create_contract_client!(evm, evm_api, api);
@@ -103,36 +104,45 @@ fn main() {
     let mut num_accounts_injected = 0;
     loop {
         let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
-        let mut req = evm_api::InjectAccountsRequest::new();
+        let mut accounts_req = Vec::new();
+        let mut storage_req = Vec::new();
         for (addr, account) in chunk {
-            let mut account_state = evm_api::AccountState::new();
-            let nonce = bigint::U256::from_str(&account.nonce).unwrap();
-            let nonce_dec = format!("{}", nonce);
-            account_state.set_nonce(nonce_dec);
-            account_state.set_address(addr);
-            let balance = bigint::U256::from_str(&account.balance).unwrap();
-            let balance_dec = format!("{}", balance);
-            account_state.set_balance(balance_dec);
-            if let Some(code) = account.code {
-                account_state.set_code(code);
-            }
+            let address = bigint::Address::from_str(&addr).unwrap();
+
+            let mut account_state = AccountState {
+                nonce: bigint::U256::from_str(&account.nonce).unwrap(),
+                address: address,
+                balance: bigint::U256::from_str(&account.balance).unwrap(),
+                code: match account.code {
+                    Some(code) => code,
+                    None => String::new(),
+                },
+            };
             if let Some(storage) = account.storage {
-                account_state.set_storage(storage);
+                for (key, value) in storage {
+                    storage_req.push((
+                        address,
+                        bigint::U256::from_str(&key).unwrap(),
+                        bigint::M256::from_str(&value).unwrap(),
+                    ));
+                }
             }
-            req.accounts.push(account_state);
+            accounts_req.push(account_state);
         }
-        if req.accounts.is_empty() {
+        if accounts_req.is_empty() && storage_req.is_empty() {
             break;
         }
-        let accounts_len = req.accounts.len();
-        let res = client.inject_accounts(req).wait().unwrap();
-        num_accounts_injected += accounts_len;
+        let accounts_len = accounts_req.len();
+        let res = client.inject_accounts(accounts_req).wait().unwrap();
         debug!("inject_accounts result: {:?}", res); // %%%
+        let res = client.inject_account_storage(storage_req).wait().unwrap();
+        debug!("inject_account_storage result: {:?}", res); // %%%
+        num_accounts_injected += accounts_len;
         trace!("Injected {} accounts", num_accounts_injected);
     }
     trace!("Done injecting accounts");
     let res = client
-        .init_genesis_block(evm_api::InitStateRequest::new())
+        .init_genesis_block(evm_api::InitStateRequest {})
         .wait()
         .unwrap();
     debug!("init_genesis_block result: {:?}", res);
@@ -160,11 +170,7 @@ fn main() {
             let transaction_raw = transaction.as_raw();
             let transaction_start = Instant::now();
             let res = client
-                .execute_raw_transaction({
-                    let mut req = evm_api::ExecuteRawTransactionRequest::new();
-                    req.set_data(hex::encode(transaction_raw));
-                    req
-                })
+                .execute_raw_transaction({ hex::encode(transaction_raw) })
                 .wait()
                 .unwrap();
             let transaction_end = Instant::now();

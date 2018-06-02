@@ -56,7 +56,7 @@ To start the shared dummy node:
 $ ekiden-node-dummy --time-source mockrpc
 ```
 
-To start the compute node for the EVM contract:
+To start the compute node for the EVM contract (you need to start at least two):
 ```bash
 $ ekiden-compute \
     --no-persist-identity \

@@ -5,6 +5,7 @@
 mod logger;
 mod evm;
 mod miner;
+mod state;
 mod util;
 
 extern crate log;
@@ -27,26 +28,23 @@ extern crate rlp;
 extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
-use evm_api::{with_api, AccountBalanceResponse, AccountCodeResponse, AccountNonceResponse,
-              AccountRequest, BlockRequest, BlockResponse, ExecuteRawTransactionRequest,
-              ExecuteTransactionRequest, ExecuteTransactionResponse, InitStateRequest,
-              InitStateResponse, InjectAccountsRequest, InjectAccountsResponse,
-              TransactionRecordRequest, TransactionRecordResponse};
+use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
+              SimulateTransactionResponse, Transaction, TransactionRecord};
 
 use sputnikvm::{VMStatus, VM};
-use sputnikvm_network_classic::MainnetEIP160Patch;
+//use sputnikvm_network_classic::MainnetEIP160Patch;
 
-use bigint::{H256, U256};
-use block::Transaction;
+use bigint::{Address, H256, M256, U256};
+use block::Transaction as BlockTransaction;
 use hexutil::{read_hex, to_hex};
 use sha3::{Digest, Keccak256};
 
 use std::str::FromStr;
 
-use evm::{fire_transaction, get_balance, get_code_string, get_nonce, save_transaction_record,
-          update_state_from_vm, StateDb};
-
 use evm::patch::ByzantiumPatch;
+use evm::{fire_transaction, update_state_from_vm};
+
+use state::{EthState, StateDb};
 
 use miner::{get_block, get_latest_block_number, mine_block};
 
@@ -56,7 +54,7 @@ use ekiden_trusted::enclave::enclave_init;
 
 use rlp::UntrustedRlp;
 
-use util::{normalize_hex_str, to_valid, unsigned_to_valid};
+use util::{to_valid, unsigned_to_valid};
 
 #[cfg(debug_assertions)]
 use util::unsigned_transaction_hash;
@@ -69,18 +67,18 @@ with_api! {
 }
 
 #[cfg(debug_assertions)]
-fn genesis_block_initialized(request: &bool) -> Result<bool> {
+fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Ok(StateDb::new().genesis_initialized.is_present())
 }
 
 #[cfg(not(debug_assertions))]
-fn genesis_block_initialized(request: &bool) -> Result<bool> {
+fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Err(Error::new("API available only in debug builds"))
 }
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResponse> {
+fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     let state = StateDb::new();
 
     if state.genesis_initialized.is_present() {
@@ -88,18 +86,32 @@ fn inject_accounts(request: &InjectAccountsRequest) -> Result<InjectAccountsResp
     }
 
     // Insert account states
-    for account_state in request.get_accounts() {
-        let mut account = account_state.clone();
-        account.set_address(normalize_hex_str(account_state.get_address()));
-        state.accounts.insert(account.get_address(), &account);
+    for account in accounts {
+        state.accounts.insert(&account.address, &account);
     }
 
-    Ok(InjectAccountsResponse::new())
+    Ok(())
 }
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
+fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
+    let state = StateDb::new();
+
+    if state.genesis_initialized.is_present() {
+        return Err(Error::new("Genesis block already created"));
+    }
+
+    for &(address, index, value) in storage {
+        state.account_storage.insert(&(address, index), &value);
+    }
+
+    Ok(())
+}
+
+// TODO: secure this method so it can't be called by any client.
+#[cfg(debug_assertions)]
+fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
     info!("*** Init genesis block");
     let state = StateDb::new();
 
@@ -111,137 +123,103 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<InitStateResponse> {
     mine_block(None);
 
     state.genesis_initialized.insert(&true);
-    Ok(InitStateResponse::new())
+    Ok(())
 }
 
 #[cfg(not(debug_assertions))]
-fn init_genesis_block(block: &InitStateRequest) -> Result<InitStateResponse> {
+fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-fn get_block_height(request: &bool) -> Result<String> {
-    Ok(format!("0x{:x}", get_latest_block_number()))
+fn get_block_height(_request: &bool) -> Result<U256> {
+    Ok(get_latest_block_number())
 }
 
-/// TODO: replace strings with U256 datatypes once they are serializable.
-fn get_latest_block_hashes(block_height: &String) -> Result<Vec<String>> {
+fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     let mut result = Vec::new();
 
     let current_block_height = get_latest_block_number();
-    let mut next_start = match U256::from_str(block_height) {
-        Ok(val) => val,
-        Err(err) => return Err(Error::new(format!("{:?}", err))),
-    };
+    let mut next_start = block_height.clone();
 
     while next_start <= current_block_height {
-        let transaction_hash = get_block(next_start)
-            .unwrap()
-            .get_transaction_hash()
-            .to_string();
-        result.push(transaction_hash);
+        let hash = get_block(next_start).unwrap().hash;
+        result.push(hash);
         next_start = next_start + U256::one();
     }
 
     Ok(result)
 }
 
-fn get_block_by_number(request: &BlockRequest) -> Result<BlockResponse> {
+fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
 
-    let number = if request.get_number() == "latest" {
+    let number = if request.number == "latest" {
         get_latest_block_number()
     } else {
-        match U256::from_str(request.get_number()) {
+        match U256::from_str(&request.number) {
             Ok(val) => val,
             Err(err) => return Err(Error::new(format!("{:?}", err))),
         }
     };
 
-    let mut response = BlockResponse::new();
-
     let mut block = match get_block(number) {
         Some(val) => val,
-        None => return Ok(response),
+        None => return Ok(None),
     };
 
     // if full transactions are requested, attach the TransactionRecord
-    if request.get_full() {
-        if let Some(val) = StateDb::new()
-            .transactions
-            .get(block.get_transaction_hash())
-        {
-            block.set_transaction(val);
+    if request.full {
+        if let Some(val) = EthState::instance().get_transaction_record(&block.transaction_hash) {
+            block.transaction = Some(val);
         }
     }
 
-    response.set_block(block);
-    Ok(response)
+    Ok(Some(block))
 }
 
-fn get_transaction_record(request: &TransactionRecordRequest) -> Result<TransactionRecordResponse> {
+fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
     info!("*** Get transaction record");
-    info!("Hash: {:?}", request.get_hash());
+    info!("Hash: {:?}", hash);
 
-    let hash = normalize_hex_str(request.get_hash());
-
-    let mut response = TransactionRecordResponse::new();
-
-    let state = StateDb::new();
-    if let Some(val) = state.transactions.get(&hash) {
-        response.set_record(val);
-    }
-
-    Ok(response)
+    Ok(EthState::instance().get_transaction_record(hash))
 }
 
-fn get_account_balance(request: &AccountRequest) -> Result<AccountBalanceResponse> {
+fn get_account_balance(address: &Address) -> Result<U256> {
     info!("*** Get account balance");
-    info!("Address: {:?}", request.get_address());
+    info!("Address: {:?}", address);
 
-    let address = normalize_hex_str(request.get_address());
-    let balance = get_balance(address);
-
-    let mut response = AccountBalanceResponse::new();
-    response.set_balance(format!("{}", balance));
-
-    Ok(response)
+    Ok(EthState::instance().get_account_balance(address))
 }
 
-fn get_account_nonce(request: &AccountRequest) -> Result<AccountNonceResponse> {
+fn get_account_nonce(address: &Address) -> Result<U256> {
     info!("*** Get account nonce");
-    info!("Address: {:?}", request.get_address());
+    info!("Address: {:?}", address);
 
-    let address = normalize_hex_str(request.get_address());
-    let nonce = get_nonce(address);
-
-    let mut response = AccountNonceResponse::new();
-    response.set_nonce(format!("{}", nonce));
-
-    Ok(response)
+    Ok(EthState::instance().get_account_nonce(address))
 }
 
-fn get_account_code(request: &AccountRequest) -> Result<AccountCodeResponse> {
+fn get_account_code(address: &Address) -> Result<String> {
     info!("*** Get account code");
-    info!("Address: {:?}", request.get_address());
+    info!("Address: {:?}", address);
 
-    let address = normalize_hex_str(request.get_address());
-    let code = get_code_string(address);
-
-    let mut response = AccountCodeResponse::new();
-    response.set_code(code);
-
-    Ok(response)
+    Ok(EthState::instance().get_code_string(address))
 }
 
-fn execute_raw_transaction(
-    request: &ExecuteRawTransactionRequest,
-) -> Result<ExecuteTransactionResponse> {
-    info!("*** Execute raw transaction");
-    info!("Data: {:?}", request.get_data());
+fn get_storage_at(pair: &(Address, U256)) -> Result<M256> {
+    info!("*** Get storage at");
+    let &(address, index) = pair;
+    info!("Address: {:?} @ {:?}", address, index);
 
-    let value = match read_hex(request.get_data()) {
+    Ok(EthState::instance().get_account_storage(address, index))
+}
+
+fn execute_raw_transaction(request: &String) -> Result<H256> {
+    info!("*** Execute raw transaction");
+    info!("Data: {:?}", request);
+
+    let value = match read_hex(request) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
@@ -249,7 +227,7 @@ fn execute_raw_transaction(
 
     let rlp = UntrustedRlp::new(&value);
 
-    let transaction: Transaction = rlp.as_val()?;
+    let transaction: BlockTransaction = rlp.as_val()?;
 
     let valid = match to_valid::<ByzantiumPatch>(&transaction) {
         Ok(val) => val,
@@ -259,37 +237,32 @@ fn execute_raw_transaction(
     let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
-    save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
+    EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
-    let mut response = ExecuteTransactionResponse::new();
-    response.set_hash(format!("{:x}", hash));
-    Ok(response)
+    Ok(hash)
 }
 
-fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTransactionResponse> {
+fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
     info!("*** Simulate transaction");
-    info!("Transaction: {:?}", request.get_transaction());
+    info!("Transaction: {:?}", request);
 
-    let valid = match unsigned_to_valid(request.get_transaction()) {
+    let valid = match unsigned_to_valid(&request) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
     let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
-    let mut response = ExecuteTransactionResponse::new();
 
-    // TODO: return error info to client
-    match vm.status() {
-        VMStatus::ExitedOk => response.set_status(true),
-        _ => response.set_status(false),
-    }
+    let response = SimulateTransactionResponse {
+        result: to_hex(&vm.out()),
+        status: match vm.status() {
+            VMStatus::ExitedOk => true,
+            _ => false,
+        },
+        used_gas: vm.used_gas(),
+    };
 
-    let result = to_hex(&vm.out());
-    trace!("*** Result: {:?}", result);
-
-    response.set_result(result);
-
-    response.set_used_gas(format!("{:x}", vm.used_gas()));
+    trace!("*** Result: {:?}", response.result);
 
     Ok(response)
 }
@@ -297,13 +270,11 @@ fn simulate_transaction(request: &ExecuteTransactionRequest) -> Result<ExecuteTr
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
 // attempts to execute the transaction without performing any validation
 #[cfg(debug_assertions)]
-fn debug_execute_unsigned_transaction(
-    request: &ExecuteTransactionRequest,
-) -> Result<ExecuteTransactionResponse> {
+fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     info!("*** Execute transaction");
-    info!("Transaction: {:?}", request.get_transaction());
+    info!("Transaction: {:?}", request);
 
-    let valid = match unsigned_to_valid(request.get_transaction()) {
+    let valid = match unsigned_to_valid(&request) {
         Ok(val) => val,
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
@@ -313,17 +284,12 @@ fn debug_execute_unsigned_transaction(
     let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
     update_state_from_vm(&vm);
     let (block_number, block_hash) = mine_block(Some(hash));
-    save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
+    EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
-    let mut response = ExecuteTransactionResponse::new();
-    response.set_hash(format!("{:x}", hash));
-
-    Ok(response)
+    Ok(hash)
 }
 
 #[cfg(not(debug_assertions))]
-fn debug_execute_unsigned_transaction(
-    request: &ExecuteTransactionRequest,
-) -> Result<ExecuteTransactionResponse> {
+fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     Err(Error::new("API available only in debug builds"))
 }

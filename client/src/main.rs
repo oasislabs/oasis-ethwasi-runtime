@@ -54,7 +54,10 @@ use ekiden_core::bytes::B256;
 use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
+
+use bigint::{Address, M256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
+use std::str::FromStr;
 
 with_api! {
     create_contract_client!(evm, evm_api, api);
@@ -99,7 +102,8 @@ fn main() {
 
 fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
     println!("Initializing genesis block");
-    let mut inject_accounts_request = evm::InjectAccountsRequest::new();
+    let mut account_request = Vec::new();
+    let mut storage_request = Vec::new();
 
     // Read in all the files in resources/genesis/
     for path in fs::read_dir("../resources/genesis").unwrap() {
@@ -115,29 +119,39 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
         );
 
         for (addr, account) in accounts.accounts {
-            let mut account_state = AccountState::new();
-            account_state.set_nonce(account.nonce);
-            account_state.set_address(addr);
-            account_state.set_balance(account.balance);
-            if account.code != "0x" {
-                account_state.set_code(account.code);
-            }
+            let address = Address::from_str(&addr).unwrap();
+
+            let mut account_state = AccountState {
+                nonce: U256::from_dec_str(&account.nonce).unwrap(),
+                address: address,
+                balance: U256::from_dec_str(&account.balance).unwrap(),
+                code: if account.code == "0x" {
+                    String::new()
+                } else {
+                    account.code
+                },
+            };
+
             for (key, value) in account.storage {
-                account_state.storage.insert(key, value);
+                storage_request.push((
+                    address,
+                    U256::from_str(&key).unwrap(),
+                    M256::from_str(&value).unwrap(),
+                ));
             }
-            inject_accounts_request.accounts.push(account_state);
+
+            account_request.push(account_state);
         }
     }
+    let result = client.inject_accounts(account_request).wait().unwrap();
     let result = client
-        .inject_accounts(inject_accounts_request)
+        .inject_account_storage(storage_request)
         .wait()
         .unwrap();
-    println!("  {:?}", result);
 
-    let mut init_state_request = evm::InitStateRequest::new();
+    let init_state_request = InitStateRequest {};
     let result = client
         .init_genesis_block(init_state_request)
         .wait()
         .unwrap();
-    println!("  {:?}", result);
 }

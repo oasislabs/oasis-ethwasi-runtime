@@ -5,12 +5,12 @@ use jsonrpc_macros::Trailing;
 use bigint::{Address, Gas, H2048, H256, H64, M256, U256};
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
+mod filter;
+mod serialize;
 mod serves;
 mod util;
-mod serialize;
-mod filter;
 
 use self::serialize::*;
 use error::Error;

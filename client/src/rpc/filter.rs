@@ -1,22 +1,22 @@
 use bigint::{Address, H256, U256};
-use hexutil::*;
 use block::{Log, Receipt};
-use sha3::{Digest, Keccak256};
-use std::str::FromStr;
-use std::collections::HashMap;
-use std::sync::Arc;
 use blockchain::chain::HeaderHash;
+use hexutil::*;
 use rpc::RPCLogFilter;
+use sha3::{Digest, Keccak256};
+use std::collections::HashMap;
+use std::str::FromStr;
+use std::sync::Arc;
 use std::thread;
 
-use super::{RPCLog, Either};
 use super::util::*;
+use super::{Either, RPCLog};
 use ekiden_rpc_client;
 
 use error::Error;
-use rlp;
 use evm;
 use futures::future::Future;
+use rlp;
 
 #[derive(Clone, Debug)]
 pub enum TopicFilter {
@@ -121,17 +121,22 @@ impl FilterManager {
     pub fn install_log_filter(&mut self, filter: LogFilter) -> usize {
         let id = self.filters.len();
         self.filters.insert(id, Filter::Log(filter.clone()));
-        self.unmodified_filters.insert(id, Filter::Log(filter.clone()));
+        self.unmodified_filters
+            .insert(id, Filter::Log(filter.clone()));
         id
     }
 
     pub fn install_block_filter(&mut self) -> usize {
-        let block_height_str = self.client.get_block_height(true).wait().unwrap();
-        let block_height = U256::from_str(&block_height_str).unwrap().as_usize();
+        let block_height = self.client
+            .get_block_height(true)
+            .wait()
+            .unwrap()
+            .as_usize();
 
         let id = self.filters.len();
         self.filters.insert(id, Filter::Block(block_height));
-        self.unmodified_filters.insert(id, Filter::Block(block_height));
+        self.unmodified_filters
+            .insert(id, Filter::Block(block_height));
         id
     }
 
@@ -175,10 +180,15 @@ impl FilterManager {
 
         match filter {
             &mut Filter::Block(ref mut next_start) => {
-                let block_hashes = self.client.get_latest_block_hashes(format!("0x{:x}", *next_start)).wait().unwrap();
+                let block_hashes = self.client
+                    .get_latest_block_hashes(U256::from(*next_start))
+                    .wait()
+                    .unwrap();
                 *next_start += block_hashes.len();
-                Ok(Either::Left(block_hashes))
-            },
+                Ok(Either::Left(
+                    block_hashes.iter().map(|h| format!("0x{:x}", h)).collect(),
+                ))
+            }
             /*
             &mut Filter::PendingTransaction(ref mut next_start) => {
                 let pending_transactions = state.all_pending_transaction_hashes();
@@ -195,7 +205,7 @@ impl FilterManager {
                 Ok(Either::Right(ret))
             },
             */
-            _ => { return Err(Error::NotImplemented) }
+            _ => return Err(Error::NotImplemented),
         }
     }
 }
