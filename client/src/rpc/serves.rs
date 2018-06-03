@@ -145,7 +145,10 @@ impl EthereumRPC for MinerEthereumRPC {
     ) -> Result<Hex<M256>, Error> {
         info!("storage_at: address = {:?}, index = {:?}", address, index);
 
-        let response = self.client.get_storage_at((address.0, index.0)).wait().unwrap();
+        let response = self.client
+            .get_storage_at((address.0, index.0))
+            .wait()
+            .unwrap();
         info!("Response: {:?}", response);
 
         Ok(Hex(response))
@@ -370,7 +373,10 @@ impl EthereumRPC for MinerEthereumRPC {
         block_hash: Hex<H256>,
         index: Hex<U256>,
     ) -> Result<Option<RPCTransaction>, Error> {
-        info!("transaction_by_block_hash_and_index: block_hash = {:?}, index = {:?}", block_hash, index);
+        info!(
+            "transaction_by_block_hash_and_index: block_hash = {:?}, index = {:?}",
+            block_hash, index
+        );
         /*
         println!("\n*** transaction_by_block_hash_and_index *** hash = {:?}, index = {:?}", block_hash, index);
 
@@ -396,7 +402,10 @@ impl EthereumRPC for MinerEthereumRPC {
         number: String,
         index: Hex<U256>,
     ) -> Result<Option<RPCTransaction>, Error> {
-        info!("transaction_by_block_number_and_index: number = {:?}, index = {:?}", number, index);
+        info!(
+            "transaction_by_block_number_and_index: number = {:?}, index = {:?}",
+            number, index
+        );
         /*
         println!("\n*** transaction_by_block_number_and_index *** number = {:?}, index = {:?}", number, index);
 
@@ -435,7 +444,10 @@ impl EthereumRPC for MinerEthereumRPC {
         block_hash: Hex<H256>,
         index: Hex<U256>,
     ) -> Result<Option<RPCBlock>, Error> {
-        info!("uncle_by_block_hash_and_index: block_hash = {:?}, index = {:?}", block_hash, index);
+        info!(
+            "uncle_by_block_hash_and_index: block_hash = {:?}, index = {:?}",
+            block_hash, index
+        );
         /*
         println!("\n*** uncle_by_block_hash_and_index *** block_hash = {:?}, index = {:?}", block_hash, index);
 
@@ -470,7 +482,10 @@ impl EthereumRPC for MinerEthereumRPC {
         block_number: String,
         index: Hex<U256>,
     ) -> Result<Option<RPCBlock>, Error> {
-        info!("uncle_by_block_number_and_index: block_number = {:?}, index = {:?}", block_number, index);
+        info!(
+            "uncle_by_block_number_and_index: block_number = {:?}, index = {:?}",
+            block_number, index
+        );
         /*
         println!("\n*** uncle_by_block_number_and_index *** block_number = {:?}, index = {:?}", block_number, index);
 
