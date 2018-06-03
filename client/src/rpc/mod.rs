@@ -14,6 +14,7 @@ mod util;
 
 use self::serialize::*;
 use error::Error;
+use log::{info, log};
 
 use ekiden_rpc_client;
 use evm;
@@ -335,7 +336,7 @@ pub fn rpc_loop(
         .start_http(addr)
         .expect("Expect to build HTTP RPC server");
 
-    println!("Started HTTP RPC server at {}", addr);
+    info!("Started HTTP RPC server at {}", addr);
 
     server.wait();
 }

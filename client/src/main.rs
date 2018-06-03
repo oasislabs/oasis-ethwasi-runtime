@@ -10,6 +10,7 @@ extern crate jsonrpc_http_server;
 extern crate jsonrpc_macros;
 extern crate lazy_static;
 extern crate log;
+extern crate pretty_env_logger;
 extern crate rlp;
 extern crate secp256k1;
 extern crate serde;
@@ -59,6 +60,8 @@ use bigint::{Address, M256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
 
+use log::{info, log, warn, LevelFilter};
+
 with_api! {
     create_contract_client!(evm, evm_api, api);
 }
@@ -84,12 +87,18 @@ struct AccountMap {
 }
 
 fn main() {
+    // initialize logger
+    pretty_env_logger::formatted_builder()
+        .unwrap()
+        .filter(None, LevelFilter::Info)
+        .init();
+
     let signer = create_key_pair();
     let client = contract_client!(signer, evm);
 
     let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
     if is_genesis_initialized {
-        println!("Genesis block already initialized");
+        warn!("Genesis block already initialized");
     } else {
         init_genesis_block(&client);
     }
@@ -101,7 +110,7 @@ fn main() {
 }
 
 fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
-    println!("Initializing genesis block");
+    info!("Initializing genesis block");
     let mut account_request = Vec::new();
     let mut storage_request = Vec::new();
 
@@ -112,7 +121,7 @@ fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcCl
 
         // Parse the JSON file.
         let accounts: AccountMap = serde_json::from_reader(br).unwrap();
-        println!(
+        info!(
             "  {:?} -> {} accounts",
             path.file_name().unwrap(),
             accounts.accounts.len()
