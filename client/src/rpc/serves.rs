@@ -7,6 +7,7 @@ use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, R
 use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
+use evm_api::error::INVALID_BLOCK_NUMBER;
 use evm_api::BlockRequest;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -18,6 +19,8 @@ use evm;
 use futures::future::Future;
 
 use hexutil::{read_hex, to_hex};
+
+use log::{info, log};
 
 pub struct MinerEthereumRPC {
     client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
@@ -55,75 +58,82 @@ impl MinerDebugRPC {
 
 impl EthereumRPC for MinerEthereumRPC {
     fn client_version(&self) -> Result<String, Error> {
-        println!("\n*** client_version");
+        info!("client_version");
         Ok("sputnikvm-dev/v0.1".to_string())
     }
 
     fn sha3(&self, data: Bytes) -> Result<Hex<H256>, Error> {
-        println!("\n*** sha3");
+        info!("sha3");
         use sha3::{Digest, Keccak256};
         Ok(Hex(H256::from(Keccak256::digest(&data.0).as_slice())))
     }
 
     fn network_id(&self) -> Result<String, Error> {
-        // println!("\n*** network_id. Result: 4447");
+        info!("network_id");
         Ok(format!("{}", 4447))
     }
 
     fn is_listening(&self) -> Result<bool, Error> {
-        println!("\n*** is_listening");
+        info!("is_listening");
         Ok(false)
     }
 
     fn peer_count(&self) -> Result<Hex<usize>, Error> {
-        println!("\n*** peer_count");
+        info!("peer_count");
         Ok(Hex(0))
     }
 
     fn protocol_version(&self) -> Result<String, Error> {
-        println!("\n*** protocol_version");
+        info!("protocol_version");
         Ok(format!("{}", 63))
     }
 
     fn is_syncing(&self) -> Result<bool, Error> {
-        println!("\n*** is_syncing");
+        info!("is_syncing");
         Ok(false)
     }
 
     fn coinbase(&self) -> Result<Hex<Address>, Error> {
-        println!("\n*** coinbase");
+        info!("coinbase");
         Ok(Hex(Address::default()))
     }
 
     fn is_mining(&self) -> Result<bool, Error> {
-        println!("\n*** is_mining");
+        info!("is_mining");
         Ok(true)
     }
 
     fn hashrate(&self) -> Result<String, Error> {
-        println!("\n*** hashrate");
+        info!("hashrate");
         Ok(format!("{}", 0))
     }
 
     fn gas_price(&self) -> Result<Hex<Gas>, Error> {
-        println!("\n*** gas_price");
+        info!("gas_price");
         Ok(Hex(Gas::zero()))
     }
 
     fn accounts(&self) -> Result<Vec<Hex<Address>>, Error> {
+        info!("accounts");
+        Ok(Vec::new())
+    }
+
+    fn compilers(&self) -> Result<Vec<String>, Error> {
+        info!("compilers");
         Ok(Vec::new())
     }
 
     fn block_number(&self) -> Result<Hex<usize>, Error> {
+        info!("block_number");
         let block_height = self.client.get_block_height(false).wait().unwrap();
         Ok(Hex(block_height.as_usize()))
     }
 
     fn balance(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Hex<U256>, Error> {
-        println!("\n*** balance *** address = {:?}", address);
+        info!("balance: address = {:?}", address);
 
         let response = self.client.get_account_balance(address.0).wait().unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(Hex(response))
     }
@@ -134,10 +144,13 @@ impl EthereumRPC for MinerEthereumRPC {
         index: Hex<U256>,
         block: Trailing<String>,
     ) -> Result<Hex<M256>, Error> {
-        println!("\n*** storage_at *** address = {:?}, index = {:?}", address, index);
+        info!("storage_at: address = {:?}, index = {:?}", address, index);
 
-        let response = self.client.get_storage_at((address.0, index.0)).wait().unwrap();
-        println!("    Response: {:?}", response);
+        let response = self.client
+            .get_storage_at((address.0, index.0))
+            .wait()
+            .unwrap();
+        info!("Response: {:?}", response);
 
         Ok(Hex(response))
     }
@@ -147,10 +160,10 @@ impl EthereumRPC for MinerEthereumRPC {
         address: Hex<Address>,
         block: Trailing<String>,
     ) -> Result<Hex<U256>, Error> {
-        println!("\n*** transaction_count *** address = {:?}", address);
+        info!("transaction_count: address = {:?}", address);
 
         let response = self.client.get_account_nonce(address.0).wait().unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(Hex(response))
     }
@@ -159,6 +172,7 @@ impl EthereumRPC for MinerEthereumRPC {
         &self,
         block: Hex<H256>,
     ) -> Result<Option<Hex<usize>>, Error> {
+        info!("block_transaction_count_by_hash: block = {:?}", block);
         /*
         println!("\n*** block_transaction_count_by_hash");
 
@@ -179,6 +193,7 @@ impl EthereumRPC for MinerEthereumRPC {
         &self,
         number: String,
     ) -> Result<Option<Hex<usize>>, Error> {
+        info!("block_transaction_count_by_number: number = {:?}", number);
         /*
         println!("\n*** block_transaction_count_by_number *** number = {:?}", number);
 
@@ -197,6 +212,7 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn block_uncles_count_by_hash(&self, block: Hex<H256>) -> Result<Option<Hex<usize>>, Error> {
+        info!("block_uncles_count_by_hash: block = {:?}", block);
         /*
         println!("\n*** block_uncles_count_by_hash");
         let state = self.state.lock().unwrap();
@@ -213,6 +229,7 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn block_uncles_count_by_number(&self, number: String) -> Result<Option<Hex<usize>>, Error> {
+        info!("block_uncles_count_by_number: number = {:?}", number);
         /*
         println!("\n*** block_uncles_count_by_number *** number = {:?}", number);
         let state = self.state.lock().unwrap();
@@ -231,90 +248,53 @@ impl EthereumRPC for MinerEthereumRPC {
 
     fn code(&self, address: Hex<Address>, block: Trailing<String>) -> Result<Bytes, Error> {
         // currently supports only "latest" block semantics
-        println!("\n*** code *** address = {:?}", address);
+        info!("code: address = {:?}", address);
 
         let response = self.client.get_account_code(address.0).wait().unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(Bytes(read_hex(&response)?))
     }
 
     fn sign(&self, address: Hex<Address>, message: Bytes) -> Result<Bytes, Error> {
-        /*
-        println!("\n*** sign *** address = {:?}, message = {:?}", address, message);
-
-        use sha3::{Digest, Keccak256};
-        use secp256k1::{SECP256K1, Message};
-
-        let state = self.state.lock().unwrap();
-
-        let mut signing_message = Vec::new();
-
-        signing_message.extend("Ethereum Signed Message:\n".as_bytes().iter().cloned());
-        signing_message.extend(format!("0x{:x}\n", message.0.len()).as_bytes().iter().cloned());
-        signing_message.extend(message.0.iter().cloned());
-
-        let hash = H256::from(Keccak256::digest(&signing_message).as_slice());
-        let secret_key = {
-            let mut secret_key = None;
-            for key in state.accounts() {
-                if Address::from_secret_key(&key)? == address.0 {
-                    secret_key = Some(key);
-                }
-            }
-            match secret_key {
-                Some(val) => val,
-                None => return Err(Error::NotFound),
-            }
-        };
-        let sign = SECP256K1.sign_recoverable(&Message::from_slice(&hash).unwrap(), &secret_key)?;
-        let (rec, sign) = sign.serialize_compact(&SECP256K1);
-        let mut ret = Vec::new();
-        ret.push(rec.to_i32() as u8);
-        ret.extend(sign.as_ref());
-
-        Ok(Bytes(ret))
-        */
-        Err(Error::TODO)
+        // this will not be implemented, as we will never store private keys
+        Err(Error::NotImplemented)
     }
 
     fn send_transaction(&self, transaction: RPCTransaction) -> Result<Hex<H256>, Error> {
-        println!("\n*** send_transaction");
+        info!("send_transaction: transaction = {:?}", transaction);
 
         let mut _transaction = to_evm_transaction(transaction).unwrap();
-
         let response = self.client
             .debug_execute_unsigned_transaction(_transaction)
             .wait()
             .unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(Hex(response))
     }
 
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
-        println!("\n*** send_raw_transaction *** data = {:?}", data);
+        info!("send_raw_transaction: data = {:?}", data);
 
         let response = match self.client.execute_raw_transaction(to_hex(&data.0)).wait() {
             Ok(val) => val,
             Err(_) => return Err(Error::CallError),
         };
+        info!("Response: {:?}", response);
 
         Ok(Hex(response))
     }
 
     fn call(&self, transaction: RPCTransaction, block: Trailing<String>) -> Result<Bytes, Error> {
-        println!("\n*** Call contract");
+        info!("call: transaction = {:?}", transaction);
+
         let mut _transaction = to_evm_transaction(transaction).unwrap();
-
-        println!("*** Call transaction");
-        println!("Transaction: {:?}", _transaction);
-
         let response = self.client
             .simulate_transaction(_transaction)
             .wait()
             .unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(Bytes(read_hex(&response.result)?))
     }
@@ -324,20 +304,21 @@ impl EthereumRPC for MinerEthereumRPC {
         transaction: RPCTransaction,
         block: Trailing<String>,
     ) -> Result<Hex<Gas>, Error> {
-        println!("\n*** estimate_gas");
-        let mut _transaction = to_evm_transaction(transaction).unwrap();
+        info!("estimate_gas: transaction = {:?}", transaction);
 
         // just simulate the transaction and return used_gas
+        let mut _transaction = to_evm_transaction(transaction).unwrap();
         let response = self.client
             .simulate_transaction(_transaction)
             .wait()
             .unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(Hex(response.used_gas))
     }
 
     fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
+        info!("block_by_hash: hash = {:?}, full = {:?}", hash, full);
         /*
         println!("\n*** block_by_hash *** hash = {:?}", hash);
         let state = self.state.lock().unwrap();
@@ -357,7 +338,7 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
-        //println!("\n*** block_by_number");
+        info!("block_by_number: number = {:?}, full = {:?}", number, full);
 
         let request = BlockRequest {
             number: number,
@@ -366,9 +347,19 @@ impl EthereumRPC for MinerEthereumRPC {
 
         let response = match self.client.get_block_by_number(request).wait() {
             Ok(val) => val,
-            Err(e) => return Err(Error::InvalidParams),
+            // FIXME: We want to differentiate between input formatting vs network errors.
+            // We have an Ekiden Error, which currently gives us only a string description.
+            // We will handle invalid input as a special case for now. Improving Ekiden Errors
+            // is tracked in https://github.com/oasislabs/ekiden/issues/161
+            Err(e) => {
+                if e.message == INVALID_BLOCK_NUMBER {
+                    return Err(Error::InvalidParams);
+                } else {
+                    panic!("Contract call failed");
+                }
+            }
         };
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         match response {
             Some(block) => Ok(Some(to_rpc_block(block, full)?)),
@@ -377,10 +368,10 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn transaction_by_hash(&self, hash: Hex<H256>) -> Result<Option<RPCTransaction>, Error> {
-        println!("\n*** transaction_by_hash");
+        info!("transaction_by_hash: hash = {:?}", hash);
 
         let response = self.client.get_transaction_record(hash.0).wait().unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(match response {
             Some(record) => Some(to_rpc_transaction(&record)?),
@@ -393,6 +384,10 @@ impl EthereumRPC for MinerEthereumRPC {
         block_hash: Hex<H256>,
         index: Hex<U256>,
     ) -> Result<Option<RPCTransaction>, Error> {
+        info!(
+            "transaction_by_block_hash_and_index: block_hash = {:?}, index = {:?}",
+            block_hash, index
+        );
         /*
         println!("\n*** transaction_by_block_hash_and_index *** hash = {:?}, index = {:?}", block_hash, index);
 
@@ -418,6 +413,10 @@ impl EthereumRPC for MinerEthereumRPC {
         number: String,
         index: Hex<U256>,
     ) -> Result<Option<RPCTransaction>, Error> {
+        info!(
+            "transaction_by_block_number_and_index: number = {:?}, index = {:?}",
+            number, index
+        );
         /*
         println!("\n*** transaction_by_block_number_and_index *** number = {:?}, index = {:?}", number, index);
 
@@ -440,10 +439,10 @@ impl EthereumRPC for MinerEthereumRPC {
     }
 
     fn transaction_receipt(&self, hash: Hex<H256>) -> Result<Option<RPCReceipt>, Error> {
-        println!("\n*** transaction_receipt");
+        info!("transaction_receipt: hash = {:?}", hash);
 
         let response = self.client.get_transaction_record(hash.0).wait().unwrap();
-        println!("    Response: {:?}", response);
+        info!("Response: {:?}", response);
 
         Ok(match response {
             Some(record) => Some(to_rpc_receipt(&record)?),
@@ -456,6 +455,10 @@ impl EthereumRPC for MinerEthereumRPC {
         block_hash: Hex<H256>,
         index: Hex<U256>,
     ) -> Result<Option<RPCBlock>, Error> {
+        info!(
+            "uncle_by_block_hash_and_index: block_hash = {:?}, index = {:?}",
+            block_hash, index
+        );
         /*
         println!("\n*** uncle_by_block_hash_and_index *** block_hash = {:?}, index = {:?}", block_hash, index);
 
@@ -490,6 +493,10 @@ impl EthereumRPC for MinerEthereumRPC {
         block_number: String,
         index: Hex<U256>,
     ) -> Result<Option<RPCBlock>, Error> {
+        info!(
+            "uncle_by_block_number_and_index: block_number = {:?}, index = {:?}",
+            block_number, index
+        );
         /*
         println!("\n*** uncle_by_block_number_and_index *** block_number = {:?}, index = {:?}", block_number, index);
 
@@ -519,13 +526,8 @@ impl EthereumRPC for MinerEthereumRPC {
         Err(Error::TODO)
     }
 
-    fn compilers(&self) -> Result<Vec<String>, Error> {
-        println!("\n*** compilers");
-
-        Ok(Vec::new())
-    }
-
     fn logs(&self, log: RPCLogFilter) -> Result<Vec<RPCLog>, Error> {
+        info!("logs: log = {:?}", log);
         /*
         println!("\n*** logs. log = {:?}", log);
 
@@ -542,40 +544,42 @@ impl EthereumRPC for MinerEthereumRPC {
 
 impl FilterRPC for MinerFilterRPC {
     fn new_filter(&self, log: RPCLogFilter) -> Result<String, Error> {
+        info!("new_filter");
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
     fn new_block_filter(&self) -> Result<String, Error> {
-        println!("*** new_block_filter");
-
+        info!("new_block_filter");
         let id = self.filter.lock().unwrap().install_block_filter();
         Ok(format!("0x{:x}", id))
     }
 
     fn new_pending_transaction_filter(&self) -> Result<String, Error> {
+        info!("pending_transaction_filter");
         // FIXME: implement
         Err(Error::NotImplemented)
     }
 
     fn uninstall_filter(&self, id: String) -> Result<bool, Error> {
-        println!("*** uninstall filter");
+        info!("uninstall_filter: id = {:?}", id);
         let id = U256::from_str(&id)?.as_usize();
         self.filter.lock().unwrap().uninstall_filter(id);
         Ok(true)
     }
 
     fn filter_changes(&self, id: String) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
-        println!("*** filter_changes");
+        info!("filter_changes: id = {:?}", id);
 
         let id = U256::from_str(&id)?.as_usize();
         let result = self.filter.lock().unwrap().get_changes(id)?;
 
-        println!("    Response: {:?}", result);
+        info!("Response: {:?}", result);
         Ok(result)
     }
 
     fn filter_logs(&self, id: String) -> Result<Vec<RPCLog>, Error> {
+        info!("filter_logs: id = {:?}", id);
         // FIXME: implement
         Err(Error::NotImplemented)
     }
