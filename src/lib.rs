@@ -28,6 +28,7 @@ extern crate rlp;
 extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
+use evm_api::error::INVALID_BLOCK_NUMBER;
 use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
               SimulateTransactionResponse, Transaction, TransactionRecord};
 
@@ -160,7 +161,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
     } else {
         match U256::from_str(&request.number) {
             Ok(val) => val,
-            Err(err) => return Err(Error::new(format!("{:?}", err))),
+            Err(err) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
         }
     };
 

@@ -21,3 +21,5 @@ extern crate bigint;
 pub use bigint::{Address, H256, M256, U256};
 mod state;
 pub use state::*;
+
+pub mod error;

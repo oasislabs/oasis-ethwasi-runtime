@@ -7,6 +7,7 @@ use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, R
 use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
+use evm_api::error::INVALID_BLOCK_NUMBER;
 use evm_api::BlockRequest;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
@@ -346,7 +347,17 @@ impl EthereumRPC for MinerEthereumRPC {
 
         let response = match self.client.get_block_by_number(request).wait() {
             Ok(val) => val,
-            Err(e) => return Err(Error::InvalidParams),
+            // FIXME: We want to differentiate between input formatting vs network errors.
+            // We have an Ekiden Error, which currently gives us only a string description.
+            // We will handle invalid input as a special case for now. Improving Ekiden Errors
+            // is tracked in https://github.com/oasislabs/ekiden/issues/161
+            Err(e) => {
+                if e.message == INVALID_BLOCK_NUMBER {
+                    return Err(Error::InvalidParams);
+                } else {
+                    panic!("Contract call failed");
+                }
+            }
         };
         info!("Response: {:?}", response);
 
