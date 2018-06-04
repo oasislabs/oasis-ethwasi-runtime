@@ -1,5 +1,5 @@
 #![feature(use_extern_macros)]
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
@@ -50,6 +50,8 @@ with_api! {
 
 /// When restoring an exported state, inject this many accounts at a time.
 const INJECT_CHUNK_SIZE: usize = 100;
+/// When restoring an exported state, inject this many account storage items at a time.
+const INJECT_STORAGE_CHUNK_SIZE: usize = 1000;
 
 #[derive(Deserialize)]
 struct ExportedAccount {
@@ -60,7 +62,7 @@ struct ExportedAccount {
 }
 #[derive(Deserialize)]
 struct ExportedState {
-    state: HashMap<String, ExportedAccount>,
+    state: BTreeMap<String, ExportedAccount>,
 }
 
 fn to_ms(d: Duration) -> f64 {
@@ -135,8 +137,15 @@ fn main() {
         let accounts_len = accounts_req.len();
         let res = client.inject_accounts(accounts_req).wait().unwrap();
         debug!("inject_accounts result: {:?}", res); // %%%
-        let res = client.inject_account_storage(storage_req).wait().unwrap();
-        debug!("inject_account_storage result: {:?}", res); // %%%
+
+        trace!("Injecting {} account storage items", storage_req.len());
+        for chunk in storage_req.chunks(INJECT_STORAGE_CHUNK_SIZE) {
+            let chunk_len = chunk.len();
+            let res = client.inject_account_storage(chunk.to_vec()).wait().unwrap();
+            debug!("inject_account_storage result: {:?}", res); // %%%
+            trace!("Injected {} account storage items", chunk_len);
+        }
+
         num_accounts_injected += accounts_len;
         trace!("Injected {} accounts", num_accounts_injected);
     }
