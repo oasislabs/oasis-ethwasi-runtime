@@ -87,25 +87,26 @@ struct AccountMap {
 }
 
 fn main() {
+    let known_components = client_utils::components::create_known_components();
     let args = default_app!()
+        .args(&known_components.get_arguments())
         .arg(
             Arg::with_name("threads")
                 .long("threads")
                 .help("Number of threads to use for HTTP server.")
-                .default_value("3")
+                .default_value("1")
                 .takes_value(true)
                 .required(true),
         )
         .get_matches();
 
-    // initialize logger
-    pretty_env_logger::formatted_builder()
-        .unwrap()
-        .filter(None, LevelFilter::Info)
-        .init();
+    // Initialize component container.
+    let mut container = known_components
+        .build_with_arguments(&args)
+        .expect("failed to initialize component container");
 
     let signer = create_key_pair();
-    let client = contract_client!(signer, evm, args);
+    let client = contract_client!(signer, evm, args, container);
 
     let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
     if is_genesis_initialized {
