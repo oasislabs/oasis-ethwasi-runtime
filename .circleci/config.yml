@@ -56,7 +56,7 @@ jobs:
 
       # Start shared dummy node.
       - run:
-          command: ekiden-node-dummy --time-source mockrpc
+          command: ekiden-node-dummy --time-source mockrpc --storage-backend dummy
           background: true
       # Start EVM compute node.
       - run:
