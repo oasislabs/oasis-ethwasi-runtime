@@ -96,13 +96,13 @@ pub fn get_logs(state: &MinerState, filter: LogFilter) -> Result<Vec<RPCLog>, Er
 */
 
 pub struct FilterManager {
-    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
+    client: Arc<evm::Client>,
     filters: HashMap<usize, Filter>,
     unmodified_filters: HashMap<usize, Filter>,
 }
 
 impl FilterManager {
-    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
+    pub fn new(client: Arc<evm::Client>) -> Self {
         FilterManager {
             client,
             filters: HashMap::new(),

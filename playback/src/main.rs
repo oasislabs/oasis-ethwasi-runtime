@@ -10,7 +10,6 @@ use clap::crate_authors;
 use clap::crate_description;
 use clap::crate_name;
 use clap::crate_version;
-use clap::value_t;
 use clap::value_t_or_exit;
 use clap::App;
 use clap::Arg;
@@ -24,21 +23,19 @@ use log::debug;
 use log::info;
 use log::log;
 use log::trace;
-use log::LevelFilter;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
-#[macro_use]
 extern crate client_utils;
 use client_utils::contract_client;
 use client_utils::default_app;
-use client_utils::default_backend;
 extern crate ekiden_contract_client;
 use ekiden_contract_client::create_contract_client;
 extern crate ekiden_core;
+use ekiden_core::bytes::B256;
 extern crate ekiden_rpc_client;
 
 extern crate evm_api;
@@ -75,7 +72,9 @@ fn main() {
     let key_pair =
         ekiden_core::ring::signature::Ed25519KeyPair::from_seed_unchecked(seed_input).unwrap();
     let signer = std::sync::Arc::new(ekiden_core::signature::InMemorySigner::new(key_pair));
+    let known_components = client_utils::components::create_known_components();
     let args = default_app!()
+        .args(&known_components.get_arguments())
         .arg(
             Arg::with_name("exported_state")
                 .takes_value(true)
@@ -87,14 +86,12 @@ fn main() {
                 .required(true),
         )
         .get_matches();
+    // Initialize component container.
+    let mut container = known_components
+        .build_with_arguments(&args)
+        .expect("failed to initialize component container");
 
-    // Initialize logger.
-    pretty_env_logger::formatted_builder()
-        .unwrap()
-        .filter(None, LevelFilter::Trace)
-        .init();
-
-    let client = contract_client!(signer, evm, args);
+    let client = contract_client!(signer, evm, args, container);
 
     let state_path = args.value_of("exported_state").unwrap();
     trace!("Parsing state JSON");
