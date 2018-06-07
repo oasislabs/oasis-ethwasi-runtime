@@ -314,10 +314,7 @@ build_rpc_trait! {
     }
 }
 
-pub fn rpc_loop(
-    client: Arc<evm::Client>,
-    addr: &SocketAddr,
-) {
+pub fn rpc_loop(client: Arc<evm::Client>, addr: &SocketAddr, num_threads: usize) {
     let rpc = serves::MinerEthereumRPC::new(client.clone());
     let filter = serves::MinerFilterRPC::new(client);
     let debug = serves::MinerDebugRPC::new();
@@ -333,10 +330,14 @@ pub fn rpc_loop(
             AccessControlAllowOrigin::Any,
             AccessControlAllowOrigin::Null,
         ]))
+        .threads(num_threads)
         .start_http(addr)
         .expect("Expect to build HTTP RPC server");
 
-    info!("Started HTTP RPC server at {}", addr);
+    info!(
+        "Started HTTP RPC server with {} threads at {}",
+        num_threads, addr
+    );
 
     server.wait();
 }

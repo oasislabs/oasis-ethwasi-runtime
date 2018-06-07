@@ -87,14 +87,25 @@ struct AccountMap {
 }
 
 fn main() {
-    // initialize logger
-    pretty_env_logger::formatted_builder()
-        .unwrap()
-        .filter(None, LevelFilter::Info)
-        .init();
+    let known_components = client_utils::components::create_known_components();
+    let args = default_app!()
+        .args(&known_components.get_arguments())
+        .arg(
+            Arg::with_name("threads")
+                .long("threads")
+                .help("Number of threads to use for HTTP server.")
+                .default_value("1")
+                .takes_value(true),
+        )
+        .get_matches();
+
+    // Initialize component container.
+    let mut container = known_components
+        .build_with_arguments(&args)
+        .expect("failed to initialize component container");
 
     let signer = create_key_pair();
-    let client = contract_client!(signer, evm);
+    let client = contract_client!(signer, evm, args, container);
 
     let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
     if is_genesis_initialized {
@@ -105,8 +116,8 @@ fn main() {
 
     let client_arc = Arc::new(client);
     let addr = "0.0.0.0:8545".parse().unwrap();
-
-    rpc::rpc_loop(client_arc, &addr);
+    let num_threads = value_t!(args, "threads", usize).unwrap();
+    rpc::rpc_loop(client_arc, &addr, num_threads);
 }
 
 fn init_genesis_block(client: &evm::Client) {
