@@ -53,7 +53,7 @@ separate container shell, attached to the same container.
 
 To start the shared dummy node:
 ```
-$ ekiden-node-dummy --time-source mockrpc
+$ ekiden-node-dummy --time-source mockrpc --storage-backend dummy
 ```
 
 To start the compute node for the EVM contract (you need to start at least two, on different ports):
