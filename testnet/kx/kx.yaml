@@ -33,6 +33,17 @@ spec:
       containers:
         - name: ekiden-node-dummy
           image: docker.io/oasislabs/ekiden-contract-evm:latest
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret
           command:
             - ekiden-node-dummy
           args:
@@ -40,6 +51,12 @@ spec:
             - mock
             - --mock-epoch-interval
             - "3600"
+            - --storage-backend
+            - dynamodb
+            - --storage-dynamodb-region
+            - us-west-2
+            - --storage-dynamodb-table-name
+            - kx-evm
 ---
 kind: Service
 apiVersion: v1
