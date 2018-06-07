@@ -109,7 +109,7 @@ fn main() {
     rpc::rpc_loop(client_arc, &addr);
 }
 
-fn init_genesis_block(client: &evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>) {
+fn init_genesis_block(client: &evm::Client) {
     info!("Initializing genesis block");
     let mut account_request = Vec::new();
     let mut storage_request = Vec::new();
