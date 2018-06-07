@@ -95,7 +95,7 @@ fn main() {
                 .long("threads")
                 .help("Number of threads to use for HTTP server.")
                 .default_value("1")
-                .takes_value(true)
+                .takes_value(true),
         )
         .get_matches();
 

@@ -314,11 +314,7 @@ build_rpc_trait! {
     }
 }
 
-pub fn rpc_loop(
-    client: Arc<evm::Client>,
-    addr: &SocketAddr,
-    num_threads: usize,
-) {
+pub fn rpc_loop(client: Arc<evm::Client>, addr: &SocketAddr, num_threads: usize) {
     let rpc = serves::MinerEthereumRPC::new(client.clone());
     let filter = serves::MinerFilterRPC::new(client);
     let debug = serves::MinerDebugRPC::new();
