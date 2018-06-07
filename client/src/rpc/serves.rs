@@ -23,7 +23,7 @@ use hexutil::{read_hex, to_hex};
 use log::{info, log};
 
 pub struct MinerEthereumRPC {
-    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
+    client: Arc<evm::Client>,
 }
 
 pub struct MinerFilterRPC {
@@ -37,13 +37,13 @@ unsafe impl Sync for MinerFilterRPC {}
 unsafe impl Sync for MinerDebugRPC {}
 
 impl MinerEthereumRPC {
-    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
+    pub fn new(client: Arc<evm::Client>) -> Self {
         MinerEthereumRPC { client }
     }
 }
 
 impl MinerFilterRPC {
-    pub fn new(client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>) -> Self {
+    pub fn new(client: Arc<evm::Client>) -> Self {
         MinerFilterRPC {
             filter: Mutex::new(FilterManager::new(client)),
         }

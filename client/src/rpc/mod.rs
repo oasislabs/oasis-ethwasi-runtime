@@ -314,10 +314,7 @@ build_rpc_trait! {
     }
 }
 
-pub fn rpc_loop(
-    client: Arc<evm::Client<ekiden_rpc_client::backend::Web3RpcClientBackend>>,
-    addr: &SocketAddr,
-) {
+pub fn rpc_loop(client: Arc<evm::Client>, addr: &SocketAddr) {
     let rpc = serves::MinerEthereumRPC::new(client.clone());
     let filter = serves::MinerFilterRPC::new(client);
     let debug = serves::MinerDebugRPC::new();
