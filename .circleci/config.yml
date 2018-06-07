@@ -49,6 +49,12 @@ jobs:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: client
           command: cargo build
+      # Build the playback program.
+      - run:
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
+          working_directory: playback
+          command: cargo build
       # Check style. This needs to be after everything is built.
       - run: cargo fmt -- --write-mode=check
 
