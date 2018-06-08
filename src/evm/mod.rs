@@ -71,15 +71,15 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
             }
             Err(RequireError::Blockhash(number)) => {
                 trace!("> Require Blockhash @ {:x}", number);
-                // TODO: maintain block state (including blockhash)
-                let result = match number.as_u32() {
-                    4976641 => H256::from_str(
-                        "0x4f5bf1c9fc97e2c17a34859bb885a67519c19e2a0d9176da45fcfee758fadf82",
-                    ).unwrap(),
-                    _ => panic!("VM requested blockhash of unknown block: {}", number),
+                // ethereum returns actual values only for the most recent 256 blocks, otherwise 0
+                let latest = state.get_latest_block_number();
+                let hash = if number <= latest && latest - number < U256::from(256) {
+                    state.get_block_hash(number).unwrap_or(H256::zero())
+                } else {
+                    H256::zero()
                 };
-
-                vm.commit_blockhash(number, result).unwrap();
+                trace!("  -> {:?}", hash);
+                vm.commit_blockhash(number, hash).unwrap();
             }
         }
     }
