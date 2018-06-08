@@ -140,6 +140,17 @@ impl EthState {
         self.db.transactions.get(hash)
     }
 
+    pub fn get_block_hash(&self, number: U256) -> Option<H256> {
+        match self.db.blocks.get(&number) {
+            Some(block) => Some(block.hash),
+            None => None,
+        }
+    }
+
+    pub fn get_latest_block_number(&self) -> U256 {
+        self.db.latest_block_number.get().unwrap_or(U256::zero())
+    }
+
     pub fn save_transaction_record<P: Patch>(
         &self,
         hash: H256,
