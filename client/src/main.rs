@@ -99,6 +99,9 @@ fn main() {
         )
         .get_matches();
 
+    // reset max log level to Info after default_app macro sets it to Trace
+    log::set_max_level(LevelFilter::Info);
+
     // Initialize component container.
     let mut container = known_components
         .build_with_arguments(&args)
