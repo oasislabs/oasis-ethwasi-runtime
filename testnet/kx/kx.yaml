@@ -50,7 +50,7 @@ spec:
             - --time-source
             - mock
             - --mock-epoch-interval
-            - "3600"
+            - "600"
             - --storage-backend
             - dynamodb
             - --storage-dynamodb-region
