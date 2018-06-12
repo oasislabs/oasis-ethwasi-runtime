@@ -15,7 +15,7 @@ evm-api = { path = "../api" }
 clap = "2.29.1"
 rand = "0.4"
 futures = "0.1.18"
-grpcio = "0.2.2"
+grpcio = { git = "https://github.com/ekiden/grpc-rs", tag = "v0.3.0-ekiden1", features = ["openssl"] }
 
 ## Sputnik/EVM dependencies
 
