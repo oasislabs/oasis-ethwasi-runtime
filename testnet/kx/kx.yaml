@@ -50,7 +50,7 @@ spec:
             - --time-source
             - mock
             - --mock-epoch-interval
-            - "3600"
+            - "600"
             - --storage-backend
             - dynamodb
             - --storage-dynamodb-region
@@ -161,6 +161,8 @@ spec:
             - -c
             - >-
               exec web3-client
+              --entity-registry-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --scheduler-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --mr-enclave $$(cat ekiden/res/evm.mrenclave)
-              --dummy-host $(EVM_NODE_DUMMY_SERVICE_HOST)
-              --dummy-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)

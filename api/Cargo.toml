@@ -7,7 +7,7 @@ build = "build.rs"
 [dependencies]
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 etcommon-bigint = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden", features = ["string", "rlp", "serialize"], default-features = false }
-protobuf = "~1.4"
+protobuf = "~2.0"
 serde = "1.0"
 serde_derive = "1.0"
 sputnikvm = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden", features = ["std"] }

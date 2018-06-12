@@ -13,9 +13,8 @@ extern crate ekiden_core;
 #[macro_use]
 mod api;
 
-// not using protobufs
-//mod generated;
-//pub use generated::api::*;
+mod generated;
+pub use generated::api::*;
 
 extern crate bigint;
 pub use bigint::{Address, H256, M256, U256};
