@@ -70,13 +70,13 @@ fn main() {
     let pool = ThreadPool::with_name("clients".into(), threads);
     let counter = Arc::new(AtomicUsize::new(0));
 
-    let transport = HttpTransport::new().unwrap();
     let url = format!("http://{}:{}", host, port);
 
     let start = Instant::now();
 
     for _ in 0..pool.max_count() {
         let counter = counter.clone();
+        let transport = HttpTransport::new().unwrap();
         let transport_handle = transport.handle(&url).unwrap();
 
         pool.execute(move || {
