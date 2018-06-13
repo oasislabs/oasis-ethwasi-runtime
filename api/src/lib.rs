@@ -1,8 +1,8 @@
 #![feature(use_extern_macros)]
 
+extern crate common_types as ethcore_types;
 extern crate protobuf;
 extern crate serde;
-extern crate sputnikvm;
 
 #[macro_use]
 extern crate serde_derive;
@@ -17,8 +17,8 @@ mod api;
 //mod generated;
 //pub use generated::api::*;
 
-extern crate bigint;
-pub use bigint::{Address, H256, M256, U256};
+extern crate ethereum_types;
+pub use ethereum_types::{Address, H256, U256};
 mod state;
 pub use state::*;
 

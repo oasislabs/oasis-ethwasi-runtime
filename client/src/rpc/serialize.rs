@@ -97,7 +97,7 @@ impl<'de> Deserialize<'de> for Bytes {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bigint::*;
+    use ethereum_types::*;
     use serde_json;
 
     #[test]

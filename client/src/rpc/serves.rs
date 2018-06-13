@@ -6,7 +6,7 @@ use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, R
 
 use error::Error;
 
-use bigint::{Address, Gas, H256, M256, U256};
+use ethereum_types::{Address, U256, H256, M256, U256};
 use evm_api::error::INVALID_BLOCK_NUMBER;
 use evm_api::BlockRequest;
 use std::str::FromStr;
@@ -108,9 +108,9 @@ impl EthereumRPC for MinerEthereumRPC {
         Ok(format!("{}", 0))
     }
 
-    fn gas_price(&self) -> Result<Hex<Gas>, Error> {
+    fn gas_price(&self) -> Result<Hex<U256>, Error> {
         info!("gas_price");
-        Ok(Hex(Gas::zero()))
+        Ok(Hex(U256::zero()))
     }
 
     fn accounts(&self) -> Result<Vec<Hex<Address>>, Error> {
@@ -303,7 +303,7 @@ impl EthereumRPC for MinerEthereumRPC {
         &self,
         transaction: RPCTransaction,
         block: Trailing<String>,
-    ) -> Result<Hex<Gas>, Error> {
+    ) -> Result<Hex<U256>, Error> {
         info!("estimate_gas: transaction = {:?}", transaction);
 
         // just simulate the transaction and return used_gas

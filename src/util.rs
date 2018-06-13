@@ -1,4 +1,4 @@
-use bigint::{Gas, H256, U256};
+use ethereum_types::{U256, H256, U256};
 use block::{RlpHash, Transaction, TransactionSignature};
 use evm_api::Transaction as EVMTransaction;
 use hexutil::{read_hex, ParseHexError};
@@ -41,7 +41,7 @@ pub fn to_valid<P: Patch>(
 
     // check gas limit
     if valid.gas_limit < valid.intrinsic_gas::<P>() {
-        return Err(PreExecutionError::InsufficientGasLimit);
+        return Err(PreExecutionError::InsufficientU256Limit);
     }
 
     // check balance
@@ -118,8 +118,8 @@ pub fn unsigned_to_valid(
     Ok(ValidTransaction {
         caller: transaction.caller,
         action: action,
-        gas_price: Gas::zero(),
-        gas_limit: Gas::max_value(),
+        gas_price: U256::zero(),
+        gas_limit: U256::max_value(),
         value: match transaction.value {
             Some(value) => value,
             None => U256::zero(),

@@ -2,7 +2,7 @@ use super::serialize::*;
 use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use error::Error;
 
-use bigint::{Address, Gas, H2048, H256, H64, U256};
+use ethereum_types::{Address, U256, H2048, H256, H64, U256};
 use hexutil::{read_hex, to_hex};
 
 use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
@@ -40,8 +40,8 @@ pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, E
 
         size: Hex(0),
         // FIXME: gas_limits that are too high overflow metamask, so pick an arbitrary not-too-large number
-        gas_limit: Hex(Gas::from_str("0x10000000000000").unwrap()),
-        gas_used: Hex(Gas::zero()),
+        gas_limit: Hex(U256::from_str("0x10000000000000").unwrap()),
+        gas_used: Hex(U256::zero()),
         timestamp: Hex(0),
         transactions: if full_transactions {
             Either::Right(match block.transaction {

@@ -1,4 +1,4 @@
-use bigint::{H256, U256};
+use ethereum_types::{H256, U256};
 use evm_api::Block;
 use sha3::{Digest, Keccak256};
 use state::StateDb;

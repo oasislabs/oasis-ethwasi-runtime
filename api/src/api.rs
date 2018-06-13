@@ -3,7 +3,7 @@ use ekiden_core::contract::contract_api;
 contract_api! {
     pub fn genesis_block_initialized(bool) -> bool;
     pub fn inject_accounts(Vec<AccountState>) -> ();
-    pub fn inject_account_storage(Vec<(Address, U256, M256)>) -> ();
+    // pub fn inject_account_storage(Vec<(Address, U256, M256)>) -> ();
     pub fn init_genesis_block(InitStateRequest) -> ();
 
     pub fn debug_execute_unsigned_transaction(Transaction) -> H256;
@@ -26,5 +26,5 @@ contract_api! {
 
     pub fn get_block_by_number(BlockRequest) -> Option<Block>;
 
-    pub fn get_storage_at((Address, U256)) -> M256;
+    // pub fn get_storage_at((Address, U256)) -> M256;
 }

@@ -1,6 +1,6 @@
 #![feature(use_extern_macros)]
 
-extern crate bigint;
+extern crate ethereum_types;
 extern crate block;
 extern crate blockchain;
 extern crate hexutil;
@@ -56,7 +56,7 @@ use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 
-use bigint::{Address, M256, U256};
+use ethereum_types::{Address, M256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
 

@@ -4,7 +4,7 @@ use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
 
-extern crate bigint;
+extern crate ethereum_types;
 extern crate clap;
 use clap::crate_authors;
 use clap::crate_description;
@@ -106,12 +106,12 @@ fn main() {
         let mut accounts_req = Vec::new();
         let mut storage_req = Vec::new();
         for (addr, account) in chunk {
-            let address = bigint::Address::from_str(&addr).unwrap();
+            let address = ethereum_types::Address::from_str(&addr).unwrap();
 
             let mut account_state = AccountState {
-                nonce: bigint::U256::from_str(&account.nonce).unwrap(),
+                nonce: ethereum_types::U256::from_str(&account.nonce).unwrap(),
                 address: address,
-                balance: bigint::U256::from_str(&account.balance).unwrap(),
+                balance: ethereum_types::U256::from_str(&account.balance).unwrap(),
                 code: match account.code {
                     Some(code) => code,
                     None => String::new(),
@@ -121,8 +121,8 @@ fn main() {
                 for (key, value) in storage {
                     storage_req.push((
                         address,
-                        bigint::U256::from_str(&key).unwrap(),
-                        bigint::M256::from_str(&value).unwrap(),
+                        ethereum_types::U256::from_str(&key).unwrap(),
+                        ethereum_types::M256::from_str(&value).unwrap(),
                     ));
                 }
             }

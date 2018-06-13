@@ -5,19 +5,15 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-etcommon-bigint = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden", features = ["string", "rlp", "serialize"], default-features = false }
-etcommon-hexutil = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden", default-features = false }
-etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
-etcommon-block = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
-sputnikvm-network-classic = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
-sputnikvm-network-foundation = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden" }
 sha3 = "0.6"
-sputnikvm = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden", features = ["std"]}
 evm-api = { path = "./api" }
+ethcore = { path = "/sterling/parity/parity/ethcore" }
+ethereum-types = { path = "/sterling/parity/primitives/ethereum-types" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 protobuf = "~1.4"
 log = "0.4"
+hex = "0.3"
 
 [build-dependencies]
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

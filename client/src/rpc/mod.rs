@@ -2,7 +2,7 @@ use jsonrpc_core::IoHandler;
 use jsonrpc_http_server::*;
 use jsonrpc_macros::Trailing;
 
-use bigint::{Address, Gas, H2048, H256, H64, M256, U256};
+use ethereum_types::{Address, U256, H2048, H256, H64, M256, U256};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -62,8 +62,8 @@ pub struct RPCReceipt {
     pub transaction_index: Hex<usize>,
     pub block_hash: Hex<H256>,
     pub block_number: Hex<U256>,
-    pub cumulative_gas_used: Hex<Gas>,
-    pub gas_used: Hex<Gas>,
+    pub cumulative_gas_used: Hex<U256>,
+    pub gas_used: Hex<U256>,
     pub contract_address: Option<Hex<Address>>,
     pub logs: Vec<RPCLog>,
     pub root: Hex<H256>,
@@ -87,8 +87,8 @@ pub struct RPCBlock {
     pub total_difficulty: Hex<U256>,
     pub extra_data: Bytes,
     pub size: Hex<usize>,
-    pub gas_limit: Hex<Gas>,
-    pub gas_used: Hex<Gas>,
+    pub gas_limit: Hex<U256>,
+    pub gas_used: Hex<U256>,
     pub timestamp: Hex<u64>,
     pub transactions: Either<Vec<Hex<H256>>, Vec<RPCTransaction>>,
     pub uncles: Vec<Hex<H256>>,
@@ -99,8 +99,8 @@ pub struct RPCBlock {
 pub struct RPCTransaction {
     pub from: Option<Hex<Address>>,
     pub to: Option<Hex<Address>>,
-    pub gas: Option<Hex<Gas>>,
-    pub gas_price: Option<Hex<Gas>>,
+    pub gas: Option<Hex<U256>>,
+    pub gas_price: Option<Hex<U256>>,
     pub value: Option<Hex<U256>>,
     pub data: Option<Bytes>,
     pub nonce: Option<Hex<U256>>,
@@ -114,7 +114,7 @@ pub struct RPCTransaction {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCTrace {
-    pub gas: Hex<Gas>,
+    pub gas: Hex<U256>,
     pub return_value: Bytes,
     pub struct_logs: Vec<RPCStep>,
 }
@@ -157,8 +157,8 @@ pub struct RPCBlockTrace {
 pub struct RPCStep {
     pub depth: usize,
     pub error: String,
-    pub gas: Hex<Gas>,
-    pub gas_cost: Hex<Gas>,
+    pub gas: Hex<U256>,
+    pub gas_cost: Hex<U256>,
     pub op: u8,
     pub pc: usize,
     pub opcode_pc: usize,
@@ -214,7 +214,7 @@ build_rpc_trait! {
         #[rpc(name = "eth_hashrate")]
         fn hashrate(&self) -> Result<String, Error>;
         #[rpc(name = "eth_gasPrice")]
-        fn gas_price(&self) -> Result<Hex<Gas>, Error>;
+        fn gas_price(&self) -> Result<Hex<U256>, Error>;
         #[rpc(name = "eth_accounts")]
         fn accounts(&self) -> Result<Vec<Hex<Address>>, Error>;
         #[rpc(name = "eth_blockNumber")]
@@ -244,8 +244,8 @@ build_rpc_trait! {
 
         #[rpc(name = "eth_call")]
         fn call(&self, RPCTransaction, Trailing<String>) -> Result<Bytes, Error>;
-        #[rpc(name = "eth_estimateGas")]
-        fn estimate_gas(&self, RPCTransaction, Trailing<String>) -> Result<Hex<Gas>, Error>;
+        #[rpc(name = "eth_estimateU256")]
+        fn estimate_gas(&self, RPCTransaction, Trailing<String>) -> Result<Hex<U256>, Error>;
 
         #[rpc(name = "eth_getBlockByHash")]
         fn block_by_hash(&self, Hex<H256>, bool) -> Result<Option<RPCBlock>, Error>;

@@ -1,4 +1,4 @@
-use bigint::{Address, H256, U256};
+use ethereum_types::{Address, H256, U256};
 use block::{Log, Receipt};
 use blockchain::chain::HeaderHash;
 use hexutil::*;

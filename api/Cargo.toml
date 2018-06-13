@@ -6,11 +6,11 @@ build = "build.rs"
 
 [dependencies]
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-etcommon-bigint = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden", features = ["string", "rlp", "serialize"], default-features = false }
+ethereum-types = { path = "/sterling/parity/primitives/ethereum-types" }
 protobuf = "~1.4"
 serde = "1.0"
 serde_derive = "1.0"
-sputnikvm = { git = "https://github.com/ekiden/sputnikvm", branch = "ekiden", features = ["std"] }
+common-types = { path = "/sterling/parity/parity/ethcore/types" }
 
 [build-dependencies]
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

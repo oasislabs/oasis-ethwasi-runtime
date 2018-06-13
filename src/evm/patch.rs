@@ -1,6 +1,6 @@
-use bigint::{Address, Gas, U256};
-use sputnikvm::{AccountPatch, Patch, Precompiled};
-use sputnikvm_network_foundation::{ByzantiumPatch as P, StateClearingAccountPatch as AP};
+use ethereum_types::{Address, U256, U256};
+// use sputnikvm::{AccountPatch, Patch, Precompiled};
+// use sputnikvm_network_foundation::{ByzantiumPatch as P, StateClearingAccountPatch as AP};
 
 /// Our ByzantiumPatch is identical to sputnikvm's, except that
 /// allow_partial_change() is enabled. Mining rewards are broken for sputnikvm's
@@ -37,28 +37,28 @@ impl Patch for ByzantiumPatch {
     fn callstack_limit() -> usize {
         P::callstack_limit()
     }
-    fn gas_extcode() -> Gas {
+    fn gas_extcode() -> U256 {
         P::gas_extcode()
     }
-    fn gas_balance() -> Gas {
+    fn gas_balance() -> U256 {
         P::gas_balance()
     }
-    fn gas_sload() -> Gas {
+    fn gas_sload() -> U256 {
         P::gas_sload()
     }
-    fn gas_suicide() -> Gas {
+    fn gas_suicide() -> U256 {
         P::gas_suicide()
     }
-    fn gas_suicide_new_account() -> Gas {
+    fn gas_suicide_new_account() -> U256 {
         P::gas_suicide_new_account()
     }
-    fn gas_call() -> Gas {
+    fn gas_call() -> U256 {
         P::gas_call()
     }
-    fn gas_expbyte() -> Gas {
+    fn gas_expbyte() -> U256 {
         P::gas_expbyte()
     }
-    fn gas_transaction_create() -> Gas {
+    fn gas_transaction_create() -> U256 {
         P::gas_transaction_create()
     }
     fn force_code_deposit() -> bool {
