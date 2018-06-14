@@ -42,6 +42,7 @@ jobs:
       # Build the contract.
       - run: cargo ekiden build-contract --output-identity
       # Build the benchmarking version of the contract.
+      - run: mkdir target_benchmark
       - run:
           environment:
             CARGO_TARGET_DIR: target_benchmark
