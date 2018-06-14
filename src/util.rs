@@ -23,8 +23,10 @@ pub fn to_valid<P: Patch>(
 
     // check nonce, always pass in benchmark mode
     let nonce = state.get_account_nonce(&caller);
-    if !cfg!(feature = "benchmark") {
-        if nonce != transaction.nonce {
+    if nonce != transaction.nonce {
+        if cfg!(feature = "benchmark") {
+            debug!("Continuing despite invalid nonce");
+        } else {
             return Err(PreExecutionError::InvalidNonce);
         }
     }
@@ -56,6 +58,7 @@ pub fn to_valid<P: Patch>(
         return Err(PreExecutionError::InsufficientBalance);
     }
 
+    // check balance
     if balance < total {
         return Err(PreExecutionError::InsufficientBalance);
     }
