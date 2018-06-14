@@ -22,3 +22,6 @@ log = "0.4"
 [build-dependencies]
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+
+[features]
+benchmark = []

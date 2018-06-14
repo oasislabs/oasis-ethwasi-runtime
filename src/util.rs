@@ -10,7 +10,6 @@ use std::rc::Rc;
 pub fn to_valid<P: Patch>(
     transaction: &Transaction,
 ) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
-    // debugging
     debug!("*** Validate block transaction");
     debug!("Data: {:?}", transaction);
 
@@ -22,11 +21,12 @@ pub fn to_valid<P: Patch>(
 
     let state = EthState::instance();
 
-    // check nonce
-    // TODO: what if account doesn't exist? for now returning 0
+    // check nonce, always pass in benchmark mode
     let nonce = state.get_account_nonce(&caller);
-    if nonce != transaction.nonce {
-        return Err(PreExecutionError::InvalidNonce);
+    if !cfg!(feature = "benchmark") {
+        if nonce != transaction.nonce {
+            return Err(PreExecutionError::InvalidNonce);
+        }
     }
 
     let valid = ValidTransaction {
@@ -45,7 +45,6 @@ pub fn to_valid<P: Patch>(
     }
 
     // check balance
-    // TODO: what if account doesn't exist? for now returning 0
     let balance = state.get_account_balance(&caller);
 
     let gas_limit: U256 = valid.gas_limit.into();
