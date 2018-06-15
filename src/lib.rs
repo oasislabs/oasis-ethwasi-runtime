@@ -161,7 +161,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
     } else {
         match U256::from_str(&request.number) {
             Ok(val) => val,
-            Err(err) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
+            Err(_) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
         }
     };
 

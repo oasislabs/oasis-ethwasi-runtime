@@ -4,17 +4,12 @@ extern crate hexutil;
 extern crate sha3;
 extern crate sputnikvm;
 
-use bigint::{Address, Gas, H256, M256, Sign, U256};
-
+use bigint::{Address, Gas, H256, Sign, U256};
 use hexutil::read_hex;
-
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
                 SeqTransactionVM, ValidTransaction, VM};
-
 use state::EthState;
-
 use std::rc::Rc;
-use std::str::FromStr;
 
 pub mod patch;
 
