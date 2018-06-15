@@ -35,17 +35,17 @@ database_schema! {
     }
 }
 
-pub struct EthState {
+pub struct State {
   db: StateDb,
 }
 
-impl EthState {
+impl State {
   fn new() -> Self {
-    EthState { db: StateDb::new() }
+    State { db: StateDb::new() }
   }
 
-  pub fn instance() -> EthState {
-    EthState::new()
+  pub fn instance() -> State {
+    State::new()
   }
 
   pub fn get_account_state(&self, address: Address) -> Option<AccountState> {
@@ -197,9 +197,13 @@ impl EthState {
   }
 }
 
-impl kvdb::KeyValueDB for EthState {
-  fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-    unimplemented!();
+impl kvdb::KeyValueDB for State {
+  fn get(&self, _col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
+    Ok(
+      DatabaseHandle::instance()
+        .get(key)
+        .map(kvdb::DBValue::from_vec),
+    )
   }
 
   fn get_by_prefix(&self, col: Option<u32>, prefix: &[u8]) -> Option<Box<[u8]>> {
@@ -207,11 +211,20 @@ impl kvdb::KeyValueDB for EthState {
   }
 
   fn write_buffered(&self, transaction: kvdb::DBTransaction) {
-    unimplemented!();
+    transaction.ops.iter().for_each(|op| match op {
+      &kvdb::DBOp::Insert {
+        ref key, ref value, ..
+      } => {
+        DatabaseHandle::instance().insert(key, value.to_vec().as_slice());
+      }
+      &kvdb::DBOp::Delete { ref key, .. } => {
+        DatabaseHandle::instance().remove(key);
+      }
+    });
   }
 
   fn flush(&self) -> kvdb::Result<()> {
-    unimplemented!();
+    Ok(())
   }
 
   fn iter<'a>(&'a self, col: Option<u32>) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {

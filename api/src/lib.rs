@@ -13,10 +13,6 @@ extern crate ekiden_core;
 #[macro_use]
 mod api;
 
-// not using protobufs
-//mod generated;
-//pub use generated::api::*;
-
 extern crate ethereum_types;
 pub use ethereum_types::{Address, H256, U256};
 mod state;
