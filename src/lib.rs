@@ -37,7 +37,7 @@ extern crate sputnikvm_network_foundation;
 
 use evm::patch::ByzantiumPatch;
 use evm::{fire_transaction, update_state_from_vm};
-use miner::{get_block, get_latest_block_number, mine_block};
+use miner::Miner;
 use state::{EthState, StateDb};
 use std::str::FromStr;
 #[cfg(debug_assertions)]
@@ -105,7 +105,7 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
     }
 
     // Mine block 0 with no transactions
-    mine_block(None);
+    Miner::instance().mine_block(None);
 
     state.genesis_initialized.insert(&true);
     Ok(())
@@ -118,17 +118,18 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 fn get_block_height(_request: &bool) -> Result<U256> {
-    Ok(get_latest_block_number())
+    Ok(Miner::instance().get_latest_block_number())
 }
 
 fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
+    let miner = Miner::instance();
     let mut result = Vec::new();
 
-    let current_block_height = get_latest_block_number();
+    let current_block_height = miner.get_latest_block_number();
     let mut next_start = block_height.clone();
 
     while next_start <= current_block_height {
-        let hash = get_block(next_start).unwrap().hash;
+        let hash = miner.get_block(next_start).unwrap().hash;
         result.push(hash);
         next_start = next_start + U256::one();
     }
@@ -139,9 +140,10 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
 fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
+    let miner = Miner::instance();
 
     let number = if request.number == "latest" {
-        get_latest_block_number()
+        miner.get_latest_block_number()
     } else {
         match U256::from_str(&request.number) {
             Ok(val) => val,
@@ -149,7 +151,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
         }
     };
 
-    let mut block = match get_block(number) {
+    let mut block = match miner.get_block(number) {
         Some(val) => val,
         None => return Ok(None),
     };
@@ -219,9 +221,10 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
+    let vm =
+        fire_transaction::<ByzantiumPatch>(&valid, Miner::instance().get_latest_block_number());
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = mine_block(Some(hash));
+    let (block_number, block_hash) = Miner::instance().mine_block(Some(hash));
     EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     Ok(hash)
@@ -236,7 +239,8 @@ fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResp
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
+    let vm =
+        fire_transaction::<ByzantiumPatch>(&valid, Miner::instance().get_latest_block_number());
 
     let response = SimulateTransactionResponse {
         result: to_hex(&vm.out()),
@@ -266,9 +270,10 @@ fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
 
     let hash = unsigned_transaction_hash(&valid);
 
-    let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
+    let vm =
+        fire_transaction::<ByzantiumPatch>(&valid, Miner::instance().get_latest_block_number());
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = mine_block(Some(hash));
+    let (block_number, block_hash) = Miner::instance().mine_block(Some(hash));
     EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     Ok(hash)

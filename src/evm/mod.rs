@@ -6,6 +6,7 @@ extern crate sputnikvm;
 
 use bigint::{Address, Gas, H256, Sign, U256};
 use hexutil::read_hex;
+use miner::Miner;
 use sputnikvm::{AccountChange, AccountCommitment, HeaderParams, Patch, RequireError,
                 SeqTransactionVM, ValidTransaction, VM};
 use state::EthState;
@@ -67,9 +68,10 @@ fn handle_fire<P: Patch>(vm: &mut SeqTransactionVM<P>) {
             Err(RequireError::Blockhash(number)) => {
                 trace!("> Require Blockhash @ {:x}", number);
                 // ethereum returns actual values only for the most recent 256 blocks, otherwise 0
-                let latest = state.get_latest_block_number();
+                let miner = Miner::instance();
+                let latest = miner.get_latest_block_number();
                 let hash = if number <= latest && latest - number < U256::from(256) {
-                    state.get_block_hash(number).unwrap_or(H256::zero())
+                    miner.get_block_hash(number).unwrap_or(H256::zero())
                 } else {
                     H256::zero()
                 };

@@ -4,18 +4,13 @@ extern crate hexutil;
 extern crate sha3;
 extern crate sputnikvm;
 
-use ekiden_trusted::db::database_schema;
-
-use std::collections::HashMap;
-
 use bigint::{Address, H256, M256, Sign, U256};
-
+use ekiden_trusted::db::database_schema;
 use evm_api::{AccountState, Block, TransactionRecord};
 use hexutil::to_hex;
-
 use sputnikvm::{AccountChange, AccountPatch, Patch, SeqTransactionVM, Storage, TransactionAction,
                 VMStatus, ValidTransaction, VM};
-
+use std::collections::HashMap;
 use std::rc::Rc;
 
 // Create database schema.
@@ -138,17 +133,6 @@ impl EthState {
 
     pub fn get_transaction_record(&self, hash: &H256) -> Option<TransactionRecord> {
         self.db.transactions.get(hash)
-    }
-
-    pub fn get_block_hash(&self, number: U256) -> Option<H256> {
-        match self.db.blocks.get(&number) {
-            Some(block) => Some(block.hash),
-            None => None,
-        }
-    }
-
-    pub fn get_latest_block_number(&self) -> U256 {
-        self.db.latest_block_number.get().unwrap_or(U256::zero())
     }
 
     pub fn save_transaction_record<P: Patch>(
