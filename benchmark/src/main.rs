@@ -19,13 +19,18 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+extern crate serde_json;
+use serde_json::Value;
+
 fn to_ms(d: Duration) -> f64 {
     d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
 // web3 JSON-RPC interface
 jsonrpc_client!(pub struct Web3Client {
+    pub fn eth_getBlockByNumber(&mut self, number: String, full: bool) -> RpcRequest<Value>;
     pub fn eth_blockNumber(&mut self) -> RpcRequest<String>;
+    pub fn net_version(&mut self) -> RpcRequest<String>;
 });
 
 fn main() {
@@ -85,6 +90,10 @@ fn main() {
                 if counter.fetch_add(1, Ordering::SeqCst) >= number {
                     break;
                 }
+                //let res = client
+                //    .eth_getBlockByNumber("latest".to_string(), false)
+                //    .call();
+                //let res = client.net_version().call();
                 let res = client.eth_blockNumber().call();
                 info!("Result: {:?}", res);
             }
@@ -98,5 +107,9 @@ fn main() {
         "Executed {:?} web3 calls over {:.3} ms",
         number,
         to_ms(duration)
+    );
+    info!(
+        "Throughput: {:.3} calls/sec",
+        number as f64 / to_ms(duration) * 1000.
     );
 }
