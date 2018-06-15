@@ -55,6 +55,12 @@ jobs:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: client
           command: cargo build
+      # Build the genesis program.
+      - run:
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
+          working_directory: genesis
+          command: cargo build
       # Build the playback program.
       - run:
           environment:
