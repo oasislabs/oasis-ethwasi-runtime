@@ -119,6 +119,7 @@ pub fn fire_transaction<P: Patch>(
     block_number: U256,
 ) -> SeqTransactionVM<P> {
     let block_header = HeaderParams {
+        // TODO: mining reward. currently gas fees are credited to address 0
         beneficiary: Address::default(),
         timestamp: 0,
         number: block_number,

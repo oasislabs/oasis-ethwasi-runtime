@@ -17,7 +17,7 @@ impl Miner {
     }
 
     // "mine" a block containing 0 or 1 transactions
-    // // returns block number and hash
+    // returns block number and hash
     pub fn mine_block(&self, transaction_hash: Option<H256>) -> (U256, H256) {
         // get the next block number
         let number = self.next_block_number();

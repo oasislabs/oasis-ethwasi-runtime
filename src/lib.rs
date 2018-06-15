@@ -10,34 +10,34 @@ mod util;
 
 extern crate alloc;
 extern crate bigint;
-use bigint::{Address, H256, M256, U256};
 extern crate block;
-use block::Transaction as BlockTransaction;
 extern crate ekiden_core;
-use ekiden_core::error::{Error, Result};
 extern crate ekiden_trusted;
-use ekiden_trusted::contract::create_contract;
-use ekiden_trusted::enclave::enclave_init;
 extern crate evm_api;
-use evm_api::error::INVALID_BLOCK_NUMBER;
-use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
-              SimulateTransactionResponse, Transaction, TransactionRecord};
 extern crate hexutil;
-use hexutil::{read_hex, to_hex};
 extern crate log;
 extern crate rlp;
-use rlp::UntrustedRlp;
 extern crate sha3;
-use sha3::{Digest, Keccak256};
 extern crate sputnikvm;
-use sputnikvm::{VMStatus, VM};
-//use sputnikvm_network_classic::MainnetEIP160Patch;
 extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
+use bigint::{Address, H256, M256, U256};
+use block::Transaction as BlockTransaction;
+use ekiden_core::error::{Error, Result};
+use ekiden_trusted::contract::create_contract;
+use ekiden_trusted::enclave::enclave_init;
 use evm::patch::ByzantiumPatch;
 use evm::{fire_transaction, update_state_from_vm};
+use evm_api::error::INVALID_BLOCK_NUMBER;
+use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
+              SimulateTransactionResponse, Transaction, TransactionRecord};
+use hexutil::{read_hex, to_hex};
 use miner::Miner;
+use rlp::UntrustedRlp;
+use sha3::{Digest, Keccak256};
+use sputnikvm::{VMStatus, VM};
+//use sputnikvm_network_classic::MainnetEIP160Patch;
 use state::{EthState, StateDb};
 use std::str::FromStr;
 #[cfg(debug_assertions)]
