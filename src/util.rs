@@ -58,7 +58,6 @@ pub fn to_valid<P: Patch>(
         return Err(PreExecutionError::InsufficientBalance);
     }
 
-    // check balance
     if balance < total {
         return Err(PreExecutionError::InsufficientBalance);
     }

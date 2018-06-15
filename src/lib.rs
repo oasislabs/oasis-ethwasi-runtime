@@ -8,57 +8,41 @@ mod miner;
 mod state;
 mod util;
 
-extern crate log;
-extern crate protobuf;
-
 extern crate alloc;
 extern crate bigint;
+use bigint::{Address, H256, M256, U256};
 extern crate block;
-extern crate hexutil;
-extern crate sha3;
-extern crate sputnikvm;
-
+use block::Transaction as BlockTransaction;
 extern crate ekiden_core;
+use ekiden_core::error::{Error, Result};
 extern crate ekiden_trusted;
-
+use ekiden_trusted::contract::create_contract;
+use ekiden_trusted::enclave::enclave_init;
 extern crate evm_api;
-
-extern crate rlp;
-
-extern crate sputnikvm_network_classic;
-extern crate sputnikvm_network_foundation;
-
 use evm_api::error::INVALID_BLOCK_NUMBER;
 use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
               SimulateTransactionResponse, Transaction, TransactionRecord};
-
+extern crate hexutil;
+use hexutil::{read_hex, to_hex};
+extern crate log;
+extern crate rlp;
+use rlp::UntrustedRlp;
+extern crate sha3;
+use sha3::{Digest, Keccak256};
+extern crate sputnikvm;
 use sputnikvm::{VMStatus, VM};
 //use sputnikvm_network_classic::MainnetEIP160Patch;
-
-use bigint::{Address, H256, M256, U256};
-use block::Transaction as BlockTransaction;
-use hexutil::{read_hex, to_hex};
-use sha3::{Digest, Keccak256};
-
-use std::str::FromStr;
+extern crate sputnikvm_network_classic;
+extern crate sputnikvm_network_foundation;
 
 use evm::patch::ByzantiumPatch;
 use evm::{fire_transaction, update_state_from_vm};
-
-use state::{EthState, StateDb};
-
 use miner::{get_block, get_latest_block_number, mine_block};
-
-use ekiden_core::error::{Error, Result};
-use ekiden_trusted::contract::create_contract;
-use ekiden_trusted::enclave::enclave_init;
-
-use rlp::UntrustedRlp;
-
-use util::{to_valid, unsigned_to_valid};
-
+use state::{EthState, StateDb};
+use std::str::FromStr;
 #[cfg(debug_assertions)]
 use util::unsigned_transaction_hash;
+use util::{to_valid, unsigned_to_valid};
 
 enclave_init!();
 
