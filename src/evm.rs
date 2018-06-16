@@ -15,7 +15,7 @@ use ethcore::{
 use ethereum_types::{Address, H256, U256};
 
 use super::{
-  miner::{get_latest_block, get_latest_block_number},
+  state::{get_latest_block, get_latest_block_number, with_state},
   State,
 };
 
@@ -32,51 +32,6 @@ macro_rules! evm_params {
     params.registrar = "0xc6d9d2cd449a754c494264e1809c50e34d64562b".into();
     params
   }};
-}
-
-macro_rules! get_backend {
-  () => {
-    ethcore::state::backend::Basic(journaldb::overlaydb::OverlayDB::new(
-      Arc::new(State::instance()),
-      None, /* col */
-    ));
-  };
-}
-
-macro_rules! get_state {
-  ($state_root:expr) => {
-    ethcore::state::State::from_existing(
-      get_backend!(),
-      $state_root,
-      U256::zero(),       /* account_start_nonce */
-      Default::default(), /* factories */
-    )
-  };
-  () => {
-    ethcore::state::State::new(
-      get_backend!(),
-      U256::zero(),       /* account_start_nonce */
-      Default::default(), /* factories */
-    )
-  };
-}
-
-pub fn with_state<R, F: FnOnce(&mut EthState<BasicBackend<OverlayDB>>) -> Result<R>>(
-  cb: F,
-) -> Result<(R, H256)> {
-  let mut state = get_state!(
-    get_latest_block()
-      .ok_or(Error::new("Genesis not ininitialized"))?
-      .state_root
-  )?;
-
-  let ret = cb(&mut state)?;
-
-  state.commit();
-  let (state_root, mut db) = state.drop();
-  db.0.commit();
-
-  Ok((ret, state_root))
 }
 
 pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {

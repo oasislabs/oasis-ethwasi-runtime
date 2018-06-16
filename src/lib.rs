@@ -1,5 +1,6 @@
-#![feature(use_extern_macros)]
 #![feature(alloc)]
+#![feature(iterator_try_fold)]
+#![feature(use_extern_macros)]
 
 #[macro_use]
 mod logger;
@@ -39,9 +40,10 @@ use sha3::{Digest, Keccak256};
 
 use std::str::FromStr;
 
-use state::{State, StateDb};
+use state::{with_state, State, StateDb};
 
-use miner::{get_block, get_latest_block_number, mine_block};
+use miner::mine_block;
+use state::{get_block, get_latest_block_number};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
@@ -69,38 +71,29 @@ fn genesis_block_initialized(_request: &bool) -> Result<bool> {
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
 fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
-  panic!()
-  // if state.genesis_initialized.is_present() {
-  //   return Err(Error::new("Genesis block already created"));
-  // }
-  //
-  // // evm::with_state(|state| {
-  // //
-  // // })
-  // // evm::inject_accounts(accounts)
-  //
-  // // Insert account states
-  // for account in accounts {
-  //   state.accounts.insert(&account.address, &account);
-  // }
-  //
-  // Ok(())
+  if StateDb::new().genesis_initialized.is_present() {
+    return Err(Error::new("Genesis block already created"));
+  }
+
+  accounts.iter().try_for_each(state::update_account_state)
 }
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn inject_account_storage(storage: &Vec<(Address, U256, U256)>) -> Result<()> {
+fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
   let state = StateDb::new();
 
   if state.genesis_initialized.is_present() {
     return Err(Error::new("Genesis block already created"));
   }
 
-  for &(address, index, value) in storage {
-    state.account_storage.insert(&(address, index), &value);
-  }
-
-  Ok(())
+  with_state(|state| {
+    storages.iter().try_for_each(|&(addr, key, value)| {
+      state
+        .set_storage(&addr, key.clone(), value.clone())
+        .map_err(|_| Error::new("Could not set storage."))
+    })
+  }).map(|_| ())
 }
 
 // TODO: secure this method so it can't be called by any client.
@@ -146,8 +139,8 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
 }
 
 fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
-  //println!("*** Get block by number");
-  //println!("Request: {:?}", request);
+  println!("*** Get block by number");
+  println!("Request: {:?}", request);
 
   let number = if request.number == "latest" {
     get_latest_block_number()
@@ -165,7 +158,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
 
   // if full transactions are requested, attach the TransactionRecord
   if request.full {
-    if let Some(val) = State::instance().get_transaction_record(&block.transaction_hash) {
+    if let Some(val) = state::get_transaction_record(&block.transaction_hash) {
       block.transaction = Some(val);
     }
   }
@@ -177,37 +170,29 @@ fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
   info!("*** Get transaction record");
   info!("Hash: {:?}", hash);
 
-  Ok(State::instance().get_transaction_record(hash))
+  Ok(state::get_transaction_record(hash))
 }
 
 fn get_account_balance(address: &Address) -> Result<U256> {
   info!("*** Get account balance");
   info!("Address: {:?}", address);
-
-  Ok(State::instance().get_account_balance(address))
+  state::get_account_balance(address)
 }
 
 fn get_account_nonce(address: &Address) -> Result<U256> {
   info!("*** Get account nonce");
   info!("Address: {:?}", address);
-
-  Ok(State::instance().get_account_nonce(address))
+  state::get_account_nonce(address)
 }
 
 fn get_account_code(address: &Address) -> Result<String> {
   info!("*** Get account code");
   info!("Address: {:?}", address);
-
-  Ok(State::instance().get_code_string(address))
+  state::get_code_string(address)
 }
 
-fn get_storage_at(pair: &(Address, U256)) -> Result<H256> {
-  panic!();
-  // info!("*** Get storage at");
-  // let &(address, index) = pair;
-  // info!("Address: {:?} @ {:?}", address, index);
-  //
-  // Ok(State::instance().get_account_storage(address, index))
+fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
+  state::get_account_storage(pair.0, pair.1)
 }
 
 fn execute_raw_transaction(request: &String) -> Result<H256> {
@@ -222,29 +207,7 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
 }
 
 fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
-  panic!();
-  // info!("*** Simulate transaction");
-  // info!("Transaction: {:?}", request);
-  //
-  // let valid = match unsigned_to_valid(&request) {
-  //   Ok(val) => val,
-  //   Err(err) => return Err(Error::new(format!("{:?}", err))),
-  // };
-  //
-  // let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
-  //
-  // let response = SimulateTransactionResponse {
-  //   result: to_hex(&vm.out()),
-  //   status: match vm.status() {
-  //     VMStatus::ExitedOk => true,
-  //     _ => false,
-  //   },
-  //   used_gas: vm.used_gas(),
-  // };
-  //
-  // trace!("*** Result: {:?}", response.result);
-  //
-  // Ok(response)
+  unimplemented!();
 }
 
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
@@ -254,19 +217,7 @@ fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
   info!("*** Execute transaction");
   info!("Transaction: {:?}", request);
 
-  panic!();
-  // let valid = match unsigned_to_valid(&request) {
-  //     Ok(val) => val,
-  //     Err(err) => return Err(Error::new(format!("{:?}", err))),
-  // };
-  //
-  // let hash = unsigned_transaction_hash(&valid);
-  //
-  // let vm = fire_transaction::<ByzantiumPatch>(&valid, get_latest_block_number());
-  // update_state_from_vm(&vm);
-  // let (block_number, block_hash) = mine_block(Some(hash));
-  // State::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
-  // Ok(hash)
+  unimplemented!();
 }
 
 #[cfg(not(debug_assertions))]
