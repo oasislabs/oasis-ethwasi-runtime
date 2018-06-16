@@ -15,25 +15,13 @@ use evm_api::{AccountState, Block, TransactionRecord};
 use ethcore::{
   self,
   executed::Executed,
+  executive::contract_address,
   journaldb::{self, overlaydb::OverlayDB},
   kvdb,
   state::backend::Basic as BasicBackend,
   transaction::{Action, SignedTransaction, Transaction, UnverifiedTransaction},
+  vm,
 };
-
-// use ethcore::{
-//   self,
-//   executive::{Executed, Executive, TransactOptions},
-//   kvdb::KeyValueDB,
-//   machine::EthereumMachine,
-//   spec::CommonParams,
-//   state::{backend::Basic as BasicBackend, State as EthState},
-//   transaction::{Action, SignedTransaction, Transaction},
-//   vm,
-// };
-
-// use sputnikvm::{AccountChange, AccountPatch, Patch, SeqTransactionVM, Storage, TransactionAction,
-//                 VMStatus, ValidTransaction, VM};
 
 use std::rc::Rc;
 
@@ -162,45 +150,68 @@ pub fn update_account_state(account: &AccountState) -> Result<()> {
   }).map(|_| ())
 }
 
-// pub fn update_account_storage(address: Address, storage: &Storage) {
-//     let storage: HashMap<U256, M256> = storage.clone().into();
-//     for (key, val) in storage {
-//         self.db.account_storage.insert(&(address, key), &val);
-//     }
-// }
+/// Increments the block number and returns the new block number.
+pub fn advance_block_number() -> U256 {
+  let state = StateDb::new();
 
-// pub fn update_account_balance<P: Patch>(address: &Address, amount: U256, sign: Sign) {
-//     match self.db.accounts.get(&address) {
-//         Some(mut account) => {
-//             // Found account. Update balance.
-//             account.balance = match sign {
-//                 Sign::Plus => account.balance + amount,
-//                 Sign::Minus => account.balance - amount,
-//                 _ => panic!(),
-//             };
-//             self.db.accounts.insert(&address, &account);
-//         }
-//         None => {
-//             // Account doesn't exist; create it.
-//             assert_eq!(
-//                 sign,
-//                 Sign::Plus,
-//                 "Can't decrease balance of nonexistent account"
-//             );
-//
-//             // EIP-161d forbids creating accounts with empty (nonce, code, balance)
-//             if P::Account::empty_considered_exists() || amount != U256::from(0) {
-//                 let account_state = AccountState {
-//                     nonce: P::Account::initial_nonce(),
-//                     address: address.clone(),
-//                     balance: amount,
-//                     code: String::new(),
-//                 };
-//                 self.db.accounts.insert(&address, &account_state);
-//             }
-//         }
-//     }
-// }
+  let next = if state.latest_block_number.is_present() {
+    state.latest_block_number.get().unwrap() + U256::one()
+  } else {
+    U256::zero() // genesis block
+  };
+
+  //  store new value
+  state.latest_block_number.insert(&next);
+
+  next
+}
+
+pub fn add_block(block_number: &U256, block: &Block) {
+  StateDb::new().blocks.insert(block_number, block);
+}
+
+pub fn record_transaction(
+  transaction: SignedTransaction,
+  block_number: U256,
+  block_hash: H256,
+  exec: Executed,
+) {
+  StateDb::new().transactions.insert(
+    &transaction.hash(),
+    &TransactionRecord {
+      hash: transaction.hash(),
+      nonce: transaction.nonce,
+      block_hash: block_hash,
+      block_number: block_number,
+      index: 0,
+      is_create: transaction.action == Action::Create,
+      from: transaction.sender(),
+      to: match transaction.action {
+        Action::Create => None,
+        Action::Call(address) => Some(address),
+      },
+      gas_used: exec.gas_used,
+      cumulative_gas_used: exec.cumulative_gas_used,
+      contract_address: match transaction.action {
+        Action::Create => None,
+        Action::Call(address) => Some(
+          contract_address(
+            vm::CreateContractAddress::FromCodeHash,
+            &transaction.sender(),
+            &U256::zero(),
+            &transaction.data,
+          ).0,
+        ),
+      },
+      value: transaction.value,
+      gas_price: transaction.gas_price,
+      gas_provided: transaction.gas,
+      input: hex::encode(&transaction.data),
+      exited_ok: exec.exception.is_none(),
+      logs: exec.logs,
+    },
+  );
+}
 
 pub fn get_transaction_record(hash: &H256) -> Option<TransactionRecord> {
   StateDb::new().transactions.get(hash)
@@ -227,46 +238,6 @@ pub fn get_latest_block_number() -> U256 {
     .latest_block_number
     .get()
     .unwrap_or(U256::zero())
-}
-
-pub fn save_transaction_record(
-  hash: H256,
-  block_hash: H256,
-  block_number: U256,
-  index: u32,
-  transaction: SignedTransaction,
-  execution: Executed,
-) {
-  let mut record = TransactionRecord {
-    hash: hash,
-    nonce: transaction.nonce,
-    block_hash: block_hash,
-    block_number: block_number,
-    index: index,
-    from: Some(transaction.sender()),
-    to: match transaction.action {
-      Action::Call(address) => Some(address),
-      Action::Create => None,
-    },
-    gas_used: execution.gas_used,
-    cumulative_gas_used: execution.gas_used,
-    value: transaction.value,
-    gas_price: transaction.gas_price,
-    // TODO: assuming this is gas limit rather than gas used, need to confirm
-    gas_provided: transaction.gas,
-    input: hex::encode(&transaction.data.clone()),
-    is_create: false,
-    contract_address: None,
-    exited_ok: false,
-    logs: execution.logs.clone(),
-  };
-  let createp = execution.contracts_created.into_iter().nth(0);
-  record.is_create = createp.is_some();
-  record.contract_address = createp;
-
-  record.exited_ok = execution.exception.is_none();
-
-  StateDb::new().transactions.insert(&hash, &record);
 }
 
 impl kvdb::KeyValueDB for State {

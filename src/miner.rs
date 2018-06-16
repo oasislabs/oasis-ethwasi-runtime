@@ -1,18 +1,18 @@
 use ethereum_types::{H256, U256};
 use evm_api::Block;
 use sha3::{Digest, Keccak256};
-use state::{get_block, StateDb};
+use state::{add_block, advance_block_number, get_block, StateDb};
 
 pub struct BlockHashes {
   tx_hash: H256,
   state_root: H256,
 }
 
-// "mine" a block containing 0 or 1 transactions
-// returns block number and hash
+/// "mine" a block containing 0 or 1 transactions.
+/// Returns block number and hash.
 pub fn mine_block(transaction_hash: Option<H256>, state_root: H256) -> (U256, H256) {
   // get the next block number
-  let block_number = incr_block_number();
+  let block_number = advance_block_number();
 
   // create a block
   let transaction_hash = transaction_hash.unwrap_or(H256::zero());
@@ -43,24 +43,7 @@ pub fn mine_block(transaction_hash: Option<H256>, state_root: H256) -> (U256, H2
     transaction: None,
   };
 
-  // store the block
-  StateDb::new().blocks.insert(&block_number, &block);;
+  add_block(&block_number, &block);
 
   (block_number, block_hash)
-}
-
-/// Increments the block number and returns the new block number.
-fn incr_block_number() -> U256 {
-  let state = StateDb::new();
-
-  let next = if state.latest_block_number.is_present() {
-    state.latest_block_number.get().unwrap() + U256::one()
-  } else {
-    // genesis block
-    U256::zero()
-  };
-
-  //  store new value
-  state.latest_block_number.insert(&next);
-  next
 }

@@ -48,9 +48,6 @@ use state::{get_block, get_latest_block_number};
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 
-// #[cfg(debug_assertions)]
-// use util::unsigned_transaction_hash;
-
 enclave_init!();
 
 // Create enclave contract interface.
@@ -200,14 +197,23 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
   info!("Data: {:?}", request);
   let tx_rlp = hex::decode(request)?;
   let tx_hash = H256::from(Keccak256::digest(&tx_rlp).as_slice());
-  let transaction = rlp::decode(&tx_rlp)?;
-  let (tx_record, state_root) = evm::execute_transaction(&SignedTransaction::new(transaction)?)?;
-  mine_block(Some(tx_hash), state_root);
+  let transaction = SignedTransaction::new(rlp::decode(&tx_rlp)?)?;
+  let (exec, state_root) = evm::execute_transaction(&transaction)?;
+  let (block_number, block_hash) = mine_block(Some(tx_hash), state_root);
+  state::record_transaction(transaction, block_number, block_hash, exec);
   Ok(tx_hash)
 }
 
-fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
-  unimplemented!();
+fn simulate_transaction(request: &String) -> Result<SimulateTransactionResponse> {
+  let tx_rlp = hex::decode(request)?;
+  let tx_hash = H256::from(Keccak256::digest(&tx_rlp).as_slice());
+  let transaction = rlp::decode(&tx_rlp)?;
+  let exec = evm::simulate_transaction(&SignedTransaction::new(transaction)?)?;
+  Ok(SimulateTransactionResponse {
+    used_gas: exec.gas_used,
+    exited_ok: exec.exception.is_none(),
+    result: hex::encode(exec.output),
+  })
 }
 
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction

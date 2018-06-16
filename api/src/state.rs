@@ -34,7 +34,7 @@ pub struct TransactionRecord {
   pub block_number: U256,
   pub index: u32,                // txn index in block, always 0 for single-txn blocks
   pub is_create: bool,           // is this a create transacation?
-  pub from: Option<Address>,     // sender address
+  pub from: Address,             // sender address
   pub to: Option<Address>,       // receiver address, defined if !is_create
   pub gas_used: U256,            // gas used to execute this txn
   pub cumulative_gas_used: U256, // always equal to gas_used for single-txn blocks
@@ -66,8 +66,8 @@ pub struct Transaction {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SimulateTransactionResponse {
   pub used_gas: U256,
-  pub status: bool,   // ExitedOk => true
-  pub result: String, // (hex)
+  pub exited_ok: bool, // ExitedOk => true
+  pub result: String,  // (hex)
 }
 
 #[derive(Serialize, Deserialize, Debug)]

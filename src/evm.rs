@@ -15,7 +15,7 @@ use ethcore::{
 use ethereum_types::{Address, H256, U256};
 
 use super::{
-  state::{get_latest_block, get_latest_block_number, with_state},
+  state::{get_latest_block, get_latest_block_number, get_state, with_state},
   State,
 };
 
@@ -49,9 +49,26 @@ pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed,
   })
 }
 
+pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed> {
+  let env_info = {
+    let mut env_info = vm::EnvInfo::default();
+    env_info.number = get_latest_block_number().into();
+    env_info.gas_limit = U256::max_value();
+    env_info
+  };
+  let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
+
+  let mut state = get_state()?;
+  Ok(Executive::new(&mut state, &env_info, &machine)
+    .transact_virtual(&transaction, TransactOptions::with_no_tracing())?)
+}
+
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use super::{
+    super::{miner, state},
+    *,
+  };
   use ethcore::{executive::contract_address, kvdb};
   use hex;
 
@@ -59,7 +76,11 @@ mod tests {
   fn test_exec() {
     let sender = Address::zero();
 
-    let mut state = get_state(None).unwrap();
+    let mut state = ethcore::state::State::new(
+      state::get_backend(),
+      U256::zero(),       /* account_start_nonce */
+      Default::default(), /* factories */
+    );
 
     state.add_balance(
       &sender,
@@ -70,6 +91,8 @@ mod tests {
     state.commit().unwrap();
     let (root, mut db) = state.drop();
     db.0.commit();
+
+    miner::mine_block(None, root);
 
     let code = hex::decode("3331600055").unwrap();
     let contract = contract_address(
@@ -88,9 +111,10 @@ mod tests {
       nonce: U256::zero(),
     }.fake_sign(sender);
 
-    let root = execute_transaction(&tx).unwrap();
+    let (_exec, root) = execute_transaction(&tx).unwrap();
+    miner::mine_block(Some(tx.hash()), root);
 
-    let new_state = get_state(Some(root)).unwrap();
+    let new_state = get_state().unwrap();
 
     assert_eq!(new_state.balance(&sender).unwrap(), U256::from(1));
     assert_eq!(new_state.nonce(&sender).unwrap(), U256::from(1));
