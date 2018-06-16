@@ -25,7 +25,7 @@ extern crate evm_api;
 
 use evm_api::{
   error::INVALID_BLOCK_NUMBER, with_api, AccountState, Block, BlockRequest, InitStateRequest,
-  SimulateTransactionResponse, Transaction, TransactionRecord,
+  SimulateTransactionResponse, Transaction as RPCTransaction, TransactionRecord,
 };
 
 use ethcore::{
@@ -204,10 +204,26 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
   Ok(tx_hash)
 }
 
-fn simulate_transaction(request: &String) -> Result<SimulateTransactionResponse> {
+fn simulate_transaction(request: &RPCTransaction) -> Result<SimulateTransactionResponse> {
   let tx_rlp = hex::decode(request)?;
   let tx_hash = H256::from(Keccak256::digest(&tx_rlp).as_slice());
   let transaction = rlp::decode(&tx_rlp)?;
+  let tx = Transaction {
+    action: if request.is_call {
+      Action::Call(address.ok_or(Error::new("Must provide address for call transaction.")))
+    } else {
+      Action::Create
+    },
+    value: request.value.unwrap_or(U256::zero()),
+    data: hex::decode(request.input)?,
+    gas: U256::max_value(),
+    gas_price: U256::zero(),
+    nonce: request.nonce.unwrap_or(U256::zero()),
+  };
+  let tx = match request.caller {
+    Some(addr) => tx.fake_sign(addr),
+    None => tx.null_sign(),
+  };
   let exec = evm::simulate_transaction(&SignedTransaction::new(transaction)?)?;
   Ok(SimulateTransactionResponse {
     used_gas: exec.gas_used,

@@ -8,7 +8,7 @@ contract_api! {
 
     pub fn debug_execute_unsigned_transaction(Transaction) -> H256;
 
-    pub fn simulate_transaction(String) -> SimulateTransactionResponse;
+    pub fn simulate_transaction(Transaction) -> SimulateTransactionResponse;
 
     pub fn execute_raw_transaction(String) -> H256;
 
