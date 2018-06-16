@@ -2,8 +2,9 @@ use super::serialize::*;
 use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
 use error::Error;
 
-use ethereum_types::{Address, U256, H2048, H256, H64, U256};
-use hexutil::{read_hex, to_hex};
+use ethereum_types::{Address, U256, H256, H64};
+use ethbloom::Bloom;
+use hex;
 
 use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
 
@@ -29,7 +30,7 @@ pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, E
         parent_hash: Hex(block.parent_hash),
         nonce: Hex(H64::new()),
         sha3_uncles: Hex(H256::new()),
-        logs_bloom: Hex(H2048::new()),
+        logs_bloom: Hex(Bloom::new()),
         transactions_root: Hex(H256::new()),
         state_root: Hex(H256::new()),
         receipts_root: Hex(H256::new()),
@@ -82,16 +83,13 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
             ret
         },
         root: Hex(H256::new()),
-        status: if record.status { 1 } else { 0 },
+        status: if record.exited_ok { 1 } else { 0 },
     })
 }
 
 pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, Error> {
     Ok(RPCTransaction {
-        from: match record.from {
-            Some(address) => Some(Hex(address)),
-            None => None,
-        },
+        from: Some(Hex(record.from)),
         to: if record.is_create {
             None
         } else {
@@ -103,7 +101,7 @@ pub fn to_rpc_transaction(record: &TransactionRecord) -> Result<RPCTransaction, 
         gas: Some(Hex(record.gas_provided)),
         gas_price: Some(Hex(record.gas_price)),
         value: Some(Hex(record.value)),
-        data: Some(Bytes(read_hex(&record.input)?)),
+        data: Some(Bytes(hex::decode(&record.input)?)),
         nonce: Some(Hex(record.nonce)),
 
         hash: Some(Hex(record.hash)),
@@ -120,7 +118,7 @@ pub fn to_evm_transaction(transaction: RPCTransaction) -> Result<EVMTransaction,
             None => None,
         },
         input: match transaction.data.clone() {
-            Some(val) => to_hex(&val.0),
+            Some(val) => hex::encode(&val.0),
             None => String::new(),
         },
         nonce: match transaction.nonce {

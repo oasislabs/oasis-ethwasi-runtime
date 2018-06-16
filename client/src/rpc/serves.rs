@@ -6,7 +6,7 @@ use super::{DebugRPC, Either, EthereumRPC, FilterRPC, RPCBlock, RPCBlockTrace, R
 
 use error::Error;
 
-use ethereum_types::{Address, U256, H256, M256, U256};
+use ethereum_types::{Address, U256, H256};
 use evm_api::error::INVALID_BLOCK_NUMBER;
 use evm_api::BlockRequest;
 use std::str::FromStr;
@@ -18,7 +18,7 @@ use ekiden_rpc_client;
 use evm;
 use futures::future::Future;
 
-use hexutil::{read_hex, to_hex};
+use hex;
 
 use log::{info, log};
 
@@ -141,13 +141,13 @@ impl EthereumRPC for MinerEthereumRPC {
     fn storage_at(
         &self,
         address: Hex<Address>,
-        index: Hex<U256>,
+        key: Hex<H256>,
         block: Trailing<String>,
-    ) -> Result<Hex<M256>, Error> {
-        info!("storage_at: address = {:?}, index = {:?}", address, index);
+    ) -> Result<Hex<H256>, Error> {
+        info!("storage_at: address = {:?}, index = {:?}", address, key);
 
         let response = self.client
-            .get_storage_at((address.0, index.0))
+            .get_storage_at((address.0, key.0))
             .wait()
             .unwrap();
         info!("Response: {:?}", response);
@@ -253,7 +253,7 @@ impl EthereumRPC for MinerEthereumRPC {
         let response = self.client.get_account_code(address.0).wait().unwrap();
         info!("Response: {:?}", response);
 
-        Ok(Bytes(read_hex(&response)?))
+        Ok(Bytes(hex::decode(&response)?))
     }
 
     fn sign(&self, address: Hex<Address>, message: Bytes) -> Result<Bytes, Error> {
@@ -277,7 +277,7 @@ impl EthereumRPC for MinerEthereumRPC {
     fn send_raw_transaction(&self, data: Bytes) -> Result<Hex<H256>, Error> {
         info!("send_raw_transaction: data = {:?}", data);
 
-        let response = match self.client.execute_raw_transaction(to_hex(&data.0)).wait() {
+        let response = match self.client.execute_raw_transaction(hex::encode(&data.0)).wait() {
             Ok(val) => val,
             Err(_) => return Err(Error::CallError),
         };
@@ -296,7 +296,7 @@ impl EthereumRPC for MinerEthereumRPC {
             .unwrap();
         info!("Response: {:?}", response);
 
-        Ok(Bytes(read_hex(&response.result)?))
+        Ok(Bytes(hex::decode(&response.result)?))
     }
 
     fn estimate_gas(

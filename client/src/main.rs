@@ -1,9 +1,7 @@
 #![feature(use_extern_macros)]
 
 extern crate ethereum_types;
-extern crate block;
-extern crate blockchain;
-extern crate hexutil;
+extern crate ethbloom;
 extern crate jsonrpc_core;
 extern crate jsonrpc_http_server;
 #[macro_use]
@@ -18,9 +16,9 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate sha3;
-extern crate sputnikvm;
 
 extern crate hex;
+extern crate rustc_hex;
 
 mod error;
 mod rpc;
@@ -56,7 +54,7 @@ use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 
-use ethereum_types::{Address, M256, U256};
+use ethereum_types::{Address, H256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
 
@@ -158,8 +156,8 @@ fn init_genesis_block(client: &evm::Client) {
             for (key, value) in account.storage {
                 storage_request.push((
                     address,
-                    U256::from_str(&key).unwrap(),
-                    M256::from_str(&value).unwrap(),
+                    H256::from_str(&key).unwrap(),
+                    H256::from_str(&value).unwrap(),
                 ));
             }
 
@@ -172,7 +170,9 @@ fn init_genesis_block(client: &evm::Client) {
         .wait()
         .unwrap();
 
-    let init_state_request = InitStateRequest {};
+    let init_state_request = InitStateRequest {
+        state_root: H256::zero()
+    };
     let result = client
         .init_genesis_block(init_state_request)
         .wait()

@@ -2,7 +2,8 @@ use jsonrpc_core::IoHandler;
 use jsonrpc_http_server::*;
 use jsonrpc_macros::Trailing;
 
-use ethereum_types::{Address, U256, H2048, H256, H64, M256, U256};
+use ethereum_types::{Address, U256, H256, H64};
+use ethbloom::Bloom;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -78,7 +79,7 @@ pub struct RPCBlock {
     pub parent_hash: Hex<H256>,
     pub nonce: Hex<H64>,
     pub sha3_uncles: Hex<H256>,
-    pub logs_bloom: Hex<H2048>,
+    pub logs_bloom: Hex<Bloom>,
     pub transactions_root: Hex<H256>,
     pub state_root: Hex<H256>,
     pub receipts_root: Hex<H256>,
@@ -167,8 +168,8 @@ pub struct RPCStep {
     pub breakpoint_index: Option<usize>,
     pub breakpoint: Option<String>,
     pub memory: Option<Vec<Bytes>>,
-    pub stack: Option<Vec<Hex<M256>>>,
-    pub storage: Option<HashMap<Hex<U256>, Hex<M256>>>,
+    pub stack: Option<Vec<Hex<H256>>>,
+    pub storage: Option<HashMap<Hex<H256>, Hex<H256>>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -186,7 +187,7 @@ pub struct RPCDumpAccount {
     pub code_hash: Hex<H256>,
     pub nonce: Hex<U256>,
     pub root: Hex<H256>,
-    pub storage: HashMap<Hex<U256>, Hex<M256>>,
+    pub storage: HashMap<Hex<U256>, Hex<H256>>,
 }
 
 build_rpc_trait! {
@@ -222,7 +223,7 @@ build_rpc_trait! {
         #[rpc(name = "eth_getBalance")]
         fn balance(&self, Hex<Address>, Trailing<String>) -> Result<Hex<U256>, Error>;
         #[rpc(name = "eth_getStorageAt")]
-        fn storage_at(&self, Hex<Address>, Hex<U256>, Trailing<String>) -> Result<Hex<M256>, Error>;
+        fn storage_at(&self, Hex<Address>, Hex<H256>, Trailing<String>) -> Result<Hex<H256>, Error>;
         #[rpc(name = "eth_getTransactionCount")]
         fn transaction_count(&self, Hex<Address>, Trailing<String>) -> Result<Hex<U256>, Error>;
         #[rpc(name = "eth_getBlockTransactionCountByHash")]

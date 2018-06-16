@@ -1,7 +1,4 @@
 use ethereum_types::{Address, H256, U256};
-use block::{Log, Receipt};
-use blockchain::chain::HeaderHash;
-use hexutil::*;
 use rpc::RPCLogFilter;
 use sha3::{Digest, Keccak256};
 use std::collections::HashMap;

@@ -1,8 +1,8 @@
-use hexutil::*;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, LowerHex};
 use std::marker::PhantomData;
 use std::str::FromStr;
+use hex;
 
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Hex<T>(pub T);
@@ -28,7 +28,7 @@ impl Serialize for Bytes {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&to_hex(&self.0))
+        serializer.serialize_str(&hex::encode(&self.0))
     }
 }
 
@@ -67,7 +67,7 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
     where
         E: de::Error,
     {
-        match read_hex(s) {
+        match hex::decode(s) {
             Ok(s) => Ok(Bytes(s)),
             Err(_) => Err(de::Error::invalid_value(de::Unexpected::Str(s), &self)),
         }

@@ -1,9 +1,9 @@
-use hexutil::ParseHexError;
 use jsonrpc_core;
 use rlp::DecoderError;
 use secp256k1;
-use sputnikvm::errors::PreExecutionError;
 use std::num::ParseIntError;
+use hex;
+use rustc_hex;
 
 #[derive(Debug)]
 pub enum Error {
@@ -20,20 +20,20 @@ pub enum Error {
     TODO,
 }
 
-impl From<PreExecutionError> for Error {
-    fn from(val: PreExecutionError) -> Error {
-        Error::CallError
-    }
-}
-
 impl From<DecoderError> for Error {
     fn from(val: DecoderError) -> Error {
         Error::RlpError
     }
 }
 
-impl From<ParseHexError> for Error {
-    fn from(val: ParseHexError) -> Error {
+impl From<rustc_hex::FromHexError> for Error {
+    fn from(val: rustc_hex::FromHexError) -> Error {
+        Error::HexError
+    }
+}
+
+impl From<hex::FromHexError> for Error {
+    fn from(val: hex::FromHexError) -> Error {
         Error::HexError
     }
 }
