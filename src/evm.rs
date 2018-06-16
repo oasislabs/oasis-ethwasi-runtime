@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, rc::Rc, str::FromStr, sync::Arc};
+use std::{cmp, collections::BTreeMap, rc::Rc, str::FromStr, sync::Arc};
 
 use ekiden_core::error::{Error, Result};
 use ethcore::{
@@ -15,7 +15,7 @@ use ethcore::{
 use ethereum_types::{Address, H256, U256};
 
 use super::{
-  state::{get_latest_block, get_latest_block_number, get_state, with_state},
+  state::{get_block_hash, get_latest_block, get_latest_block_number, get_state, with_state},
   State,
 };
 
@@ -34,32 +34,32 @@ macro_rules! evm_params {
   }};
 }
 
+fn get_env_info() -> vm::EnvInfo {
+  let block_number = <u64>::from(get_latest_block_number());
+  let last_hashes = (0..cmp::min(block_number + 1, 256))
+    .map(|i| get_block_hash(U256::from(block_number - i)).expect("block hash should exist?"))
+    .collect();
+  let mut env_info = vm::EnvInfo::default();
+  env_info.last_hashes = Arc::new(last_hashes);
+  env_info.number = block_number + 1;
+  env_info.gas_limit = U256::max_value();
+  env_info
+}
+
 pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
-  let env_info = {
-    let mut env_info = vm::EnvInfo::default();
-    env_info.number = get_latest_block_number().into();
-    env_info.gas_limit = U256::max_value();
-    env_info
-  };
   let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
 
   with_state(|state| {
-    Ok(Executive::new(state, &env_info, &machine)
+    Ok(Executive::new(state, &get_env_info(), &machine)
       .transact(&transaction, TransactOptions::with_no_tracing())?)
   })
 }
 
 pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed> {
-  let env_info = {
-    let mut env_info = vm::EnvInfo::default();
-    env_info.number = get_latest_block_number().into();
-    env_info.gas_limit = U256::max_value();
-    env_info
-  };
   let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
 
   let mut state = get_state()?;
-  Ok(Executive::new(&mut state, &env_info, &machine)
+  Ok(Executive::new(&mut state, &get_env_info(), &machine)
     .transact_virtual(&transaction, TransactOptions::with_no_tracing())?)
 }
 
