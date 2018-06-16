@@ -28,7 +28,7 @@ secp256k1-plus = "0.5"
 #rand = "0.3.1"
 sha3 = "0.6"
 blockchain = "0.2"
-ethereum-types = { path = "/sterling/parity/primitives/ethereum-types" }
+ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 lazy_static = "0.2"
 jsonrpc-core = { version = "8.0" }
 jsonrpc-http-server = { version = "8.0" }
