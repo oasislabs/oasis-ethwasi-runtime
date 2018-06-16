@@ -29,6 +29,8 @@ extern crate ekiden_rpc_client;
 extern crate evm_api;
 use evm_api::{with_api, AccountState};
 
+use std::time::{Duration, Instant};
+
 with_api! {
     create_contract_client!(evm, evm_api, api);
 }
@@ -36,7 +38,7 @@ with_api! {
 /// When restoring an exported state, inject this many accounts at a time.
 const INJECT_CHUNK_SIZE: usize = 100;
 /// When restoring an exported state, inject this many account storage items at a time.
-const INJECT_STORAGE_CHUNK_SIZE: usize = 10000;
+const INJECT_STORAGE_CHUNK_SIZE: usize = 1000;
 
 #[derive(Deserialize)]
 struct ExportedAccount {
@@ -48,6 +50,10 @@ struct ExportedAccount {
 #[derive(Deserialize)]
 struct ExportedState {
     state: BTreeMap<String, ExportedAccount>,
+}
+
+fn to_ms(d: Duration) -> f64 {
+    d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
 fn main() {
@@ -117,12 +123,18 @@ fn main() {
         debug!("Injecting {} account storage items", storage_req.len());
         for chunk in storage_req.chunks(INJECT_STORAGE_CHUNK_SIZE) {
             let chunk_len = chunk.len();
-            let res = client
-                .inject_account_storage(chunk.to_vec())
-                .wait()
-                .unwrap();
+            let chunk_vec = chunk.to_vec();
+            let start = Instant::now();
+            let res = client.inject_account_storage(chunk_vec).wait().unwrap();
+            let end = Instant::now();
+            let duration_ms = to_ms(end - start);
             debug!("inject_account_storage result: {:?}", res); // %%%
-            debug!("Injected {} account storage items", chunk_len);
+            debug!(
+                "Injected {} account storage items in {:.3} ms: {:.3} items/sec",
+                chunk_len,
+                duration_ms,
+                chunk_len as f64 / duration_ms * 1000.
+            );
         }
 
         num_accounts_injected += accounts_len;
