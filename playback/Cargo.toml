@@ -5,20 +5,19 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 clap = "2.29.1"
+client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
+evm-api = { path = "../api" }
 filebuffer = "0.4.0"
 futures = "0.1.18"
 grpcio = "0.2.2"
 hex = "0.3.1"
 log = "0.4"
 pretty_env_logger = "0.2"
+rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-
-client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-
-evm-api = { path = "../api" }

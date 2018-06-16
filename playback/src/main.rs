@@ -121,8 +121,8 @@ fn main() {
                 for (key, value) in storage {
                     storage_req.push((
                         address,
-                        ethereum_types::U256::from_str(&key).unwrap(),
-                        ethereum_types::M256::from_str(&value).unwrap(),
+                        ethereum_types::H256::from_str(&key).unwrap(),
+                        ethereum_types::H256::from_str(&value).unwrap(),
                     ));
                 }
             }
@@ -148,7 +148,9 @@ fn main() {
     }
     trace!("Done injecting accounts");
     let res = client
-        .init_genesis_block(evm_api::InitStateRequest {})
+        .init_genesis_block(evm_api::InitStateRequest {
+            state_root: ethereum_types::H256::zero()
+        })
         .wait()
         .unwrap();
     debug!("init_genesis_block result: {:?}", res);
