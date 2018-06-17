@@ -87,29 +87,30 @@ fn main() {
         pool.execute(move || {
             let mut client = Web3Client::new(transport_handle);
             loop {
-                if counter.fetch_add(1, Ordering::SeqCst) >= number {
-                    break;
-                }
                 //let res = client
                 //    .eth_getBlockByNumber("latest".to_string(), false)
                 //    .call();
                 //let res = client.net_version().call();
                 let res = client.eth_blockNumber().call();
-                info!("Result: {:?}", res);
+                //info!("Result: {:?}", res);
+                if counter.fetch_add(1, Ordering::Relaxed) >= number {
+                    break;
+                }
             }
         });
     }
     pool.join();
 
     let end = Instant::now();
+    let total = counter.load(Ordering::SeqCst);
     let duration = end - start;
     info!(
         "Executed {:?} web3 calls over {:.3} ms",
-        number,
+        total,
         to_ms(duration)
     );
     info!(
         "Throughput: {:.3} calls/sec",
-        number as f64 / to_ms(duration) * 1000.
+        total as f64 / to_ms(duration) * 1000.
     );
 }
