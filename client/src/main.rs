@@ -55,11 +55,10 @@ use ekiden_core::bytes::B256;
 use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
-
+use sputnikvm::Log;
 use bigint::{Address, M256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use std::str::FromStr;
-
 use log::{info, log, warn, LevelFilter};
 
 with_api! {

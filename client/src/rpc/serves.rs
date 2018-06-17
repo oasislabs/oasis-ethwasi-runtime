@@ -14,7 +14,6 @@ use std::sync::{Arc, Mutex};
 
 use jsonrpc_macros::Trailing;
 
-use ekiden_rpc_client;
 use evm;
 use futures::future::Future;
 
@@ -528,17 +527,11 @@ impl EthereumRPC for MinerEthereumRPC {
 
     fn logs(&self, log: RPCLogFilter) -> Result<Vec<RPCLog>, Error> {
         info!("logs: log = {:?}", log);
-        /*
-        println!("\n*** logs. log = {:?}", log);
+        println!("\n*** logs. log filter = {:?}", log);
 
-        let state = self.state.lock().unwrap();
-
-        match from_log_filter(&state, log) {
-            Ok(filter) => Ok(get_logs(&state, filter)?),
-            Err(_) => Ok(Vec::new()),
-        }
-        */
-        Err(Error::TODO)
+        let filter = from_log_filter(log)?;
+        let logs = self.client.get_logs(filter).wait().unwrap();
+        Ok(logs.iter().map(|x| filtered_log_to_rpc_log(x)).collect())
     }
 }
 

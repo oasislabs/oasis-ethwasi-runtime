@@ -1,36 +1,14 @@
-use bigint::{Address, H256, U256};
-use block::{Log, Receipt};
-use blockchain::chain::HeaderHash;
-use hexutil::*;
-use rpc::RPCLogFilter;
-use sha3::{Digest, Keccak256};
+use bigint::U256;
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
-use std::thread;
 
-use super::util::*;
 use super::{Either, RPCLog};
-use ekiden_rpc_client;
+
+use evm_api::LogFilter;
 
 use error::Error;
 use evm;
 use futures::future::Future;
-use rlp;
-
-#[derive(Clone, Debug)]
-pub enum TopicFilter {
-    All,
-    Or(Vec<H256>),
-}
-
-#[derive(Clone, Debug)]
-pub struct LogFilter {
-    pub from_block: usize,
-    pub to_block: usize,
-    pub address: Option<Address>,
-    pub topics: Vec<TopicFilter>,
-}
 
 #[derive(Clone, Debug)]
 pub enum Filter {
@@ -108,14 +86,6 @@ impl FilterManager {
             filters: HashMap::new(),
             unmodified_filters: HashMap::new(),
         }
-    }
-
-    pub fn from_log_filter(&self, log: RPCLogFilter) -> Result<LogFilter, Error> {
-        /*
-        let state = self.state.lock().unwrap();
-        from_log_filter(&state, log)
-        */
-        Err(Error::NotImplemented)
     }
 
     pub fn install_log_filter(&mut self, filter: LogFilter) -> usize {
