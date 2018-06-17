@@ -60,7 +60,6 @@ fn run_scenario(
     info!("Starting {} benchmark...", name);
     let pool = ThreadPool::with_name("clients".into(), threads);
     let counter = Arc::new(AtomicUsize::new(0));
-
     let start = Instant::now();
 
     for _ in 0..pool.max_count() {
