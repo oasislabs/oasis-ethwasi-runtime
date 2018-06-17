@@ -6,6 +6,8 @@ contract_api! {
     pub fn inject_account_storage(Vec<(Address, U256, M256)>) -> ();
     pub fn init_genesis_block(InitStateRequest) -> ();
 
+    pub fn debug_null_call(bool) -> ();
+
     pub fn debug_execute_unsigned_transaction(Transaction) -> H256;
 
     pub fn simulate_transaction(Transaction) -> SimulateTransactionResponse;

@@ -51,6 +51,12 @@ with_api! {
     create_contract!(api);
 }
 
+// used for performance debugging
+#[cfg(debug_assertions)]
+fn debug_null_call(_request: &bool) -> Result<()> {
+    Ok(())
+}
+
 #[cfg(debug_assertions)]
 fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Ok(StateDb::new().genesis_initialized.is_present())

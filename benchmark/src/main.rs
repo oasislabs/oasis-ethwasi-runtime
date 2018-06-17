@@ -28,8 +28,9 @@ fn to_ms(d: Duration) -> f64 {
 
 // web3 JSON-RPC interface
 jsonrpc_client!(pub struct Web3Client {
-    pub fn eth_getBlockByNumber(&mut self, number: String, full: bool) -> RpcRequest<Value>;
     pub fn eth_blockNumber(&mut self) -> RpcRequest<String>;
+    pub fn eth_getBlockByNumber(&mut self, number: String, full: bool) -> RpcRequest<Value>;
+    pub fn debug_nullCall(&mut self) -> RpcRequest<bool>;
     pub fn net_version(&mut self) -> RpcRequest<String>;
 });
 
@@ -91,7 +92,8 @@ fn main() {
                 //    .eth_getBlockByNumber("latest".to_string(), false)
                 //    .call();
                 //let res = client.net_version().call();
-                let res = client.eth_blockNumber().call();
+                let res = client.debug_nullCall().call();
+                //let res = client.eth_blockNumber().call();
                 //info!("Result: {:?}", res);
                 if counter.fetch_add(1, Ordering::Relaxed) >= number {
                     break;
