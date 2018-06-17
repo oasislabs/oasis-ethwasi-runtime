@@ -4,7 +4,7 @@
 extern crate clap;
 use clap::{App, Arg};
 extern crate log;
-use log::{info, log, LevelFilter};
+use log::{debug, info, log, LevelFilter};
 extern crate pretty_env_logger;
 
 extern crate threadpool;
@@ -13,7 +13,7 @@ use threadpool::ThreadPool;
 #[macro_use]
 extern crate jsonrpc_client_core;
 extern crate jsonrpc_client_http;
-use jsonrpc_client_http::HttpTransport;
+use jsonrpc_client_http::{HttpHandle, HttpTransport};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -34,6 +34,64 @@ jsonrpc_client!(pub struct Web3Client {
     pub fn net_version(&mut self) -> RpcRequest<String>;
 });
 
+// scenarios
+fn eth_blockNumber(client: &mut Web3Client<HttpHandle>) {
+    let res = client.eth_blockNumber().call();
+    debug!("result: {:?}", res);
+}
+
+fn net_version(client: &mut Web3Client<HttpHandle>) {
+    let res = client.net_version().call();
+    debug!("result: {:?}", res);
+}
+
+fn debug_nullCall(client: &mut Web3Client<HttpHandle>) {
+    let res = client.debug_nullCall().call();
+    debug!("result: {:?}", res);
+}
+
+fn run_scenario(
+    name: &str,
+    scenario: fn(&mut Web3Client<HttpHandle>),
+    url: &str,
+    threads: usize,
+    number: usize,
+) {
+    info!("Starting {} benchmark...", name);
+    let pool = ThreadPool::with_name("clients".into(), threads);
+    let counter = Arc::new(AtomicUsize::new(0));
+
+    let start = Instant::now();
+
+    for _ in 0..pool.max_count() {
+        let counter = counter.clone();
+        let transport = HttpTransport::new().unwrap();
+        let transport_handle = transport.handle(&url).unwrap();
+
+        pool.execute(move || {
+            let mut client = Web3Client::new(transport_handle);
+            loop {
+                scenario(&mut client);
+                if counter.fetch_add(1, Ordering::Relaxed) >= number {
+                    break;
+                }
+            }
+        });
+    }
+    pool.join();
+
+    let end = Instant::now();
+    let total = counter.load(Ordering::SeqCst);
+    let duration = end - start;
+    info!(
+        "{}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        name,
+        total,
+        to_ms(duration),
+        total as f64 / to_ms(duration) * 1000.
+    );
+}
+
 fn main() {
     let args = App::new("web3 benchmarking client")
         .arg(
@@ -47,12 +105,6 @@ fn main() {
                 .long("port")
                 .takes_value(true)
                 .default_value("8545"),
-        )
-        .arg(
-            Arg::with_name("number")
-                .long("number")
-                .takes_value(true)
-                .default_value("1"),
         )
         .arg(
             Arg::with_name("threads")
@@ -70,49 +122,10 @@ fn main() {
 
     let host = value_t!(args, "host", String).unwrap();
     let port = value_t!(args, "port", String).unwrap();
-    let number = value_t!(args, "number", usize).unwrap();
     let threads = value_t!(args, "threads", usize).unwrap();
-
-    let pool = ThreadPool::with_name("clients".into(), threads);
-    let counter = Arc::new(AtomicUsize::new(0));
-
     let url = format!("http://{}:{}", host, port);
 
-    let start = Instant::now();
-
-    for _ in 0..pool.max_count() {
-        let counter = counter.clone();
-        let transport = HttpTransport::new().unwrap();
-        let transport_handle = transport.handle(&url).unwrap();
-
-        pool.execute(move || {
-            let mut client = Web3Client::new(transport_handle);
-            loop {
-                //let res = client
-                //    .eth_getBlockByNumber("latest".to_string(), false)
-                //    .call();
-                //let res = client.net_version().call();
-                let res = client.debug_nullCall().call();
-                //let res = client.eth_blockNumber().call();
-                //info!("Result: {:?}", res);
-                if counter.fetch_add(1, Ordering::Relaxed) >= number {
-                    break;
-                }
-            }
-        });
-    }
-    pool.join();
-
-    let end = Instant::now();
-    let total = counter.load(Ordering::SeqCst);
-    let duration = end - start;
-    info!(
-        "Executed {:?} web3 calls over {:.3} ms",
-        total,
-        to_ms(duration)
-    );
-    info!(
-        "Throughput: {:.3} calls/sec",
-        total as f64 / to_ms(duration) * 1000.
-    );
+    run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 5000);
+    run_scenario("net_version", net_version, &url, threads, 100000);
+    run_scenario("null call", debug_nullCall, &url, threads, 5000);
 }
