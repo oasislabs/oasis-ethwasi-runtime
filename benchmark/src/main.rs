@@ -40,6 +40,13 @@ fn eth_blockNumber(client: &mut Web3Client<HttpHandle>) {
     debug!("result: {:?}", res);
 }
 
+fn eth_getBlockByNumber(client: &mut Web3Client<HttpHandle>) {
+    let res = client
+        .eth_getBlockByNumber("latest".to_string(), true)
+        .call();
+    debug!("result: {:?}", res);
+}
+
 fn net_version(client: &mut Web3Client<HttpHandle>) {
     let res = client.net_version().call();
     debug!("result: {:?}", res);
@@ -126,5 +133,12 @@ fn main() {
 
     run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 5000);
     run_scenario("net_version", net_version, &url, threads, 100000);
+    run_scenario(
+        "eth_getBlockByNumber",
+        eth_getBlockByNumber,
+        &url,
+        threads,
+        5000,
+    );
     run_scenario("null call", debug_nullCall, &url, threads, 5000);
 }
