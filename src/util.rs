@@ -1,4 +1,4 @@
-use bigint::{Gas, H256, U256};
+use bigint::{Address, Gas, H256, U256};
 use block::{RlpHash, Transaction, TransactionSignature};
 use ekiden_core::error::{Error, Result};
 use evm_api::{FilteredLog, LogFilter, TopicFilter, Transaction as EVMTransaction};
@@ -117,7 +117,7 @@ pub fn unsigned_to_valid(
     };
 
     Ok(ValidTransaction {
-        caller: transaction.caller,
+        caller: Some(transaction.caller.unwrap_or(Address::default())),
         action: action,
         gas_price: Gas::zero(),
         gas_limit: Gas::max_value(),
