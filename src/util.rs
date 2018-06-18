@@ -179,7 +179,7 @@ pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
     let mut ret = Vec::new();
 
     while current_block_number <= to_block {
-        let block = match super::get_block(current_block_number) {
+        let block = match super::block_by_number(current_block_number) {
             Some(block) => block,
             None => break,
         };

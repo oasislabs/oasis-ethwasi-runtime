@@ -29,8 +29,9 @@ extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
 use evm_api::error::INVALID_BLOCK_NUMBER;
-use evm_api::{with_api, AccountState, Block, BlockRequest, FilteredLog, InitStateRequest,
-              LogFilter, SimulateTransactionResponse, Transaction, TransactionRecord};
+use evm_api::{with_api, AccountState, Block, BlockRequestByHash, BlockRequestByNumber,
+              FilteredLog, InitStateRequest, LogFilter, SimulateTransactionResponse, Transaction,
+              TransactionRecord};
 
 use sputnikvm::{VMStatus, VM};
 //use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -47,7 +48,7 @@ use evm::{fire_transaction, update_state_from_vm};
 
 use state::{EthState, StateDb};
 
-use miner::{get_block, get_latest_block_number, mine_block};
+use miner::{block_by_hash, block_by_number, get_latest_block_number, mine_block};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::contract::create_contract;
@@ -144,7 +145,7 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     let mut next_start = block_height.clone();
 
     while next_start <= current_block_height {
-        let hash = get_block(next_start).unwrap().hash;
+        let hash = block_by_number(next_start).unwrap().hash;
         result.push(hash);
         next_start = next_start + U256::one();
     }
@@ -152,7 +153,7 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     Ok(result)
 }
 
-fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
+fn get_block_by_number(request: &BlockRequestByNumber) -> Result<Option<Block>> {
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
 
@@ -165,7 +166,26 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
         }
     };
 
-    let mut block = match get_block(number) {
+    let mut block = match block_by_number(number) {
+        Some(val) => val,
+        None => return Ok(None),
+    };
+
+    // if full transactions are requested, attach the TransactionRecord
+    if request.full {
+        if let Some(val) = EthState::instance().get_transaction_record(&block.transaction_hash) {
+            block.transaction = Some(val);
+        }
+    }
+
+    Ok(Some(block))
+}
+
+fn get_block_by_hash(request: &BlockRequestByHash) -> Result<Option<Block>> {
+    println!("*** Get block by hash");
+    println!("Request: {:?}", request);
+
+    let mut block = match block_by_hash(request.hash) {
         Some(val) => val,
         None => return Ok(None),
     };
