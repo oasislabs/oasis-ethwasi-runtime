@@ -26,7 +26,7 @@ run_compute_node() {
 	--max-batch-timeout 100 \
         --port ${port} \
         ${extra_args} \
-        $CARGO_TARGET_DIR/contract/evm.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/contract/evm.so &> compute${id}.log &
 }
 
 run_test() {
@@ -54,15 +54,15 @@ run_test() {
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
     pushd ${WORKDIR}/client/ > /dev/null
-    $CARGO_TARGET_DIR/debug/web3-client \
-        --mr-enclave $(cat $CARGO_TARGET_DIR/contract/evm.mrenclave) \
+    ${WORKDIR}/client/target/release/web3-client \
+        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/evm.mrenclave) \
         --threads 100 &> ${WORKDIR}/client.log &
     popd > /dev/null
     sleep 2
 
     # Start benchmark.
     echo "Starting benchmark."
-    $CARGO_TARGET_DIR/debug/web3_benchmark \
+    ${WORKDIR}/benchmark/target/release/web3_benchmark \
         --threads 100 &
     benchmark_pid=$!
 

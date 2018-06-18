@@ -52,7 +52,6 @@ with_api! {
 }
 
 // used for performance debugging
-#[cfg(debug_assertions)]
 fn debug_null_call(_request: &bool) -> Result<()> {
     Ok(())
 }
@@ -84,6 +83,11 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(debug_assertions))]
+fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
+    Err(Error::new("API available only in debug builds"))
+}
+
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
 fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
@@ -98,6 +102,11 @@ fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(not(debug_assertions))]
+fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
+    Err(Error::new("API available only in debug builds"))
 }
 
 // TODO: secure this method so it can't be called by any client.
