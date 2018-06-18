@@ -1,29 +1,18 @@
-extern crate alloc;
-extern crate ethereum_types;
-extern crate hex;
-extern crate sha3;
+use std::sync::Arc;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::db::{database_schema, Database, DatabaseHandle};
-
-use std::{collections::HashMap, sync::Arc};
-
-use ethereum_types::{Address, H256, U256};
-
-use evm_api::{AccountState, Block, TransactionRecord};
-
 use ethcore::{
   self,
   executed::Executed,
-  executive::contract_address,
-  journaldb::{self, overlaydb::OverlayDB},
+  journaldb::overlaydb::OverlayDB,
   kvdb,
   state::backend::Basic as BasicBackend,
-  transaction::{Action, SignedTransaction, Transaction, UnverifiedTransaction},
-  vm,
+  transaction::{Action, SignedTransaction},
 };
-
-use std::rc::Rc;
+use ethereum_types::{Address, H256, U256};
+use evm_api::{AccountState, Block, TransactionRecord};
+use hex;
 
 // Create database schema.
 database_schema! {
@@ -35,9 +24,7 @@ database_schema! {
     }
 }
 
-pub struct State {
-  db: StateDb,
-}
+pub struct State {}
 
 type Backend = BasicBackend<OverlayDB>;
 type EthState = ethcore::state::State<Backend>;
@@ -65,16 +52,16 @@ pub fn with_state<R, F: FnOnce(&mut EthState) -> Result<R>>(cb: F) -> Result<(R,
 
   let ret = cb(&mut state)?;
 
-  state.commit();
+  state.commit()?;
   let (state_root, mut db) = state.drop();
-  db.0.commit();
+  db.0.commit()?;
 
   Ok((ret, state_root))
 }
 
 impl State {
   fn new() -> Self {
-    State { db: StateDb::new() }
+    State {}
   }
 
   pub fn instance() -> State {
@@ -194,14 +181,7 @@ pub fn record_transaction(
       cumulative_gas_used: exec.cumulative_gas_used,
       contract_address: match transaction.action {
         Action::Create => None,
-        Action::Call(address) => Some(
-          contract_address(
-            vm::CreateContractAddress::FromCodeHash,
-            &transaction.sender(),
-            &U256::zero(),
-            &transaction.data,
-          ).0,
-        ),
+        Action::Call(address) => Some(address),
       },
       value: transaction.value,
       gas_price: transaction.gas_price,
@@ -249,7 +229,7 @@ impl kvdb::KeyValueDB for State {
     )
   }
 
-  fn get_by_prefix(&self, col: Option<u32>, prefix: &[u8]) -> Option<Box<[u8]>> {
+  fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {
     unimplemented!();
   }
 
@@ -270,19 +250,19 @@ impl kvdb::KeyValueDB for State {
     Ok(())
   }
 
-  fn iter<'a>(&'a self, col: Option<u32>) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
+  fn iter<'a>(&'a self, _col: Option<u32>) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
     unimplemented!();
   }
 
   fn iter_from_prefix<'a>(
     &'a self,
-    col: Option<u32>,
-    prefix: &'a [u8],
+    _col: Option<u32>,
+    _prefix: &'a [u8],
   ) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
     unimplemented!();
   }
 
-  fn restore(&self, new_db: &str) -> kvdb::Result<()> {
+  fn restore(&self, _new_db: &str) -> kvdb::Result<()> {
     unimplemented!();
   }
 }

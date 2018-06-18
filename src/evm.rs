@@ -1,23 +1,16 @@
-use std::{cmp, collections::BTreeMap, rc::Rc, str::FromStr, sync::Arc};
+use std::{cmp, collections::BTreeMap, sync::Arc};
 
-use ekiden_core::error::{Error, Result};
+use ekiden_core::error::Result;
 use ethcore::{
-  self,
   executive::{Executed, Executive, TransactOptions},
-  journaldb::{self, overlaydb::OverlayDB},
-  kvdb::KeyValueDB,
   machine::EthereumMachine,
   spec::CommonParams,
-  state::{backend::Basic as BasicBackend, State as EthState},
-  transaction::{Action, SignedTransaction, Transaction},
+  transaction::SignedTransaction,
   vm,
 };
-use ethereum_types::{Address, H256, U256};
+use ethereum_types::{H256, U256};
 
-use super::{
-  state::{get_block_hash, get_latest_block, get_latest_block_number, get_state, with_state},
-  State,
-};
+use super::state::{get_block_hash, get_latest_block_number, get_state, with_state};
 
 /// as per https://github.com/paritytech/parity/blob/master/ethcore/res/ethereum/byzantium_test.json
 macro_rules! evm_params {

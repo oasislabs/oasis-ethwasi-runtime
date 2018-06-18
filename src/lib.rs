@@ -1,52 +1,40 @@
-#![feature(alloc)]
 #![feature(iterator_try_fold)]
 #![feature(use_extern_macros)]
 
-#[macro_use]
-mod logger;
-mod evm;
-mod miner;
-mod state;
-// mod util;
-
-extern crate log;
-extern crate protobuf;
-
-extern crate alloc;
-extern crate ethcore;
-extern crate ethereum_types;
-extern crate hex;
-extern crate sha3;
-
 extern crate ekiden_core;
 extern crate ekiden_trusted;
-
+extern crate ethcore;
+extern crate ethereum_types;
 extern crate evm_api;
+extern crate hex;
+extern crate log;
+extern crate protobuf;
+extern crate sha3;
 
-use evm_api::{
-  error::INVALID_BLOCK_NUMBER, with_api, AccountState, Block, BlockRequest, InitStateRequest,
-  SimulateTransactionResponse, Transaction as RPCTransaction, TransactionRecord,
-};
-
-use ethcore::{
-  executive::{Executive, TransactOptions},
-  rlp,
-  transaction::{Action, SignedTransaction, Transaction, UnverifiedTransaction},
-  vm::EnvInfo,
-};
-
-use ethereum_types::{Address, H256, U256};
-use sha3::{Digest, Keccak256};
+mod evm;
+#[macro_use]
+mod logger;
+mod miner;
+mod state;
 
 use std::str::FromStr;
 
-use state::{with_state, State, StateDb};
-
-use miner::mine_block;
-use state::{get_block, get_latest_block_number};
-
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
+use ethcore::{
+  executed::Executed,
+  rlp,
+  transaction::{Action, SignedTransaction, Transaction as EVMTransaction},
+};
+use ethereum_types::{Address, H256, U256};
+use evm_api::{
+  error::INVALID_BLOCK_NUMBER, with_api, AccountState, Block, BlockRequest, InitStateRequest,
+  SimulateTransactionResponse, Transaction, TransactionRecord,
+};
+use sha3::{Digest, Keccak256};
+
+use miner::mine_block;
+use state::{get_block, get_latest_block_number, with_state, StateDb};
 
 enclave_init!();
 
@@ -56,18 +44,18 @@ with_api! {
 }
 
 #[cfg(debug_assertions)]
-fn genesis_block_initialized(_request: &bool) -> Result<bool> {
+pub fn genesis_block_initialized(_request: &bool) -> Result<bool> {
   Ok(StateDb::new().genesis_initialized.is_present())
 }
 
 #[cfg(not(debug_assertions))]
-fn genesis_block_initialized(_request: &bool) -> Result<bool> {
+pub fn genesis_block_initialized(_request: &bool) -> Result<bool> {
   Err(Error::new("API available only in debug builds"))
 }
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
+pub fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
   if StateDb::new().genesis_initialized.is_present() {
     return Err(Error::new("Genesis block already created"));
   }
@@ -77,7 +65,7 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
+pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
   let state = StateDb::new();
 
   if state.genesis_initialized.is_present() {
@@ -95,7 +83,7 @@ fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(debug_assertions)]
-fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
+pub fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
   info!("*** Init genesis block");
   let state = StateDb::new();
 
@@ -111,16 +99,16 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
 }
 
 #[cfg(not(debug_assertions))]
-fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
+pub fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
   Err(Error::new("API available only in debug builds"))
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-fn get_block_height(_request: &bool) -> Result<U256> {
+pub fn get_block_height(_request: &bool) -> Result<U256> {
   Ok(get_latest_block_number())
 }
 
-fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
+pub fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
   let mut result = Vec::new();
 
   let current_block_height = get_latest_block_number();
@@ -135,7 +123,7 @@ fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
   Ok(result)
 }
 
-fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
+pub fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
   println!("*** Get block by number");
   println!("Request: {:?}", request);
 
@@ -144,7 +132,7 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
   } else {
     match U256::from_str(&request.number) {
       Ok(val) => val,
-      Err(err) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
+      Err(_err) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
     }
   };
 
@@ -163,36 +151,36 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
   Ok(Some(block))
 }
 
-fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
+pub fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
   info!("*** Get transaction record");
   info!("Hash: {:?}", hash);
 
   Ok(state::get_transaction_record(hash))
 }
 
-fn get_account_balance(address: &Address) -> Result<U256> {
+pub fn get_account_balance(address: &Address) -> Result<U256> {
   info!("*** Get account balance");
   info!("Address: {:?}", address);
   state::get_account_balance(address)
 }
 
-fn get_account_nonce(address: &Address) -> Result<U256> {
+pub fn get_account_nonce(address: &Address) -> Result<U256> {
   info!("*** Get account nonce");
   info!("Address: {:?}", address);
   state::get_account_nonce(address)
 }
 
-fn get_account_code(address: &Address) -> Result<String> {
+pub fn get_account_code(address: &Address) -> Result<String> {
   info!("*** Get account code");
   info!("Address: {:?}", address);
   state::get_code_string(address)
 }
 
-fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
+pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
   state::get_account_storage(pair.0, pair.1)
 }
 
-fn execute_raw_transaction(request: &String) -> Result<H256> {
+pub fn execute_raw_transaction(request: &String) -> Result<H256> {
   info!("*** Execute raw transaction");
   info!("Data: {:?}", request);
   let tx_rlp = hex::decode(request)?;
@@ -204,8 +192,8 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
   Ok(tx_hash)
 }
 
-fn simulate_transaction(request: &RPCTransaction) -> Result<SimulateTransactionResponse> {
-  let tx = Transaction {
+fn do_simulated_transaction(request: &Transaction) -> Result<(Executed, H256)> {
+  let tx = EVMTransaction {
     action: if request.is_call {
       Action::Call(request
         .address
@@ -223,25 +211,31 @@ fn simulate_transaction(request: &RPCTransaction) -> Result<SimulateTransactionR
     Some(addr) => tx.fake_sign(addr),
     None => tx.null_sign(0),
   };
-  let exec = evm::simulate_transaction(&tx)?;
+  Ok((evm::simulate_transaction(&tx)?, tx.hash()))
+}
+
+pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
+  let exec = do_simulated_transaction(request)?.0;
+  let result = hex::encode(exec.output);
+  trace!("*** Result: {:?}", result);
   Ok(SimulateTransactionResponse {
     used_gas: exec.gas_used,
     exited_ok: exec.exception.is_none(),
-    result: hex::encode(exec.output),
+    result: result,
   })
 }
 
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
 // attempts to execute the transaction without performing any validation
 #[cfg(debug_assertions)]
-fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
+pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
   info!("*** Execute transaction");
   info!("Transaction: {:?}", request);
 
-  unimplemented!();
+  do_simulated_transaction(request).map(|(_exec, hash)| hash)
 }
 
 #[cfg(not(debug_assertions))]
-fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
+pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
   Err(Error::new("API available only in debug builds"))
 }

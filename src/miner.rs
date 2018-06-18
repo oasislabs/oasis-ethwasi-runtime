@@ -1,12 +1,8 @@
 use ethereum_types::{H256, U256};
 use evm_api::Block;
 use sha3::{Digest, Keccak256};
-use state::{add_block, advance_block_number, get_block, StateDb};
 
-pub struct BlockHashes {
-  tx_hash: H256,
-  state_root: H256,
-}
+use state::{add_block, advance_block_number, get_block};
 
 /// "mine" a block containing 0 or 1 transactions.
 /// Returns block number and hash.
