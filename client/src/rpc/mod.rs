@@ -2,11 +2,9 @@ use jsonrpc_core::IoHandler;
 use jsonrpc_http_server::*;
 use jsonrpc_macros::Trailing;
 
-use ethereum_types::{Address, U256, H256, H64};
 use ethbloom::Bloom;
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::sync::Arc;
+use ethereum_types::{Address, H256, H64, U256};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 
 mod filter;
 mod serialize;
@@ -23,171 +21,171 @@ use evm;
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum Either<T, U> {
-    Left(T),
-    Right(U),
+  Left(T),
+  Right(U),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum RPCTopicFilter {
-    Single(Hex<H256>),
-    Or(Vec<Hex<H256>>),
+  Single(Hex<H256>),
+  Or(Vec<Hex<H256>>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCLogFilter {
-    pub from_block: Option<String>,
-    pub to_block: Option<String>,
-    pub address: Option<Hex<Address>>,
-    pub topics: Option<Vec<Option<RPCTopicFilter>>>,
+  pub from_block: Option<String>,
+  pub to_block: Option<String>,
+  pub address: Option<Hex<Address>>,
+  pub topics: Option<Vec<Option<RPCTopicFilter>>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCLog {
-    pub removed: bool,
-    pub log_index: Hex<usize>,
-    pub transaction_index: Hex<usize>,
-    pub transaction_hash: Hex<H256>,
-    pub block_hash: Hex<H256>,
-    pub block_number: Hex<U256>,
-    pub data: Bytes,
-    pub topics: Vec<Hex<H256>>,
+  pub removed: bool,
+  pub log_index: Hex<usize>,
+  pub transaction_index: Hex<usize>,
+  pub transaction_hash: Hex<H256>,
+  pub block_hash: Hex<H256>,
+  pub block_number: Hex<U256>,
+  pub data: Bytes,
+  pub topics: Vec<Hex<H256>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCReceipt {
-    pub transaction_hash: Hex<H256>,
-    pub transaction_index: Hex<usize>,
-    pub block_hash: Hex<H256>,
-    pub block_number: Hex<U256>,
-    pub cumulative_gas_used: Hex<U256>,
-    pub gas_used: Hex<U256>,
-    pub contract_address: Option<Hex<Address>>,
-    pub logs: Vec<RPCLog>,
-    pub root: Hex<H256>,
-    pub status: usize,
+  pub transaction_hash: Hex<H256>,
+  pub transaction_index: Hex<usize>,
+  pub block_hash: Hex<H256>,
+  pub block_number: Hex<U256>,
+  pub cumulative_gas_used: Hex<U256>,
+  pub gas_used: Hex<U256>,
+  pub contract_address: Option<Hex<Address>>,
+  pub logs: Vec<RPCLog>,
+  pub root: Hex<H256>,
+  pub status: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCBlock {
-    pub number: Hex<U256>,
-    pub hash: Hex<H256>,
-    pub parent_hash: Hex<H256>,
-    pub nonce: Hex<H64>,
-    pub sha3_uncles: Hex<H256>,
-    pub logs_bloom: Hex<Bloom>,
-    pub transactions_root: Hex<H256>,
-    pub state_root: Hex<H256>,
-    pub receipts_root: Hex<H256>,
-    pub miner: Hex<Address>,
-    pub difficulty: Hex<U256>,
-    pub total_difficulty: Hex<U256>,
-    pub extra_data: Bytes,
-    pub size: Hex<usize>,
-    pub gas_limit: Hex<U256>,
-    pub gas_used: Hex<U256>,
-    pub timestamp: Hex<u64>,
-    pub transactions: Either<Vec<Hex<H256>>, Vec<RPCTransaction>>,
-    pub uncles: Vec<Hex<H256>>,
+  pub number: Hex<U256>,
+  pub hash: Hex<H256>,
+  pub parent_hash: Hex<H256>,
+  pub nonce: Hex<H64>,
+  pub sha3_uncles: Hex<H256>,
+  pub logs_bloom: Hex<Bloom>,
+  pub transactions_root: Hex<H256>,
+  pub state_root: Hex<H256>,
+  pub receipts_root: Hex<H256>,
+  pub miner: Hex<Address>,
+  pub difficulty: Hex<U256>,
+  pub total_difficulty: Hex<U256>,
+  pub extra_data: Bytes,
+  pub size: Hex<usize>,
+  pub gas_limit: Hex<U256>,
+  pub gas_used: Hex<U256>,
+  pub timestamp: Hex<u64>,
+  pub transactions: Either<Vec<Hex<H256>>, Vec<RPCTransaction>>,
+  pub uncles: Vec<Hex<H256>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCTransaction {
-    pub from: Option<Hex<Address>>,
-    pub to: Option<Hex<Address>>,
-    pub gas: Option<Hex<U256>>,
-    pub gas_price: Option<Hex<U256>>,
-    pub value: Option<Hex<U256>>,
-    pub data: Option<Bytes>,
-    pub nonce: Option<Hex<U256>>,
+  pub from: Option<Hex<Address>>,
+  pub to: Option<Hex<Address>>,
+  pub gas: Option<Hex<U256>>,
+  pub gas_price: Option<Hex<U256>>,
+  pub value: Option<Hex<U256>>,
+  pub data: Option<Bytes>,
+  pub nonce: Option<Hex<U256>>,
 
-    pub hash: Option<Hex<H256>>,
-    pub block_hash: Option<Hex<H256>>,
-    pub block_number: Option<Hex<U256>>,
-    pub transaction_index: Option<Hex<usize>>,
+  pub hash: Option<Hex<H256>>,
+  pub block_hash: Option<Hex<H256>>,
+  pub block_number: Option<Hex<U256>>,
+  pub transaction_index: Option<Hex<usize>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCTrace {
-    pub gas: Hex<U256>,
-    pub return_value: Bytes,
-    pub struct_logs: Vec<RPCStep>,
+  pub gas: Hex<U256>,
+  pub return_value: Bytes,
+  pub struct_logs: Vec<RPCStep>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCTraceConfig {
-    #[serde(default)]
-    pub disable_memory: bool,
-    #[serde(default)]
-    pub disable_stack: bool,
-    #[serde(default)]
-    pub disable_storage: bool,
-    #[serde(default)]
-    pub breakpoints: Option<RPCBreakpointConfig>,
+  #[serde(default)]
+  pub disable_memory: bool,
+  #[serde(default)]
+  pub disable_stack: bool,
+  #[serde(default)]
+  pub disable_storage: bool,
+  #[serde(default)]
+  pub breakpoints: Option<RPCBreakpointConfig>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCBreakpointConfig {
-    pub source_map: HashMap<Hex<H256>, RPCSourceMapConfig>,
-    pub breakpoints: String,
+  pub source_map: HashMap<Hex<H256>, RPCSourceMapConfig>,
+  pub breakpoints: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCSourceMapConfig {
-    pub source_map: String,
-    pub source_list: Vec<String>,
+  pub source_map: String,
+  pub source_list: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCBlockTrace {
-    pub struct_logs: Vec<RPCStep>,
+  pub struct_logs: Vec<RPCStep>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCStep {
-    pub depth: usize,
-    pub error: String,
-    pub gas: Hex<U256>,
-    pub gas_cost: Hex<U256>,
-    pub op: u8,
-    pub pc: usize,
-    pub opcode_pc: usize,
-    pub code_hash: Hex<H256>,
-    pub address: Hex<Address>,
-    pub breakpoint_index: Option<usize>,
-    pub breakpoint: Option<String>,
-    pub memory: Option<Vec<Bytes>>,
-    pub stack: Option<Vec<Hex<H256>>>,
-    pub storage: Option<HashMap<Hex<H256>, Hex<H256>>>,
+  pub depth: usize,
+  pub error: String,
+  pub gas: Hex<U256>,
+  pub gas_cost: Hex<U256>,
+  pub op: u8,
+  pub pc: usize,
+  pub opcode_pc: usize,
+  pub code_hash: Hex<H256>,
+  pub address: Hex<Address>,
+  pub breakpoint_index: Option<usize>,
+  pub breakpoint: Option<String>,
+  pub memory: Option<Vec<Bytes>>,
+  pub stack: Option<Vec<Hex<H256>>>,
+  pub storage: Option<HashMap<Hex<H256>, Hex<H256>>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCDump {
-    pub accounts: HashMap<Hex<Address>, RPCDumpAccount>,
-    pub root: Hex<H256>,
+  pub accounts: HashMap<Hex<Address>, RPCDumpAccount>,
+  pub root: Hex<H256>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCDumpAccount {
-    pub balance: Hex<U256>,
-    pub code: Bytes,
-    pub code_hash: Hex<H256>,
-    pub nonce: Hex<U256>,
-    pub root: Hex<H256>,
-    pub storage: HashMap<Hex<U256>, Hex<H256>>,
+  pub balance: Hex<U256>,
+  pub code: Bytes,
+  pub code_hash: Hex<H256>,
+  pub nonce: Hex<U256>,
+  pub root: Hex<H256>,
+  pub storage: HashMap<Hex<U256>, Hex<H256>>,
 }
 
 build_rpc_trait! {
@@ -316,29 +314,29 @@ build_rpc_trait! {
 }
 
 pub fn rpc_loop(client: Arc<evm::Client>, addr: &SocketAddr, num_threads: usize) {
-    let rpc = serves::MinerEthereumRPC::new(client.clone());
-    let filter = serves::MinerFilterRPC::new(client);
-    let debug = serves::MinerDebugRPC::new();
+  let rpc = serves::MinerEthereumRPC::new(client.clone());
+  let filter = serves::MinerFilterRPC::new(client);
+  let debug = serves::MinerDebugRPC::new();
 
-    let mut io = IoHandler::default();
+  let mut io = IoHandler::default();
 
-    io.extend_with(rpc.to_delegate());
-    io.extend_with(filter.to_delegate());
-    io.extend_with(debug.to_delegate());
+  io.extend_with(rpc.to_delegate());
+  io.extend_with(filter.to_delegate());
+  io.extend_with(debug.to_delegate());
 
-    let server = ServerBuilder::new(io)
-        .cors(DomainsValidation::AllowOnly(vec![
-            AccessControlAllowOrigin::Any,
-            AccessControlAllowOrigin::Null,
-        ]))
-        .threads(num_threads)
-        .start_http(addr)
-        .expect("Expect to build HTTP RPC server");
+  let server = ServerBuilder::new(io)
+    .cors(DomainsValidation::AllowOnly(vec![
+      AccessControlAllowOrigin::Any,
+      AccessControlAllowOrigin::Null,
+    ]))
+    .threads(num_threads)
+    .start_http(addr)
+    .expect("Expect to build HTTP RPC server");
 
-    info!(
-        "Started HTTP RPC server with {} threads at {}",
-        num_threads, addr
-    );
+  info!(
+    "Started HTTP RPC server with {} threads at {}",
+    num_threads, addr
+  );
 
-    server.wait();
+  server.wait();
 }

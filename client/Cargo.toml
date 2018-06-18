@@ -22,7 +22,6 @@ rand = "0.4"
 ethbloom = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 hex = "0.3.1"
-rustc-hex = "1.0"
 jsonrpc-core = { version = "8.0" }
 jsonrpc-http-server = { version = "8.0" }
 jsonrpc-macros = { version = "8.0" }
@@ -30,6 +29,7 @@ lazy_static = "0.2"
 log = "0.4"
 pretty_env_logger = "0.2"
 rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
+rustc-hex = "1.0"
 secp256k1-plus = "0.5"
 serde = "1.0"
 serde_derive = "1.0"
