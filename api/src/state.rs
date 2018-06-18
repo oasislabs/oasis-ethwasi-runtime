@@ -32,8 +32,14 @@ pub struct Block {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct BlockRequest {
+pub struct BlockRequestByNumber {
     pub number: String,
+    pub full: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BlockRequestByHash {
+    pub hash: H256,
     pub full: bool,
 }
 

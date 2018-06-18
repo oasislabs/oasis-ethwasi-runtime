@@ -17,7 +17,7 @@ pub fn mine_block(transaction_hash: Option<H256>) -> (U256, H256) {
 
     // set parent hash
     let parent_hash = if number > U256::zero() {
-        get_block(number - U256::one()).unwrap().hash
+        block_by_number(number - U256::one()).unwrap().hash
     } else {
         // genesis block
         H256::new()
@@ -43,13 +43,22 @@ pub fn mine_block(transaction_hash: Option<H256>) -> (U256, H256) {
     // store the block
     let state = StateDb::new();
     state.blocks.insert(&number, &block);
+    state.block_hashes.insert(&hash, &number);
 
     (number, hash)
 }
 
-pub fn get_block(number: U256) -> Option<Block> {
+pub fn block_by_number(number: U256) -> Option<Block> {
     let state = StateDb::new();
     state.blocks.get(&number)
+}
+
+pub fn block_by_hash(hash: H256) -> Option<Block> {
+    let state = StateDb::new();
+    match state.block_hashes.get(&hash) {
+        Some(number) => block_by_number(number),
+        None => None,
+    }
 }
 
 pub fn get_latest_block_number() -> U256 {

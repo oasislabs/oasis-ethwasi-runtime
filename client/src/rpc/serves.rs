@@ -8,7 +8,7 @@ use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::error::INVALID_BLOCK_NUMBER;
-use evm_api::BlockRequest;
+use evm_api::{BlockRequestByNumber, BlockRequestByHash};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
@@ -318,28 +318,28 @@ impl EthereumRPC for MinerEthereumRPC {
 
     fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
         info!("block_by_hash: hash = {:?}, full = {:?}", hash, full);
-        /*
-        println!("\n*** block_by_hash *** hash = {:?}", hash);
-        let state = self.state.lock().unwrap();
-        let block = match state.get_block_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
+
+        let request = BlockRequestByHash {
+            hash: hash.0,
+            full: full
         };
-        let total = match state.get_total_header_by_hash(hash.0) {
+
+        let response = match self.client.get_block_by_hash(request).wait() {
             Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
+            Err(e) => panic!("Contract call failed")
         };
-        Ok(Some(to_rpc_block(block, total, full)))
-        */
-        Err(Error::TODO)
+        info!("Response: {:?}", response);
+
+        match response {
+            Some(block) => Ok(Some(to_rpc_block(block, full)?)),
+            None => Ok(None),
+        }
     }
 
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
         info!("block_by_number: number = {:?}, full = {:?}", number, full);
 
-        let request = BlockRequest {
+        let request = BlockRequestByNumber {
             number: number,
             full: full,
         };
