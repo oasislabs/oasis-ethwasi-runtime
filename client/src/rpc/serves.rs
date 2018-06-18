@@ -8,7 +8,7 @@ use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::error::INVALID_BLOCK_NUMBER;
-use evm_api::{BlockRequestByNumber, BlockRequestByHash};
+use evm_api::{BlockRequestByHash, BlockRequestByNumber};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
@@ -321,13 +321,10 @@ impl EthereumRPC for MinerEthereumRPC {
 
         let request = BlockRequestByHash {
             hash: hash.0,
-            full: full
+            full: full,
         };
 
-        let response = match self.client.get_block_by_hash(request).wait() {
-            Ok(val) => val,
-            Err(e) => panic!("Contract call failed")
-        };
+        let response = self.client.get_block_by_hash(request).wait().unwrap();
         info!("Response: {:?}", response);
 
         match response {
