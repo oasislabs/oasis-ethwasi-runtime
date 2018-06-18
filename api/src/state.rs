@@ -43,7 +43,7 @@ pub struct TransactionRecord {
     pub nonce: U256,
     pub block_hash: H256,
     pub block_number: U256,
-    pub index: u32,                         // txn index in block, always 0 for single-txn blocks
+    pub index: usize,                       // txn index in block, always 0 for single-txn blocks
     pub is_create: bool,                    // is this a create transacation?
     pub from: Option<Address>,              // sender address
     pub to: Option<Address>,                // receiver address, defined if !is_create

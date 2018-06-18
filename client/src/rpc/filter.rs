@@ -17,62 +17,6 @@ pub enum Filter {
     Log(LogFilter),
 }
 
-/*
-fn check_log(log: &Log, index: usize, filter: &TopicFilter) -> bool {
-    match filter {
-        &TopicFilter::All => true,
-        &TopicFilter::Or(ref hashes) => {
-            if log.topics.len() >= index {
-                false
-            } else {
-                let mut matched = false;
-                for hash in hashes {
-                    if hash == &log.topics[index] {
-                        matched = true;
-                    }
-                }
-                matched
-            }
-        },
-    }
-}
-
-pub fn get_logs(state: &MinerState, filter: LogFilter) -> Result<Vec<RPCLog>, Error> {
-    let mut current_block_number = filter.from_block;
-    let mut ret = Vec::new();
-
-    while current_block_number >= filter.to_block {
-        if current_block_number > state.block_height() {
-            break;
-        }
-
-        let block = state.get_block_by_number(current_block_number);
-        for transaction in &block.transactions {
-            let transaction_hash = H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
-            let receipt = state.get_receipt_by_transaction_hash(transaction_hash)?;
-            for i in 0..receipt.logs.len() {
-                let log = &receipt.logs[i];
-                if check_log(log, 0, &filter.topics[0]) &&
-                    check_log(log, 1, &filter.topics[1]) &&
-                    check_log(log, 2, &filter.topics[2]) &&
-                    check_log(log, 3, &filter.topics[3]) &&
-                    match filter.address {
-                        Some(address) => address == log.address,
-                        None => true,
-                    }
-                    {
-                        ret.push(to_rpc_log(&receipt, i, transaction, &block));
-                    }
-            }
-        }
-
-        current_block_number += 1;
-    }
-
-    return Ok(ret);
-}
-*/
-
 pub struct FilterManager {
     client: Arc<evm::Client>,
     filters: HashMap<usize, Filter>,

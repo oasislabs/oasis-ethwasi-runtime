@@ -1,15 +1,16 @@
 use super::serialize::*;
-use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction, RPCTopicFilter, RPCLogFilter};
+use super::{Either, RPCBlock, RPCLog, RPCLogFilter, RPCReceipt, RPCTopicFilter, RPCTransaction};
 use error::Error;
 
 use bigint::{Address, Gas, H2048, H256, H64, U256};
 use hexutil::{read_hex, to_hex};
 
-use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord, FilteredLog, LogFilter, TopicFilter};
+use evm_api::{Block, FilteredLog, LogFilter, TopicFilter, Transaction as EVMTransaction,
+              TransactionRecord};
 
 use std::str::FromStr;
 
-pub fn receipt_to_rpc_log(record: &TransactionRecord, index: usize) -> RPCLog {
+pub fn transaction_record_to_rpc_log(record: &TransactionRecord, index: usize) -> RPCLog {
     RPCLog {
         removed: false,
         log_index: Hex(index),
@@ -34,7 +35,6 @@ pub fn filtered_log_to_rpc_log(log: &FilteredLog) -> RPCLog {
         topics: log.topics.iter().map(|t| Hex(*t)).collect(),
     }
 }
-
 
 pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, Error> {
     Ok(RPCBlock {
@@ -75,12 +75,8 @@ pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, E
 pub fn from_topic_filter(filter: Option<RPCTopicFilter>) -> Result<TopicFilter, Error> {
     Ok(match filter {
         None => TopicFilter::All,
-        Some(RPCTopicFilter::Single(s)) => TopicFilter::Or(vec![
-            s.0
-        ]),
-        Some(RPCTopicFilter::Or(ss)) => {
-            TopicFilter::Or(ss.into_iter().map(|v| v.0).collect())
-        },
+        Some(RPCTopicFilter::Single(s)) => TopicFilter::Or(vec![s.0]),
+        Some(RPCTopicFilter::Or(ss)) => TopicFilter::Or(ss.into_iter().map(|v| v.0).collect()),
     })
 }
 
@@ -104,8 +100,13 @@ pub fn from_log_filter(filter: RPCLogFilter) -> Result<LogFilter, Error> {
                     }
                 }
                 ret
-            },
-            None => vec![TopicFilter::All, TopicFilter::All, TopicFilter::All, TopicFilter::All],
+            }
+            None => vec![
+                TopicFilter::All,
+                TopicFilter::All,
+                TopicFilter::All,
+                TopicFilter::All,
+            ],
         },
     })
 }
@@ -129,7 +130,7 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
         logs: {
             let mut ret = Vec::new();
             for i in 0..record.logs.len() {
-                ret.push(receipt_to_rpc_log(&record, i));
+                ret.push(transaction_record_to_rpc_log(&record, i));
             }
             ret
         },

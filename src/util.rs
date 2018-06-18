@@ -186,9 +186,9 @@ pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
 
         let transaction_hash = block.transaction_hash;
         match state.get_transaction_record(&block.transaction_hash) {
-            Some(receipt) => {
-                for i in 0..receipt.logs.len() {
-                    let log = &receipt.logs[i];
+            Some(record) => {
+                for i in 0..record.logs.len() {
+                    let log = &record.logs[i];
 
                     let passes_filter = filter.addresses.contains(&log.address)
                         && check_log_topic(log, 0, &filter.topics[0])
@@ -204,8 +204,8 @@ pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
                             transaction_hash: block.transaction_hash,
                             block_hash: block.hash,
                             block_number: block.number,
-                            data: receipt.logs[i].data.clone(),
-                            topics: receipt.logs[i].topics.clone(),
+                            data: record.logs[i].data.clone(),
+                            topics: record.logs[i].topics.clone(),
                         });
                     }
                 }
