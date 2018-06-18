@@ -27,4 +27,6 @@ contract_api! {
     pub fn get_block_by_number(BlockRequest) -> Option<Block>;
 
     pub fn get_storage_at((Address, U256)) -> M256;
+
+    pub fn get_logs(LogFilter) -> Vec<FilteredLog>;
 }

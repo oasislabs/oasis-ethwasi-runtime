@@ -29,8 +29,8 @@ extern crate sputnikvm_network_classic;
 extern crate sputnikvm_network_foundation;
 
 use evm_api::error::INVALID_BLOCK_NUMBER;
-use evm_api::{with_api, AccountState, Block, BlockRequest, InitStateRequest,
-              SimulateTransactionResponse, Transaction, TransactionRecord};
+use evm_api::{with_api, AccountState, Block, BlockRequest, FilteredLog, InitStateRequest,
+              LogFilter, SimulateTransactionResponse, Transaction, TransactionRecord};
 
 use sputnikvm::{VMStatus, VM};
 //use sputnikvm_network_classic::MainnetEIP160Patch;
@@ -178,6 +178,13 @@ fn get_block_by_number(request: &BlockRequest) -> Result<Option<Block>> {
     }
 
     Ok(Some(block))
+}
+
+fn get_logs(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
+    info!("*** Get logs");
+    info!("Log filter: {:?}", filter);
+
+    util::get_logs_from_filter(filter)
 }
 
 fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {

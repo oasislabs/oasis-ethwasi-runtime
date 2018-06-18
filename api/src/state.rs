@@ -2,6 +2,18 @@ use bigint::{Address, Gas, H256, U256};
 
 use sputnikvm::Log;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FilteredLog {
+    pub removed: bool,
+    pub log_index: usize,
+    pub transaction_index: usize,
+    pub transaction_hash: H256,
+    pub block_hash: H256,
+    pub block_number: U256,
+    pub data: Vec<u8>,
+    pub topics: Vec<H256>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountState {
     pub nonce: U256,
@@ -31,7 +43,7 @@ pub struct TransactionRecord {
     pub nonce: U256,
     pub block_hash: H256,
     pub block_number: U256,
-    pub index: u32,                         // txn index in block, always 0 for single-txn blocks
+    pub index: usize,                       // txn index in block, always 0 for single-txn blocks
     pub is_create: bool,                    // is this a create transacation?
     pub from: Option<Address>,              // sender address
     pub to: Option<Address>,                // receiver address, defined if !is_create

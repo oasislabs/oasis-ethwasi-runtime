@@ -156,7 +156,7 @@ impl EthState {
         hash: H256,
         block_hash: H256,
         block_number: U256,
-        index: u32,
+        index: usize,
         transaction: ValidTransaction,
         vm: &SeqTransactionVM<P>,
     ) {

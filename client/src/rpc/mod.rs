@@ -16,7 +16,6 @@ use self::serialize::*;
 use error::Error;
 use log::{info, log};
 
-use ekiden_rpc_client;
 use evm;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -38,7 +37,7 @@ pub enum RPCTopicFilter {
 pub struct RPCLogFilter {
     pub from_block: Option<String>,
     pub to_block: Option<String>,
-    pub address: Option<Hex<Address>>,
+    pub address: Option<Either<Vec<Hex<Address>>, Hex<Address>>>,
     pub topics: Option<Vec<Option<RPCTopicFilter>>>,
 }
 
