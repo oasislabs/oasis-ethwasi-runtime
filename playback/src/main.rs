@@ -64,8 +64,6 @@ fn get_transactions_from_blocks(blocks_path: &str, max_num_transactions: usize) 
 /// web3 JSON-RPC interface
 jsonrpc_client!(pub struct Web3Client {
     pub fn eth_sendRawTransaction(&mut self, data: String) -> RpcRequest<String>;
-    pub fn eth_blockNumber(&mut self) -> RpcRequest<String>;
-    pub fn net_listening(&mut self) -> RpcRequest<bool>;
 });
 
 fn main() {
