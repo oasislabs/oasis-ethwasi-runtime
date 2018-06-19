@@ -50,17 +50,16 @@ use clap::{App, Arg};
 use futures::future::Future;
 use std::fs;
 
+use bigint::{Address, M256, U256};
 use ekiden_contract_client::create_contract_client;
 use ekiden_core::bytes::B256;
 use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
-
-use bigint::{Address, M256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
-use std::str::FromStr;
-
 use log::{error, info, log, warn, LevelFilter};
+use sputnikvm::Log;
+use std::str::FromStr;
 
 with_api! {
     create_contract_client!(evm, evm_api, api);

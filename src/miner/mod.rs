@@ -30,7 +30,7 @@ impl Miner {
 
         // set parent hash
         let parent_hash = if number > U256::zero() {
-            self.get_block(number - U256::one()).unwrap().hash
+            self.block_by_number(number - U256::one()).unwrap().hash
         } else {
             // genesis block
             H256::new()
@@ -58,8 +58,15 @@ impl Miner {
         (number, hash)
     }
 
-    pub fn get_block(&self, number: U256) -> Option<Block> {
+    pub fn block_by_number(&self, number: U256) -> Option<Block> {
         self.db.blocks.get(&number)
+    }
+
+    pub fn block_by_hash(&self, hash: H256) -> Option<Block> {
+        match self.db.block_hashes.get(&hash) {
+            Some(number) => self.block_by_number(number),
+            None => None,
+        }
     }
 
     pub fn get_block_hash(&self, number: U256) -> Option<H256> {

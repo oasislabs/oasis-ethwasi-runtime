@@ -21,7 +21,10 @@ database_schema! {
         pub account_storage: Map<(Address, U256), M256>,
         pub transactions: Map<H256, TransactionRecord>,
         pub latest_block_number: U256,
+        // Key: block number
         pub blocks: Map<U256, Block>,
+        // To allow retrieving blocks by hash. Key: block hash, value: block number
+        pub block_hashes: Map<H256, U256>,
     }
 }
 
@@ -140,7 +143,7 @@ impl EthState {
         hash: H256,
         block_hash: H256,
         block_number: U256,
-        index: u32,
+        index: usize,
         transaction: ValidTransaction,
         vm: &SeqTransactionVM<P>,
     ) {

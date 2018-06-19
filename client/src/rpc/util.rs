@@ -1,15 +1,16 @@
 use super::serialize::*;
-use super::{Either, RPCBlock, RPCLog, RPCReceipt, RPCTransaction};
+use super::{Either, RPCBlock, RPCLog, RPCLogFilter, RPCReceipt, RPCTopicFilter, RPCTransaction};
 use error::Error;
 
 use bigint::{Address, Gas, H2048, H256, H64, U256};
 use hexutil::{read_hex, to_hex};
 
-use evm_api::{Block, Transaction as EVMTransaction, TransactionRecord};
+use evm_api::{Block, FilteredLog, LogFilter, TopicFilter, Transaction as EVMTransaction,
+              TransactionRecord};
 
 use std::str::FromStr;
 
-pub fn to_rpc_log(record: &TransactionRecord, index: usize) -> RPCLog {
+pub fn transaction_record_to_rpc_log(record: &TransactionRecord, index: usize) -> RPCLog {
     RPCLog {
         removed: false,
         log_index: Hex(index),
@@ -19,6 +20,19 @@ pub fn to_rpc_log(record: &TransactionRecord, index: usize) -> RPCLog {
         block_number: Hex(record.block_number),
         data: Bytes(record.logs[index].data.clone()),
         topics: record.logs[index].topics.iter().map(|t| Hex(*t)).collect(),
+    }
+}
+
+pub fn filtered_log_to_rpc_log(log: &FilteredLog) -> RPCLog {
+    RPCLog {
+        removed: log.removed,
+        log_index: Hex(log.log_index),
+        transaction_index: Hex(log.transaction_index),
+        transaction_hash: Hex(log.transaction_hash),
+        block_hash: Hex(log.block_hash),
+        block_number: Hex(log.block_number),
+        data: Bytes(log.data.clone()),
+        topics: log.topics.iter().map(|t| Hex(*t)).collect(),
     }
 }
 
@@ -58,6 +72,45 @@ pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, E
     })
 }
 
+pub fn from_topic_filter(filter: Option<RPCTopicFilter>) -> Result<TopicFilter, Error> {
+    Ok(match filter {
+        None => TopicFilter::All,
+        Some(RPCTopicFilter::Single(s)) => TopicFilter::Or(vec![s.0]),
+        Some(RPCTopicFilter::Or(ss)) => TopicFilter::Or(ss.into_iter().map(|v| v.0).collect()),
+    })
+}
+
+pub fn from_log_filter(filter: RPCLogFilter) -> Result<LogFilter, Error> {
+    Ok(LogFilter {
+        from_block: filter.from_block,
+        to_block: filter.to_block,
+        addresses: match filter.address {
+            Some(Either::Left(addresses)) => addresses.iter().map(|x| x.0).collect(),
+            Some(Either::Right(Hex(address))) => vec![address],
+            None => vec![Address::default()],
+        },
+        topics: match filter.topics {
+            Some(topics) => {
+                let mut ret = Vec::new();
+                for i in 0..4 {
+                    if topics.len() > i {
+                        ret.push(from_topic_filter(topics[i].clone())?);
+                    } else {
+                        ret.push(TopicFilter::All);
+                    }
+                }
+                ret
+            }
+            None => vec![
+                TopicFilter::All,
+                TopicFilter::All,
+                TopicFilter::All,
+                TopicFilter::All,
+            ],
+        },
+    })
+}
+
 pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
     Ok(RPCReceipt {
         transaction_hash: Hex(record.hash),
@@ -77,7 +130,7 @@ pub fn to_rpc_receipt(record: &TransactionRecord) -> Result<RPCReceipt, Error> {
         logs: {
             let mut ret = Vec::new();
             for i in 0..record.logs.len() {
-                ret.push(to_rpc_log(&record, i));
+                ret.push(transaction_record_to_rpc_log(&record, i));
             }
             ret
         },

@@ -8,13 +8,12 @@ use error::Error;
 
 use bigint::{Address, Gas, H256, M256, U256};
 use evm_api::error::INVALID_BLOCK_NUMBER;
-use evm_api::BlockRequest;
+use evm_api::{BlockRequestByHash, BlockRequestByNumber};
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 use jsonrpc_macros::Trailing;
 
-use ekiden_rpc_client;
 use evm;
 use futures::future::Future;
 
@@ -321,28 +320,25 @@ impl EthereumRPC for MinerEthereumRPC {
 
     fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
         info!("block_by_hash: hash = {:?}, full = {:?}", hash, full);
-        /*
-        println!("\n*** block_by_hash *** hash = {:?}", hash);
-        let state = self.state.lock().unwrap();
-        let block = match state.get_block_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
+
+        let request = BlockRequestByHash {
+            hash: hash.0,
+            full: full,
         };
-        let total = match state.get_total_header_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
-        Ok(Some(to_rpc_block(block, total, full)))
-        */
-        Err(Error::TODO)
+
+        let response = self.client.get_block_by_hash(request).wait().unwrap();
+        info!("Response: {:?}", response);
+
+        match response {
+            Some(block) => Ok(Some(to_rpc_block(block, full)?)),
+            None => Ok(None),
+        }
     }
 
     fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
         info!("block_by_number: number = {:?}, full = {:?}", number, full);
 
-        let request = BlockRequest {
+        let request = BlockRequestByNumber {
             number: number,
             full: full,
         };
@@ -530,17 +526,11 @@ impl EthereumRPC for MinerEthereumRPC {
 
     fn logs(&self, log: RPCLogFilter) -> Result<Vec<RPCLog>, Error> {
         info!("logs: log = {:?}", log);
-        /*
-        println!("\n*** logs. log = {:?}", log);
+        println!("\n*** logs. log filter = {:?}", log);
 
-        let state = self.state.lock().unwrap();
-
-        match from_log_filter(&state, log) {
-            Ok(filter) => Ok(get_logs(&state, filter)?),
-            Err(_) => Ok(Vec::new()),
-        }
-        */
-        Err(Error::TODO)
+        let filter = from_log_filter(log)?;
+        let logs = self.client.get_logs(filter).wait().unwrap();
+        Ok(logs.iter().map(|x| filtered_log_to_rpc_log(x)).collect())
     }
 }
 
