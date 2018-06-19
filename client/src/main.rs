@@ -58,7 +58,6 @@ use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 use evm_api::{with_api, AccountState, InitStateRequest};
 use log::{error, info, log, warn, LevelFilter};
-use sputnikvm::Log;
 use std::str::FromStr;
 
 with_api! {
