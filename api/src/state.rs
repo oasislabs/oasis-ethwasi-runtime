@@ -71,6 +71,4 @@ pub struct SimulateTransactionResponse {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct InitStateRequest {
-  pub state_root: H256,
-}
+pub struct InitStateRequest {}

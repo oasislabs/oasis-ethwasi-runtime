@@ -22,6 +22,7 @@ use futures::future::Future;
 use hex;
 
 use log::{info, log};
+use util::strip_0x;
 
 pub struct MinerEthereumRPC {
   client: Arc<evm::Client>,
@@ -566,7 +567,7 @@ impl FilterRPC for MinerFilterRPC {
 
   fn uninstall_filter(&self, id: String) -> Result<bool, Error> {
     info!("uninstall_filter: id = {:?}", id);
-    let id = U256::from_str(&id)?.as_usize();
+    let id = U256::from_str(strip_0x(&id))?.as_usize();
     self.filter.lock().unwrap().uninstall_filter(id);
     Ok(true)
   }
@@ -574,7 +575,7 @@ impl FilterRPC for MinerFilterRPC {
   fn filter_changes(&self, id: String) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
     info!("filter_changes: id = {:?}", id);
 
-    let id = U256::from_str(&id)?.as_usize();
+    let id = U256::from_str(strip_0x(&id))?.as_usize();
     let result = self.filter.lock().unwrap().get_changes(id)?;
 
     info!("Response: {:?}", result);

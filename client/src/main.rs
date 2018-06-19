@@ -22,6 +22,7 @@ extern crate rustc_hex;
 
 mod error;
 mod rpc;
+mod util;
 
 use std::{collections::HashMap, fs::File, io::BufReader, sync::Arc};
 
@@ -170,9 +171,7 @@ fn init_genesis_block(client: &evm::Client) {
     .wait()
     .unwrap();
 
-  let init_state_request = InitStateRequest {
-    state_root: H256::zero(),
-  };
+  let init_state_request = InitStateRequest {};
   let result = client
     .init_genesis_block(init_state_request)
     .wait()

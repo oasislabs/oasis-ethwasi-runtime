@@ -19,5 +19,3 @@ sha3 = "0.6"
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
-[dev-dependencies]
-hex = "0.3.2"

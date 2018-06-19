@@ -12,7 +12,11 @@ use ethcore::{
 };
 use ethereum_types::{Address, H256, U256};
 use evm_api::{AccountState, Block, TransactionRecord};
-use hex;
+
+use super::{
+  evm::get_contract_address,
+  util::{from_hex, to_hex},
+};
 
 // Create database schema.
 database_schema! {
@@ -37,14 +41,21 @@ pub(crate) fn get_backend() -> Backend {
 }
 
 pub(crate) fn get_state() -> Result<EthState> {
-  Ok(ethcore::state::State::from_existing(
-    get_backend(),
-    get_latest_block()
-      .ok_or(Error::new("Genesis not ininitialized"))?
-      .state_root,
-    U256::zero(),       /* account_start_nonce */
-    Default::default(), /* factories */
-  )?)
+  let backend = get_backend();
+  if let Some(block) = get_latest_block() {
+    Ok(ethcore::state::State::from_existing(
+      backend,
+      block.state_root,
+      U256::zero(),       /* account_start_nonce */
+      Default::default(), /* factories */
+    )?)
+  } else {
+    Ok(ethcore::state::State::new(
+      backend,
+      U256::zero(),       /* account_start_nonce */
+      Default::default(), /* factories */
+    ))
+  }
 }
 
 pub fn with_state<R, F: FnOnce(&mut EthState) -> Result<R>>(cb: F) -> Result<(R, H256)> {
@@ -69,40 +80,31 @@ impl State {
   }
 }
 
-pub fn get_account_state(address: Address) -> Result<Option<AccountState>> {
+pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {
   let state = get_state()?;
-  if !state.exists_and_not_null(&address)? {
+  if !state.exists_and_not_null(address)? {
     return Ok(None);
   }
   Ok(Some(AccountState {
     address: address.clone(),
-    nonce: state.nonce(&address)?,
-    balance: state.balance(&address)?,
-    code: get_code_string_from_state(&state, &address)?,
+    nonce: state.nonce(address)?,
+    balance: state.balance(address)?,
+    code: get_code_string_from_state(&state, address)?,
   }))
 }
 
 fn get_code_string_from_state(state: &EthState, address: &Address) -> Result<String> {
-  Ok(
-    state
-      .code(address)?
-      .map(|code| hex::encode(code.as_ref()))
-      .unwrap_or(String::new()),
-  )
+  Ok(state.code(address)?.map(to_hex).unwrap_or(String::new()))
 }
 
 pub fn get_account_storage(address: Address, key: H256) -> Result<H256> {
   Ok(get_state()?.storage_at(&address, &key)?)
 }
 
-// TODO: currently returns 0 for nonexistent accounts
-//       specified behavior is different for more recent patches
 pub fn get_account_nonce(address: &Address) -> Result<U256> {
   Ok(get_state()?.nonce(&address)?)
 }
 
-// TODO: currently returns 0 for nonexistent accounts
-//       specified behavior is different for more recent patches
 pub fn get_account_balance(address: &Address) -> Result<U256> {
   Ok(get_state()?.balance(&address)?)
 }
@@ -112,7 +114,7 @@ pub fn get_code_string(address: &Address) -> Result<String> {
   Ok(get_code_string_from_state(&get_state()?, address)?)
 }
 
-pub fn update_account_state(account: &AccountState) -> Result<()> {
+pub fn update_account_state(account: &AccountState) -> Result<H256> {
   with_state(|state| {
     state.new_contract(
       &account.address,
@@ -121,10 +123,7 @@ pub fn update_account_state(account: &AccountState) -> Result<()> {
     );
     if account.code.len() > 0 {
       state
-        .init_code(
-          &account.address,
-          hex::decode(&account.code).map_err(|_| Error::new("Code hex decode error."))?,
-        )
+        .init_code(&account.address, from_hex(&account.code)?)
         .map_err(|_| {
           Error::new(format!(
             "Could not init code for address {:?}.",
@@ -134,27 +133,13 @@ pub fn update_account_state(account: &AccountState) -> Result<()> {
     } else {
       Ok(())
     }
-  }).map(|_| ())
+  }).map(|(_, root)| root)
 }
 
-/// Increments the block number and returns the new block number.
-pub fn advance_block_number() -> U256 {
+pub fn set_block(block_number: &U256, block: &Block) {
   let state = StateDb::new();
-
-  let next = if state.latest_block_number.is_present() {
-    state.latest_block_number.get().unwrap() + U256::one()
-  } else {
-    U256::zero() // genesis block
-  };
-
-  //  store new value
-  state.latest_block_number.insert(&next);
-
-  next
-}
-
-pub fn add_block(block_number: &U256, block: &Block) {
-  StateDb::new().blocks.insert(block_number, block);
+  state.latest_block_number.insert(block_number);
+  state.blocks.insert(block_number, block);
 }
 
 pub fn record_transaction(
@@ -180,13 +165,13 @@ pub fn record_transaction(
       gas_used: exec.gas_used,
       cumulative_gas_used: exec.cumulative_gas_used,
       contract_address: match transaction.action {
-        Action::Create => None,
-        Action::Call(address) => Some(address),
+        Action::Create => Some(get_contract_address(&transaction)),
+        Action::Call(_) => None,
       },
       value: transaction.value,
       gas_price: transaction.gas_price,
       gas_provided: transaction.gas,
-      input: hex::encode(&transaction.data),
+      input: to_hex(&transaction.data),
       exited_ok: exec.exception.is_none(),
       logs: exec.logs,
     },

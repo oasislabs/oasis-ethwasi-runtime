@@ -2,13 +2,13 @@ use std::{cmp, collections::BTreeMap, sync::Arc};
 
 use ekiden_core::error::Result;
 use ethcore::{
-  executive::{Executed, Executive, TransactOptions},
+  executive::{contract_address, Executed, Executive, TransactOptions},
   machine::EthereumMachine,
   spec::CommonParams,
-  transaction::SignedTransaction,
+  transaction::{SignedTransaction, Transaction},
   vm,
 };
-use ethereum_types::{H256, U256};
+use ethereum_types::{Address, H256, U256};
 
 use super::state::{get_block_hash, get_latest_block_number, get_state, with_state};
 
@@ -29,8 +29,8 @@ macro_rules! evm_params {
 
 fn get_env_info() -> vm::EnvInfo {
   let block_number = <u64>::from(get_latest_block_number());
-  let last_hashes = (0..cmp::min(block_number + 1, 256))
-    .map(|i| get_block_hash(U256::from(block_number - i)).expect("block hash should exist?"))
+  let last_hashes = (0..cmp::min(block_number, 256) + 1)
+    .map(|i| get_block_hash(U256::from(block_number - i)).expect("blockhash should exist?"))
     .collect();
   let mut env_info = vm::EnvInfo::default();
   env_info.last_hashes = Arc::new(last_hashes);
@@ -48,24 +48,40 @@ pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed,
   })
 }
 
-pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed> {
+pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
   let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
 
   let mut state = get_state()?;
-  Ok(Executive::new(&mut state, &get_env_info(), &machine)
-    .transact_virtual(&transaction, TransactOptions::with_no_tracing())?)
+  let exec = Executive::new(&mut state, &get_env_info(), &machine)
+    .transact_virtual(&transaction, TransactOptions::with_no_tracing())?;
+  let (root, _db) = state.drop();
+  Ok((exec, root))
+}
+
+pub fn get_contract_address(transaction: &Transaction) -> Address {
+  contract_address(
+    vm::CreateContractAddress::FromCodeHash,
+    &Address::zero(), // unused
+    &U256::zero(),    // unused
+    &transaction.data,
+  ).0
 }
 
 #[cfg(test)]
 mod tests {
   use super::{
-    super::{miner, state},
+    super::{miner, state, util::strip_0x},
     *,
   };
 
   use std::default::Default;
 
-  use ethcore::{executive::contract_address, kvdb};
+  use ethcore::{
+    self,
+    executive::contract_address,
+    transaction::{Action, Transaction},
+  };
+  use ethereum_types::Address;
   use hex;
 
   struct Client {
@@ -80,21 +96,19 @@ mod tests {
         nonce: U256::zero(),
       };
 
-      let mut state = ethcore::state::State::new(
-        state::get_backend(),
-        U256::zero(),       /* account_start_nonce */
-        Default::default(), /* factories */
-      );
+      let mut state = get_state().unwrap();
 
-      state.add_balance(
-        &sender.address,
-        balance,
-        ethcore::state::CleanupMode::NoEmpty,
-      );
+      state
+        .add_balance(
+          &sender.address,
+          balance,
+          ethcore::state::CleanupMode::NoEmpty,
+        )
+        .unwrap();
 
       state.commit().unwrap();
       let (root, mut db) = state.drop();
-      db.0.commit();
+      db.0.commit().unwrap();
 
       miner::mine_block(None, root);
 
@@ -221,7 +235,11 @@ mod tests {
     let contract_b_code = hex::decode("6080604052348015600f57600080fd5b50609c8061001e6000396000f300608060405260043610603e5763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663346fb5c981146043575b600080fd5b348015604e57600080fd5b506058600435606a565b60408051918252519081900360200190f35b600101905600a165627a7a72305820ea09447c835e5eb442e1a85e271b0ae6decf8551aa73948ab6b53e8dd1fa0dca0029").unwrap();
     let contract_b = client.create_contract(contract_b_code, &U256::zero());
 
-    let data = hex::decode(format!("e3f30055000000000000000000000000{}0000000000000000000000000000000000000000000000000000000000000029", contract_b.hex().split_off(2))).unwrap();
+    let data = hex::decode(format!(
+      "e3f30055000000000000000000000000{:\
+       x}0000000000000000000000000000000000000000000000000000000000000029",
+      contract_b
+    )).unwrap();
     let output = client.call(&contract_a, data, &U256::zero());
 
     assert_eq!(output, H256::from(42));

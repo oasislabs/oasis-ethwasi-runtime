@@ -6,6 +6,8 @@ use std::{
   str::FromStr,
 };
 
+use util::strip_0x;
+
 #[derive(Debug, Hash, Clone, Eq, PartialEq)]
 pub struct Hex<T>(pub T);
 #[derive(Debug, Clone)]
@@ -17,11 +19,7 @@ impl<T: LowerHex> Serialize for Hex<T> {
     S: Serializer,
   {
     let value = format!("0x{:x}", self.0);
-    if &value == "0x" {
-      serializer.serialize_str("0x0")
-    } else {
-      serializer.serialize_str(&value)
-    }
+    serializer.serialize_str(&value)
   }
 }
 
@@ -30,7 +28,7 @@ impl Serialize for Bytes {
   where
     S: Serializer,
   {
-    serializer.serialize_str(&hex::encode(&self.0))
+    serializer.serialize_str(&format!("0x{}", &hex::encode(&self.0)))
   }
 }
 
@@ -49,6 +47,7 @@ impl<'de, T: FromStr> de::Visitor<'de> for HexVisitor<T> {
   where
     E: de::Error,
   {
+    let s = strip_0x(s);
     match T::from_str(s) {
       Ok(s) => Ok(Hex(s)),
       Err(_) => Err(de::Error::invalid_value(de::Unexpected::Str(s), &self)),
@@ -69,11 +68,7 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
   where
     E: de::Error,
   {
-    let s = if s.starts_with("0x") {
-      s.get(2..).unwrap()
-    } else {
-      s
-    };
+    let s = strip_0x(s);
     match hex::decode(s) {
       Ok(s) => Ok(Bytes(s)),
       Err(_) => Err(de::Error::invalid_value(de::Unexpected::Str(s), &self)),
