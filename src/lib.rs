@@ -40,7 +40,7 @@ use sputnikvm::{VMStatus, VM};
 //use sputnikvm_network_classic::MainnetEIP160Patch;
 use state::{EthState, StateDb};
 use std::str::FromStr;
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 use util::unsigned_transaction_hash;
 use util::{to_valid, unsigned_to_valid};
 
@@ -56,18 +56,18 @@ fn debug_null_call(_request: &bool) -> Result<()> {
     Ok(())
 }
 
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Ok(StateDb::new().genesis_initialized.is_present())
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn genesis_block_initialized(_request: &bool) -> Result<bool> {
     Err(Error::new("API available only in debug builds"))
 }
 
 // TODO: secure this method so it can't be called by any client.
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     let state = StateDb::new();
 
@@ -83,13 +83,13 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
 
 // TODO: secure this method so it can't be called by any client.
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
     let state = StateDb::new();
 
@@ -104,13 +104,13 @@ fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
 
 // TODO: secure this method so it can't be called by any client.
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
     info!("*** Init genesis block");
     let state = StateDb::new();
@@ -126,7 +126,7 @@ fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
@@ -273,7 +273,7 @@ fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResp
 
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
 // attempts to execute the transaction without performing any validation
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     info!("*** Execute transaction");
     info!("Transaction: {:?}", request);
@@ -294,7 +294,7 @@ fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     Ok(hash)
 }
 
-#[cfg(not(debug_assertions))]
+#[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     Err(Error::new("API available only in debug builds"))
 }
