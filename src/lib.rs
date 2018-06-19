@@ -263,10 +263,10 @@ fn execute_raw_transaction(request: &String) -> Result<H256> {
         Err(err) => return Err(Error::new(format!("{:?}", err))),
     };
 
-    let vm =
-        fire_transaction::<ByzantiumPatch>(&valid, Miner::instance().get_latest_block_number());
+    let miner = Miner::instance();
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, miner.get_latest_block_number());
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = Miner::instance().mine_block(Some(hash));
+    let (block_number, block_hash) = miner.mine_block(Some(hash));
     EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     Ok(hash)
@@ -312,10 +312,10 @@ fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
 
     let hash = unsigned_transaction_hash(&valid);
 
-    let vm =
-        fire_transaction::<ByzantiumPatch>(&valid, Miner::instance().get_latest_block_number());
+    let miner = Miner::instance();
+    let vm = fire_transaction::<ByzantiumPatch>(&valid, miner.get_latest_block_number());
     update_state_from_vm(&vm);
-    let (block_number, block_hash) = Miner::instance().mine_block(Some(hash));
+    let (block_number, block_hash) = miner.mine_block(Some(hash));
     EthState::instance().save_transaction_record(hash, block_hash, block_number, 0, valid, &vm);
 
     Ok(hash)
