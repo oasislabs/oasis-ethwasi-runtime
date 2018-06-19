@@ -118,7 +118,6 @@ fn main() {
         }
         let accounts_len = accounts_req.len();
         let res = client.inject_accounts(accounts_req).wait().unwrap();
-        debug!("inject_accounts result: {:?}", res); // %%%
 
         debug!("Injecting {} account storage items", storage_req.len());
         for chunk in storage_req.chunks(INJECT_STORAGE_CHUNK_SIZE) {
@@ -128,7 +127,6 @@ fn main() {
             let res = client.inject_account_storage(chunk_vec).wait().unwrap();
             let end = Instant::now();
             let duration_ms = to_ms(end - start);
-            debug!("inject_account_storage result: {:?}", res); // %%%
             debug!(
                 "Injected {} account storage items in {:.3} ms: {:.3} items/sec",
                 chunk_len,
@@ -145,5 +143,4 @@ fn main() {
         .init_genesis_block(evm_api::InitStateRequest {})
         .wait()
         .unwrap();
-    debug!("init_genesis_block result: {:?}", res);
 }
