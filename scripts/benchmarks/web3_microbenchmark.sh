@@ -56,7 +56,7 @@ run_test() {
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
     pushd ${WORKDIR}/client/ > /dev/null
-    ${WORKDIR}/client/target/release/web3-client \
+    target/release/web3-client \
         --mr-enclave $(cat $WORKDIR/target_benchmark/contract/evm.mrenclave) \
         --threads 100 &> ${WORKDIR}/client.log &
     popd > /dev/null
