@@ -101,6 +101,10 @@ spec:
             - --no-persist-identity
             - --max-batch-timeout
             - "10"
+            - --time-source-notifier
+            - "system"
+            - --entity-ethereum-address
+            - "0000000000000000000000000000000000000000"
             - --metrics-addr
             - "0.0.0.0:3000"
             - --consensus-client-host

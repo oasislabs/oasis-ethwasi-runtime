@@ -61,6 +61,8 @@ To start the compute node for the EVM contract (you need to start at least two, 
 $ ekiden-compute \
     --no-persist-identity \
     --max-batch-timeout 10 \
+    --time-source-notifier system \
+    --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --port <port number> \
     target/contract/evm.so
 ```

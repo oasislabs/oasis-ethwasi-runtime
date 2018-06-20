@@ -24,6 +24,8 @@ run_compute_node() {
     ekiden-compute \
         --no-persist-identity \
 	--max-batch-timeout 100 \
+	--time-source-notifier system \
+	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target_benchmark/contract/evm.so &> compute${id}.log &
