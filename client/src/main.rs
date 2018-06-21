@@ -57,8 +57,7 @@ use ekiden_core::ring::signature::Ed25519KeyPair;
 use ekiden_core::signature::InMemorySigner;
 use ekiden_core::untrusted;
 use evm_api::{with_api, AccountState, InitStateRequest};
-use log::{info, log, warn, LevelFilter};
-use sputnikvm::Log;
+use log::{error, info, log, warn, LevelFilter};
 use std::str::FromStr;
 
 with_api! {
@@ -109,11 +108,13 @@ fn main() {
     let signer = create_key_pair();
     let client = contract_client!(signer, evm, args, container);
 
-    let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
-    if is_genesis_initialized {
-        warn!("Genesis block already initialized");
-    } else {
-        init_genesis_block(&client);
+    match client.genesis_block_initialized(true).wait() {
+        Ok(initialized) => if initialized {
+            warn!("Genesis block already initialized");
+        } else {
+            init_genesis_block(&client);
+        },
+        Err(_) => error!("Error checking whether genesis block is initialized"),
     }
 
     let client_arc = Arc::new(client);

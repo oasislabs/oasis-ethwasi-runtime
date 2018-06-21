@@ -1,22 +1,16 @@
 [package]
-name = "playback"
+name = "web3_benchmark"
 version = "0.1.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 clap = "2.29.1"
-etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
-crossbeam-deque = "0.4"
-filebuffer = "0.4.0"
-futures = "0.1.18"
-hex = "0.3.1"
 jsonrpc-client-core = "0.3.0"
 jsonrpc-client-http = "0.3.0"
 log = "0.4"
 pretty_env_logger = "0.2"
-regex = "=1.0.0"
 serde = "=1.0.59"
-serde_derive = "1.0"
 serde_json = "1.0"
+regex = "=1.0.0"
 threadpool = "1.7.1"
 

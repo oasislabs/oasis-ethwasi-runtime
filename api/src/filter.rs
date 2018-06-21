@@ -1,4 +1,3 @@
-use serde::{de, Deserialize, Serialize};
 use bigint::{Address, H256};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

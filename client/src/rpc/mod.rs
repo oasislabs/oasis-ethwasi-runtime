@@ -310,13 +310,15 @@ build_rpc_trait! {
                                  -> Result<RPCBlockTrace, Error>;
         #[rpc(name = "debug_dumpBlock")]
         fn dump_block(&self, usize) -> Result<RPCDump, Error>;
+        #[rpc(name = "debug_nullCall")]
+        fn null_call(&self) -> Result<bool, Error>;
     }
 }
 
 pub fn rpc_loop(client: Arc<evm::Client>, addr: &SocketAddr, num_threads: usize) {
     let rpc = serves::MinerEthereumRPC::new(client.clone());
-    let filter = serves::MinerFilterRPC::new(client);
-    let debug = serves::MinerDebugRPC::new();
+    let filter = serves::MinerFilterRPC::new(client.clone());
+    let debug = serves::MinerDebugRPC::new(client);
 
     let mut io = IoHandler::default();
 

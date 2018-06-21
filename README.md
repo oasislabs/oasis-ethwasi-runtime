@@ -61,6 +61,8 @@ To start the compute node for the EVM contract (you need to start at least two, 
 $ ekiden-compute \
     --no-persist-identity \
     --max-batch-timeout 10 \
+    --time-source-notifier system \
+    --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --port <port number> \
     target/contract/evm.so
 ```
@@ -76,17 +78,34 @@ Development notes:
 
 * If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
-## Building the client
+## Building the web3 gateway
 
-The web3 client is located under `client` and it may be built using:
+The web3 gateway is located under `client` and it may be built using:
 ```bash
 $ cd client
 $ cargo build
 ```
 
-To run the client (in the same directory):
+To run (in the same directory):
 ```bash
 $ cargo run -- --mr-enclave <mr-enclave>
 ```
 
 For `<mr-enclave>` you can use the value reported when starting the compute node.
+
+## Benchmarking
+
+To build the benchmarking version of the contract (release build, logging suppressed, nonce checking disabled):
+```bash
+$ CARGO_TARGET_DIR=target_benchmark cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
+```
+
+The built contract will be stored under `target_benchmark/contract/evm.so`.
+
+Release builds of `benchmark`, `client`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
+```bash
+$ cd <component>
+$ cargo build --release
+```
+
+Some sample benchmark driver scripts are located in `scripts/benchmarks/`.

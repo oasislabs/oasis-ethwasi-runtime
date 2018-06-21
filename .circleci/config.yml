@@ -41,13 +41,31 @@ jobs:
             ekiden-node-dummy
       # Build the contract.
       - run: cargo ekiden build-contract --output-identity
+      # Build the benchmarking version of the contract (in release mode)
+      - run: mkdir target_benchmark
+      - run:
+          environment:
+            CARGO_TARGET_DIR: target_benchmark
+          command: cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
       # Run the contract tests.
       - run: cargo test
-      # Build the client.
+      # Build the web3 gateway.
       - run:
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: client
+          command: cargo build
+      # Build the web3 microbenchmark.
+      - run:
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
+          working_directory: benchmark
+          command: cargo build
+      # Build the genesis state injector program.
+      - run:
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
+          working_directory: genesis
           command: cargo build
       # Build the playback program.
       - run:
@@ -66,7 +84,7 @@ jobs:
           background: true
       # Start EVM compute node.
       - run:
-          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10
+          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10 --time-source-notifier system --entity-ethereum-address 0000000000000000000000000000000000000000
           background: true
       # Advance epoch.
       - run: |

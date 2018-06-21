@@ -29,7 +29,9 @@ pub struct MinerFilterRPC {
     filter: Mutex<FilterManager>,
 }
 
-pub struct MinerDebugRPC {}
+pub struct MinerDebugRPC {
+    client: Arc<evm::Client>,
+}
 
 unsafe impl Sync for MinerEthereumRPC {}
 unsafe impl Sync for MinerFilterRPC {}
@@ -50,8 +52,8 @@ impl MinerFilterRPC {
 }
 
 impl MinerDebugRPC {
-    pub fn new() -> Self {
-        MinerDebugRPC {}
+    pub fn new(client: Arc<evm::Client>) -> Self {
+        MinerDebugRPC { client }
     }
 }
 
@@ -629,5 +631,11 @@ impl DebugRPC for MinerDebugRPC {
     fn dump_block(&self, number: usize) -> Result<RPCDump, Error> {
         // FIXME: implement
         Err(Error::NotImplemented)
+    }
+
+    fn null_call(&self) -> Result<bool, Error> {
+        let response = self.client.debug_null_call(true).wait().unwrap();
+        info!("Response: {:?}", response);
+        Ok(true)
     }
 }

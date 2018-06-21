@@ -2,6 +2,10 @@
 /// once log is enabled for enclaves, we can simply swap in the real macros
 
 // max log level defined at compile-time
+#[cfg(feature = "benchmark")]
+pub const STATIC_MAX_LEVEL: ::log::LevelFilter = ::log::LevelFilter::Error;
+
+#[cfg(not(feature = "benchmark"))]
 pub const STATIC_MAX_LEVEL: ::log::LevelFilter = ::log::LevelFilter::Trace;
 
 macro_rules! log {

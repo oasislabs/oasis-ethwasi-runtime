@@ -3,6 +3,7 @@ use block::{RlpHash, Transaction, TransactionSignature};
 use ekiden_core::error::{Error, Result};
 use evm_api::{FilteredLog, LogFilter, TopicFilter, Transaction as EVMTransaction};
 use hexutil::{read_hex, ParseHexError};
+use miner::Miner;
 use sputnikvm::{Log, Patch, PreExecutionError, TransactionAction, ValidTransaction};
 use state::EthState;
 use std::rc::Rc;
@@ -11,7 +12,6 @@ use std::rc::Rc;
 pub fn to_valid<P: Patch>(
     transaction: &Transaction,
 ) -> ::std::result::Result<ValidTransaction, PreExecutionError> {
-    // debugging
     debug!("*** Validate block transaction");
     debug!("Data: {:?}", transaction);
 
@@ -23,11 +23,14 @@ pub fn to_valid<P: Patch>(
 
     let state = EthState::instance();
 
-    // check nonce
-    // TODO: what if account doesn't exist? for now returning 0
+    // check nonce, always pass in benchmark mode
     let nonce = state.get_account_nonce(&caller);
     if nonce != transaction.nonce {
-        return Err(PreExecutionError::InvalidNonce);
+        if cfg!(feature = "benchmark") {
+            debug!("Continuing despite invalid nonce");
+        } else {
+            return Err(PreExecutionError::InvalidNonce);
+        }
     }
 
     let valid = ValidTransaction {
@@ -46,7 +49,6 @@ pub fn to_valid<P: Patch>(
     }
 
     // check balance
-    // TODO: what if account doesn't exist? for now returning 0
     let balance = state.get_account_balance(&caller);
 
     let gas_limit: U256 = valid.gas_limit.into();
@@ -67,7 +69,7 @@ pub fn to_valid<P: Patch>(
 
 // for debugging and testing: computes transaction hash from an unsigned web3 sendTransaction
 // signature is fake, but unique per account
-#[cfg(debug_assertions)]
+#[cfg(any(debug_assertions, feature = "benchmark"))]
 pub fn unsigned_transaction_hash(transaction: &ValidTransaction) -> H256 {
     // unique per-account fake "signature"
     let signature = TransactionSignature {
@@ -165,7 +167,8 @@ pub fn parse_block_number(value: &Option<String>, latest_block_number: &U256) ->
 }
 
 pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
-    let latest_block_number = super::get_latest_block_number();
+    let miner = Miner::instance();
+    let latest_block_number = miner.get_latest_block_number();
     let from_block = parse_block_number(&filter.from_block, &latest_block_number)?;
     let to_block =
         latest_block_number.min(parse_block_number(&filter.to_block, &latest_block_number)?);
@@ -179,12 +182,11 @@ pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
     let mut ret = Vec::new();
 
     while current_block_number <= to_block {
-        let block = match super::block_by_number(current_block_number) {
+        let block = match miner.block_by_number(current_block_number) {
             Some(block) => block,
             None => break,
         };
 
-        let transaction_hash = block.transaction_hash;
         match state.get_transaction_record(&block.transaction_hash) {
             Some(record) => {
                 for i in 0..record.logs.len() {
