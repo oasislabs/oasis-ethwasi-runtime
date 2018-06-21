@@ -5,6 +5,7 @@ use std::str::FromStr;
 extern crate clap;
 use clap::{crate_authors, crate_description, crate_name, crate_version, value_t_or_exit, App, Arg};
 extern crate ethereum_types;
+use ethereum_types::{Address, H256, U256};
 extern crate filebuffer;
 extern crate futures;
 use futures::future::Future;
@@ -56,6 +57,14 @@ fn to_ms(d: Duration) -> f64 {
     d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
+fn strip_0x<'a>(hex: &'a str) -> &'a str {
+  if hex.starts_with("0x") {
+    hex.get(2..).unwrap()
+  } else {
+    hex
+  }
+}
+
 fn main() {
     let seed = ekiden_core::bytes::B256::random();
     let seed_input = ekiden_core::untrusted::Input::from(&seed);
@@ -91,12 +100,12 @@ fn main() {
         let mut accounts_req = Vec::new();
         let mut storage_req = Vec::new();
         for (addr, account) in chunk {
-            let address = ethereum_types::Address::from_str(&addr).unwrap();
+            let address = Address::from_str(strip_0x(&addr)).unwrap();
 
             let mut account_state = AccountState {
-                nonce: ethereum_types::U256::from_str(&account.nonce).unwrap(),
+                nonce: U256::from_str(&account.nonce).unwrap(),
                 address: address,
-                balance: ethereum_types::U256::from_str(&account.balance).unwrap(),
+                balance: U256::from_str(&account.balance).unwrap(),
                 code: match account.code {
                     Some(code) => code,
                     None => String::new(),
@@ -106,8 +115,8 @@ fn main() {
                 for (key, value) in storage {
                     storage_req.push((
                         address,
-                        ethereum_types::H256::from_str(&key).unwrap(),
-                        ethereum_types::H256::from_str(&value).unwrap(),
+                        H256::from_str(strip_0x(&key)).unwrap(),
+                        H256::from_str(strip_0x(&value)).unwrap(),
                     ));
                 }
             }

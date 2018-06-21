@@ -28,7 +28,7 @@ run_compute_node() {
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/evm.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/contract/runtime-evm.so &> compute${id}.log &
 }
 
 run_test() {
@@ -55,7 +55,7 @@ run_test() {
     # Start genesis state injector.
     echo "Starting genesis state injector."
     ${WORKDIR}/genesis/target/release/genesis \
-        --mr-enclave $(cat ${WORKDIR}/target_benchmark/contract/evm.mrenclave) \
+        --mr-enclave $(cat ${WORKDIR}/target_benchmark/contract/runtime-evm.mrenclave) \
 	${WORKDIR}/genesis/state-999999.json &
     genesis_pid=$!
 
