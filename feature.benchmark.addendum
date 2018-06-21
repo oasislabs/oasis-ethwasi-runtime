@@ -1,2 +1,2 @@
 [features]
-benchmark = ["evm/benchmark"]
+benchmark = ["runtime-evm/benchmark"]
