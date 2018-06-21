@@ -2,6 +2,18 @@ use ethereum_types::{Address, H256, U256};
 
 use ethcore_types::log_entry::LogEntry;
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct FilteredLog {
+    pub removed: bool,
+    pub log_index: usize,
+    pub transaction_index: usize,
+    pub transaction_hash: H256,
+    pub block_hash: H256,
+    pub block_number: U256,
+    pub data: Vec<u8>,
+    pub topics: Vec<H256>,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AccountState {
   pub nonce: U256,
@@ -21,30 +33,36 @@ pub struct Block {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct BlockRequest {
-  pub number: String,
-  pub full: bool,
+pub struct BlockRequestByNumber {
+    pub number: String,
+    pub full: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BlockRequestByHash {
+    pub hash: H256,
+    pub full: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TransactionRecord {
-  pub hash: H256,
-  pub nonce: U256,
-  pub block_hash: H256,
-  pub block_number: U256,
-  pub index: u32,                // txn index in block, always 0 for single-txn blocks
-  pub is_create: bool,           // is this a create transacation?
-  pub from: Address,             // sender address
-  pub to: Option<Address>,       // receiver address, defined if !is_create
-  pub gas_used: U256,            // gas used to execute this txn
-  pub cumulative_gas_used: U256, // always equal to gas_used for single-txn blocks
-  pub contract_address: Option<Address>, // address of created contract, defined if is_create
-  pub value: U256,
-  pub gas_price: U256,
-  pub gas_provided: U256,
-  pub input: String,
-  pub exited_ok: bool, // true for success
-  pub logs: Vec<LogEntry>,
+    pub hash: H256,
+    pub nonce: U256,
+    pub block_hash: H256,
+    pub block_number: U256,
+    pub index: usize,                       // txn index in block, always 0 for single-txn blocks
+    pub is_create: bool,                    // is this a create transacation?
+    pub from: Address,                      // sender address
+    pub to: Option<Address>,                // receiver address, defined if !is_create
+    pub gas_used: U256,                     // gas used to execute this txn
+    pub cumulative_gas_used: U256,          // always equal to gas_used for single-txn blocks
+    pub contract_address: Option<Address>,  // address of created contract, defined if is_create
+    pub value: U256,
+    pub gas_price: U256,
+    pub gas_provided: U256,
+    pub input: String,
+    pub exited_ok: bool,                    // true for success
+    pub logs: Vec<LogEntry>,
 }
 
 // An unsigned transaction.

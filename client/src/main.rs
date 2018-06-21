@@ -53,9 +53,8 @@ use ekiden_core::{
 
 use ethereum_types::{Address, H256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
+use log::{error, info, log, warn, LevelFilter};
 use std::str::FromStr;
-
-use log::{info, log, warn, LevelFilter};
 
 with_api! {
     create_contract_client!(evm, evm_api, api);

@@ -101,6 +101,10 @@ spec:
             - --no-persist-identity
             - --max-batch-timeout
             - "10"
+            - --time-source-notifier
+            - "system"
+            - --entity-ethereum-address
+            - "0000000000000000000000000000000000000000"
             - --metrics-addr
             - "0.0.0.0:3000"
             - --consensus-client-host
@@ -161,8 +165,8 @@ spec:
             - -c
             - >-
               exec web3-client
-              --entity-registry-client-host $(EKIDEN_TOKEN_NODE_DUMMY_SERVICE_HOST)
-              --entity-registry-client-port $(EKIDEN_TOKEN_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-              --scheduler-client-host $(EKIDEN_TOKEN_NODE_DUMMY_SERVICE_HOST)
-              --scheduler-client-port $(EKIDEN_TOKEN_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --entity-registry-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --scheduler-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --mr-enclave $$(cat ekiden/res/evm.mrenclave)

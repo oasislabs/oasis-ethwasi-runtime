@@ -5,6 +5,7 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
+common-types = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethcore = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
@@ -12,10 +13,12 @@ ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekide
 evm-api = { path = "./api" }
 hex = "0.3"
 log = "0.4"
-protobuf = "~1.4"
+protobuf = "~2.0"
 sha3 = "0.6"
 
 [build-dependencies]
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
+[features]
+benchmark = []

@@ -7,7 +7,7 @@ use super::{
 use error::Error;
 
 use ethereum_types::{Address, H256, U256};
-use evm_api::{error::INVALID_BLOCK_NUMBER, BlockRequest};
+use evm_api::{error::INVALID_BLOCK_NUMBER, BlockRequestByHash, BlockRequestByNumber};
 use std::{
   str::FromStr,
   sync::{Arc, Mutex},
@@ -32,7 +32,9 @@ pub struct MinerFilterRPC {
   filter: Mutex<FilterManager>,
 }
 
-pub struct MinerDebugRPC {}
+pub struct MinerDebugRPC {
+  client: Arc<evm::Client>,
+}
 
 unsafe impl Sync for MinerEthereumRPC {}
 unsafe impl Sync for MinerFilterRPC {}
@@ -53,8 +55,8 @@ impl MinerFilterRPC {
 }
 
 impl MinerDebugRPC {
-  pub fn new() -> Self {
-    MinerDebugRPC {}
+  pub fn new(client: Arc<evm::Client>) -> Self {
+    MinerDebugRPC { client }
   }
 }
 
@@ -321,30 +323,27 @@ impl EthereumRPC for MinerEthereumRPC {
     Ok(Hex(response.used_gas))
   }
 
-  fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
-    info!("block_by_hash: hash = {:?}, full = {:?}", hash, full);
-    /*
-        println!("\n*** block_by_hash *** hash = {:?}", hash);
-        let state = self.state.lock().unwrap();
-        let block = match state.get_block_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
+      fn block_by_hash(&self, hash: Hex<H256>, full: bool) -> Result<Option<RPCBlock>, Error> {
+        info!("block_by_hash: hash = {:?}, full = {:?}", hash, full);
+
+        let request = BlockRequestByHash {
+            hash: hash.0,
+            full: full,
         };
-        let total = match state.get_total_header_by_hash(hash.0) {
-            Ok(val) => val,
-            Err(Error::NotFound) => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
-        Ok(Some(to_rpc_block(block, total, full)))
-        */
-    Err(Error::TODO)
-  }
+
+        let response = self.client.get_block_by_hash(request).wait().unwrap();
+        info!("Response: {:?}", response);
+
+        match response {
+            Some(block) => Ok(Some(to_rpc_block(block, full)?)),
+            None => Ok(None),
+        }
+    }
 
   fn block_by_number(&self, number: String, full: bool) -> Result<Option<RPCBlock>, Error> {
     info!("block_by_number: number = {:?}, full = {:?}", number, full);
 
-    let request = BlockRequest {
+    let request = BlockRequestByNumber {
       number: number,
       full: full,
     };
@@ -530,20 +529,14 @@ impl EthereumRPC for MinerEthereumRPC {
     Err(Error::TODO)
   }
 
-  fn logs(&self, log: RPCLogFilter) -> Result<Vec<RPCLog>, Error> {
-    info!("logs: log = {:?}", log);
-    /*
-        println!("\n*** logs. log = {:?}", log);
+    fn logs(&self, log: RPCLogFilter) -> Result<Vec<RPCLog>, Error> {
+        info!("logs: log = {:?}", log);
+        println!("\n*** logs. log filter = {:?}", log);
 
-        let state = self.state.lock().unwrap();
-
-        match from_log_filter(&state, log) {
-            Ok(filter) => Ok(get_logs(&state, filter)?),
-            Err(_) => Ok(Vec::new()),
-        }
-        */
-    Err(Error::TODO)
-  }
+        let filter = from_log_filter(log)?;
+        let logs = self.client.get_logs(filter).wait().unwrap();
+        Ok(logs.iter().map(|x| filtered_log_to_rpc_log(x)).collect())
+    }
 }
 
 impl FilterRPC for MinerFilterRPC {
@@ -590,58 +583,64 @@ impl FilterRPC for MinerFilterRPC {
 }
 
 impl DebugRPC for MinerDebugRPC {
-  fn block_rlp(&self, number: usize) -> Result<Bytes, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn block_rlp(&self, number: usize) -> Result<Bytes, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
 
-  fn trace_transaction(
-    &self,
-    hash: Hex<H256>,
-    config: Trailing<RPCTraceConfig>,
-  ) -> Result<RPCTrace, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn trace_transaction(
+        &self,
+        hash: Hex<H256>,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCTrace, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
 
-  fn trace_block(
-    &self,
-    block_rlp: Bytes,
-    config: Trailing<RPCTraceConfig>,
-  ) -> Result<RPCBlockTrace, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn trace_block(
+        &self,
+        block_rlp: Bytes,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
 
-  fn trace_block_by_number(
-    &self,
-    number: usize,
-    config: Trailing<RPCTraceConfig>,
-  ) -> Result<RPCBlockTrace, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn trace_block_by_number(
+        &self,
+        number: usize,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
 
-  fn trace_block_by_hash(
-    &self,
-    hash: Hex<H256>,
-    config: Trailing<RPCTraceConfig>,
-  ) -> Result<RPCBlockTrace, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn trace_block_by_hash(
+        &self,
+        hash: Hex<H256>,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
 
-  fn trace_block_from_file(
-    &self,
-    path: String,
-    config: Trailing<RPCTraceConfig>,
-  ) -> Result<RPCBlockTrace, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn trace_block_from_file(
+        &self,
+        path: String,
+        config: Trailing<RPCTraceConfig>,
+    ) -> Result<RPCBlockTrace, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
 
-  fn dump_block(&self, number: usize) -> Result<RPCDump, Error> {
-    // FIXME: implement
-    Err(Error::NotImplemented)
-  }
+    fn dump_block(&self, number: usize) -> Result<RPCDump, Error> {
+        // FIXME: implement
+        Err(Error::NotImplemented)
+    }
+
+    fn null_call(&self) -> Result<bool, Error> {
+        let response = self.client.debug_null_call(true).wait().unwrap();
+        info!("Response: {:?}", response);
+        Ok(true)
+    }
 }

@@ -24,7 +24,10 @@ database_schema! {
         pub genesis_initialized: bool,
         pub transactions: Map<H256, TransactionRecord>,
         pub latest_block_number: U256,
+        // Key: block number
         pub blocks: Map<U256, Block>,
+        // To allow retrieving blocks by hash. Key: block hash, value: block number
+        pub block_hashes: Map<H256, U256>,
     }
 }
 
@@ -140,6 +143,7 @@ pub fn set_block(block_number: &U256, block: &Block) {
   let state = StateDb::new();
   state.latest_block_number.insert(block_number);
   state.blocks.insert(block_number, block);
+  state.block_hashes.insert(&block.hash, block_number);
 }
 
 pub fn record_transaction(
@@ -189,13 +193,20 @@ pub fn get_block_hash(number: U256) -> Option<H256> {
   }
 }
 
-pub fn get_block(number: U256) -> Option<Block> {
+pub fn block_by_number(number: U256) -> Option<Block> {
   let state = StateDb::new();
   state.blocks.get(&number)
 }
 
+pub fn block_by_hash(hash: H256) -> Option<Block> {
+    match StateDb::new().block_hashes.get(&hash) {
+        Some(number) => block_by_number(number),
+        None => None,
+    }
+}
+
 pub fn get_latest_block() -> Option<Block> {
-  get_block(get_latest_block_number())
+  block_by_number(get_latest_block_number())
 }
 
 pub fn get_latest_block_number() -> U256 {

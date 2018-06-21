@@ -5,25 +5,11 @@ use std::{collections::HashMap, str::FromStr, sync::Arc, thread};
 
 use super::{util::*, Either, RPCLog};
 use ekiden_rpc_client;
+use evm_api::LogFilter;
 
 use error::Error;
 use evm;
 use futures::future::Future;
-use rlp;
-
-#[derive(Clone, Debug)]
-pub enum TopicFilter {
-  All,
-  Or(Vec<H256>),
-}
-
-#[derive(Clone, Debug)]
-pub struct LogFilter {
-  pub from_block: usize,
-  pub to_block: usize,
-  pub address: Option<Address>,
-  pub topics: Vec<TopicFilter>,
-}
 
 #[derive(Clone, Debug)]
 pub enum Filter {
@@ -31,62 +17,6 @@ pub enum Filter {
   Block(usize),
   Log(LogFilter),
 }
-
-/*
-fn check_log(log: &Log, index: usize, filter: &TopicFilter) -> bool {
-    match filter {
-        &TopicFilter::All => true,
-        &TopicFilter::Or(ref hashes) => {
-            if log.topics.len() >= index {
-                false
-            } else {
-                let mut matched = false;
-                for hash in hashes {
-                    if hash == &log.topics[index] {
-                        matched = true;
-                    }
-                }
-                matched
-            }
-        },
-    }
-}
-
-pub fn get_logs(state: &MinerState, filter: LogFilter) -> Result<Vec<RPCLog>, Error> {
-    let mut current_block_number = filter.from_block;
-    let mut ret = Vec::new();
-
-    while current_block_number >= filter.to_block {
-        if current_block_number > state.block_height() {
-            break;
-        }
-
-        let block = state.get_block_by_number(current_block_number);
-        for transaction in &block.transactions {
-            let transaction_hash = H256::from(Keccak256::digest(&rlp::encode(transaction).to_vec()).as_slice());
-            let receipt = state.get_receipt_by_transaction_hash(transaction_hash)?;
-            for i in 0..receipt.logs.len() {
-                let log = &receipt.logs[i];
-                if check_log(log, 0, &filter.topics[0]) &&
-                    check_log(log, 1, &filter.topics[1]) &&
-                    check_log(log, 2, &filter.topics[2]) &&
-                    check_log(log, 3, &filter.topics[3]) &&
-                    match filter.address {
-                        Some(address) => address == log.address,
-                        None => true,
-                    }
-                    {
-                        ret.push(to_rpc_log(&receipt, i, transaction, &block));
-                    }
-            }
-        }
-
-        current_block_number += 1;
-    }
-
-    return Ok(ret);
-}
-*/
 
 pub struct FilterManager {
   client: Arc<evm::Client>,
@@ -103,41 +33,31 @@ impl FilterManager {
     }
   }
 
-  pub fn from_log_filter(&self, log: RPCLogFilter) -> Result<LogFilter, Error> {
-    /*
-        let state = self.state.lock().unwrap();
-        from_log_filter(&state, log)
-        */
-    Err(Error::NotImplemented)
-  }
 
-  pub fn install_log_filter(&mut self, filter: LogFilter) -> usize {
-    let id = self.filters.len();
-    self.filters.insert(id, Filter::Log(filter.clone()));
-    self
-      .unmodified_filters
-      .insert(id, Filter::Log(filter.clone()));
-    id
-  }
+    pub fn install_log_filter(&mut self, filter: LogFilter) -> usize {
+        let id = self.filters.len();
+        self.filters.insert(id, Filter::Log(filter.clone()));
+        self.unmodified_filters
+            .insert(id, Filter::Log(filter.clone()));
+        id
+    }
 
-  pub fn install_block_filter(&mut self) -> usize {
-    let block_height = self
-      .client
-      .get_block_height(true)
-      .wait()
-      .unwrap()
-      .as_usize();
+    pub fn install_block_filter(&mut self) -> usize {
+        let block_height = self.client
+            .get_block_height(true)
+            .wait()
+            .unwrap()
+            .as_usize();
 
-    let id = self.filters.len();
-    self.filters.insert(id, Filter::Block(block_height));
-    self
-      .unmodified_filters
-      .insert(id, Filter::Block(block_height));
-    id
-  }
+        let id = self.filters.len();
+        self.filters.insert(id, Filter::Block(block_height));
+        self.unmodified_filters
+            .insert(id, Filter::Block(block_height));
+        id
+    }
 
-  pub fn install_pending_transaction_filter(&mut self) -> usize {
-    /*
+    pub fn install_pending_transaction_filter(&mut self) -> usize {
+        /*
         let mut client = self.client.lock().unwrap();
 
         let pending_transactions = state.all_pending_transaction_hashes();

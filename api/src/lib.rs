@@ -17,7 +17,11 @@ pub use ethereum_types::{Address, H256, U256};
 
 mod generated;
 pub use generated::api::*;
+
 mod state;
 pub use state::*;
+
+mod filter;
+pub use filter::*;
 
 pub mod error;

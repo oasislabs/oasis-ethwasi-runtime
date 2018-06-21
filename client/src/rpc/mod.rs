@@ -15,7 +15,6 @@ use self::serialize::*;
 use error::Error;
 use log::{info, log};
 
-use ekiden_rpc_client;
 use evm;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -35,10 +34,10 @@ pub enum RPCTopicFilter {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RPCLogFilter {
-  pub from_block: Option<String>,
-  pub to_block: Option<String>,
-  pub address: Option<Hex<Address>>,
-  pub topics: Option<Vec<Option<RPCTopicFilter>>>,
+    pub from_block: Option<String>,
+    pub to_block: Option<String>,
+    pub address: Option<Either<Vec<Hex<Address>>, Hex<Address>>>,
+    pub topics: Option<Vec<Option<RPCTopicFilter>>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -243,7 +242,7 @@ build_rpc_trait! {
 
         #[rpc(name = "eth_call")]
         fn call(&self, RPCTransaction, Trailing<String>) -> Result<Bytes, Error>;
-        #[rpc(name = "eth_estimateU256")]
+        #[rpc(name = "eth_estimateGas")]
         fn estimate_gas(&self, RPCTransaction, Trailing<String>) -> Result<Hex<U256>, Error>;
 
         #[rpc(name = "eth_getBlockByHash")]
@@ -310,13 +309,15 @@ build_rpc_trait! {
                                  -> Result<RPCBlockTrace, Error>;
         #[rpc(name = "debug_dumpBlock")]
         fn dump_block(&self, usize) -> Result<RPCDump, Error>;
+        #[rpc(name = "debug_nullCall")]
+        fn null_call(&self) -> Result<bool, Error>;
     }
 }
 
 pub fn rpc_loop(client: Arc<evm::Client>, addr: &SocketAddr, num_threads: usize) {
   let rpc = serves::MinerEthereumRPC::new(client.clone());
-  let filter = serves::MinerFilterRPC::new(client);
-  let debug = serves::MinerDebugRPC::new();
+  let filter = serves::MinerFilterRPC::new(client.clone());
+  let debug = serves::MinerDebugRPC::new(client);
 
   let mut io = IoHandler::default();
 

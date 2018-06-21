@@ -6,6 +6,8 @@ contract_api! {
     pub fn inject_account_storage(Vec<(Address, H256, H256)>) -> ();
     pub fn init_genesis_block(InitStateRequest) -> ();
 
+    pub fn debug_null_call(bool) -> ();
+
     pub fn debug_execute_unsigned_transaction(Transaction) -> H256;
 
     pub fn simulate_transaction(Transaction) -> SimulateTransactionResponse;
@@ -26,7 +28,11 @@ contract_api! {
 
     pub fn get_account_code(Address) -> String;
 
-    pub fn get_block_by_number(BlockRequest) -> Option<Block>;
+    pub fn get_block_by_number(BlockRequestByNumber) -> Option<Block>;
+
+    pub fn get_block_by_hash(BlockRequestByHash) -> Option<Block>;
 
     pub fn get_storage_at((Address, H256)) -> H256;
+
+    pub fn get_logs(LogFilter) -> Vec<FilteredLog>;
 }

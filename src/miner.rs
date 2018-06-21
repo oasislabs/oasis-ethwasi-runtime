@@ -2,7 +2,7 @@ use ethereum_types::{H256, U256};
 use evm_api::Block;
 use sha3::{Digest, Keccak256};
 
-use state::{get_block, get_latest_block_number, set_block};
+use state::{block_by_number, get_latest_block_number, set_block};
 
 /// "mine" a block containing 0 or 1 transactions.
 /// Returns block number and hash.
@@ -19,7 +19,7 @@ pub fn mine_block(transaction_hash: Option<H256>, state_root: H256) -> (U256, H2
 
   // set parent hash
   let parent_hash = if block_number > U256::zero() {
-    get_block(block_number - U256::one()).unwrap().hash
+    block_by_number(block_number - U256::one()).unwrap().hash
   } else {
     // genesis block
     H256::zero()
