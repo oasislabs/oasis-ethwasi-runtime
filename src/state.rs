@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use ekiden_core::error::{Error, Result};
+use ekiden_core::error::Result;
 use ekiden_trusted::db::{database_schema, Database, DatabaseHandle};
 use ethcore::{
   self,
@@ -15,7 +15,7 @@ use evm_api::{AccountState, Block, TransactionRecord};
 
 use super::{
   evm::get_contract_address,
-  util::{from_hex, to_hex},
+  util::to_hex,
 };
 
 // Create database schema.
@@ -115,28 +115,6 @@ pub fn get_account_balance(address: &Address) -> Result<U256> {
 // returns a hex-encoded string directly from storage to avoid unnecessary conversions
 pub fn get_code_string(address: &Address) -> Result<String> {
   Ok(get_code_string_from_state(&get_state()?, address)?)
-}
-
-pub fn update_account_state(account: &AccountState) -> Result<H256> {
-  with_state(|state| {
-    state.new_contract(
-      &account.address,
-      account.balance.clone(),
-      account.nonce.clone(),
-    );
-    if account.code.len() > 0 {
-      state
-        .init_code(&account.address, from_hex(&account.code)?)
-        .map_err(|_| {
-          Error::new(format!(
-            "Could not init code for address {:?}.",
-            &account.address
-          ))
-        })
-    } else {
-      Ok(())
-    }
-  }).map(|(_, root)| root)
 }
 
 pub fn set_block(block_number: &U256, block: &Block) {

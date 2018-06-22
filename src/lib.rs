@@ -67,9 +67,29 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     return Err(Error::new("Genesis block already created"));
   }
 
-  for account_state in accounts.iter() {
-    mine_block(None, state::update_account_state(account_state)?);
-  }
+  let (_, root) = with_state(|state| {
+    accounts.iter().try_for_each(|ref account| {
+      state.new_contract(
+        &account.address,
+        account.balance.clone(),
+        account.nonce.clone(),
+      );
+      if account.code.len() > 0 {
+        state
+          .init_code(&account.address, from_hex(&account.code)?)
+          .map_err(|_| {
+            Error::new(format!(
+              "Could not init code for address {:?}.",
+              &account.address
+            ))
+          })
+      } else {
+        Ok(())
+      }
+    })
+  })?;
+
+  mine_block(None, root);
 
   Ok(())
 }
