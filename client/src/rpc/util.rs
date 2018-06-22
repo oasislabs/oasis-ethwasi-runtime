@@ -45,7 +45,7 @@ pub fn to_rpc_block(block: Block, full_transactions: bool) -> Result<RPCBlock, E
     sha3_uncles: Hex(H256::new()),
     logs_bloom: Hex(Bloom::new()),
     transactions_root: Hex(H256::new()),
-    state_root: Hex(H256::new()),
+    state_root: Hex(block.state_root),
     receipts_root: Hex(H256::new()),
     miner: Hex(Address::default()),
     difficulty: Hex(U256::zero()),
