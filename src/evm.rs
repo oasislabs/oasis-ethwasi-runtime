@@ -79,10 +79,20 @@ mod tests {
   use ethcore::{
     self,
     executive::contract_address,
+    journaldb::overlaydb::OverlayDB,
+    state::backend::Basic as BasicBackend,
     transaction::{Action, Transaction},
   };
   use ethereum_types::Address;
   use hex;
+
+  fn new_state() -> Result<ethcore::state::State<BasicBackend<OverlayDB>>> {
+    Ok(ethcore::state::State::new(
+      state::get_backend(),
+      U256::zero(),       /* account_start_nonce */
+      Default::default(), /* factories */
+    ))
+  }
 
   struct Client {
     address: Address,
@@ -96,7 +106,7 @@ mod tests {
         nonce: U256::zero(),
       };
 
-      let mut state = get_state().unwrap();
+      let mut state = new_state().unwrap();
 
       state
         .add_balance(
