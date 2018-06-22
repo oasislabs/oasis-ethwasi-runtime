@@ -1,0 +1,19 @@
+[package]
+name = "test_contract"
+version = "0.1.0"
+authors = ["David Yan <david.yan@berkeley.edu>"]
+
+[dependencies]
+pwasm-ethereum = { git = "https://github.com/ekiden/pwasm-ethereum" }
+wee_alloc = "0.4.1"
+
+[dependencies.parity-hash]
+version = "1"
+default-features = false
+
+[dependencies.bigint]
+version = "4"
+default-features = false
+
+[lib]
+crate-type = ["cdylib"]

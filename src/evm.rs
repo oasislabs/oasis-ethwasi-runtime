@@ -74,7 +74,12 @@ mod tests {
     *,
   };
 
-  use std::default::Default;
+  use std::{
+    default::Default,
+    fs::File,
+    io::{self, prelude::*},
+    str,
+  };
 
   use ethcore::{
     self,
@@ -150,6 +155,13 @@ mod tests {
       }.fake_sign(self.address);
 
       let (exec, root) = execute_transaction(&tx).unwrap();
+      match exec.exception {
+        Some(err) => panic!(err),
+        None => println!("No exception"),
+      }
+
+      let output = str::from_utf8(exec.output.as_ref()).unwrap();
+      println!("output: {}", output);
       miner::mine_block(Some(tx.hash()), root);
       self.nonce += U256::one();
 
@@ -243,5 +255,29 @@ mod tests {
     let output = client.call(&contract_a, data, &U256::zero());
 
     assert_eq!(output, H256::from(42));
+  }
+
+  #[test]
+  fn test_tvm() {
+    let mut client = Client::default();
+
+    //let mut file = match File::open("../wasm-rust/target/wasm_rust.wasm") {
+    let mut file = match File::open("test_contract/target/test_contract.wasm") {
+      Err(why) => panic!(why),
+      Ok(file) => file,
+    };
+
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer);
+
+    let contract = client.create_contract(buffer, &U256::zero());
+    client.call(&contract, Vec::new(), &U256::zero());
+
+    let new_state = get_state().unwrap();
+
+    assert_eq!(
+      new_state.storage_at(&contract, &H256::zero()).unwrap(),
+      H256::from(U256::one())
+    );
   }
 }
