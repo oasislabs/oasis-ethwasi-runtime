@@ -1,3 +1,4 @@
+use ekiden_core::error::Error as EkidenError;
 use hex;
 use jsonrpc_core;
 use rlp::DecoderError;
@@ -18,6 +19,13 @@ pub enum Error {
     UnknownSourceMapJump,
     NotImplemented,
     TODO,
+}
+
+// for contract call errors
+impl From<EkidenError> for Error {
+    fn from(val: EkidenError) -> Error {
+        Error::CallError
+    }
 }
 
 impl From<DecoderError> for Error {

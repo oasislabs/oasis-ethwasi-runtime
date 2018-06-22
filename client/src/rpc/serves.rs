@@ -293,10 +293,7 @@ impl EthereumRPC for MinerEthereumRPC {
         info!("call: transaction = {:?}", transaction);
 
         let mut _transaction = to_evm_transaction(transaction).unwrap();
-        let response = self.client
-            .simulate_transaction(_transaction)
-            .wait()
-            .unwrap();
+        let response = self.client.simulate_transaction(_transaction).wait()?;
         info!("Response: {:?}", response);
 
         Ok(Bytes(hex::decode(&response.result)?))
@@ -311,10 +308,7 @@ impl EthereumRPC for MinerEthereumRPC {
 
         // just simulate the transaction and return used_gas
         let mut _transaction = to_evm_transaction(transaction).unwrap();
-        let response = self.client
-            .simulate_transaction(_transaction)
-            .wait()
-            .unwrap();
+        let response = self.client.simulate_transaction(_transaction).wait()?;
         info!("Response: {:?}", response);
 
         Ok(Hex(response.used_gas))
