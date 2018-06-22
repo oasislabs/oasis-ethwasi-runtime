@@ -55,6 +55,7 @@ impl Miner {
 
         // store the block
         self.db.blocks.insert(&number, &block);
+        self.db.block_hashes.insert(&hash, &number);
         (number, hash)
     }
 
