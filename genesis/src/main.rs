@@ -58,11 +58,11 @@ fn to_ms(d: Duration) -> f64 {
 }
 
 fn strip_0x<'a>(hex: &'a str) -> &'a str {
-  if hex.starts_with("0x") {
-    hex.get(2..).unwrap()
-  } else {
-    hex
-  }
+    if hex.starts_with("0x") {
+        hex.get(2..).unwrap()
+    } else {
+        hex
+    }
 }
 
 fn main() {
@@ -149,8 +149,7 @@ fn main() {
     }
     debug!("Done injecting accounts");
     let res = client
-        .init_genesis_block(evm_api::InitStateRequest {
-        })
+        .init_genesis_block(evm_api::InitStateRequest {})
         .wait()
         .unwrap();
 }

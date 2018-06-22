@@ -13,26 +13,25 @@ use futures::future::Future;
 
 #[derive(Clone, Debug)]
 pub enum Filter {
-  PendingTransaction(usize),
-  Block(usize),
-  Log(LogFilter),
+    PendingTransaction(usize),
+    Block(usize),
+    Log(LogFilter),
 }
 
 pub struct FilterManager {
-  client: Arc<evm::Client>,
-  filters: HashMap<usize, Filter>,
-  unmodified_filters: HashMap<usize, Filter>,
+    client: Arc<evm::Client>,
+    filters: HashMap<usize, Filter>,
+    unmodified_filters: HashMap<usize, Filter>,
 }
 
 impl FilterManager {
-  pub fn new(client: Arc<evm::Client>) -> Self {
-    FilterManager {
-      client,
-      filters: HashMap::new(),
-      unmodified_filters: HashMap::new(),
+    pub fn new(client: Arc<evm::Client>) -> Self {
+        FilterManager {
+            client,
+            filters: HashMap::new(),
+            unmodified_filters: HashMap::new(),
+        }
     }
-  }
-
 
     pub fn install_log_filter(&mut self, filter: LogFilter) -> usize {
         let id = self.filters.len();
@@ -66,16 +65,16 @@ impl FilterManager {
         self.unmodified_filters.insert(id, Filter::PendingTransaction(pending_transactions.len()));
         id
         */
-    0usize
-  }
+        0usize
+    }
 
-  pub fn uninstall_filter(&mut self, id: usize) {
-    self.filters.remove(&id);
-    self.unmodified_filters.remove(&id);
-  }
+    pub fn uninstall_filter(&mut self, id: usize) {
+        self.filters.remove(&id);
+        self.unmodified_filters.remove(&id);
+    }
 
-  pub fn get_logs(&mut self, id: usize) -> Result<Vec<RPCLog>, Error> {
-    /*
+    pub fn get_logs(&mut self, id: usize) -> Result<Vec<RPCLog>, Error> {
+        /*
         let state = self.state.lock().unwrap();
 
         let filter = self.unmodified_filters.get(&id).ok_or(Error::NotFound)?;
@@ -88,25 +87,24 @@ impl FilterManager {
             _ => Err(Error::NotFound),
         }
         */
-    Err(Error::NotImplemented)
-  }
+        Err(Error::NotImplemented)
+    }
 
-  pub fn get_changes(&mut self, id: usize) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
-    let filter = self.filters.get_mut(&id).ok_or(Error::NotFound)?;
+    pub fn get_changes(&mut self, id: usize) -> Result<Either<Vec<String>, Vec<RPCLog>>, Error> {
+        let filter = self.filters.get_mut(&id).ok_or(Error::NotFound)?;
 
-    match filter {
-      &mut Filter::Block(ref mut next_start) => {
-        let block_hashes = self
-          .client
-          .get_latest_block_hashes(U256::from(*next_start))
-          .wait()
-          .unwrap();
-        *next_start += block_hashes.len();
-        Ok(Either::Left(
-          block_hashes.iter().map(|h| format!("0x{:x}", h)).collect(),
-        ))
-      }
-      /*
+        match filter {
+            &mut Filter::Block(ref mut next_start) => {
+                let block_hashes = self.client
+                    .get_latest_block_hashes(U256::from(*next_start))
+                    .wait()
+                    .unwrap();
+                *next_start += block_hashes.len();
+                Ok(Either::Left(
+                    block_hashes.iter().map(|h| format!("0x{:x}", h)).collect(),
+                ))
+            }
+            /*
             &mut Filter::PendingTransaction(ref mut next_start) => {
                 let pending_transactions = state.all_pending_transaction_hashes();
                 let mut ret = Vec::new();
@@ -122,7 +120,7 @@ impl FilterManager {
                 Ok(Either::Right(ret))
             },
             */
-      _ => return Err(Error::NotImplemented),
+            _ => return Err(Error::NotImplemented),
+        }
     }
-  }
 }
