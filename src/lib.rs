@@ -32,7 +32,7 @@ use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, Block, BlockR
 
 use miner::mine_block;
 use state::{block_by_hash, block_by_number, get_latest_block_number, with_state, StateDb};
-use util::{from_hex, to_hex};
+use util::{from_hex, strip_0x, to_hex};
 
 enclave_init!();
 
@@ -175,7 +175,7 @@ fn get_block_by_number(request: &BlockRequestByNumber) -> Result<Option<Block>> 
     let number = if request.number == "latest" {
         get_latest_block_number()
     } else {
-        match U256::from_str(&request.number) {
+        match U256::from_str(strip_0x(&request.number)) {
             Ok(val) => val,
             Err(_) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
         }
