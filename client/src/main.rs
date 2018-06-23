@@ -54,6 +54,7 @@ use ethereum_types::{Address, H256, U256};
 use evm_api::{with_api, AccountState, InitStateRequest};
 use log::{error, info, log, warn, LevelFilter};
 use std::str::FromStr;
+use util::strip_0x;
 
 with_api! {
     create_contract_client!(evm, evm_api, api);
@@ -135,11 +136,7 @@ fn init_genesis_block(client: &evm::Client) {
         );
 
         for (mut addr, account) in accounts.accounts {
-            let address = Address::from_str(&if addr.starts_with("0x") {
-                addr.split_off(2)
-            } else {
-                addr
-            }).unwrap();
+            let address = Address::from_str(strip_0x(&addr)).unwrap();
 
             let mut account_state = AccountState {
                 nonce: U256::from_dec_str(&account.nonce).unwrap(),
