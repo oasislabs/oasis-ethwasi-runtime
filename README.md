@@ -44,7 +44,7 @@ To build the EVM contract simply run:
 $ cargo ekiden build-contract
 ```
 
-The built contract will be stored under `target/contract/evm.so`.
+The built contract will be stored under `target/contract/runtime-evm.so`.
 
 ## Running the contract
 
@@ -64,7 +64,7 @@ $ ekiden-compute \
     --time-source-notifier system \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --port <port number> \
-    target/contract/evm.so
+    target/contract/runtime-evm.so
 ```
 
 After starting the nodes, to manually advance the epoch in the shared dummy node:
@@ -76,7 +76,7 @@ The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `900
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Building the web3 gateway
 
@@ -100,7 +100,7 @@ To build the benchmarking version of the contract (release build, logging suppre
 $ CARGO_TARGET_DIR=target_benchmark cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
 ```
 
-The built contract will be stored under `target_benchmark/contract/evm.so`.
+The built contract will be stored under `target_benchmark/contract/runtime-evm.so`.
 
 Release builds of `benchmark`, `client`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
 ```bash
