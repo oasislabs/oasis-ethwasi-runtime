@@ -23,7 +23,7 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-	--max-batch-timeout 100 \
+	--max-batch-timeout 10 \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
