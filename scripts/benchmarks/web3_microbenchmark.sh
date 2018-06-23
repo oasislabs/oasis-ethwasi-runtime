@@ -28,7 +28,7 @@ run_compute_node() {
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/evm.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/contract/runtime-evm.so &> compute${id}.log &
 }
 
 run_test() {
@@ -57,7 +57,7 @@ run_test() {
     echo "Starting web3 gateway."
     pushd ${WORKDIR}/client/ > /dev/null
     target/release/web3-client \
-        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/evm.mrenclave) \
+        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/runtime-evm.mrenclave) \
         --threads 100 &> ${WORKDIR}/client.log &
     popd > /dev/null
     sleep 2
