@@ -40,10 +40,18 @@ fn get_env_info() -> vm::EnvInfo {
 pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
     let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
 
-    with_state(|state| {
-        Ok(Executive::new(state, &get_env_info(), &machine)
-            .transact(&transaction, TransactOptions::with_no_tracing())?)
-    })
+    let mut transact_options = TransactOptions::with_no_tracing();
+    if cfg!(feature = "benchmark") {
+        // don't check nonce in benchmarking mode (transactions may be executed out of order)
+        transact_options = transact_options.dont_check_nonce();
+    }
+
+    with_state(
+        |state| {
+            Ok(Executive::new(state, &get_env_info(), &machine)
+                .transact(&transaction, transact_options)?)
+        },
+    )
 }
 
 pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
