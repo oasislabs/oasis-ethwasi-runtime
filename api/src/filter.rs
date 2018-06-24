@@ -2,14 +2,14 @@ use ethereum_types::{Address, H256};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum TopicFilter {
-    All,
-    Or(Vec<H256>),
+  All,
+  Or(Vec<H256>),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LogFilter {
-    pub from_block: Option<String>,
-    pub to_block: Option<String>,
-    pub addresses: Vec<Address>,
-    pub topics: Vec<TopicFilter>,
+  pub from_block: Option<String>,
+  pub to_block: Option<String>,
+  pub addresses: Vec<Address>,
+  pub topics: Vec<TopicFilter>,
 }

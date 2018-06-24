@@ -1,67 +1,97 @@
-use std::sync::Arc;
+use std::{
+  cmp,
+  collections::BTreeMap,
+  io::{Cursor, Read},
+  sync::Arc,
+};
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::db::{database_schema, Database, DatabaseHandle};
 use ethcore::{
   self,
+  block::{Block, Drain, IsBlock, LockedBlock, OpenBlock, SealedBlock},
+  blockchain::{BlockChain, BlockProvider, ExtrasInsert},
+  engines::{ForkChoice, InstantSeal},
   executed::Executed,
+  header::Header,
   journaldb::overlaydb::OverlayDB,
-  kvdb,
+  kvdb::{self, KeyValueDB},
+  machine::EthereumMachine,
+  rlp::{decode, Decodable},
+  spec::{CommonParams, Spec},
   state::backend::Basic as BasicBackend,
   transaction::{Action, SignedTransaction},
+  types::{
+    receipt::{Receipt, TransactionOutcome},
+    BlockNumber,
+  },
 };
 use ethereum_types::{Address, H256, U256};
-use evm_api::{AccountState, Block, TransactionRecord};
+use evm_api::{AccountState, TransactionRecord};
 
 use super::{
   evm::get_contract_address,
   util::{from_hex, to_hex},
 };
 
-// Create database schema.
-database_schema! {
-    pub struct StateDb {
-        pub genesis_initialized: bool,
-        pub transactions: Map<H256, TransactionRecord>,
-        pub latest_block_number: U256,
-        // Key: block number
-        pub blocks: Map<U256, Block>,
-        // To allow retrieving blocks by hash. Key: block hash, value: block number
-        pub block_hashes: Map<H256, U256>,
-    }
+lazy_static! {
+  static ref SPEC: Spec = Spec::load(Cursor::new(include_str!("genesis.json"))).unwrap();
+  static ref CHAIN: BlockChain = {
+    let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */).unwrap();
+    db.0.commit().unwrap();
+
+    BlockChain::new(
+      Default::default() /* config */,
+      &*SPEC.genesis_block(),
+      Arc::new(StateDb::instance())
+    )
+  };
 }
 
-pub struct State {}
+pub struct StateDb {}
 
 type Backend = BasicBackend<OverlayDB>;
-type EthState = ethcore::state::State<Backend>;
+type State = ethcore::state::State<Backend>;
 
 pub(crate) fn get_backend() -> Backend {
   BasicBackend(OverlayDB::new(
-    Arc::new(State::instance()),
+    Arc::new(StateDb::instance()),
     None, /* col */
   ))
 }
 
-pub(crate) fn get_state() -> Result<EthState> {
+pub(crate) fn get_state() -> Result<State> {
   let backend = get_backend();
-  if let Some(block) = get_latest_block() {
-    Ok(ethcore::state::State::from_existing(
-      backend,
-      block.state_root,
-      U256::zero(),       /* account_start_nonce */
-      Default::default(), /* factories */
-    )?)
-  } else {
-    Ok(ethcore::state::State::new(
-      backend,
-      U256::zero(),       /* account_start_nonce */
-      Default::default(), /* factories */
-    ))
-  }
+  info!("GOT BACKEND");
+  println!("{:?}", CHAIN.best_block_header());
+  let root = CHAIN.best_block_header().state_root().clone();
+  Ok(ethcore::state::State::from_existing(
+    backend,
+    root,
+    U256::zero(),       /* account_start_nonce */
+    Default::default(), /* factories */
+  )?)
 }
 
-pub fn with_state<R, F: FnOnce(&mut EthState) -> Result<R>>(cb: F) -> Result<(R, H256)> {
+pub(crate) fn new_block() -> Result<OpenBlock<'static>> {
+  let parent = CHAIN.best_block_header();
+  println!("{:?}", parent);
+  Ok(OpenBlock::new(
+    &*SPEC.engine,
+    Default::default(),                                     /* factories */
+    false,                                                  /* tracing */
+    get_backend(),                                          /* state_db */
+    &parent,                                                /* parent */
+    Arc::new(block_hashes_since(BlockOffset::Offset(256))), /* last hashes */
+    Address::default(),                                     /* author */
+    (U256::one(), U256::max_value()),                       /* gas_range_target */
+    vec![],                                                 /* extra data */
+    true,                                                   /* is epoch_begin */
+    &mut Vec::new().into_iter(),                            /* ancestry */
+  )?)
+}
+
+pub fn with_state<R, F: FnOnce(&mut State) -> Result<R>>(cb: F) -> Result<(R, H256)> {
   let mut state = get_state()?;
 
   let ret = cb(&mut state)?;
@@ -73,13 +103,13 @@ pub fn with_state<R, F: FnOnce(&mut EthState) -> Result<R>>(cb: F) -> Result<(R,
   Ok((ret, state_root))
 }
 
-impl State {
+impl StateDb {
   fn new() -> Self {
-    State {}
+    Self {}
   }
 
-  pub fn instance() -> State {
-    State::new()
+  pub fn instance() -> Self {
+    Self::new()
   }
 }
 
@@ -96,7 +126,7 @@ pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {
   }))
 }
 
-fn get_code_string_from_state(state: &EthState, address: &Address) -> Result<String> {
+fn get_code_string_from_state(state: &State, address: &Address) -> Result<String> {
   Ok(state.code(address)?.map(to_hex).unwrap_or(String::new()))
 }
 
@@ -105,7 +135,8 @@ pub fn get_account_storage(address: Address, key: H256) -> Result<H256> {
 }
 
 pub fn get_account_nonce(address: &Address) -> Result<U256> {
-  Ok(get_state()?.nonce(&address)?)
+  let r = Ok(get_state().unwrap().nonce(&address).unwrap());
+  r
 }
 
 pub fn get_account_balance(address: &Address) -> Result<U256> {
@@ -115,6 +146,42 @@ pub fn get_account_balance(address: &Address) -> Result<U256> {
 // returns a hex-encoded string directly from storage to avoid unnecessary conversions
 pub fn get_code_string(address: &Address) -> Result<String> {
   Ok(get_code_string_from_state(&get_state()?, address)?)
+}
+
+pub enum BlockOffset {
+  Offset(u64),
+  Absolute(u64),
+}
+
+pub fn block_hashes_since(start: BlockOffset) -> Vec<H256> {
+  let mut head = CHAIN.best_block_header();
+
+  let start = match start {
+    BlockOffset::Offset(offset) => if head.number() < offset {
+      0
+    } else {
+      head.number() - offset
+    },
+    BlockOffset::Absolute(num) => if num <= head.number() {
+      num
+    } else {
+      return Vec::new();
+    },
+  };
+  let mut hashes = Vec::with_capacity((head.number() - start + 1) as usize);
+
+  loop {
+    hashes.push(head.hash());
+    if head.number() >= start {
+      break;
+    }
+    head = CHAIN
+      .block_header_data(head.parent_hash())
+      .map(|enc| enc.decode().unwrap())
+      .expect("Parent block should exist?");
+  }
+
+  hashes
 }
 
 pub fn update_account_state(account: &AccountState) -> Result<H256> {
@@ -139,88 +206,109 @@ pub fn update_account_state(account: &AccountState) -> Result<H256> {
   }).map(|(_, root)| root)
 }
 
-pub fn set_block(block_number: &U256, block: &Block) {
-  let state = StateDb::new();
-  state.latest_block_number.insert(block_number);
-  state.blocks.insert(block_number, block);
-  state.block_hashes.insert(&block.hash, block_number);
-}
-
-pub fn record_transaction(
-  transaction: SignedTransaction,
-  block_number: U256,
-  block_hash: H256,
-  exec: Executed,
-) {
-  StateDb::new().transactions.insert(
-    &transaction.hash(),
-    &TransactionRecord {
-      hash: transaction.hash(),
-      nonce: transaction.nonce,
-      block_hash: block_hash,
-      block_number: block_number,
-      index: 0,
-      is_create: transaction.action == Action::Create,
-      from: transaction.sender(),
-      to: match transaction.action {
-        Action::Create => None,
-        Action::Call(address) => Some(address),
-      },
-      gas_used: exec.gas_used,
-      cumulative_gas_used: exec.cumulative_gas_used,
-      contract_address: match transaction.action {
-        Action::Create => Some(get_contract_address(&transaction)),
-        Action::Call(_) => None,
-      },
-      value: transaction.value,
-      gas_price: transaction.gas_price,
-      gas_provided: transaction.gas,
-      input: to_hex(&transaction.data),
-      exited_ok: exec.exception.is_none(),
-      logs: exec.logs,
+pub fn add_block(block: LockedBlock) -> Result<()> {
+  let block = block.seal(&*SPEC.engine, Vec::new())?;
+  let mut db_tx = kvdb::DBTransaction::default();
+  CHAIN.insert_block(
+    &mut db_tx,
+    &block.rlp_bytes(),
+    block.receipts().to_owned(),
+    ExtrasInsert {
+      fork_choice: ForkChoice::New,
+      is_finalized: true,
+      metadata: None,
     },
   );
+  CHAIN.commit();
+  let mut db = block.drain().0;
+  println!("{:?}", db_tx.ops.len());
+  db.commit_to_batch(&mut db_tx);
+  StateDb::instance().write(db_tx);
+  // db.commit()?;
+  Ok(())
+  // let state = StateDb::new();
+  // state.latest_block_number.insert(block_number);
+  // state.blocks.insert(block_number, block);
+  // state.block_hashes.insert(&block.hash, block_number);
 }
 
 pub fn get_transaction_record(hash: &H256) -> Option<TransactionRecord> {
-  StateDb::new().transactions.get(hash)
+  CHAIN.transaction_address(hash).map(|addr| {
+    let mut tx = CHAIN.transaction(&addr).unwrap();
+    let receipt = CHAIN.transaction_receipt(&addr).unwrap();
+    TransactionRecord {
+      hash: tx.hash(),
+      nonce: tx.nonce,
+      block_hash: tx.block_hash,
+      block_number: U256::from(tx.block_number),
+      index: addr.index,
+      is_create: tx.action == Action::Create,
+      from: tx.sender(),
+      to: match tx.action {
+        Action::Create => None,
+        Action::Call(address) => Some(address),
+      },
+      contract_address: match tx.action {
+        Action::Create => Some(get_contract_address(&tx)),
+        Action::Call(_) => None,
+      },
+      input: to_hex(&tx.data),
+      value: tx.value,
+      gas_price: tx.gas_price,
+      gas_provided: tx.gas,
+      gas_used: receipt.gas_used,
+      cumulative_gas_used: receipt.gas_used, // TODO: get from block header
+      exited_ok: match receipt.outcome {
+        TransactionOutcome::StatusCode(code) => code == 1,
+        _ => false,
+      },
+      logs: receipt.logs,
+    }
+  })
 }
 
-pub fn get_block_hash(number: U256) -> Option<H256> {
-  match StateDb::new().blocks.get(&number) {
-    Some(block) => Some(block.hash),
-    None => None,
-  }
+pub fn get_block_hash(number: BlockNumber) -> Option<H256> {
+  CHAIN.block_hash(number)
 }
 
-pub fn block_by_number(number: U256) -> Option<Block> {
-  let state = StateDb::new();
-  state.blocks.get(&number)
+pub fn block_by_number(number: BlockNumber) -> Option<Block> {
+  CHAIN
+    .block_hash(number)
+    .and_then(|hash| CHAIN.block(&hash))
+    .map(|enc| enc.decode().unwrap())
 }
 
 pub fn block_by_hash(hash: H256) -> Option<Block> {
-    match StateDb::new().block_hashes.get(&hash) {
-        Some(number) => block_by_number(number),
-        None => None,
-    }
+  CHAIN.block(&hash).map(|encoded| encoded.decode().unwrap())
 }
 
 pub fn get_latest_block() -> Option<Block> {
   block_by_number(get_latest_block_number())
 }
 
-pub fn get_latest_block_number() -> U256 {
-  StateDb::new()
-    .latest_block_number
-    .get()
-    .unwrap_or(U256::zero())
+pub fn get_latest_block_number() -> BlockNumber {
+  CHAIN.best_block_number()
 }
 
-impl kvdb::KeyValueDB for State {
-  fn get(&self, _col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
+use std::mem;
+pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
+  unsafe { mem::transmute(num) }
+}
+
+fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
+  let col_bytes = col.map(|id| to_bytes(id.to_le())).unwrap_or([0, 0, 0, 0]);
+  col_bytes
+    .into_iter()
+    .chain(key.into_iter())
+    .map(|v| v.to_owned())
+    .collect()
+}
+
+impl kvdb::KeyValueDB for StateDb {
+  fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
     Ok(
       DatabaseHandle::instance()
-        .get(key)
+        .get(&get_key(col, key))
         .map(kvdb::DBValue::from_vec),
     )
   }
@@ -232,12 +320,14 @@ impl kvdb::KeyValueDB for State {
   fn write_buffered(&self, transaction: kvdb::DBTransaction) {
     transaction.ops.iter().for_each(|op| match op {
       &kvdb::DBOp::Insert {
-        ref key, ref value, ..
+        ref key,
+        ref value,
+        col,
       } => {
-        DatabaseHandle::instance().insert(key, value.to_vec().as_slice());
+        DatabaseHandle::instance().insert(&get_key(col, key), value.to_vec().as_slice());
       }
-      &kvdb::DBOp::Delete { ref key, .. } => {
-        DatabaseHandle::instance().remove(key);
+      &kvdb::DBOp::Delete { ref key, col } => {
+        DatabaseHandle::instance().remove(&get_key(col, key));
       }
     });
   }
@@ -260,5 +350,16 @@ impl kvdb::KeyValueDB for State {
 
   fn restore(&self, _new_db: &str) -> kvdb::Result<()> {
     unimplemented!();
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use lazy_static;
+
+  #[test]
+  fn test_create_chain() {
+    lazy_static::initialize(&CHAIN);
   }
 }

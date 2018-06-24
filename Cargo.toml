@@ -12,6 +12,7 @@ ethcore = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 evm-api = { path = "./api" }
 hex = "0.3"
+lazy_static = "1.0.1"
 log = "0.4"
 protobuf = "~2.0"
 sha3 = "0.6"
