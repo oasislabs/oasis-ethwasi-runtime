@@ -19,7 +19,7 @@ jsonrpc-client-core = "0.3.0"
 jsonrpc-client-http = "0.3.0"
 log = "0.4"
 pretty_env_logger = "0.2"
-rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
+etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
 regex = "=1.0.0"
 serde = "=1.0.59"
 serde_derive = "1.0"

@@ -103,9 +103,9 @@ fn main() {
             let address = Address::from_str(strip_0x(&addr)).unwrap();
 
             let mut account_state = AccountState {
-                nonce: U256::from_str(&account.nonce).unwrap(),
+                nonce: U256::from_str(strip_0x(&account.nonce)).unwrap(),
                 address: address,
-                balance: U256::from_str(&account.balance).unwrap(),
+                balance: U256::from_str(strip_0x(&account.balance)).unwrap(),
                 code: match account.code {
                     Some(code) => code,
                     None => String::new(),
