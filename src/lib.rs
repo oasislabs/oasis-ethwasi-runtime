@@ -245,23 +245,31 @@ pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
 
 pub fn execute_raw_transaction(request: &String) -> Result<H256> {
   info!("*** Execute raw transaction");
-  info!("Data: {:?}", request);
   let tx_rlp = from_hex(request)?;
   let transaction = SignedTransaction::new(rlp::decode(&tx_rlp)?)?;
-  info!("Calling transact: {:?}", transaction);
   transact(transaction)
 }
 
 fn transact(transaction: SignedTransaction) -> Result<H256> {
-  info!("transact");
   let mut block = new_block()?;
-  info!("new block");
   let tx_hash = transaction.hash();
-  info!("pushing tx {:?}", transaction);
   block.push_transaction(transaction, None)?;
-  info!("adding block");
   add_block(block.close_and_lock())?;
   Ok(tx_hash)
+}
+
+pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
+  info!("*** Simulate transaction");
+  info!("Data: {:?}", request);
+  let tx = make_unsigned_transaction(request)?;
+  let (exec, _root) = evm::simulate_transaction(&tx)?;
+  let result = to_hex(exec.output);
+  trace!("*** Result: {:?}", result);
+  Ok(SimulateTransactionResponse {
+    used_gas: exec.gas_used,
+    exited_ok: exec.exception.is_none(),
+    result: result,
+  })
 }
 
 fn make_unsigned_transaction(request: &Transaction) -> Result<SignedTransaction> {
@@ -277,30 +285,11 @@ fn make_unsigned_transaction(request: &Transaction) -> Result<SignedTransaction>
     data: from_hex(&request.input)?,
     gas: U256::max_value(),
     gas_price: U256::zero(),
-    nonce: request.nonce.unwrap_or_else(|| {
-      request
-        .caller
-        .map(|addr| state::get_account_nonce(&addr).unwrap_or(U256::zero()))
-        .unwrap_or(U256::zero())
-    }),
+    nonce: request.nonce.unwrap_or_else(U256::zero), // unsigned tx -> unchecked nonce
   };
   Ok(match request.caller {
     Some(addr) => tx.fake_sign(addr),
     None => tx.null_sign(0),
-  })
-}
-
-pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
-  info!("*** Simulate transaction");
-  info!("Data: {:?}", request);
-  let tx = make_unsigned_transaction(request)?;
-  let (exec, _root) = evm::simulate_transaction(&tx)?;
-  let result = to_hex(exec.output);
-  trace!("*** Result: {:?}", result);
-  Ok(SimulateTransactionResponse {
-    used_gas: exec.gas_used,
-    exited_ok: exec.exception.is_none(),
-    result: result,
   })
 }
 

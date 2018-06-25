@@ -2,6 +2,7 @@ use std::{
   cmp,
   collections::BTreeMap,
   io::{Cursor, Read},
+  mem,
   sync::Arc,
 };
 
@@ -208,7 +209,10 @@ pub fn update_account_state(account: &AccountState) -> Result<H256> {
 
 pub fn add_block(block: LockedBlock) -> Result<()> {
   let block = block.seal(&*SPEC.engine, Vec::new())?;
+
   let mut db_tx = kvdb::DBTransaction::default();
+
+  // queue the db ops necessary to insert this block
   CHAIN.insert_block(
     &mut db_tx,
     &block.rlp_bytes(),
@@ -219,17 +223,13 @@ pub fn add_block(block: LockedBlock) -> Result<()> {
       metadata: None,
     },
   );
-  CHAIN.commit();
+
+  CHAIN.commit(); // commit the insert to the in-memory BlockChain repr
   let mut db = block.drain().0;
-  println!("{:?}", db_tx.ops.len());
-  db.commit_to_batch(&mut db_tx);
-  StateDb::instance().write(db_tx);
-  // db.commit()?;
+  db.commit_to_batch(&mut db_tx); // add any pending state updates to the db transaction
+  StateDb::instance().write(db_tx); // persist the changes to the backing db
+
   Ok(())
-  // let state = StateDb::new();
-  // state.latest_block_number.insert(block_number);
-  // state.blocks.insert(block_number, block);
-  // state.block_hashes.insert(&block.hash, block_number);
 }
 
 pub fn get_transaction_record(hash: &H256) -> Option<TransactionRecord> {
@@ -290,11 +290,13 @@ pub fn get_latest_block_number() -> BlockNumber {
   CHAIN.best_block_number()
 }
 
-use std::mem;
 pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
   unsafe { mem::transmute(num) }
 }
 
+// parity expects the database to namespace keys by column
+// the ekiden db doesn't [yet?] have this feature, so we emulate by
+// prepending the column id to the actual key
 fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
   let col_bytes = col.map(|id| to_bytes(id.to_le())).unwrap_or([0, 0, 0, 0]);
   col_bytes
