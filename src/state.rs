@@ -36,7 +36,13 @@ use super::{
 };
 
 lazy_static! {
-  static ref SPEC: Spec = Spec::load(Cursor::new(include_str!("genesis.json"))).unwrap();
+  static ref SPEC: Spec = {
+    #[cfg(not(feature = "benchmark"))]
+    let spec_json = include_str!("genesis.json");
+    #[cfg(feature = "benchmark")]
+    let spec_json = include_str!("genesis_benchmarking.json");
+    Spec::load(Cursor::new(spec_json)).unwrap()
+  };
   static ref CHAIN: BlockChain = {
     let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */).unwrap();
     db.0.commit().unwrap();

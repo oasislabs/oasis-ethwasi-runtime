@@ -262,7 +262,7 @@ pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransaction
   info!("*** Simulate transaction");
   info!("Data: {:?}", request);
   let tx = make_unsigned_transaction(request)?;
-  let (exec, _root) = evm::simulate_transaction(&tx)?;
+  let exec = evm::simulate_transaction(&tx)?;
   let result = to_hex(exec.output);
   trace!("*** Result: {:?}", result);
   Ok(SimulateTransactionResponse {

@@ -47,14 +47,17 @@ pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed,
   })
 }
 
-pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
+pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed> {
   let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
 
   let mut state = get_state()?;
-  let exec = Executive::new(&mut state, &get_env_info(), &machine)
-    .transact_virtual(&transaction, TransactOptions::with_no_tracing())?;
-  let (root, _db) = state.drop();
-  Ok((exec, root))
+  #[cfg(not(feature = "benchmark"))]
+  let options = TransactOptions::with_no_tracing();
+  #[cfg(feature = "benchmark")]
+  let options = TransactOptions::with_no_tracing().dont_check_nonce();
+  let exec =
+    Executive::new(&mut state, &get_env_info(), &machine).transact_virtual(&transaction, options)?;
+  Ok(exec)
 }
 
 pub fn get_contract_address(transaction: &Transaction) -> Address {
