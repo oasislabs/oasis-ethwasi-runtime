@@ -6,7 +6,9 @@ run_dummy_node_default() {
     echo "Starting dummy node."
 
     ekiden-node-dummy \
-        --time-source mockrpc \
+	--random-beacon-backend dummy \
+	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+	--time-source-notifier mockrpc \
         --storage-backend dummy \
         &> dummy.log &
 }
@@ -24,6 +26,7 @@ run_compute_node() {
     ekiden-compute \
         --no-persist-identity \
 	--max-batch-timeout 100 \
+	--max-batch-size 50 \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
