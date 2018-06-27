@@ -107,7 +107,7 @@ spec:
             - "system"
             - --entity-ethereum-address
             - "0000000000000000000000000000000000000000"
-            - --metrics-addr
+            - --prometheus-metrics-addr
             - "0.0.0.0:3000"
             - --consensus-client-host
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
