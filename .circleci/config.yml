@@ -81,7 +81,7 @@ jobs:
 
       # Start shared dummy node.
       - run:
-          command: ekiden-node-dummy --time-source mockrpc --storage-backend dummy
+          command: ekiden-node-dummy --time-source-notifier mockrpc --random-beacon-backend dummy --storage-backend dummy
           background: true
       # Start EVM compute node.
       - run:
