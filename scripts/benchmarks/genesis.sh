@@ -13,7 +13,20 @@ run_dummy_node_default() {
         &> dummy.log &
 }
 
-run_compute_node() {
+run_dummy_node_storage_dynamodb() {
+    echo "Starting dummy node."
+
+    ekiden-node-dummy \
+        --time-source-notifier mockrpc \
+        --random-beacon-backend dummy \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --storage-backend dynamodb \
+        --storage-dynamodb-region us-east-1 \
+        --storage-dynamodb-table-name test \
+        &> dummy.log &
+}
+
+run_compute_node_default() {
     local id=$1
     shift
     local extra_args=$*
@@ -28,6 +41,33 @@ run_compute_node() {
 	--max-batch-timeout 10 \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --batch-storage immediate_remote \
+        --port ${port} \
+        ${extra_args} \
+        ${WORKDIR}/target_benchmark/contract/runtime-evm.so &> compute${id}.log &
+}
+
+run_compute_node_storage_multilayer() {
+    local id=$1
+    shift
+    local extra_args=$*
+
+    local db_dir=/tmp/ekiden-test-storage-multilayer-sled-$id
+    # Generate port number.
+    let "port=id + 10000"
+
+    echo "Starting compute node ${id} on port ${port}."
+
+    ekiden-compute \
+        --no-persist-identity \
+        --max-batch-size 50 \
+	--max-batch-timeout 10 \
+        --time-source-notifier system \
+	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --batch-storage multilayer \
+        --storage-multilayer-sled-storage-base "$db_dir" \
+        --storage-multilayer-aws-region us-east-1 \
+        --storage-multilayer-aws-table-name test \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target_benchmark/contract/runtime-evm.so &> compute${id}.log &
@@ -35,6 +75,7 @@ run_compute_node() {
 
 run_test() {
     local dummy_node_runner=$1
+    local compute_node_runner=$2
 
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
@@ -44,9 +85,9 @@ run_test() {
     sleep 1
 
     # Start compute nodes.
-    run_compute_node 1
+    $compute_node_runner 1
     sleep 1
-    run_compute_node 2
+    $compute_node_runner 2
 
     # Advance epoch to elect a new committee.
     echo "Advancing epoch."
@@ -70,4 +111,5 @@ run_test() {
     wait || true
 }
 
-run_test run_dummy_node_default
+#run_test run_dummy_node_storage_dynamodb run_compute_node_storage_multilayer
+run_test run_dummy_node_default run_compute_node_default
