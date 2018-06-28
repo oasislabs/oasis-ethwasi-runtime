@@ -97,6 +97,16 @@ spec:
           env:
             - name: LD_LIBRARY_PATH
               value: /opt/intel/sgxsdk/lib64
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret
           command:
             - ekiden-compute
           args:
@@ -127,10 +137,14 @@ spec:
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
             - --scheduler-client-port
             - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - --storage-client-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
-            - --storage-client-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+            - --batch-storage
+            - multilayer
+            - --storage-multilayer-sled-storage-base
+            - /tmp/ekiden-storage-persistent
+            - --storage-multilayer-aws-region
+            - us-west-2
+            - --storage-multilayer-aws-table-name
+            - kx-evm
             - ekiden/lib/evm.so
 
 ---
