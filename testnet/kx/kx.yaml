@@ -141,6 +141,8 @@ spec:
             - multilayer
             - --storage-multilayer-sled-storage-base
             - /tmp/ekiden-storage-persistent
+            - --storage-multilayer-bottom-backend
+            - dynamodb
             - --storage-multilayer-aws-region
             - us-west-2
             - --storage-multilayer-aws-table-name

@@ -85,7 +85,7 @@ jobs:
           background: true
       # Start EVM compute node.
       - run:
-          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10 --time-source-notifier system --entity-ethereum-address 0000000000000000000000000000000000000000
+          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10 --time-source-notifier system --entity-ethereum-address 0000000000000000000000000000000000000000 --batch-storage immediate_remote
           background: true
       # Advance epoch.
       - run: |
