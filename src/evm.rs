@@ -19,10 +19,11 @@ macro_rules! evm_params {
     params.maximum_extra_data_size = 0x20;
     params.min_gas_limit = 0x1388.into();
     params.network_id = 0x01;
-    params.max_code_size = 24576;
+    params.max_code_size = 49152;
     params.eip98_transition = <u64>::max_value();
     params.gas_limit_bound_divisor = 0x0400.into();
     params.registrar = "0xc6d9d2cd449a754c494264e1809c50e34d64562b".into();
+    params.wasm_activation_transition = 1;
     params
   }};
 }
@@ -41,6 +42,10 @@ fn get_env_info() -> vm::EnvInfo {
 
 pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
   let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
+  println!(
+    "machine schedule: {:?}",
+    machine.schedule(get_env_info().number).create_data_limit
+  );
 
   with_state(|state| {
     Ok(Executive::new(state, &get_env_info(), &machine)
@@ -137,7 +142,8 @@ mod tests {
         nonce: self.nonce,
       }.fake_sign(self.address);
 
-      let (_exec, root) = execute_transaction(&tx).unwrap();
+      let (exec, root) = execute_transaction(&tx).unwrap();
+      println!("{:?}", exec);
       miner::mine_block(Some(tx.hash()), root);
       self.nonce += U256::one();
 
@@ -159,6 +165,7 @@ mod tests {
         Some(err) => panic!(err),
         None => println!("No exception"),
       }
+      println!("exec: {:?}", exec);
 
       let output = str::from_utf8(exec.output.as_ref()).unwrap();
       println!("output: {}", output);
@@ -259,10 +266,15 @@ mod tests {
 
   #[test]
   fn test_tvm() {
-    let mut client = Client::default();
+    let mut client = Client::new(&U256::from("10000000"));
+    let state = get_state().unwrap();
+    println!("{:?}", state.balance(&client.address).unwrap());
 
-    //let mut file = match File::open("../wasm-rust/target/wasm_rust.wasm") {
-    let mut file = match File::open("test_contract/target/test_contract.wasm") {
+    //let mut file = match File::open("../wasm-rust/target/wasm_rust.wasm")
+    let mut file = match File::open("test_contract/target/test_contract.wasm")
+    //let mut file = match File::open("../pwasm-tutorial/step-0/target/pwasm_tutorial_contract.wasm")
+    //let mut file = match File::open("/home/ec2-user/wasm-explorations/3-Rust+C-nostd/foo/target/foo.wasm")
+    {
       Err(why) => panic!(why),
       Ok(file) => file,
     };
@@ -270,14 +282,26 @@ mod tests {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer);
 
-    let contract = client.create_contract(buffer, &U256::zero());
-    client.call(&contract, Vec::new(), &U256::zero());
+    //let contract_code = hex::decode("0061736d01000000010d0360027f7f0060017f0060000002270303656e7603726574000003656e760673656e646572000103656e76066d656d6f727902010110030201020404017000000501000708010463616c6c00020901000ac10101be0102057f017e4100410028020441c0006b22043602042004412c6a41106a220041003602002004412c6a41086a22014200370200200441186a41106a22024100360200200441186a41086a220342003703002004420037022c2004410036021c20044100360218200441186a1001200020022802002202360200200120032903002205370200200441106a2002360200200441086a200537030020042004290318220537022c200420053703002004411410004100200441c0006a3602040b0b0a010041040b0410c00000").unwrap();
 
+    let contract = client.create_contract(buffer, &U256::from(10));
+    println!("contract created");
+    let output = client.call(&contract, Vec::new(), &U256::zero());
+
+    /*
     let new_state = get_state().unwrap();
-
+    println!("{:?}", new_state.balance(&client.address).unwrap());
+    println!("{:?}", new_state.balance(&contract).unwrap())
+    */
+    /*
     assert_eq!(
       new_state.storage_at(&contract, &H256::zero()).unwrap(),
       H256::from(U256::one())
     );
+    */
+
+    println!("{:?}", output);
+    //assert_eq!(output, H256::from_slice(&b"success"[..]));
+    assert_eq!(output, H256::from(U256::from(9i32)));
   }
 }

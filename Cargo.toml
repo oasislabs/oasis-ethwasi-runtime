@@ -19,3 +19,12 @@ sha3 = "0.6"
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
+[patch."https://github.com/ekiden/wasmi"]
+wasmi = { path = "../wasmi" }
+
+[patch."https://github.com/ekiden/parity"]
+ethcore = { path = "../parity/ethcore" }
+common-types = { path = "/sterling/parity/ethcore/types" }
+
+#[patch.crates-io]
+#ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden"}
