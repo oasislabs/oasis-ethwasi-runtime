@@ -10,7 +10,13 @@ jobs:
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
       - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+      # We will install truffle-hdwallet-provider globally, so make that available.
+      - run: echo 'export NODE_PATH=/root/.nvm/versions/node/v*/lib/node_modules' >> $BASH_ENV
       - checkout
+
+      # Install truffle dependencies
+      # Need to run as root so that scrypt (a transitive dependency) can access our node binary (in /root/.nvm)
+      - run: npm install  --global --user root truffle-assertions@"^0.3.1" truffle-hdwallet-provider@0.0.5 web3@"^0.18.4"
 
       # Install Ekiden binaries.
       - run:
