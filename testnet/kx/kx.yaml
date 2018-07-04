@@ -145,7 +145,7 @@ spec:
             - --storage-multilayer-sled-storage-base
             - /tmp/ekiden-storage-persistent
             - --storage-multilayer-bottom-backend
-            - immediate_remote
+            - remote
             - --storage-multilayer-client-host
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
             - --storage-multilayer-client-port
