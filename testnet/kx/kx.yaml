@@ -54,11 +54,14 @@ spec:
             - --mock-epoch-interval
             - "600"
             - --storage-backend
-            - dynamodb
-            - --storage-dynamodb-region
-            - us-west-2
-            - --storage-dynamodb-table-name
-            - kx-evm
+            - persistent
+          volumeMounts:
+            - mountPath: /persistent-storage
+              name: kx-evm-dummy-storage-persistent
+      volumes:
+        - name: kx-evm-dummy-storage-persistent
+          awsElasticBlockStore:
+            volumeID: vol-0559e233828c46577
 ---
 kind: Service
 apiVersion: v1
@@ -141,10 +144,12 @@ spec:
             - multilayer
             - --storage-multilayer-sled-storage-base
             - /tmp/ekiden-storage-persistent
-            - --storage-multilayer-aws-region
-            - us-west-2
-            - --storage-multilayer-aws-table-name
-            - kx-evm
+            - --storage-multilayer-bottom-backend
+            - immediate_remote
+            - --storage-multilayer-client-host
+            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - --storage-multilayer-client-port
+            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - ekiden/lib/evm.so
 
 ---
