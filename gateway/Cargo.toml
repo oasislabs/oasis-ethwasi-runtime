@@ -55,7 +55,7 @@ ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 evm-api = { path = "../api" }
 rand = "0.4"
-grpcio = { git = "https://github.com/ekiden/grpc-rs", tag = "v0.3.0-ekiden1", features = ["openssl"] }
+grpcio = { git = "https://github.com/ekiden/grpc-rs", tag = "v0.3.0-ekiden2", features = ["openssl"] }
 
 [build-dependencies]
 rustc_version = "0.2"
