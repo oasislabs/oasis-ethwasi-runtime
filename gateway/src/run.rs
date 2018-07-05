@@ -33,9 +33,6 @@ use rpc_apis;
 pub fn execute() -> Result<RunningClient, String> {
     use parking_lot::{Mutex, RwLock};
 
-    println!("RUNNING!");
-    info!("Running in experimental mode.");
-
     let client = Arc::new(Client::instance());
     let rpc_stats = Arc::new(informant::RpcStats::default());
 

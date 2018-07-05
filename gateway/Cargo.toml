@@ -5,10 +5,9 @@ license = "GPL-3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>", "Parity Technologies <admin@parity.io>"]
 
 [dependencies]
-log = "0.3"
+log = "0.4"
 env_logger = "0.4"
 rustc-hex = "1.0"
-clap = "2"
 parking_lot = "0.5"
 regex = "0.2"
 toml = "0.4"
@@ -48,11 +47,21 @@ common-types = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3
 vm = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 util-error = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 
+## Ekiden client dependencies
+clap = "2.29.1"
+client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+evm-api = { path = "../api" }
+rand = "0.4"
+grpcio = { git = "https://github.com/ekiden/grpc-rs", tag = "v0.3.0-ekiden1", features = ["openssl"] }
+
 [build-dependencies]
 rustc_version = "0.2"
 
 [patch.crates-io]
-ring = { git = "https://github.com/paritytech/ring" }
+ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden" }
 
 [[bin]]
 name = "gateway"
