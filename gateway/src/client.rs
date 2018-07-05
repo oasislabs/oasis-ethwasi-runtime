@@ -28,7 +28,7 @@ impl Client {
 
     // block-related
     pub fn best_block_number(&self) -> BlockNumber {
-        unimplemented!()
+        Default::default()
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
@@ -36,7 +36,7 @@ impl Client {
         let chain = self.chain.read();
         Self::block_hash(&chain, id).and_then(|hash| chain.block(&hash))
         */
-        unimplemented!()
+        None
     }
 
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
@@ -48,7 +48,7 @@ impl Client {
             BlockId::Latest => Some(chain.best_block_hash()),
         }
         */
-        unimplemented!()
+        None
     }
 
     pub fn block_header(&self, id: BlockId) -> Option<encoded::Header> {
@@ -56,7 +56,7 @@ impl Client {
         let chain = self.chain.read();
         Self::block_hash(&chain, id).and_then(|hash| chain.block_header_data(&hash))
         */
-        unimplemented!()
+        None
     }
 
     pub fn block_status(&self, id: BlockId) -> BlockStatus {
@@ -67,33 +67,33 @@ impl Client {
             None => BlockStatus::Unknown
         }
         */
-        unimplemented!()
+        BlockStatus::Unknown
     }
 
     // transaction-related
     pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
-        unimplemented!()
+        None
     }
 
     pub fn transaction_receipt(&self, id: TransactionId) -> Option<LocalizedReceipt> {
-        unimplemented!()
+        None
     }
 
     pub fn logs(&self, filter: Filter) -> Vec<LocalizedLogEntry> {
-        unimplemented!()
+        vec![]
     }
 
     // account state-related
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
-        unimplemented!()
+        None
     }
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
-        unimplemented!()
+        None
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
-        unimplemented!()
+        None
     }
 
     pub fn storage_at(
@@ -102,12 +102,12 @@ impl Client {
         position: &H256,
         state: StateOrBlock,
     ) -> Option<H256> {
-        unimplemented!()
+        None
     }
 
     // state-related
     pub fn state_at(&self, id: BlockId) -> Option<State<Backend>> {
-        unimplemented!()
+        None
     }
 
     // evm-related
