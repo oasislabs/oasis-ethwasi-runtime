@@ -257,13 +257,15 @@ impl Eth for EthClient {
     }
 
     fn block_number(&self) -> Result<RpcU256> {
+        info!("block_number");
         Ok(RpcU256::from(self.client.best_block_number()))
     }
 
     fn balance(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<RpcU256> {
         let address = address.into();
-
         let num = num.unwrap_or_default();
+
+        info!("balance: address = {:?}, block_number = {:?}", address, num);
 
         try_bf!(check_known(&*self.client, num.clone()));
         let res = match self.client.balance(&address, self.get_state(num)) {

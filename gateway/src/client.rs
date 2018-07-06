@@ -18,19 +18,19 @@ use transaction::{LocalizedTransaction, SignedTransaction};
 type Backend = BasicBackend<OverlayDB>;
 
 pub struct Client {
-    ekiden_client: runtime_evm::Client,
+    client: runtime_evm::Client,
 }
 
 impl Client {
     pub fn new(client: runtime_evm::Client) -> Self {
         Self {
-            ekiden_client: client,
+            client: client,
         }
     }
 
     // block-related
     pub fn best_block_number(&self) -> BlockNumber {
-        let block_height = self.ekiden_client.get_block_height(false).wait().unwrap();
+        let block_height = self.client.get_block_height(false).wait().unwrap();
         block_height.into()
     }
 
@@ -88,7 +88,8 @@ impl Client {
 
     // account state-related
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
-        None
+        let response = self.client.get_account_balance(*address).wait().unwrap();
+        Some(response)
     }
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {

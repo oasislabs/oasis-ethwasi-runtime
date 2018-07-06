@@ -28,8 +28,7 @@ wasmi = "=0.2.0"
 ethcore = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 ethcore-bytes = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 ethcore-transaction = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-#ethereum-types = { git = "https://github.com/ekiden/primitives" }
-ethereum-types = "0.3"
+ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity-machine = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
