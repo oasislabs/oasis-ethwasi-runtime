@@ -56,6 +56,8 @@ pub fn parse_block_number(value: &Option<String>, latest_block_number: &U256) ->
     }
 }
 
+// TODO: re-enable
+/*
 pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
     let latest_block_number = get_latest_block_number();
     let from_block = parse_block_number(&filter.from_block, &latest_block_number)?;
@@ -108,3 +110,4 @@ pub fn get_logs_from_filter(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
 
     return Ok(ret);
 }
+*/
