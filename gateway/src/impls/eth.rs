@@ -207,6 +207,8 @@ impl EthClient where {
 }
 
 fn check_known(client: &Client, number: BlockNumber) -> Result<()> {
+    // TODO: re-enable
+    /*
     use ethcore::block_status::BlockStatus;
 
     let id = match number {
@@ -221,6 +223,8 @@ fn check_known(client: &Client, number: BlockNumber) -> Result<()> {
         BlockStatus::InChain => Ok(()),
         _ => Err(errors::unknown_block()),
     }
+    */
+    Ok(())
 }
 
 impl Eth for EthClient {
@@ -304,8 +308,11 @@ impl Eth for EthClient {
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<RpcU256> {
         let address: Address = RpcH160::into(address);
+        let num = num.unwrap_or_default();
 
-        let res = match num.unwrap_or_default() {
+        info!("transaction_count: address = {:?}, block_number = {:?}", address, num);
+
+        let res = match num {
             BlockNumber::Pending => match self.client.nonce(&address, BlockId::Latest) {
                 Some(nonce) => Ok(nonce.into()),
                 None => Err(errors::database("latest nonce missing")),

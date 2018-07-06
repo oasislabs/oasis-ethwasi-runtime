@@ -88,8 +88,8 @@ impl Client {
 
     // account state-related
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
-        let response = self.client.get_account_balance(*address).wait().unwrap();
-        Some(response)
+        let balance = self.client.get_account_balance(*address).wait().unwrap();
+        Some(balance)
     }
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
@@ -97,7 +97,8 @@ impl Client {
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
-        None
+        let nonce = self.client.get_account_nonce(*address).wait().unwrap();
+        Some(nonce)
     }
 
     pub fn storage_at(
