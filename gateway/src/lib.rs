@@ -16,6 +16,8 @@
 
 //! Ethcore client application.
 
+#![feature(use_extern_macros)]
+
 #[macro_use]
 extern crate clap;
 extern crate env_logger;
@@ -71,8 +73,43 @@ mod rpc_apis;
 mod run;
 mod servers;
 
+#[macro_use]
+extern crate client_utils;
+extern crate ekiden_contract_client;
+extern crate ekiden_core;
+extern crate ekiden_di;
+extern crate ekiden_rpc_client;
+extern crate evm_api;
+
+use std::sync::Arc;
+
+use clap::ArgMatches;
+
+use ekiden_contract_client::create_contract_client;
+use ekiden_core::{bytes::B256, ring::signature::Ed25519KeyPair, signature::InMemorySigner,
+                  untrusted};
+use ekiden_di::Container;
+use evm_api::{with_api, AccountState, InitStateRequest};
+
 pub use self::run::RunningClient;
 
-pub fn start() -> Result<RunningClient, String> {
-    run::execute()
+with_api! {
+    create_contract_client!(runtime_evm, evm_api, api);
+}
+
+/// Generate client key pair.
+fn create_key_pair() -> Arc<InMemorySigner> {
+    let key_pair =
+        Ed25519KeyPair::from_seed_unchecked(untrusted::Input::from(&B256::random())).unwrap();
+    Arc::new(InMemorySigner::new(key_pair))
+}
+
+pub fn start(
+    args: ArgMatches,
+    mut container: Container,
+    num_threads: usize,
+) -> Result<RunningClient, String> {
+    let signer = create_key_pair();
+    let ekiden_client = contract_client!(signer, runtime_evm, args, container);
+    run::execute(ekiden_client, num_threads)
 }

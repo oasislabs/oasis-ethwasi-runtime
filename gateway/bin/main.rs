@@ -34,11 +34,6 @@ extern crate rand;
 
 #[macro_use]
 extern crate client_utils;
-extern crate ekiden_contract_client;
-extern crate ekiden_core;
-extern crate ekiden_rpc_client;
-
-extern crate evm_api;
 
 use clap::{App, Arg};
 use ctrlc::CtrlC;
@@ -47,23 +42,7 @@ use log::{error, info, log, warn, LevelFilter};
 use parking_lot::{Condvar, Mutex};
 use std::sync::Arc;
 
-use ekiden_contract_client::create_contract_client;
-use ekiden_core::{bytes::B256, ring::signature::Ed25519KeyPair, signature::InMemorySigner,
-                  untrusted};
-use evm_api::{with_api, AccountState, InitStateRequest};
-
 use web3_gateway::start;
-
-with_api! {
-    create_contract_client!(evm, evm_api, api);
-}
-
-/// Generate client key pair.
-fn create_key_pair() -> Arc<InMemorySigner> {
-    let key_pair =
-        Ed25519KeyPair::from_seed_unchecked(untrusted::Input::from(&B256::random())).unwrap();
-    Arc::new(InMemorySigner::new(key_pair))
-}
 
 // Run our version of parity.
 fn main() {
@@ -87,16 +66,14 @@ fn main() {
     log::set_max_level(LevelFilter::Info);
 
     // Initialize component container.
-    let mut container = known_components
+    let container = known_components
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
 
-    let signer = create_key_pair();
-    let contract_client = contract_client!(signer, evm, args, container);
-
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
 
-    let client = start().unwrap();
+    let num_threads = value_t!(args, "threads", usize).unwrap();
+    let client = start(args, container, num_threads).unwrap();
 
     CtrlC::set_handler({
         let e = exit.clone();

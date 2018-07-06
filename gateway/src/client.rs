@@ -10,25 +10,28 @@ use ethcore::receipt::LocalizedReceipt;
 use ethcore::state::backend::Basic as BasicBackend;
 use ethcore::state::State;
 use ethereum_types::{Address, H256, U256};
+use futures::future::Future;
 use journaldb::overlaydb::OverlayDB;
+use runtime_evm;
 use transaction::{LocalizedTransaction, SignedTransaction};
 
 type Backend = BasicBackend<OverlayDB>;
 
-pub struct Client {}
+pub struct Client {
+    ekiden_client: runtime_evm::Client,
+}
 
 impl Client {
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    pub fn instance() -> Self {
-        Self::new()
+    pub fn new(client: runtime_evm::Client) -> Self {
+        Self {
+            ekiden_client: client,
+        }
     }
 
     // block-related
     pub fn best_block_number(&self) -> BlockNumber {
-        Default::default()
+        let block_height = self.ekiden_client.get_block_height(false).wait().unwrap();
+        block_height.into()
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {

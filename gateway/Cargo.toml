@@ -52,6 +52,7 @@ clap = "2.29.1"
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 evm-api = { path = "../api" }
 rand = "0.4"

@@ -30,10 +30,15 @@ use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 //use db;
 
-pub fn execute() -> Result<RunningClient, String> {
+use runtime_evm;
+
+pub fn execute(
+    ekiden_client: runtime_evm::Client,
+    num_threads: usize,
+) -> Result<RunningClient, String> {
     use parking_lot::{Mutex, RwLock};
 
-    let client = Arc::new(Client::instance());
+    let client = Arc::new(Client::new(ekiden_client));
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
     // spin up event loop
@@ -42,6 +47,8 @@ pub fn execute() -> Result<RunningClient, String> {
     let cpu_pool = CpuPool::new(4);
 
     let ws_conf = WsConfiguration::default();
+    let mut http_conf = HttpConfiguration::default();
+    http_conf.processing_threads = num_threads;
 
     // start RPCs
     let deps_for_rpc_apis = Arc::new(rpc_apis::FullDependencies {
@@ -55,19 +62,13 @@ pub fn execute() -> Result<RunningClient, String> {
         apis: deps_for_rpc_apis.clone(),
         remote: event_loop.raw_remote(),
         stats: rpc_stats.clone(),
-        // TODO: make number of http processing threads configurable
-        pool: Some(rpc::CpuPool::new(10)),
+        pool: Some(rpc::CpuPool::new(http_conf.processing_threads)),
     };
 
     // start rpc servers
     let rpc_direct = rpc::setup_apis(rpc_apis::ApiSet::All, &dependencies);
     let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
-    let http_server = rpc::new_http(
-        "HTTP JSON-RPC",
-        "jsonrpc",
-        HttpConfiguration::default(),
-        &dependencies,
-    )?;
+    let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)?;
 
     Ok(RunningClient {
         inner: RunningClientInner::Full {
