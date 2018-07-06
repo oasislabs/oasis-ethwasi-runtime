@@ -13,6 +13,7 @@ use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use journaldb::overlaydb::OverlayDB;
 use runtime_evm;
+use rustc_hex::FromHex;
 use transaction::{LocalizedTransaction, SignedTransaction};
 
 type Backend = BasicBackend<OverlayDB>;
@@ -91,7 +92,12 @@ impl Client {
     }
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
-        None
+        // TODO: differentiate between no account vs no code
+        let code = self.client.get_account_code(*address).wait().unwrap();
+        match FromHex::from_hex(code.as_str()) {
+            Ok(bytes) => Some(Some(bytes)),
+            Err(_) => Some(None),
+        }
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {

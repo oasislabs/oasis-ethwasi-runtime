@@ -362,8 +362,10 @@ impl Eth for EthClient {
 
     fn code_at(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<Bytes> {
         let address: Address = RpcH160::into(address);
-
         let num = num.unwrap_or_default();
+
+        info!("code_at: address = {:?}, block_number = {:?}", address, num);
+
         try_bf!(check_known(&*self.client, num.clone()));
 
         let res = match self.client.code(&address, self.get_state(num)) {
