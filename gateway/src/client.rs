@@ -23,9 +23,7 @@ pub struct Client {
 
 impl Client {
     pub fn new(client: runtime_evm::Client) -> Self {
-        Self {
-            client: client,
-        }
+        Self { client: client }
     }
 
     // block-related

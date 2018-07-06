@@ -310,7 +310,10 @@ impl Eth for EthClient {
         let address: Address = RpcH160::into(address);
         let num = num.unwrap_or_default();
 
-        info!("transaction_count: address = {:?}, block_number = {:?}", address, num);
+        info!(
+            "transaction_count: address = {:?}, block_number = {:?}",
+            address, num
+        );
 
         let res = match num {
             BlockNumber::Pending => match self.client.nonce(&address, BlockId::Latest) {

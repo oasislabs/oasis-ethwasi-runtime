@@ -70,11 +70,10 @@ fn main() {
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
 
-    let exit = Arc::new((Mutex::new(false), Condvar::new()));
-
     let num_threads = value_t!(args, "threads", usize).unwrap();
     let client = start(args, container, num_threads).unwrap();
 
+    let exit = Arc::new((Mutex::new(false), Condvar::new()));
     CtrlC::set_handler({
         let e = exit.clone();
         move || {

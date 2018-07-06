@@ -81,9 +81,15 @@ extern crate ekiden_di;
 extern crate ekiden_rpc_client;
 extern crate evm_api;
 
-use std::sync::Arc;
+use std::{collections::HashMap,
+          fs::{self, File},
+          io::BufReader,
+          str::FromStr,
+          sync::Arc};
 
 use clap::ArgMatches;
+use ethereum_types::{Address, H256, U256};
+use futures::future::Future;
 
 use ekiden_contract_client::create_contract_client;
 use ekiden_core::{bytes::B256, ring::signature::Ed25519KeyPair, signature::InMemorySigner,
@@ -104,12 +110,97 @@ fn create_key_pair() -> Arc<InMemorySigner> {
     Arc::new(InMemorySigner::new(key_pair))
 }
 
+fn strip_0x<'a>(hex: &'a str) -> &'a str {
+    if hex.starts_with("0x") {
+        hex.get(2..).unwrap()
+    } else {
+        hex
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Account {
+    nonce: String,
+    balance: String,
+    storage: HashMap<String, String>,
+    code: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct AccountMap {
+    accounts: HashMap<String, Account>,
+}
+
 pub fn start(
     args: ArgMatches,
     mut container: Container,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let signer = create_key_pair();
-    let ekiden_client = contract_client!(signer, runtime_evm, args, container);
-    run::execute(ekiden_client, num_threads)
+    let client = contract_client!(signer, runtime_evm, args, container);
+
+    let is_genesis_initialized = client.genesis_block_initialized(true).wait().unwrap();
+    if is_genesis_initialized {
+        warn!("Genesis block already initialized");
+    } else {
+        init_genesis_block(&client);
+    }
+
+    run::execute(client, num_threads)
+}
+
+fn init_genesis_block(client: &runtime_evm::Client) {
+    info!("Initializing genesis block");
+    let mut account_request = Vec::new();
+    let mut storage_request = Vec::new();
+
+    // Read in all the files in resources/genesis/
+    for path in fs::read_dir("../resources/genesis").unwrap() {
+        let path = path.unwrap().path();
+        let br = BufReader::new(File::open(path.clone()).unwrap());
+
+        // Parse the JSON file.
+        let accounts: AccountMap = serde_json::from_reader(br).unwrap();
+        info!(
+            "  {:?} -> {} accounts",
+            path.file_name().unwrap(),
+            accounts.accounts.len()
+        );
+
+        for (mut addr, account) in accounts.accounts {
+            let address = Address::from_str(strip_0x(&addr)).unwrap();
+
+            let mut account_state = AccountState {
+                nonce: U256::from_dec_str(&account.nonce).unwrap(),
+                address: address,
+                balance: U256::from_dec_str(&account.balance).unwrap(),
+                code: if account.code == "0x" {
+                    String::new()
+                } else {
+                    account.code
+                },
+            };
+
+            for (key, value) in account.storage {
+                storage_request.push((
+                    address,
+                    H256::from_str(&key).unwrap(),
+                    H256::from_str(&value).unwrap(),
+                ));
+            }
+
+            account_request.push(account_state);
+        }
+    }
+    let result = client.inject_accounts(account_request).wait().unwrap();
+    let result = client
+        .inject_account_storage(storage_request)
+        .wait()
+        .unwrap();
+
+    let init_state_request = InitStateRequest {};
+    let result = client
+        .init_genesis_block(init_state_request)
+        .wait()
+        .unwrap();
 }
