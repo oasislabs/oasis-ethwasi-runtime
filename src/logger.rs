@@ -3,7 +3,7 @@
 
 // max log level defined at compile-time
 #[cfg(feature = "benchmark")]
-pub const STATIC_MAX_LEVEL: ::log::LevelFilter = ::log::LevelFilter::Error;
+pub const STATIC_MAX_LEVEL: ::log::LevelFilter = ::log::LevelFilter::Info;
 
 #[cfg(not(feature = "benchmark"))]
 pub const STATIC_MAX_LEVEL: ::log::LevelFilter = ::log::LevelFilter::Trace;

@@ -8,6 +8,8 @@ extern crate ethcore;
 extern crate ethereum_types;
 extern crate evm_api;
 extern crate hex;
+#[macro_use]
+extern crate lazy_static;
 extern crate log;
 extern crate protobuf;
 extern crate sha3;
@@ -15,7 +17,6 @@ extern crate sha3;
 mod evm;
 #[macro_use]
 mod logger;
-mod miner;
 mod state;
 mod util;
 
@@ -23,15 +24,17 @@ use std::str::FromStr;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
-use ethcore::{rlp,
-              transaction::{Action, SignedTransaction, Transaction as EVMTransaction}};
+use ethcore::{block::OpenBlock,
+              rlp,
+              transaction::{Action, SignedTransaction, Transaction as EVMTransaction},
+              types::BlockNumber};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, Block, BlockRequestByHash,
               BlockRequestByNumber, FilteredLog, InitStateRequest, LogFilter,
               SimulateTransactionResponse, Transaction, TransactionRecord};
 
-use miner::mine_block;
-use state::{block_by_hash, block_by_number, get_latest_block_number, with_state, StateDb};
+use state::{add_block, block_by_hash, block_by_number, get_latest_block_number, new_block,
+            with_state, BlockOffset, StateDb};
 use util::{from_hex, strip_0x, to_hex};
 
 enclave_init!();
@@ -46,9 +49,13 @@ fn debug_null_call(_request: &bool) -> Result<()> {
     Ok(())
 }
 
+fn has_genesis() -> Result<bool> {
+    Ok(true)
+}
+
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 fn genesis_block_initialized(_request: &bool) -> Result<bool> {
-    Ok(StateDb::new().genesis_initialized.is_present())
+    has_genesis()
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
@@ -59,11 +66,12 @@ fn genesis_block_initialized(_request: &bool) -> Result<bool> {
 // TODO: secure this method so it can't be called by any client.
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
-    let state = StateDb::new();
-    if state.genesis_initialized.is_present() {
+    if has_genesis()? {
         return Err(Error::new("Genesis block already created"));
     }
 
+    // TODO: account injection for benchmarking
+    /*
     let (_, root) = with_state(|state| {
         accounts.iter().try_for_each(|ref account| {
             state.new_contract(
@@ -89,6 +97,8 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     mine_block(None, root);
 
     Ok(())
+    */
+    Ok(())
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
@@ -100,9 +110,7 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
     info!("*** Inject account storage");
-    let state = StateDb::new();
-
-    if state.genesis_initialized.is_present() {
+    if has_genesis()? {
         return Err(Error::new("Genesis block already created"));
     }
 
@@ -113,8 +121,6 @@ pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<(
                 .map_err(|_| Error::new("Could not set storage."))
         })
     })?;
-
-    mine_block(None, root);
 
     Ok(())
 }
@@ -128,17 +134,9 @@ fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
     info!("*** Init genesis block");
-    let state = StateDb::new();
-
-    if state.genesis_initialized.is_present() {
+    if has_genesis()? {
         return Err(Error::new("Genesis block already created"));
     }
-
-    if state::get_latest_block().is_none() {
-        mine_block(None, H256::zero());
-    }
-
-    state.genesis_initialized.insert(&true);
 
     Ok(())
 }
@@ -150,25 +148,20 @@ fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 pub fn get_block_height(_request: &bool) -> Result<U256> {
-    Ok(get_latest_block_number())
+    Ok(get_latest_block_number().into())
 }
 
 pub fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
-    let mut result = Vec::new();
-
-    let current_block_height = get_latest_block_number();
-    let mut next_start = block_height.clone();
-
-    while next_start <= current_block_height {
-        let hash = block_by_number(next_start).unwrap().hash;
-        result.push(hash);
-        next_start = next_start + U256::one();
-    }
-
-    Ok(result)
+    Ok(
+        state::block_hashes_since(BlockOffset::Absolute(block_height.low_u64()))
+            .into_iter()
+            .rev()
+            .collect(),
+    )
 }
 
 fn get_block_by_number(request: &BlockRequestByNumber) -> Result<Option<Block>> {
+    /*
     //println!("*** Get block by number");
     //println!("Request: {:?}", request);
 
@@ -194,9 +187,12 @@ fn get_block_by_number(request: &BlockRequestByNumber) -> Result<Option<Block>> 
     }
 
     Ok(Some(block))
+    */
+    unimplemented!()
 }
 
 fn get_block_by_hash(request: &BlockRequestByHash) -> Result<Option<Block>> {
+    /*
     println!("*** Get block by hash");
     println!("Request: {:?}", request);
 
@@ -213,13 +209,16 @@ fn get_block_by_hash(request: &BlockRequestByHash) -> Result<Option<Block>> {
     }
 
     Ok(Some(block))
+    */
+    unimplemented!()
 }
 
 fn get_logs(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
     info!("*** Get logs");
     info!("Log filter: {:?}", filter);
 
-    util::get_logs_from_filter(filter)
+    //util::get_logs_from_filter(filter)
+    unimplemented!()
 }
 
 pub fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
@@ -269,11 +268,10 @@ pub fn execute_raw_transaction(request: &String) -> Result<H256> {
 }
 
 fn transact(transaction: SignedTransaction) -> Result<H256> {
-    let (exec, state_root) = evm::execute_transaction(&transaction)?;
-    info!("transact result: {:?}", exec);
+    let mut block = new_block()?;
     let tx_hash = transaction.hash();
-    let (block_number, block_hash) = mine_block(Some(tx_hash), state_root);
-    state::record_transaction(transaction, block_number, block_hash, exec);
+    block.push_transaction(transaction, None)?;
+    add_block(block.close_and_lock())?;
     Ok(tx_hash)
 }
 
@@ -307,7 +305,7 @@ pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransaction
     info!("*** Simulate transaction");
     info!("Data: {:?}", request);
     let tx = make_unsigned_transaction(request)?;
-    let (exec, _root) = evm::simulate_transaction(&tx)?;
+    let exec = evm::simulate_transaction(&tx)?;
     let result = to_hex(exec.output);
     trace!("*** Result: {:?}", result);
     Ok(SimulateTransactionResponse {
@@ -329,4 +327,139 @@ pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256>
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
 pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
     Err(Error::new("API available only in debug builds"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use ethcore::{self, executive::contract_address, vm};
+    use hex;
+
+    struct Client {
+        address: Address,
+    }
+
+    impl Client {
+        fn new() -> Self {
+            Self {
+                address: Address::from("0x7110316b618d20d0c44728ac2a3d683536ea682b"),
+            }
+        }
+
+        fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> Address {
+            let contract = contract_address(
+                vm::CreateContractAddress::FromCodeHash,
+                &self.address,
+                &U256::zero(),
+                &code,
+            ).0;
+
+            let tx = Transaction {
+                caller: Some(self.address),
+                is_call: false,
+                address: None,
+                input: hex::encode(code),
+                value: Some(*balance),
+                nonce: None,
+            };
+
+            debug_execute_unsigned_transaction(&tx).unwrap();
+
+            contract
+        }
+
+        fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> H256 {
+            let tx = Transaction {
+                caller: Some(self.address),
+                is_call: true,
+                address: Some(*contract),
+                input: hex::encode(data),
+                value: Some(*value),
+                nonce: None,
+            };
+
+            debug_execute_unsigned_transaction(&tx).unwrap()
+        }
+    }
+
+    #[test]
+    fn test_create_balance() {
+        let init_bal = U256::from("56bc75e2d63100000"); // 1e20
+        let contract_bal = U256::from(10);
+        let remaining_bal = init_bal - contract_bal;
+
+        let mut client = Client::new();
+
+        let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
+        let contract = client.create_contract(code, &contract_bal);
+
+        assert_eq!(get_account_balance(&client.address).unwrap(), remaining_bal);
+        assert_eq!(get_account_nonce(&client.address).unwrap(), U256::one());
+        assert_eq!(get_account_balance(&contract).unwrap(), contract_bal);
+        assert_eq!(
+            get_storage_at(&(contract, H256::zero())).unwrap(),
+            H256::from(&remaining_bal)
+        );
+    }
+
+    #[test]
+    fn test_solidity_blockhash() {
+        // contract The {
+        //   function hash(uint8 num) public pure returns (uint8) {
+        //       return blockhash;
+        //     }
+        // }
+
+        let mut client = Client::new();
+
+        let blockhash_code = hex::decode("608060405234801561001057600080fd5b5060c78061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063cc8ee489146044575b600080fd5b348015604f57600080fd5b50606f600480360381019080803560ff169060200190929190505050608d565b60405180826000191660001916815260200191505060405180910390f35b60008160ff164090509190505600a165627a7a72305820349ccb60d12533bc99c8a927d659ee80298e4f4e056054211bcf7518f773f3590029").unwrap();
+
+        let contract = client.create_contract(blockhash_code, &U256::zero());
+
+        let mut blockhash = |num: u8| -> H256 {
+            let mut data = hex::decode(
+                "cc8ee4890000000000000000000000000000000000000000000000000000000000000000",
+            ).unwrap();
+            data[35] = num;
+            client.call(&contract, data, &U256::zero())
+        };
+
+        assert_ne!(blockhash(0), H256::zero());
+        assert_ne!(blockhash(2), H256::zero());
+        assert_eq!(blockhash(5), H256::zero());
+    }
+
+    #[test]
+    fn test_solidity_x_contract_call() {
+        // contract A {
+        //   function call_a(address b, int a) public pure returns (int) {
+        //       B cb = B(b);
+        //       return cb.call_b(a);
+        //     }
+        // }
+        //
+        // contract B {
+        //     function call_b(int b) public pure returns (int) {
+        //             return b + 1;
+        //         }
+        // }
+
+        let mut client = Client::new();
+
+        let contract_a_code = hex::decode("608060405234801561001057600080fd5b5061015d806100206000396000f3006080604052600436106100405763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663e3f300558114610045575b600080fd5b34801561005157600080fd5b5061007673ffffffffffffffffffffffffffffffffffffffff60043516602435610088565b60408051918252519081900360200190f35b6000808390508073ffffffffffffffffffffffffffffffffffffffff1663346fb5c9846040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050602060405180830381600087803b1580156100fd57600080fd5b505af1158015610111573d6000803e3d6000fd5b505050506040513d602081101561012757600080fd5b50519493505050505600a165627a7a7230582062a004e161bd855be0a78838f92bafcbb4cef5df9f9ac673c2f7d174eff863fb0029").unwrap();
+        let contract_a = client.create_contract(contract_a_code, &U256::zero());
+
+        let contract_b_code = hex::decode("6080604052348015600f57600080fd5b50609c8061001e6000396000f300608060405260043610603e5763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663346fb5c981146043575b600080fd5b348015604e57600080fd5b506058600435606a565b60408051918252519081900360200190f35b600101905600a165627a7a72305820ea09447c835e5eb442e1a85e271b0ae6decf8551aa73948ab6b53e8dd1fa0dca0029").unwrap();
+        let contract_b = client.create_contract(contract_b_code, &U256::zero());
+
+        let data = hex::decode(format!(
+            "e3f30055000000000000000000000000{:\
+             x}0000000000000000000000000000000000000000000000000000000000000029",
+            contract_b
+        )).unwrap();
+        let output = client.call(&contract_a, data, &U256::zero());
+
+        assert_eq!(output, H256::from(42));
+    }
 }
