@@ -38,7 +38,22 @@ impl Client {
         let chain = self.chain.read();
         Self::block_hash(&chain, id).and_then(|hash| chain.block(&hash))
         */
-        None
+        let response = if let BlockId::Hash(hash) = id {
+            self.client.get_block_by_hash(hash).wait().unwrap()
+        } else {
+            let number = match id {
+                BlockId::Hash(hash) => unreachable!(),
+                BlockId::Number(number) => format!("{:x}", number),
+                BlockId::Earliest => "0".to_owned(),
+                BlockId::Latest => "latest".to_owned(),
+            };
+            self.client.get_block_by_number(number).wait().unwrap()
+        };
+
+        match response {
+            Some(block) => Some(encoded::Block::new(block)),
+            None => None,
+        }
     }
 
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {

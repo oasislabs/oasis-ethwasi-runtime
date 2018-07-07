@@ -25,13 +25,13 @@ use std::str::FromStr;
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{block::OpenBlock,
+              encoded::Block,
               rlp,
               transaction::{Action, SignedTransaction, Transaction as EVMTransaction},
               types::BlockNumber};
 use ethereum_types::{Address, H256, U256};
-use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, Block, BlockRequestByHash,
-              BlockRequestByNumber, FilteredLog, InitStateRequest, LogFilter,
-              SimulateTransactionResponse, Transaction, TransactionRecord};
+use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
+              LogFilter, SimulateTransactionResponse, Transaction, TransactionRecord};
 
 use state::{add_block, block_by_hash, block_by_number, get_latest_block_number, new_block,
             with_state, BlockOffset, StateDb};
@@ -160,57 +160,37 @@ pub fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     )
 }
 
-fn get_block_by_number(request: &BlockRequestByNumber) -> Result<Option<Block>> {
-    /*
-    //println!("*** Get block by number");
-    //println!("Request: {:?}", request);
+fn get_block_by_number(request: &String) -> Result<Option<Vec<u8>>> {
+    println!("*** Get block by number");
+    println!("Request: {:?}", request);
 
-    let number = if request.number == "latest" {
+    let number = if *request == "latest" {
         get_latest_block_number()
     } else {
-        match U256::from_str(strip_0x(&request.number)) {
-            Ok(val) => val,
+        match U256::from_str(strip_0x(request)) {
+            Ok(val) => val.into(),
             Err(_) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
         }
     };
 
-    let mut block = match block_by_number(number) {
+    let block = match block_by_number(number) {
         Some(val) => val,
         None => return Ok(None),
     };
 
-    // if full transactions are requested, attach the TransactionRecord
-    if request.full {
-        if let Some(val) = state::get_transaction_record(&block.transaction_hash) {
-            block.transaction = Some(val);
-        }
-    }
-
-    Ok(Some(block))
-    */
-    unimplemented!()
+    Ok(Some(block.into_inner()))
 }
 
-fn get_block_by_hash(request: &BlockRequestByHash) -> Result<Option<Block>> {
-    /*
+fn get_block_by_hash(hash: &H256) -> Result<Option<Vec<u8>>> {
     println!("*** Get block by hash");
-    println!("Request: {:?}", request);
+    println!("Request: {:?}", hash);
 
-    let mut block = match block_by_hash(request.hash) {
+    let mut block = match block_by_hash(*hash) {
         Some(val) => val,
         None => return Ok(None),
     };
 
-    // if full transactions are requested, attach the TransactionRecord
-    if request.full {
-        if let Some(val) = state::get_transaction_record(&block.transaction_hash) {
-            block.transaction = Some(val);
-        }
-    }
-
-    Ok(Some(block))
-    */
-    unimplemented!()
+    Ok(Some(block.into_inner()))
 }
 
 fn get_logs(filter: &LogFilter) -> Result<Vec<FilteredLog>> {

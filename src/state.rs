@@ -7,8 +7,9 @@ use std::{cmp,
 use ekiden_core::error::Result;
 use ekiden_trusted::db::{database_schema, Database, DatabaseHandle};
 use ethcore::{self,
-              block::{Block, Drain, IsBlock, LockedBlock, OpenBlock, SealedBlock},
+              block::{Drain, IsBlock, LockedBlock, OpenBlock, SealedBlock},
               blockchain::{BlockChain, BlockProvider, ExtrasInsert},
+              encoded::Block,
               engines::{ForkChoice, InstantSeal},
               executed::Executed,
               header::Header,
@@ -246,14 +247,11 @@ pub fn get_block_hash(number: BlockNumber) -> Option<H256> {
 }
 
 pub fn block_by_number(number: BlockNumber) -> Option<Block> {
-    CHAIN
-        .block_hash(number)
-        .and_then(|hash| CHAIN.block(&hash))
-        .map(|enc| enc.decode().unwrap())
+    CHAIN.block_hash(number).and_then(|hash| CHAIN.block(&hash))
 }
 
 pub fn block_by_hash(hash: H256) -> Option<Block> {
-    CHAIN.block(&hash).map(|encoded| encoded.decode().unwrap())
+    CHAIN.block(&hash)
 }
 
 pub fn get_latest_block() -> Option<Block> {
