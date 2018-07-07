@@ -126,7 +126,11 @@ impl Client {
         position: &H256,
         state: StateOrBlock,
     ) -> Option<H256> {
-        None
+        let value = self.client
+            .get_storage_at((*address, *position))
+            .wait()
+            .unwrap();
+        Some(value)
     }
 
     // state-related
