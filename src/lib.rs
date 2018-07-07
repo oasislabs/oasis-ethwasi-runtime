@@ -27,11 +27,11 @@ use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{block::OpenBlock,
               encoded::Block,
               rlp,
-              transaction::{Action, SignedTransaction, Transaction as EVMTransaction},
+              transaction::{Action, SignedTransaction, Transaction},
               types::BlockNumber};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
-              LogFilter, SimulateTransactionResponse, Transaction, TransactionRecord};
+              LogFilter, SimulateTransactionResponse, TransactionRecord, TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, get_latest_block_number, new_block,
             with_state, BlockOffset, StateDb};
@@ -238,11 +238,10 @@ pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
     state::get_account_storage(pair.0, pair.1)
 }
 
-pub fn execute_raw_transaction(request: &String) -> Result<H256> {
+pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<H256> {
     info!("*** Execute raw transaction");
     info!("Data: {:?}", request);
-    let tx_rlp = from_hex(request)?;
-    let transaction = SignedTransaction::new(rlp::decode(&tx_rlp)?)?;
+    let transaction = SignedTransaction::new(rlp::decode(request)?)?;
     info!("Calling transact: {:?}", transaction);
     transact(transaction)
 }
@@ -255,8 +254,8 @@ fn transact(transaction: SignedTransaction) -> Result<H256> {
     Ok(tx_hash)
 }
 
-fn make_unsigned_transaction(request: &Transaction) -> Result<SignedTransaction> {
-    let tx = EVMTransaction {
+fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTransaction> {
+    let tx = Transaction {
         action: if request.is_call {
             Action::Call(request
                 .address
@@ -265,7 +264,7 @@ fn make_unsigned_transaction(request: &Transaction) -> Result<SignedTransaction>
             Action::Create
         },
         value: request.value.unwrap_or(U256::zero()),
-        data: from_hex(&request.input)?,
+        data: request.input.clone().unwrap_or(vec![]),
         gas: U256::max_value(),
         gas_price: U256::zero(),
         nonce: request.nonce.unwrap_or_else(|| {
@@ -281,31 +280,30 @@ fn make_unsigned_transaction(request: &Transaction) -> Result<SignedTransaction>
     })
 }
 
-pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransactionResponse> {
+pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTransactionResponse> {
     info!("*** Simulate transaction");
     info!("Data: {:?}", request);
     let tx = make_unsigned_transaction(request)?;
     let exec = evm::simulate_transaction(&tx)?;
-    let result = to_hex(exec.output);
-    trace!("*** Result: {:?}", result);
+    trace!("*** Result: {:?}", exec.output);
     Ok(SimulateTransactionResponse {
         used_gas: exec.gas_used,
         exited_ok: exec.exception.is_none(),
-        result: result,
+        result: exec.output,
     })
 }
 
 // for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
 // attempts to execute the transaction without performing any validation
 #[cfg(any(debug_assertions, feature = "benchmark"))]
-pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
+pub fn debug_execute_unsigned_transaction(request: &TransactionRequest) -> Result<H256> {
     info!("*** Execute transaction");
     info!("Transaction: {:?}", request);
     transact(make_unsigned_transaction(request)?)
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
-pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
+pub fn debug_execute_unsigned_transaction(request: &TransactionRequest) -> Result<H256> {
     Err(Error::new("API available only in debug builds"))
 }
 
@@ -335,7 +333,7 @@ mod tests {
                 &code,
             ).0;
 
-            let tx = Transaction {
+            let tx = TransactionRequest {
                 caller: Some(self.address),
                 is_call: false,
                 address: None,
@@ -350,7 +348,7 @@ mod tests {
         }
 
         fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> H256 {
-            let tx = Transaction {
+            let tx = TransactionRequest {
                 caller: Some(self.address),
                 is_call: true,
                 address: Some(*contract),

@@ -45,6 +45,8 @@ use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransac
                             Index, Log, Receipt, RichBlock, SyncStatus, Transaction,
                             U256 as RpcU256, Work};
 
+use evm_api::TransactionRequest;
+
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.
 macro_rules! try_bf {
@@ -510,9 +512,9 @@ impl Eth for EthClient {
         request: CallRequest,
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<Bytes> {
+        /*
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-
         let num = num.unwrap_or_default();
 
         let (mut state, header) = {
@@ -534,19 +536,19 @@ impl Eth for EthClient {
 
             (state, header)
         };
+        */
 
-        let result = self.client
-            .call(&signed, Default::default(), &mut state, &header);
+        let request = TransactionRequest {
+            nonce: request.nonce.map(Into::into),
+            caller: request.from.map(Into::into),
+            is_call: request.to.is_some(),
+            address: request.to.map(Into::into),
+            input: request.data.map(Into::into),
+            value: request.value.map(Into::into),
+        };
 
-        Box::new(future::done(
-            result
-                .map_err(errors::call)
-                .and_then(|executed| match executed.exception {
-                    Some(ref exception) => Err(errors::vm(exception, &executed.output)),
-                    None => Ok(executed),
-                })
-                .map(|b| b.output.into()),
-        ))
+        let result = self.client.call(request);
+        Box::new(future::done(result.map_err(errors::call).map(Into::into)))
     }
 
     fn estimate_gas(
@@ -555,6 +557,7 @@ impl Eth for EthClient {
         request: CallRequest,
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<RpcU256> {
+        /*
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
         let num = num.unwrap_or_default();
@@ -578,13 +581,18 @@ impl Eth for EthClient {
 
             (state, header)
         };
+        */
+        let request = TransactionRequest {
+            nonce: request.nonce.map(Into::into),
+            caller: request.from.map(Into::into),
+            is_call: request.to.is_some(),
+            address: request.to.map(Into::into),
+            input: request.data.map(Into::into),
+            value: request.value.map(Into::into),
+        };
 
-        Box::new(future::done(
-            self.client
-                .estimate_gas(&signed, &state, &header)
-                .map(Into::into)
-                .map_err(errors::call),
-        ))
+        let result = self.client.estimate_gas(request);
+        Box::new(future::done(result.map_err(errors::call).map(Into::into)))
     }
 
     fn compile_lll(&self, _: String) -> Result<Bytes> {

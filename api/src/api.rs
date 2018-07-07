@@ -8,11 +8,11 @@ contract_api! {
 
     pub fn debug_null_call(bool) -> ();
 
-    pub fn debug_execute_unsigned_transaction(Transaction) -> H256;
+    pub fn debug_execute_unsigned_transaction(TransactionRequest) -> H256;
 
-    pub fn simulate_transaction(Transaction) -> SimulateTransactionResponse;
+    pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
 
-    pub fn execute_raw_transaction(String) -> H256;
+    pub fn execute_raw_transaction(Vec<u8>) -> H256;
 
     pub fn get_block_height(bool) -> U256;
 

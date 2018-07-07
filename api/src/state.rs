@@ -53,9 +53,9 @@ pub struct TransactionRecord {
     pub logs: Vec<LogEntry>,
 }
 
-// An unsigned transaction.
+// An unsigned transaction request.
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Transaction {
+pub struct TransactionRequest {
     // The nonce from web3. It's a monotonic counter per account.
     pub nonce: Option<U256>, // optional
     // The "from" addr.
@@ -65,7 +65,7 @@ pub struct Transaction {
     // The "to" addr for a call to a contract.
     pub address: Option<Address>, // defined if is_call = true
     // Opaque call input.
-    pub input: String, // hex
+    pub input: Option<Vec<u8>>,
     pub value: Option<U256>,
 }
 
@@ -73,7 +73,7 @@ pub struct Transaction {
 pub struct SimulateTransactionResponse {
     pub used_gas: U256,
     pub exited_ok: bool, // ExitedOk => true
-    pub result: String,  // (hex)
+    pub result: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

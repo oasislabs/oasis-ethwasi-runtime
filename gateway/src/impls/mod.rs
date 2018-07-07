@@ -21,12 +21,14 @@
 
 pub mod eth;
 pub mod eth_filter;
+pub mod eth_signing;
 pub mod net;
 pub mod trace;
 pub mod web3;
 
 pub use self::eth::EthClient;
 pub use self::eth_filter::EthFilterClient;
+pub use self::eth_signing::EthSigningClient;
 pub use self::net::NetClient;
 pub use self::trace::TracesClient;
 pub use self::web3::Web3Client;

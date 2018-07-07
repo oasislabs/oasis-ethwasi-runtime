@@ -14,7 +14,9 @@ use futures::future::Future;
 use journaldb::overlaydb::OverlayDB;
 use runtime_evm;
 use rustc_hex::FromHex;
-use transaction::{LocalizedTransaction, SignedTransaction};
+use transaction::{LocalizedTransaction, SignedTransaction, Transaction};
+
+use evm_api::TransactionRequest;
 
 type Backend = BasicBackend<OverlayDB>;
 
@@ -139,27 +141,34 @@ impl Client {
     }
 
     // evm-related
-    pub fn call(
-        &self,
-        transaction: &SignedTransaction,
-        analytics: CallAnalytics,
-        state: &mut State<Backend>,
-        header: &Header,
-    ) -> Result<Executed, CallError> {
-        unimplemented!()
+    pub fn call(&self, request: TransactionRequest) -> Result<Bytes, CallError> {
+        match self.client.simulate_transaction(request).wait() {
+            Ok(result) => Ok(result.result),
+            Err(e) => Err(CallError::Exceptional),
+        }
     }
 
-    pub fn estimate_gas(
-        &self,
-        transaction: &SignedTransaction,
-        state: &State<Backend>,
-        header: &Header,
-    ) -> Result<U256, CallError> {
-        unimplemented!()
+    pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, CallError> {
+        match self.client.simulate_transaction(request).wait() {
+            Ok(result) => Ok(result.used_gas),
+            Err(e) => Err(CallError::Exceptional),
+        }
     }
 
     pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, CallError> {
-        // TODO: call runtime-evm contract
-        unimplemented!()
+        match self.client.execute_raw_transaction(raw).wait() {
+            Ok(result) => Ok(result),
+            Err(e) => Err(CallError::Exceptional),
+        }
+    }
+
+    pub fn send_transaction(&self, request: TransactionRequest) -> Result<H256, CallError> {
+        match self.client
+            .debug_execute_unsigned_transaction(request)
+            .wait()
+        {
+            Ok(result) => Ok(result),
+            Err(e) => Err(CallError::Exceptional),
+        }
     }
 }
