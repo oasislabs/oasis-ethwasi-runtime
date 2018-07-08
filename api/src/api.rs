@@ -30,6 +30,8 @@ contract_api! {
 
     pub fn get_account_code(Address) -> String;
 
+    pub fn get_block_hash(String) -> Option<H256>;
+
     pub fn get_block_by_number(String) -> Option<Vec<u8>>;
 
     pub fn get_block_by_hash(H256) -> Option<Vec<u8>>;

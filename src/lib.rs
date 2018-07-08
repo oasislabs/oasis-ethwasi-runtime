@@ -33,8 +33,8 @@ use ethereum_types::{Address, H256, U256};
 use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
               LogFilter, Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 
-use state::{add_block, block_by_hash, block_by_number, get_latest_block_number, new_block,
-            with_state, BlockOffset, StateDb};
+use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
+            new_block, with_state, BlockOffset, StateDb};
 use util::{from_hex, strip_0x, to_hex};
 
 enclave_init!();
@@ -158,6 +158,19 @@ pub fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
             .rev()
             .collect(),
     )
+}
+
+fn get_block_hash(request: &String) -> Result<Option<H256>> {
+    let number = if *request == "latest" {
+        get_latest_block_number()
+    } else {
+        match U256::from_str(strip_0x(request)) {
+            Ok(val) => val.into(),
+            Err(_) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
+        }
+    };
+
+    Ok(block_hash(number))
 }
 
 fn get_block_by_number(request: &String) -> Result<Option<Vec<u8>>> {

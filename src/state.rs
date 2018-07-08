@@ -270,7 +270,7 @@ pub fn get_receipt(hash: &H256) -> Option<Receipt> {
     })
 }
 
-pub fn get_block_hash(number: BlockNumber) -> Option<H256> {
+pub fn block_hash(number: BlockNumber) -> Option<H256> {
     CHAIN.block_hash(number)
 }
 

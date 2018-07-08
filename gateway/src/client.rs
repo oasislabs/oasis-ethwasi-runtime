@@ -59,15 +59,18 @@ impl Client {
     }
 
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
-        /*
-        match id {
-            BlockId::Hash(hash) => Some(hash),
-            BlockId::Number(number) => chain.block_hash(number),
-            BlockId::Earliest => chain.block_hash(0),
-            BlockId::Latest => Some(chain.best_block_hash()),
-        }
-        */
-        None
+        let response = if let BlockId::Hash(hash) = id {
+            Some(hash)
+        } else {
+            let number = match id {
+                BlockId::Hash(hash) => unreachable!(),
+                BlockId::Number(number) => format!("{:x}", number),
+                BlockId::Earliest => "0".to_owned(),
+                BlockId::Latest => "latest".to_owned(),
+            };
+            self.client.get_block_hash(number).wait().unwrap()
+        };
+        response.map(Into::into)
     }
 
     pub fn block_header(&self, id: BlockId) -> Option<encoded::Header> {

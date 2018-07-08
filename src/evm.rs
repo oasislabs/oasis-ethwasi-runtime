@@ -9,8 +9,7 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
               vm};
 use ethereum_types::{Address, H256, U256};
 
-use super::state::{block_hashes_since, get_block_hash, get_latest_block_number, get_state,
-                   with_state, BlockOffset};
+use super::state::{block_hashes_since, get_latest_block_number, get_state, with_state, BlockOffset};
 
 /// as per https://github.com/paritytech/parity/blob/master/ethcore/res/ethereum/byzantium_test.json
 macro_rules! evm_params {
