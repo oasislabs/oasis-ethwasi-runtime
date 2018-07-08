@@ -6,7 +6,7 @@ use ethcore::executive::Executed;
 use ethcore::filter::Filter;
 use ethcore::header::{BlockNumber, Header};
 use ethcore::log_entry::LocalizedLogEntry;
-use ethcore::receipt::LocalizedReceipt;
+//use ethcore::receipt::LocalizedReceipt;
 use ethcore::state::backend::Basic as BasicBackend;
 use ethcore::state::State;
 use ethereum_types::{Address, H256, U256};
@@ -16,7 +16,7 @@ use runtime_evm;
 use rustc_hex::FromHex;
 use transaction::{LocalizedTransaction, SignedTransaction, Transaction};
 
-use evm_api::TransactionRequest;
+use evm_api::{Receipt, TransactionRequest};
 
 type Backend = BasicBackend<OverlayDB>;
 
@@ -94,8 +94,8 @@ impl Client {
         None
     }
 
-    pub fn transaction_receipt(&self, id: TransactionId) -> Option<LocalizedReceipt> {
-        None
+    pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
+        self.client.get_receipt(hash).wait().unwrap()
     }
 
     pub fn logs(&self, filter: Filter) -> Vec<LocalizedLogEntry> {

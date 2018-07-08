@@ -120,4 +120,3 @@ pub fn start(
 
     run::execute(client, num_threads)
 }
-

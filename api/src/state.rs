@@ -1,4 +1,4 @@
-use ethereum_types::{Address, H256, U256};
+use ethereum_types::{Address, Bloom, H256, U256};
 
 use ethcore_types::log_entry::LogEntry;
 
@@ -20,6 +20,21 @@ pub struct AccountState {
     pub address: Address,
     pub balance: U256,
     pub code: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Receipt {
+    pub hash: Option<H256>,
+    pub index: Option<U256>,
+    pub block_hash: Option<H256>,
+    pub block_number: Option<U256>,
+    pub cumulative_gas_used: U256,
+    pub gas_used: Option<U256>,
+    pub contract_address: Option<Address>,
+    pub logs: Vec<LogEntry>,
+    pub state_root: Option<H256>,
+    pub logs_bloom: Bloom,
+    pub status_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -31,7 +31,8 @@ use ethcore::{block::OpenBlock,
               types::BlockNumber};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
-              LogFilter, SimulateTransactionResponse, TransactionRecord, TransactionRequest};
+              LogFilter, Receipt, SimulateTransactionResponse, TransactionRecord,
+              TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, get_latest_block_number, new_block,
             with_state, BlockOffset, StateDb};
@@ -206,6 +207,12 @@ pub fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> 
     info!("Hash: {:?}", hash);
     let r = Ok(state::get_transaction_record(hash));
     r
+}
+
+pub fn get_receipt(hash: &H256) -> Result<Option<Receipt>> {
+    info!("*** Get transaction receipt");
+    info!("Hash: {:?}", hash);
+    Ok(state::get_receipt(hash))
 }
 
 pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {

@@ -42,10 +42,10 @@ use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
                             CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
-                            Index, Log, Receipt, RichBlock, SyncStatus, Transaction,
-                            U256 as RpcU256, Work};
+                            Index, Log, Receipt as RpcReceipt, RichBlock, SyncStatus, Transaction,
+                            U256 as RpcU256, U64 as RpcU64, Work};
 
-use evm_api::TransactionRequest;
+use evm_api::{Receipt, TransactionRequest};
 
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.
@@ -425,12 +425,29 @@ impl Eth for EthClient {
         Box::new(future::done(self.transaction(transaction_id)))
     }
 
-    fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<Receipt>> {
-        let best_block = self.client.best_block_number();
+    fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         let hash: H256 = hash.into();
-
-        let receipt = self.client.transaction_receipt(TransactionId::Hash(hash));
-        Box::new(future::ok(receipt.map(Into::into)))
+        info!("transaction_receipt: hash = {:?}", hash);
+        if let Some(receipt) = self.client.transaction_receipt(hash) {
+            let rpc_receipt = RpcReceipt {
+                transaction_hash: receipt.hash.map(Into::into),
+                transaction_index: receipt.index.map(Into::into),
+                block_hash: receipt.block_hash.map(Into::into),
+                block_number: receipt.block_number.map(Into::into),
+                cumulative_gas_used: receipt.cumulative_gas_used.into(),
+                gas_used: receipt.gas_used.map(Into::into),
+                contract_address: receipt.contract_address.map(Into::into),
+                // TODO: logs
+                //logs: receipt.logs.into(),
+                logs: vec![],
+                state_root: receipt.state_root.map(Into::into),
+                logs_bloom: receipt.logs_bloom.into(),
+                status_code: receipt.status_code.map(Into::into),
+            };
+            Box::new(future::ok(Some(rpc_receipt)))
+        } else {
+            Box::new(future::ok(None))
+        }
     }
 
     fn uncle_by_block_hash_and_index(

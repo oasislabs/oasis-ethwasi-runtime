@@ -20,10 +20,9 @@ use ethcore::{self,
               spec::{CommonParams, Spec},
               state::backend::Basic as BasicBackend,
               transaction::{Action, SignedTransaction},
-              types::{receipt::{Receipt, TransactionOutcome},
-                      BlockNumber}};
-use ethereum_types::{Address, H256, U256};
-use evm_api::{AccountState, TransactionRecord};
+              types::{receipt::TransactionOutcome, BlockNumber}};
+use ethereum_types::{Address, H256, U256, U64};
+use evm_api::{AccountState, Receipt, TransactionRecord};
 
 use super::{evm::get_contract_address, util::to_hex};
 
@@ -205,6 +204,35 @@ pub fn add_block(block: LockedBlock) -> Result<()> {
     StateDb::instance().write(db_tx); // persist the changes to the backing db
 
     Ok(())
+}
+
+pub fn get_receipt(hash: &H256) -> Option<Receipt> {
+    CHAIN.transaction_address(hash).map(|addr| {
+        let mut tx = CHAIN.transaction(&addr).unwrap();
+        let receipt = CHAIN.transaction_receipt(&addr).unwrap();
+        Receipt {
+            hash: Some(tx.hash()),
+            index: Some(U256::from(addr.index)),
+            block_hash: Some(tx.block_hash),
+            block_number: Some(U256::from(tx.block_number)),
+            cumulative_gas_used: receipt.gas_used, // TODO: get from block header
+            gas_used: Some(receipt.gas_used),
+            contract_address: match tx.action {
+                Action::Create => Some(get_contract_address(&tx)),
+                Action::Call(_) => None,
+            },
+            logs: receipt.logs,
+            logs_bloom: receipt.log_bloom,
+            state_root: match receipt.outcome {
+                TransactionOutcome::StateRoot(hash) => Some(hash),
+                _ => None,
+            },
+            status_code: match receipt.outcome {
+                TransactionOutcome::StatusCode(code) => Some(code.into()),
+                _ => None,
+            },
+        }
+    })
 }
 
 pub fn get_transaction_record(hash: &H256) -> Option<TransactionRecord> {
