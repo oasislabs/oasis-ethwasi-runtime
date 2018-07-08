@@ -23,16 +23,6 @@ pub struct AccountState {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Block {
-    pub number: U256,
-    pub hash: H256,
-    pub parent_hash: H256,
-    pub transaction_hash: H256,
-    pub transaction: Option<TransactionRecord>,
-    pub state_root: H256,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct TransactionRecord {
     pub hash: H256,
     pub nonce: U256,
