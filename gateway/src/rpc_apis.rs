@@ -17,7 +17,7 @@
 use std::cmp::PartialEq;
 use std::collections::{BTreeMap, HashSet};
 use std::str::FromStr;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 use client::Client;
 use futures_cpupool::CpuPool;
@@ -118,21 +118,6 @@ impl FromStr for ApiSet {
     }
 }
 
-fn to_modules(apis: &HashSet<Api>) -> BTreeMap<String, String> {
-    let mut modules = BTreeMap::new();
-    for api in apis {
-        let (name, version) = match *api {
-            Api::Web3 => ("web3", "1.0"),
-            Api::Net => ("net", "1.0"),
-            Api::Eth => ("eth", "1.0"),
-            Api::EthPubSub => ("pubsub", "1.0"),
-            Api::Traces => ("traces", "1.0"),
-        };
-        modules.insert(name.into(), version.into());
-    }
-    modules
-}
-
 /// Client Notifier
 pub struct ClientNotifier {
     /// Client
@@ -225,11 +210,6 @@ impl Dependencies for FullDependencies {
 }
 
 impl ApiSet {
-    /// Retains only APIs in given set.
-    pub fn retain(self, set: Self) -> Self {
-        ApiSet::List(&self.list_apis() & &set.list_apis())
-    }
-
     pub fn list_apis(&self) -> HashSet<Api> {
         let mut public_list: HashSet<Api> = [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub]
             .into_iter()

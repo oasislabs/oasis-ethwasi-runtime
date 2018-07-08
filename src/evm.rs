@@ -1,11 +1,10 @@
-use std::{cmp, collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc};
 
 use ekiden_core::error::Result;
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
               machine::EthereumMachine,
               spec::CommonParams,
               transaction::{SignedTransaction, Transaction},
-              types::{receipt::Receipt, BlockNumber},
               vm};
 use ethereum_types::{Address, H256, U256};
 

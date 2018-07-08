@@ -24,18 +24,15 @@ use std::str::FromStr;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
-use ethcore::{block::OpenBlock,
-              encoded::Block,
-              rlp,
-              transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction},
-              types::BlockNumber};
+use ethcore::{rlp,
+              transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
               LogFilter, Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
-            new_block, with_state, BlockOffset, StateDb};
-use util::{from_hex, strip_0x, to_hex};
+            new_block, with_state, BlockOffset};
+use util::strip_0x;
 
 enclave_init!();
 
@@ -114,7 +111,7 @@ pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<(
         return Err(Error::new("Genesis block already created"));
     }
 
-    let (_, root) = with_state(|state| {
+    let (_, _) = with_state(|state| {
         storages.iter().try_for_each(|&(addr, key, value)| {
             state
                 .set_storage(&addr, key.clone(), value.clone())
@@ -198,7 +195,7 @@ fn get_block_by_hash(hash: &H256) -> Result<Option<Vec<u8>>> {
     println!("*** Get block by hash");
     println!("Request: {:?}", hash);
 
-    let mut block = match block_by_hash(*hash) {
+    let block = match block_by_hash(*hash) {
         Some(val) => val,
         None => return Ok(None),
     };

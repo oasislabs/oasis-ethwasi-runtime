@@ -16,7 +16,6 @@
 
 use std::collections::HashSet;
 use std::io;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use jsonrpc_core::MetaIoHandler;

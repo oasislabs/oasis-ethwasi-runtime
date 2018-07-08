@@ -20,11 +20,8 @@ use std::sync::Arc;
 
 use client::Client;
 
-use ethereum_types::H256;
-
-use jsonrpc_core::futures::future::Either;
 use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpc_core::BoxFuture;
 use parity_rpc::v1::helpers::errors;
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::EthSigning;
@@ -46,7 +43,7 @@ impl EthSigningClient {
 impl EthSigning for EthSigningClient {
     type Metadata = Metadata;
 
-    fn sign(&self, meta: Metadata, address: RpcH160, data: Bytes) -> BoxFuture<RpcH520> {
+    fn sign(&self, _meta: Metadata, _address: RpcH160, _data: Bytes) -> BoxFuture<RpcH520> {
         Box::new(future::err(errors::unimplemented(None)))
     }
 
@@ -63,15 +60,14 @@ impl EthSigning for EthSigningClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-
         let result = self.client.send_transaction(request);
         Box::new(future::done(result.map_err(errors::call).map(Into::into)))
     }
 
     fn sign_transaction(
         &self,
-        meta: Metadata,
-        request: RpcTransactionRequest,
+        _meta: Metadata,
+        _request: RpcTransactionRequest,
     ) -> BoxFuture<RichRawTransaction> {
         Box::new(future::err(errors::unimplemented(None)))
     }

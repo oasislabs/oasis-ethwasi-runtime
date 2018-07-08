@@ -1,27 +1,19 @@
-use std::{cmp,
-          collections::BTreeMap,
-          io::{Cursor, Read},
-          mem,
-          sync::Arc};
+use std::{io::Cursor, mem, sync::Arc};
 
 use ekiden_core::error::Result;
-use ekiden_trusted::db::{database_schema, Database, DatabaseHandle};
+use ekiden_trusted::db::{Database, DatabaseHandle};
 use ethcore::{self,
-              block::{Drain, IsBlock, LockedBlock, OpenBlock, SealedBlock},
+              block::{Drain, IsBlock, LockedBlock, OpenBlock},
               blockchain::{BlockChain, BlockProvider, ExtrasInsert},
               encoded::Block,
-              engines::{ForkChoice, InstantSeal},
-              executed::Executed,
-              header::Header,
+              engines::ForkChoice,
               journaldb::overlaydb::OverlayDB,
               kvdb::{self, KeyValueDB},
-              machine::EthereumMachine,
-              rlp::{decode, Decodable},
-              spec::{CommonParams, Spec},
+              spec::Spec,
               state::backend::Basic as BasicBackend,
-              transaction::{Action, SignedTransaction},
+              transaction::Action,
               types::{receipt::TransactionOutcome, BlockNumber}};
-use ethereum_types::{Address, H256, U256, U64};
+use ethereum_types::{Address, H256, U256};
 use evm_api::{AccountState, Receipt, Transaction};
 
 use super::{evm::get_contract_address, util::to_hex};
@@ -200,8 +192,11 @@ pub fn add_block(block: LockedBlock) -> Result<()> {
 
     CHAIN.commit(); // commit the insert to the in-memory BlockChain repr
     let mut db = block.drain().0;
-    db.commit_to_batch(&mut db_tx); // add any pending state updates to the db transaction
-    StateDb::instance().write(db_tx); // persist the changes to the backing db
+    db.commit_to_batch(&mut db_tx)
+        .expect("could not commit state updates"); // add any pending state updates to the db transaction
+    StateDb::instance()
+        .write(db_tx)
+        .expect("could not persist state updates"); // persist the changes to the backing db
 
     Ok(())
 }
@@ -243,7 +238,7 @@ pub fn get_transaction(hash: &H256) -> Option<Transaction> {
 
 pub fn get_receipt(hash: &H256) -> Option<Receipt> {
     CHAIN.transaction_address(hash).map(|addr| {
-        let mut tx = CHAIN.transaction(&addr).unwrap();
+        let tx = CHAIN.transaction(&addr).unwrap();
         let receipt = CHAIN.transaction_receipt(&addr).unwrap();
         Receipt {
             hash: Some(tx.hash()),

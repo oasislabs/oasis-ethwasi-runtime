@@ -16,25 +16,20 @@
 
 //! Eth Filter RPC implementation
 
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use client::Client;
 
-use ethcore::client::{BlockChainClient, BlockId};
+use ethcore::client::BlockId;
 use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::miner;
 use ethereum_types::H256;
 use parking_lot::Mutex;
 
-use jsonrpc_core::futures::future::Either;
-use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
-use parity_rpc::v1::helpers::{errors, limit_logs, PollFilter, PollManager};
+use jsonrpc_core::futures::future;
+use jsonrpc_core::BoxFuture;
+use parity_rpc::v1::helpers::{PollFilter, PollManager};
 use parity_rpc::v1::impls::eth_filter::Filterable;
-use parity_rpc::v1::traits::EthFilter;
-use parity_rpc::v1::types::{BlockNumber, Filter, FilterChanges, H256 as RpcH256, Index, Log,
-                            U256 as RpcU256};
+use parity_rpc::v1::types::{H256 as RpcH256, Log, U256 as RpcU256};
 
 /// Eth filter rpc implementation for a full node.
 pub struct EthFilterClient {

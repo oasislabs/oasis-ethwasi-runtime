@@ -18,19 +18,15 @@
 
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use std::thread;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use ethereum_types::{Address, H160, H256, H64, U256};
+use ethereum_types::{Address, H256, U256};
 use rlp::{self, Rlp};
 
 use client::Client;
-use ethcore::client::{BlockChainClient, BlockId, Call, EngineInfo, StateClient, StateInfo,
-                      StateOrBlock, TransactionId};
+use ethcore::client::{BlockId, Call, EngineInfo, StateClient, StateInfo, StateOrBlock,
+                      TransactionId};
 use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::header::BlockNumber as EthBlockNumber;
 use ethcore::log_entry::LogEntry;
-use ethcore::miner;
 use transaction::{LocalizedTransaction, SignedTransaction};
 
 use jsonrpc_core::futures::future;
@@ -43,9 +39,9 @@ use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
                             CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
                             Index, Log, Receipt as RpcReceipt, RichBlock, SyncStatus,
-                            Transaction as RpcTransaction, U256 as RpcU256, U64 as RpcU64, Work};
+                            Transaction as RpcTransaction, U256 as RpcU256, Work};
 
-use evm_api::{Receipt, Transaction, TransactionRequest};
+use evm_api::TransactionRequest;
 
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.
@@ -228,11 +224,6 @@ impl EthClient where {
         */
     }
 
-    fn uncle(&self, id: PendingUncleId) -> Result<Option<RichBlock>> {
-        // we don't have uncles
-        Ok(None)
-    }
-
     fn get_state(&self, number: BlockNumber) -> StateOrBlock {
         // for "pending", just use latest block
         match number {
@@ -277,7 +268,7 @@ impl Eth for EthClient {
         Ok(SyncStatus::None)
     }
 
-    fn author(&self, meta: Metadata) -> Result<RpcH160> {
+    fn author(&self, _meta: Metadata) -> Result<RpcH160> {
         Ok(Default::default())
     }
 
@@ -294,7 +285,7 @@ impl Eth for EthClient {
         Ok(RpcU256::from(0))
     }
 
-    fn accounts(&self, meta: Metadata) -> Result<Vec<RpcH160>> {
+    fn accounts(&self, _meta: Metadata) -> Result<Vec<RpcH160>> {
         Ok(vec![])
     }
 
@@ -379,8 +370,6 @@ impl Eth for EthClient {
     }
 
     fn block_transaction_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
-        let block_number = self.client.best_block_number();
-
         Box::new(future::ok(
             self.client
                 .block(block_number_to_id(num))
@@ -388,12 +377,12 @@ impl Eth for EthClient {
         ))
     }
 
-    fn block_uncles_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
+    fn block_uncles_count_by_hash(&self, _hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
         // we don't have uncles
         Box::new(future::ok(Some(RpcU256::from(0))))
     }
 
-    fn block_uncles_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
+    fn block_uncles_count_by_number(&self, _num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         // we don't have uncles
         Box::new(future::ok(Some(RpcU256::from(0))))
     }
@@ -427,9 +416,7 @@ impl Eth for EthClient {
 
     fn transaction_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcTransaction>> {
         let hash: H256 = hash.into();
-        let block_number = self.client.best_block_number();
         let tx = try_bf!(self.transaction(PendingTransactionId::Hash(hash)));
-
         Box::new(future::ok(tx))
     }
 
@@ -488,8 +475,8 @@ impl Eth for EthClient {
 
     fn uncle_by_block_hash_and_index(
         &self,
-        hash: RpcH256,
-        index: Index,
+        _hash: RpcH256,
+        _index: Index,
     ) -> BoxFuture<Option<RichBlock>> {
         // we dont' have uncles
         Box::new(future::ok(None))
@@ -497,8 +484,8 @@ impl Eth for EthClient {
 
     fn uncle_by_block_number_and_index(
         &self,
-        num: BlockNumber,
-        index: Index,
+        _num: BlockNumber,
+        _index: Index,
     ) -> BoxFuture<Option<RichBlock>> {
         // we dont' have uncles
         Box::new(future::ok(None))
@@ -523,32 +510,19 @@ impl Eth for EthClient {
         Box::new(future::ok(logs))
     }
 
-    fn work(&self, no_new_work_timeout: Trailing<u64>) -> Result<Work> {
+    fn work(&self, _no_new_work_timeout: Trailing<u64>) -> Result<Work> {
         Err(errors::unimplemented(None))
     }
 
-    fn submit_work(&self, nonce: RpcH64, pow_hash: RpcH256, mix_hash: RpcH256) -> Result<bool> {
+    fn submit_work(&self, _nonce: RpcH64, _pow_hash: RpcH256, _mix_hash: RpcH256) -> Result<bool> {
         Err(errors::unimplemented(None))
     }
 
-    fn submit_hashrate(&self, rate: RpcU256, id: RpcH256) -> Result<bool> {
+    fn submit_hashrate(&self, _rate: RpcU256, _id: RpcH256) -> Result<bool> {
         Err(errors::unimplemented(None))
     }
 
     fn send_raw_transaction(&self, raw: Bytes) -> Result<RpcH256> {
-        /*
-        Rlp::new(&raw.into_vec()).as_val()
-			.map_err(errors::rlp)
-			.and_then(|tx| SignedTransaction::new(tx).map_err(errors::transaction))
-			.and_then(|signed_transaction| {
-				FullDispatcher::dispatch_transaction(
-					&*self.client,
-					&*self.miner,
-					signed_transaction.into(),
-				)
-			})
-			.map(Into::into)
-        */
         self.client
             .send_raw_transaction(raw.into())
             .map(Into::into)
@@ -590,7 +564,6 @@ impl Eth for EthClient {
             (state, header)
         };
         */
-
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -599,7 +572,6 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-
         let result = self.client.call(request);
         Box::new(future::done(result.map_err(errors::call).map(Into::into)))
     }
@@ -643,7 +615,6 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-
         let result = self.client.estimate_gas(request);
         Box::new(future::done(result.map_err(errors::call).map(Into::into)))
     }

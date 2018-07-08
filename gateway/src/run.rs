@@ -15,7 +15,6 @@
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::any::Any;
-use std::fmt;
 use std::sync::{Arc, Weak};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -36,8 +35,6 @@ pub fn execute(
     ekiden_client: runtime_evm::Client,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
-    use parking_lot::{Mutex, RwLock};
-
     let client = Arc::new(Client::new(ekiden_client));
     let rpc_stats = Arc::new(informant::RpcStats::default());
 

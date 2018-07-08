@@ -19,7 +19,7 @@
 #![warn(missing_docs)]
 
 use jsonrpc_core;
-use jsonrpc_http_server::{self as http, hyper, tokio_core, Host, RequestMiddleware};
+use jsonrpc_http_server::{self as http, tokio_core};
 use jsonrpc_ws_server as ws;
 
 use parity_rpc::http_common::{self, HttpMetaExtractor};
@@ -46,7 +46,7 @@ where
     T: HttpMetaExtractor<Metadata = M>,
 {
     let extractor = http_common::MetaExtractor::new(extractor);
-    let mut builder = http::ServerBuilder::with_meta_extractor(handler, extractor)
+    let builder = http::ServerBuilder::with_meta_extractor(handler, extractor)
         .threads(threads)
         .event_loop_remote(remote)
         .cors(cors_domains.into())

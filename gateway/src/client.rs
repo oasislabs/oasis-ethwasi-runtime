@@ -44,7 +44,7 @@ impl Client {
             self.client.get_block_by_hash(hash).wait().unwrap()
         } else {
             let number = match id {
-                BlockId::Hash(hash) => unreachable!(),
+                BlockId::Hash(_) => unreachable!(),
                 BlockId::Number(number) => format!("{:x}", number),
                 BlockId::Earliest => "0".to_owned(),
                 BlockId::Latest => "latest".to_owned(),
@@ -63,7 +63,7 @@ impl Client {
             Some(hash)
         } else {
             let number = match id {
-                BlockId::Hash(hash) => unreachable!(),
+                BlockId::Hash(_) => unreachable!(),
                 BlockId::Number(number) => format!("{:x}", number),
                 BlockId::Earliest => "0".to_owned(),
                 BlockId::Latest => "latest".to_owned(),
@@ -102,6 +102,7 @@ impl Client {
     }
 
     pub fn logs(&self, filter: Filter) -> Vec<LocalizedLogEntry> {
+        // TODO: implement
         vec![]
     }
 
@@ -147,21 +148,21 @@ impl Client {
     pub fn call(&self, request: TransactionRequest) -> Result<Bytes, CallError> {
         match self.client.simulate_transaction(request).wait() {
             Ok(result) => Ok(result.result),
-            Err(e) => Err(CallError::Exceptional),
+            Err(_e) => Err(CallError::Exceptional),
         }
     }
 
     pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, CallError> {
         match self.client.simulate_transaction(request).wait() {
             Ok(result) => Ok(result.used_gas),
-            Err(e) => Err(CallError::Exceptional),
+            Err(_e) => Err(CallError::Exceptional),
         }
     }
 
     pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, CallError> {
         match self.client.execute_raw_transaction(raw).wait() {
             Ok(result) => Ok(result),
-            Err(e) => Err(CallError::Exceptional),
+            Err(_e) => Err(CallError::Exceptional),
         }
     }
 
@@ -171,7 +172,7 @@ impl Client {
             .wait()
         {
             Ok(result) => Ok(result),
-            Err(e) => Err(CallError::Exceptional),
+            Err(_e) => Err(CallError::Exceptional),
         }
     }
 }

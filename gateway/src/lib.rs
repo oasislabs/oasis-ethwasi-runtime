@@ -81,21 +81,15 @@ extern crate ekiden_di;
 extern crate ekiden_rpc_client;
 extern crate evm_api;
 
-use std::{collections::HashMap,
-          fs::{self, File},
-          io::BufReader,
-          str::FromStr,
-          sync::Arc};
+use std::sync::Arc;
 
 use clap::ArgMatches;
-use ethereum_types::{Address, H256, U256};
-use futures::future::Future;
 
 use ekiden_contract_client::create_contract_client;
 use ekiden_core::{bytes::B256, ring::signature::Ed25519KeyPair, signature::InMemorySigner,
                   untrusted};
 use ekiden_di::Container;
-use evm_api::{with_api, AccountState, InitStateRequest};
+use evm_api::with_api;
 
 pub use self::run::RunningClient;
 

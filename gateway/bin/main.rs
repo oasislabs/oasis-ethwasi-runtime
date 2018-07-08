@@ -38,7 +38,7 @@ extern crate client_utils;
 use clap::{App, Arg};
 use ctrlc::CtrlC;
 use fdlimit::raise_fd_limit;
-use log::{error, info, log, warn, LevelFilter};
+use log::LevelFilter;
 use parking_lot::{Condvar, Mutex};
 use std::sync::Arc;
 
