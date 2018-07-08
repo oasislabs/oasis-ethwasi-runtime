@@ -265,6 +265,8 @@ fn transact(transaction: SignedTransaction) -> Result<H256> {
     let mut block = new_block()?;
     let tx_hash = transaction.hash();
     block.push_transaction(transaction, None)?;
+    // set timestamp to 0, as blocks must be deterministic
+    block.set_timestamp(0);
     add_block(block.close_and_lock())?;
     Ok(tx_hash)
 }
