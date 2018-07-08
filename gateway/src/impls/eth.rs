@@ -42,10 +42,10 @@ use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
                             CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
-                            Index, Log, Receipt as RpcReceipt, RichBlock, SyncStatus, Transaction,
-                            U256 as RpcU256, U64 as RpcU64, Work};
+                            Index, Log, Receipt as RpcReceipt, RichBlock, SyncStatus,
+                            Transaction as RpcTransaction, U256 as RpcU256, U64 as RpcU64, Work};
 
-use evm_api::{Receipt, TransactionRequest};
+use evm_api::{Receipt, Transaction, TransactionRequest};
 
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.
@@ -152,7 +152,7 @@ impl EthClient where {
                                     .view()
                                     .localized_transactions()
                                     .into_iter()
-                                    .map(|t| Transaction::from_localized(t, 0))
+                                    .map(|t| RpcTransaction::from_localized(t, 0))
                                     .collect(),
                             ),
                             false => BlockTransactions::Hashes(
@@ -172,7 +172,42 @@ impl EthClient where {
         }
     }
 
-    fn transaction(&self, id: PendingTransactionId) -> Result<Option<Transaction>> {
+    fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
+        if let PendingTransactionId::Hash(hash) = id {
+            let hash: H256 = hash.into();
+            info!("transaction: hash = {:?}", hash);
+            if let Some(tx) = self.client.transaction(hash) {
+                let transaction = RpcTransaction {
+                    hash: tx.hash.into(),
+                    nonce: tx.nonce.into(),
+                    block_hash: tx.block_hash.map(Into::into),
+                    block_number: tx.block_number.map(Into::into),
+                    transaction_index: tx.index.map(Into::into),
+                    from: tx.from.into(),
+                    to: tx.to.map(Into::into),
+                    value: tx.value.into(),
+                    gas_price: tx.gas_price.into(),
+                    gas: tx.gas.into(),
+                    input: tx.input.clone().into(),
+                    creates: tx.creates.map(Into::into),
+                    raw: tx.raw.clone().into(),
+                    public_key: tx.public_key.map(Into::into),
+                    chain_id: tx.chain_id.map(Into::into),
+                    standard_v: tx.standard_v.into(),
+                    v: tx.v.into(),
+                    r: tx.r.into(),
+                    s: tx.s.into(),
+                    condition: None,
+                };
+                Ok(Some(transaction))
+            } else {
+                Ok(None)
+            }
+        } else {
+            warn!("Only transction hash parameter supported");
+            Ok(None)
+        }
+        /*
         let client_transaction = |id| match self.client.transaction(id) {
             Some(t) => Ok(Some(Transaction::from_localized(t, 0))),
             None => Ok(None),
@@ -190,6 +225,7 @@ impl EthClient where {
                 return Ok(None);
             }
         }
+        */
     }
 
     fn uncle(&self, id: PendingUncleId) -> Result<Option<RichBlock>> {
@@ -389,7 +425,7 @@ impl Eth for EthClient {
         Box::new(future::done(self.rich_block(num.into(), include_txs)))
     }
 
-    fn transaction_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<Transaction>> {
+    fn transaction_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcTransaction>> {
         let hash: H256 = hash.into();
         let block_number = self.client.best_block_number();
         let tx = try_bf!(self.transaction(PendingTransactionId::Hash(hash)));
@@ -401,7 +437,7 @@ impl Eth for EthClient {
         &self,
         hash: RpcH256,
         index: Index,
-    ) -> BoxFuture<Option<Transaction>> {
+    ) -> BoxFuture<Option<RpcTransaction>> {
         let id = PendingTransactionId::Location(
             PendingOrBlock::Block(BlockId::Hash(hash.into())),
             index.value(),
@@ -413,7 +449,7 @@ impl Eth for EthClient {
         &self,
         num: BlockNumber,
         index: Index,
-    ) -> BoxFuture<Option<Transaction>> {
+    ) -> BoxFuture<Option<RpcTransaction>> {
         let block_id = match num {
             BlockNumber::Latest => PendingOrBlock::Block(BlockId::Latest),
             BlockNumber::Earliest => PendingOrBlock::Block(BlockId::Earliest),

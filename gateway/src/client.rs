@@ -14,9 +14,9 @@ use futures::future::Future;
 use journaldb::overlaydb::OverlayDB;
 use runtime_evm;
 use rustc_hex::FromHex;
-use transaction::{LocalizedTransaction, SignedTransaction, Transaction};
+use transaction::{LocalizedTransaction, SignedTransaction};
 
-use evm_api::{Receipt, TransactionRequest};
+use evm_api::{Receipt, Transaction, TransactionRequest};
 
 type Backend = BasicBackend<OverlayDB>;
 
@@ -90,8 +90,8 @@ impl Client {
     }
 
     // transaction-related
-    pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
-        None
+    pub fn transaction(&self, hash: H256) -> Option<Transaction> {
+        self.client.get_transaction(hash).wait().unwrap()
     }
 
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {

@@ -22,7 +22,7 @@ use ethcore::{self,
               transaction::{Action, SignedTransaction},
               types::{receipt::TransactionOutcome, BlockNumber}};
 use ethereum_types::{Address, H256, U256, U64};
-use evm_api::{AccountState, Receipt, TransactionRecord};
+use evm_api::{AccountState, Receipt, Transaction};
 
 use super::{evm::get_contract_address, util::to_hex};
 
@@ -206,6 +206,41 @@ pub fn add_block(block: LockedBlock) -> Result<()> {
     Ok(())
 }
 
+pub fn get_transaction(hash: &H256) -> Option<Transaction> {
+    CHAIN.transaction_address(hash).map(|addr| {
+        let mut tx = CHAIN.transaction(&addr).unwrap();
+        let signature = tx.signature();
+        Transaction {
+            hash: tx.hash(),
+            nonce: tx.nonce,
+            block_hash: Some(tx.block_hash),
+            block_number: Some(U256::from(tx.block_number)),
+            index: Some(tx.transaction_index.into()),
+            from: tx.sender(),
+            to: match tx.action {
+                Action::Create => None,
+                Action::Call(address) => Some(address),
+            },
+            value: tx.value,
+            gas_price: tx.gas_price,
+            gas: tx.gas,
+            input: tx.data.clone(),
+            creates: match tx.action {
+                Action::Create => Some(get_contract_address(&tx)),
+                Action::Call(_) => None,
+            },
+            raw: ::rlp::encode(&tx.signed).into_vec(),
+            // TODO: recover pubkey
+            public_key: None,
+            chain_id: tx.chain_id().into(),
+            standard_v: tx.standard_v().into(),
+            v: tx.original_v().into(),
+            r: signature.r().into(),
+            s: signature.s().into(),
+        }
+    })
+}
+
 pub fn get_receipt(hash: &H256) -> Option<Receipt> {
     CHAIN.transaction_address(hash).map(|addr| {
         let mut tx = CHAIN.transaction(&addr).unwrap();
@@ -231,41 +266,6 @@ pub fn get_receipt(hash: &H256) -> Option<Receipt> {
                 TransactionOutcome::StatusCode(code) => Some(code.into()),
                 _ => None,
             },
-        }
-    })
-}
-
-pub fn get_transaction_record(hash: &H256) -> Option<TransactionRecord> {
-    CHAIN.transaction_address(hash).map(|addr| {
-        let mut tx = CHAIN.transaction(&addr).unwrap();
-        let receipt = CHAIN.transaction_receipt(&addr).unwrap();
-        TransactionRecord {
-            hash: tx.hash(),
-            nonce: tx.nonce,
-            block_hash: tx.block_hash,
-            block_number: U256::from(tx.block_number),
-            index: addr.index,
-            is_create: tx.action == Action::Create,
-            from: tx.sender(),
-            to: match tx.action {
-                Action::Create => None,
-                Action::Call(address) => Some(address),
-            },
-            contract_address: match tx.action {
-                Action::Create => Some(get_contract_address(&tx)),
-                Action::Call(_) => None,
-            },
-            input: to_hex(&tx.data),
-            value: tx.value,
-            gas_price: tx.gas_price,
-            gas_provided: tx.gas,
-            gas_used: receipt.gas_used,
-            cumulative_gas_used: receipt.gas_used, // TODO: get from block header
-            exited_ok: match receipt.outcome {
-                TransactionOutcome::StatusCode(code) => code == 1,
-                _ => false,
-            },
-            logs: receipt.logs,
         }
     })
 }

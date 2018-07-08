@@ -27,12 +27,11 @@ use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{block::OpenBlock,
               encoded::Block,
               rlp,
-              transaction::{Action, SignedTransaction, Transaction},
+              transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction},
               types::BlockNumber};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
-              LogFilter, Receipt, SimulateTransactionResponse, TransactionRecord,
-              TransactionRequest};
+              LogFilter, Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, get_latest_block_number, new_block,
             with_state, BlockOffset, StateDb};
@@ -202,11 +201,10 @@ fn get_logs(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
     unimplemented!()
 }
 
-pub fn get_transaction_record(hash: &H256) -> Result<Option<TransactionRecord>> {
-    info!("*** Get transaction record");
+pub fn get_transaction(hash: &H256) -> Result<Option<Transaction>> {
+    info!("*** Get transaction");
     info!("Hash: {:?}", hash);
-    let r = Ok(state::get_transaction_record(hash));
-    r
+    Ok(state::get_transaction(hash))
 }
 
 pub fn get_receipt(hash: &H256) -> Result<Option<Receipt>> {
@@ -262,7 +260,7 @@ fn transact(transaction: SignedTransaction) -> Result<H256> {
 }
 
 fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTransaction> {
-    let tx = Transaction {
+    let tx = EthcoreTransaction {
         action: if request.is_call {
             Action::Call(request
                 .address

@@ -3,7 +3,7 @@ use ethcore_types::log_entry::LogEntry;
 use ethereum_types::U256;
 use evm_api::{error::INVALID_BLOCK_NUMBER, FilteredLog, LogFilter, TopicFilter};
 use hex;
-use state::{block_by_number, get_latest_block_number, get_transaction_record};
+use state::{block_by_number, get_latest_block_number};
 use std::str::FromStr;
 
 pub fn strip_0x<'a>(hex: &'a str) -> &'a str {

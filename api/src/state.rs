@@ -1,4 +1,4 @@
-use ethereum_types::{Address, Bloom, H256, U256};
+use ethereum_types::{Address, Bloom, H256, H512, U256};
 
 use ethcore_types::log_entry::LogEntry;
 
@@ -38,24 +38,26 @@ pub struct Receipt {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct TransactionRecord {
+pub struct Transaction {
     pub hash: H256,
     pub nonce: U256,
-    pub block_hash: H256,
-    pub block_number: U256,
-    pub index: usize,        // txn index in block, always 0 for single-txn blocks
-    pub is_create: bool,     // is this a create transacation?
-    pub from: Address,       // sender address
-    pub to: Option<Address>, // receiver address, defined if !is_create
-    pub gas_used: U256,      // gas used to execute this txn
-    pub cumulative_gas_used: U256, // always equal to gas_used for single-txn blocks
-    pub contract_address: Option<Address>, // address of created contract, defined if is_create
+    pub block_hash: Option<H256>,
+    pub block_number: Option<U256>,
+    pub index: Option<U256>,
+    pub from: Address,
+    pub to: Option<Address>,
     pub value: U256,
     pub gas_price: U256,
-    pub gas_provided: U256,
-    pub input: String,
-    pub exited_ok: bool, // true for success
-    pub logs: Vec<LogEntry>,
+    pub gas: U256,
+    pub input: Vec<u8>,
+    pub creates: Option<Address>,
+    pub raw: Vec<u8>,
+    pub public_key: Option<H512>,
+    pub chain_id: Option<u64>,
+    pub standard_v: U256,
+    pub v: U256,
+    pub r: U256,
+    pub s: U256,
 }
 
 // An unsigned transaction request.
