@@ -61,7 +61,7 @@ run_test() {
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
-    gateway/target/debug/gateway \
+    target/debug/gateway \
         --mr-enclave $(cat $WORKDIR/target/contract/runtime-evm.mrenclave) \
         --threads 100 &> gateway.log &
     sleep 2
