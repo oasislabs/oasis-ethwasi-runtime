@@ -64,14 +64,15 @@ pub fn execute(
 
     // start rpc servers
     let rpc_direct = rpc::setup_apis(rpc_apis::ApiSet::All, &dependencies);
-    let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
+    // WebSocket endpoint is disabled
+    //let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
     let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)?;
 
     Ok(RunningClient {
         inner: RunningClientInner::Full {
             rpc: rpc_direct,
             client,
-            keep_alive: Box::new((event_loop, ws_server, http_server)),
+            keep_alive: Box::new((event_loop, http_server)),
         },
     })
 }
