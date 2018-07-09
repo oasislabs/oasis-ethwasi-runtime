@@ -55,6 +55,10 @@ spec:
             - "600"
             - --storage-backend
             - persistent
+            - --prometheus-metrics-addr
+            - "0.0.0.0:3000"
+            - --prometheus-mode
+            - pull
           volumeMounts:
             - mountPath: /persistent-storage
               name: kx-evm-dummy-storage-persistent
