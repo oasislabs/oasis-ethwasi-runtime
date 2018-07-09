@@ -3,15 +3,26 @@ use ethereum_types::{Address, Bloom, H256, H512, U256};
 use ethcore_types::log_entry::LogEntry;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct FilteredLog {
-    pub removed: bool,
-    pub log_index: usize,
-    pub transaction_index: usize,
-    pub transaction_hash: H256,
-    pub block_hash: H256,
-    pub block_number: U256,
-    pub data: Vec<u8>,
+pub struct Filter {
+    pub from_block: String,
+    pub to_block: String,
+    pub address: Option<Vec<Address>>,
+    pub topics: Vec<Option<Vec<H256>>>,
+    pub limit: Option<usize>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Log {
+    pub address: Address,
     pub topics: Vec<H256>,
+    pub data: Vec<u8>,
+    pub block_hash: Option<H256>,
+    pub block_number: Option<U256>,
+    pub transaction_hash: Option<H256>,
+    pub transaction_index: Option<U256>,
+    pub log_index: Option<U256>,
+    pub transaction_log_index: Option<U256>,
+    pub log_type: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

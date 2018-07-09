@@ -27,8 +27,8 @@ use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
 use ethereum_types::{Address, H256, U256};
-use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, FilteredLog, InitStateRequest,
-              LogFilter, Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
+use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, Filter, InitStateRequest, Log,
+              Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
             new_block, with_state, BlockOffset};
@@ -203,7 +203,7 @@ fn get_block_by_hash(hash: &H256) -> Result<Option<Vec<u8>>> {
     Ok(Some(block.into_inner()))
 }
 
-fn get_logs(filter: &LogFilter) -> Result<Vec<FilteredLog>> {
+fn get_logs(filter: &Filter) -> Result<Vec<Log>> {
     info!("*** Get logs");
     info!("Log filter: {:?}", filter);
 

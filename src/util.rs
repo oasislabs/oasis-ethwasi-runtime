@@ -1,7 +1,7 @@
 use ekiden_core::error::{Error, Result};
 use ethcore_types::log_entry::LogEntry;
 use ethereum_types::U256;
-use evm_api::{error::INVALID_BLOCK_NUMBER, FilteredLog, LogFilter, TopicFilter};
+use evm_api::{error::INVALID_BLOCK_NUMBER, TopicFilter};
 use hex;
 use state::{block_by_number, get_latest_block_number};
 use std::str::FromStr;

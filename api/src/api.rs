@@ -38,5 +38,5 @@ contract_api! {
 
     pub fn get_storage_at((Address, H256)) -> H256;
 
-    pub fn get_logs(LogFilter) -> Vec<FilteredLog>;
+    pub fn get_logs(Filter) -> Vec<Log>;
 }
