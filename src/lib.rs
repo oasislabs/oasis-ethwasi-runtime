@@ -364,7 +364,7 @@ mod tests {
             contract
         }
 
-        fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> H256 {
+        fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> Vec<u8> {
             let tx = TransactionRequest {
                 caller: Some(self.address),
                 is_call: true,
@@ -374,7 +374,7 @@ mod tests {
                 nonce: None,
             };
 
-            debug_execute_unsigned_transaction(&tx).unwrap()
+            simulate_transaction(&tx).unwrap().result
         }
     }
 
@@ -398,7 +398,7 @@ mod tests {
         );
     }
 
-    // TODO: fix these tests
+    // TODO: fix this test
     /*
     #[test]
     fn test_solidity_blockhash() {
@@ -414,7 +414,7 @@ mod tests {
 
         let contract = client.create_contract(blockhash_code, &U256::zero());
 
-        let mut blockhash = |num: u8| -> H256 {
+        let mut blockhash = |num: u8| -> Vec<u8> {
             let mut data = hex::decode(
                 "cc8ee4890000000000000000000000000000000000000000000000000000000000000000",
             ).unwrap();
@@ -422,10 +422,11 @@ mod tests {
             client.call(&contract, data, &U256::zero())
         };
 
-        assert_ne!(blockhash(0), H256::zero());
-        assert_ne!(blockhash(2), H256::zero());
-        assert_eq!(blockhash(5), H256::zero());
+        assert_ne!(hex::encode(blockhash(0)), "0000000000000000000000000000000000000000000000000000000000000000");
+        assert_ne!(hex::encode(blockhash(2)), "0000000000000000000000000000000000000000000000000000000000000000");
+        assert_eq!(hex::encode(blockhash(5)), "0000000000000000000000000000000000000000000000000000000000000000");
     }
+    */
 
     #[test]
     fn test_solidity_x_contract_call() {
@@ -457,7 +458,10 @@ mod tests {
         )).unwrap();
         let output = client.call(&contract_a, data, &U256::zero());
 
-        assert_eq!(output, H256::from(42));
+        // expected output is 42
+        assert_eq!(
+            hex::encode(output),
+            "000000000000000000000000000000000000000000000000000000000000002a"
+        );
     }
-    */
 }
