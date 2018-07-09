@@ -161,7 +161,7 @@ pub fn block_hashes_since(start: BlockOffset) -> Vec<H256> {
 
     loop {
         hashes.push(head.hash());
-        if head.number() >= start {
+        if head.number() <= start {
             break;
         }
         head = CHAIN

@@ -398,8 +398,6 @@ mod tests {
         );
     }
 
-    // TODO: fix this test
-    /*
     #[test]
     fn test_solidity_blockhash() {
         // contract The {
@@ -422,11 +420,19 @@ mod tests {
             client.call(&contract, data, &U256::zero())
         };
 
-        assert_ne!(hex::encode(blockhash(0)), "0000000000000000000000000000000000000000000000000000000000000000");
-        assert_ne!(hex::encode(blockhash(2)), "0000000000000000000000000000000000000000000000000000000000000000");
-        assert_eq!(hex::encode(blockhash(5)), "0000000000000000000000000000000000000000000000000000000000000000");
+        assert_ne!(
+            hex::encode(blockhash(0)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+        assert_ne!(
+            hex::encode(blockhash(2)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+        assert_eq!(
+            hex::encode(blockhash(5)),
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        );
     }
-    */
 
     #[test]
     fn test_solidity_x_contract_call() {
