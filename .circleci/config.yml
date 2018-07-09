@@ -45,6 +45,7 @@ jobs:
       # Build the benchmarking version of the contract (in release mode)
       - run: mkdir target_benchmark
       - run:
+          name: Build the benchmarking version of the runtime
           environment:
             CARGO_TARGET_DIR: target_benchmark
           command: cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
@@ -52,24 +53,28 @@ jobs:
       - run: cargo test -- --test-threads=1
       # Build the web3 gateway.
       - run:
+          name: Build the web3 gateway
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo build
       # Build the web3 microbenchmark.
       - run:
+          name: Build the web3 microbenchmark
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: benchmark
           command: cargo build
       # Build the genesis state injector program.
       - run:
+          name: Build the genesis state injector tool
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: genesis
           command: cargo build
       # Build the playback program.
       - run:
+          name: Build the transaction playback tool
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: playback
