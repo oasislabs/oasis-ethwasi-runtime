@@ -40,6 +40,9 @@ run_test() {
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
 
+    # Ensure jq is installed (used by test_origin.sh)
+    apt-get install jq
+
     # Start dummy node.
     $dummy_node_runner
     sleep 1
@@ -61,14 +64,17 @@ run_test() {
     gateway/target/debug/gateway \
         --mr-enclave $(cat $WORKDIR/target/contract/runtime-evm.mrenclave) \
         --threads 100 &> gateway.log &
-    gateway_pid=$!
+    sleep 2
 
-    wait ${gateway_pid}
+    # Run origin test script
+    echo "Running origin test script."
+    pushd ${WORKDIR}/scripts/ > /dev/null
+    . test_origin.sh
+    popd > /dev/null
 
     # Cleanup.
     echo "Cleaning up."
     pkill -P $$
-    wait || true
 }
 
 run_test run_dummy_node_default

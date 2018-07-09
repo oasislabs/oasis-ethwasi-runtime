@@ -54,7 +54,7 @@ jobs:
       - run:
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
-          working_directory: client
+          working_directory: gateway
           command: cargo build
       # Build the web3 microbenchmark.
       - run:
@@ -77,34 +77,8 @@ jobs:
       # Check style. This needs to be after everything is built.
       - run: cargo fmt -- --write-mode=check
 
-      # Contract end-to-end tests.
-
-      # Start shared dummy node.
-      - run:
-          command: ekiden-node-dummy --time-source mockrpc --storage-backend dummy
-          background: true
-      # Start EVM compute node.
-      - run:
-          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10 --time-source-notifier system --entity-ethereum-address 0000000000000000000000000000000000000000
-          background: true
-      # Advance epoch.
-      - run: |
-          # Sleep so everything gets ready.
-          sleep 10
-
-          # Advance epoch to elect a new committee.
-          ekiden-node-dummy-controller set-epoch --epoch 1
-
-          # Sleep some more.
-          sleep 5
-      # Start web3 proxy.
-      - run:
-          command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
-          background: true
-      # TODO: Run a test script.
-      # - run:
-      #     working_directory: scripts
-      #     command: ./test_counter.sh
+      # End-to-end tests.
+      - run: ./scripts/test-e2e.sh
 
   deploy:
     docker:
