@@ -321,18 +321,6 @@ mod test {
     }
 
     #[test]
-    fn test_all_without_personal_apis() {
-        assert_eq!(
-            "personal,all,-personal".parse::<ApiSet>().unwrap(),
-            ApiSet::List(
-                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Traces]
-                    .into_iter()
-                    .collect()
-            )
-        );
-    }
-
-    #[test]
     fn test_safe_parsing() {
         assert_eq!(
             "safe".parse::<ApiSet>().unwrap(),
