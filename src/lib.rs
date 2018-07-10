@@ -308,20 +308,6 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
     })
 }
 
-// for debugging and testing: executes an unsigned transaction from a web3 sendTransaction
-// attempts to execute the transaction without performing any validation
-#[cfg(any(debug_assertions, feature = "benchmark"))]
-pub fn debug_execute_unsigned_transaction(request: &TransactionRequest) -> Result<H256> {
-    info!("*** Execute transaction");
-    info!("Transaction: {:?}", request);
-    transact(make_unsigned_transaction(request)?)
-}
-
-#[cfg(not(any(debug_assertions, feature = "benchmark")))]
-pub fn debug_execute_unsigned_transaction(request: &TransactionRequest) -> Result<H256> {
-    Err(Error::new("API available only in debug builds"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

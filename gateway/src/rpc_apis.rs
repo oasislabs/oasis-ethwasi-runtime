@@ -26,7 +26,7 @@ use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
-use impls::{EthClient, EthFilterClient, EthSigningClient, NetClient, TracesClient, Web3Client};
+use impls::{EthClient, EthFilterClient, NetClient, TracesClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -161,7 +161,7 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthFilter, EthSigning, Net, Traces, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, Net, Traces, Web3};
 
         for api in apis {
             match *api {
@@ -178,9 +178,6 @@ impl FullDependencies {
                     if !for_generic_pubsub {
                         let filter_client = EthFilterClient::new(self.client.clone());
                         handler.extend_with(filter_client.to_delegate());
-
-                        let signing_client = EthSigningClient::new(self.client.clone());
-                        handler.extend_with(signing_client.to_delegate());
                     }
                 }
                 Api::EthPubSub => {

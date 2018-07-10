@@ -174,14 +174,4 @@ impl Client {
             Err(_e) => Err(CallError::Exceptional),
         }
     }
-
-    pub fn send_transaction(&self, request: TransactionRequest) -> Result<H256, CallError> {
-        match self.client
-            .debug_execute_unsigned_transaction(request)
-            .wait()
-        {
-            Ok(result) => Ok(result),
-            Err(_e) => Err(CallError::Exceptional),
-        }
-    }
 }
