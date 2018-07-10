@@ -1,7 +1,5 @@
 use ethereum_types::{Address, Bloom, H256, H512, U256};
 
-use ethcore_types::log_entry::LogEntry;
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum BlockId {
     Hash(H256),
@@ -24,12 +22,12 @@ pub struct Log {
     pub address: Address,
     pub topics: Vec<H256>,
     pub data: Vec<u8>,
-    pub block_hash: H256,
-    pub block_number: U256,
-    pub transaction_hash: H256,
-    pub transaction_index: U256,
-    pub log_index: U256,
-    pub transaction_log_index: U256,
+    pub block_hash: Option<H256>,
+    pub block_number: Option<U256>,
+    pub transaction_hash: Option<H256>,
+    pub transaction_index: Option<U256>,
+    pub log_index: Option<U256>,
+    pub transaction_log_index: Option<U256>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -49,7 +47,7 @@ pub struct Receipt {
     pub cumulative_gas_used: U256,
     pub gas_used: Option<U256>,
     pub contract_address: Option<Address>,
-    pub logs: Vec<LogEntry>,
+    pub logs: Vec<Log>,
     pub state_root: Option<H256>,
     pub logs_bloom: Bloom,
     pub status_code: Option<u64>,

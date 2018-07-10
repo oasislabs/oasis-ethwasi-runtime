@@ -13,7 +13,9 @@ use ethcore::{self,
               spec::Spec,
               state::backend::Basic as BasicBackend,
               transaction::Action,
-              types::{ids::BlockId, log_entry::LocalizedLogEntry, receipt::TransactionOutcome,
+              types::{ids::BlockId,
+                      log_entry::{LocalizedLogEntry, LogEntry},
+                      receipt::TransactionOutcome,
                       BlockNumber}};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
@@ -153,12 +155,26 @@ fn lle_to_log(lle: LocalizedLogEntry) -> Log {
         address: lle.entry.address,
         topics: lle.entry.topics.into_iter().map(Into::into).collect(),
         data: lle.entry.data.into(),
-        block_hash: lle.block_hash,
-        block_number: lle.block_number.into(),
-        transaction_hash: lle.transaction_hash,
-        transaction_index: lle.transaction_index.into(),
-        log_index: lle.log_index.into(),
-        transaction_log_index: lle.transaction_log_index.into(),
+        block_hash: Some(lle.block_hash),
+        block_number: Some(lle.block_number.into()),
+        transaction_hash: Some(lle.transaction_hash),
+        transaction_index: Some(lle.transaction_index.into()),
+        log_index: Some(lle.log_index.into()),
+        transaction_log_index: Some(lle.transaction_log_index.into()),
+    }
+}
+
+fn le_to_log(le: LogEntry) -> Log {
+    Log {
+        address: le.address,
+        topics: le.topics.into_iter().map(Into::into).collect(),
+        data: le.data.into(),
+        block_hash: None,
+        block_number: None,
+        transaction_hash: None,
+        transaction_index: None,
+        log_index: None,
+        transaction_log_index: None,
     }
 }
 
@@ -318,7 +334,7 @@ pub fn get_receipt(hash: &H256) -> Option<Receipt> {
                 Action::Create => Some(get_contract_address(&tx)),
                 Action::Call(_) => None,
             },
-            logs: receipt.logs,
+            logs: receipt.logs.into_iter().map(|l| le_to_log(l)).collect(),
             logs_bloom: receipt.log_bloom,
             state_root: match receipt.outcome {
                 TransactionOutcome::StateRoot(hash) => Some(hash),

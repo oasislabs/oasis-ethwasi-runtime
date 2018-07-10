@@ -1,5 +1,6 @@
 use evm_api::{BlockId as EkidenBlockId, Log};
 
+use common_types::log_entry::LogEntry;
 use ethcore::client::BlockId;
 use parity_rpc::v1::types::Log as RpcLog;
 
@@ -8,12 +9,12 @@ pub fn log_to_rpc_log(log: Log) -> RpcLog {
         address: log.address.into(),
         topics: log.topics.into_iter().map(Into::into).collect(),
         data: log.data.into(),
-        block_hash: Some(log.block_hash.into()),
-        block_number: Some(log.block_number.into()),
-        transaction_hash: Some(log.transaction_hash.into()),
-        transaction_index: Some(log.transaction_index.into()),
-        log_index: Some(log.log_index.into()),
-        transaction_log_index: Some(log.transaction_log_index.into()),
+        block_hash: log.block_hash.map(Into::into),
+        block_number: log.block_number.map(Into::into),
+        transaction_hash: log.transaction_hash.map(Into::into),
+        transaction_index: log.transaction_index.map(Into::into),
+        log_index: log.log_index.map(Into::into),
+        transaction_log_index: log.transaction_log_index.map(Into::into),
         log_type: "mined".to_owned(),
     }
 }

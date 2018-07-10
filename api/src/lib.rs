@@ -1,6 +1,5 @@
 #![feature(use_extern_macros)]
 
-extern crate common_types as ethcore_types;
 extern crate protobuf;
 extern crate serde;
 

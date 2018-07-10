@@ -462,9 +462,11 @@ impl Eth for EthClient {
                 cumulative_gas_used: receipt.cumulative_gas_used.into(),
                 gas_used: receipt.gas_used.map(Into::into),
                 contract_address: receipt.contract_address.map(Into::into),
-                // TODO: logs
-                //logs: receipt.logs.into(),
-                logs: vec![],
+                logs: receipt
+                    .logs
+                    .into_iter()
+                    .map(|l| log_to_rpc_log(l))
+                    .collect(),
                 state_root: receipt.state_root.map(Into::into),
                 logs_bloom: receipt.logs_bloom.into(),
                 status_code: receipt.status_code.map(Into::into),
