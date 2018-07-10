@@ -72,6 +72,7 @@ mod rpc;
 mod rpc_apis;
 mod run;
 mod servers;
+mod util;
 
 #[macro_use]
 extern crate client_utils;

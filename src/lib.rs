@@ -206,9 +206,7 @@ fn get_block_by_hash(hash: &H256) -> Result<Option<Vec<u8>>> {
 fn get_logs(filter: &Filter) -> Result<Vec<Log>> {
     info!("*** Get logs");
     info!("Log filter: {:?}", filter);
-
-    //util::get_logs_from_filter(filter)
-    unimplemented!()
+    Ok(state::get_logs(filter))
 }
 
 pub fn get_transaction(hash: &H256) -> Result<Option<Transaction>> {

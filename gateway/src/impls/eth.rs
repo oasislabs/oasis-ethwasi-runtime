@@ -23,6 +23,8 @@ use ethereum_types::{Address, H256, U256};
 use rlp::{self, Rlp};
 
 use client::Client;
+use util::log_to_rpc_log;
+
 use ethcore::client::{BlockId, Call, EngineInfo, StateClient, StateInfo, StateOrBlock,
                       TransactionId};
 use ethcore::filter::Filter as EthcoreFilter;
@@ -38,7 +40,7 @@ use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
                             CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
-                            Index, Log, Receipt as RpcReceipt, RichBlock, SyncStatus,
+                            Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus,
                             Transaction as RpcTransaction, U256 as RpcU256, Work};
 
 use evm_api::TransactionRequest;
@@ -497,16 +499,15 @@ impl Eth for EthClient {
         ))
     }
 
-    fn logs(&self, filter: Filter) -> BoxFuture<Vec<Log>> {
+    fn logs(&self, filter: Filter) -> BoxFuture<Vec<RpcLog>> {
+        info!("logs: filter = {:?}", filter);
         let filter: EthcoreFilter = filter.into();
-        let mut logs = self.client
+        let logs = self.client
             .logs(filter.clone())
             .into_iter()
-            .map(From::from)
-            .collect::<Vec<Log>>();
-
+            .map(|l| log_to_rpc_log(l))
+            .collect();
         let logs = limit_logs(logs, filter.limit);
-
         Box::new(future::ok(logs))
     }
 

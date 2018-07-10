@@ -19,6 +19,7 @@
 use std::sync::Arc;
 
 use client::Client;
+use util::log_to_rpc_log;
 
 use ethcore::client::BlockId;
 use ethcore::filter::Filter as EthcoreFilter;
@@ -29,7 +30,9 @@ use jsonrpc_core::futures::future;
 use jsonrpc_core::BoxFuture;
 use parity_rpc::v1::helpers::{PollFilter, PollManager};
 use parity_rpc::v1::impls::eth_filter::Filterable;
-use parity_rpc::v1::types::{H256 as RpcH256, Log, U256 as RpcU256};
+use parity_rpc::v1::types::{H256 as RpcH256, Log as RpcLog, U256 as RpcU256};
+
+use evm_api::Log;
 
 /// Eth filter rpc implementation for a full node.
 pub struct EthFilterClient {
@@ -60,17 +63,18 @@ impl Filterable for EthFilterClient {
         Vec::new()
     }
 
-    fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<Log>> {
-        Box::new(future::ok(
+    fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<RpcLog>> {
+        info!("logs: filter = {:?}", filter);
+        Box::new(future::ok({
             self.client
                 .logs(filter)
                 .into_iter()
-                .map(Into::into)
-                .collect(),
-        ))
+                .map(|l| log_to_rpc_log(l))
+                .collect()
+        }))
     }
 
-    fn pending_logs(&self, block_number: u64, filter: &EthcoreFilter) -> Vec<Log> {
+    fn pending_logs(&self, block_number: u64, filter: &EthcoreFilter) -> Vec<RpcLog> {
         Vec::new()
     }
 

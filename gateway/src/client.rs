@@ -3,10 +3,8 @@ use ethcore::client::{BlockId, BlockStatus, CallAnalytics, StateOrBlock, Transac
 use ethcore::encoded;
 use ethcore::error::CallError;
 use ethcore::executive::Executed;
-use ethcore::filter::Filter;
+use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::{BlockNumber, Header};
-use ethcore::log_entry::LocalizedLogEntry;
-//use ethcore::receipt::LocalizedReceipt;
 use ethcore::state::backend::Basic as BasicBackend;
 use ethcore::state::State;
 use ethereum_types::{Address, H256, U256};
@@ -16,7 +14,9 @@ use runtime_evm;
 use rustc_hex::FromHex;
 use transaction::{LocalizedTransaction, SignedTransaction};
 
-use evm_api::{Receipt, Transaction, TransactionRequest};
+use evm_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
+
+use util::from_block_id;
 
 type Backend = BasicBackend<OverlayDB>;
 
@@ -101,9 +101,18 @@ impl Client {
         self.client.get_receipt(hash).wait().unwrap()
     }
 
-    pub fn logs(&self, filter: Filter) -> Vec<LocalizedLogEntry> {
-        // TODO: implement
-        vec![]
+    pub fn logs(&self, filter: EthcoreFilter) -> Vec<Log> {
+        let filter = Filter {
+            from_block: from_block_id(filter.from_block),
+            to_block: from_block_id(filter.to_block),
+            address: match filter.address {
+                Some(address) => Some(address.into_iter().map(Into::into).collect()),
+                None => None,
+            },
+            topics: filter.topics.into_iter().map(Into::into).collect(),
+            limit: filter.limit.map(Into::into),
+        };
+        self.client.get_logs(filter).wait().unwrap()
     }
 
     // account state-related

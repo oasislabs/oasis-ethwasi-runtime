@@ -1,4 +1,4 @@
-use std::{io::Cursor, mem, sync::Arc};
+use std::{collections::HashSet, io::Cursor, mem, sync::Arc};
 
 use ekiden_core::error::Result;
 use ekiden_trusted::db::{Database, DatabaseHandle};
@@ -7,14 +7,16 @@ use ethcore::{self,
               blockchain::{BlockChain, BlockProvider, ExtrasInsert},
               encoded::Block,
               engines::ForkChoice,
+              filter::Filter as EthcoreFilter,
               journaldb::overlaydb::OverlayDB,
               kvdb::{self, KeyValueDB},
               spec::Spec,
               state::backend::Basic as BasicBackend,
               transaction::Action,
-              types::{receipt::TransactionOutcome, BlockNumber}};
+              types::{ids::BlockId, log_entry::LocalizedLogEntry, receipt::TransactionOutcome,
+                      BlockNumber}};
 use ethereum_types::{Address, H256, U256};
-use evm_api::{AccountState, Receipt, Transaction};
+use evm_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 
 use super::{evm::get_contract_address, util::to_hex};
 
@@ -135,6 +137,71 @@ pub fn get_account_balance(address: &Address) -> Result<U256> {
 // returns a hex-encoded string directly from storage to avoid unnecessary conversions
 pub fn get_code_string(address: &Address) -> Result<String> {
     Ok(get_code_string_from_state(&get_state()?, address)?)
+}
+
+fn block_number_ref(id: &BlockId) -> Option<BlockNumber> {
+    match *id {
+        BlockId::Number(number) => Some(number),
+        BlockId::Hash(ref hash) => CHAIN.block_number(hash),
+        BlockId::Earliest => Some(0),
+        BlockId::Latest => Some(CHAIN.best_block_number()),
+    }
+}
+
+fn lle_to_log(lle: LocalizedLogEntry) -> Log {
+    Log {
+        address: lle.entry.address,
+        topics: lle.entry.topics.into_iter().map(Into::into).collect(),
+        data: lle.entry.data.into(),
+        block_hash: lle.block_hash,
+        block_number: lle.block_number.into(),
+        transaction_hash: lle.transaction_hash,
+        transaction_index: lle.transaction_index.into(),
+        log_index: lle.log_index.into(),
+        transaction_log_index: lle.transaction_log_index.into(),
+    }
+}
+
+fn to_block_id(id: EkidenBlockId) -> BlockId {
+    match id {
+        EkidenBlockId::Number(number) => BlockId::Number(number.into()),
+        EkidenBlockId::Hash(hash) => BlockId::Hash(hash),
+        EkidenBlockId::Earliest => BlockId::Earliest,
+        EkidenBlockId::Latest => BlockId::Latest,
+    }
+}
+
+pub fn get_logs(filter: &Filter) -> Vec<Log> {
+    let filter = EthcoreFilter {
+        from_block: to_block_id(filter.from_block.clone()),
+        to_block: to_block_id(filter.to_block.clone()),
+        address: match filter.address.clone() {
+            Some(address) => Some(address.into_iter().map(Into::into).collect()),
+            None => None,
+        },
+        topics: filter.topics.clone().into_iter().map(Into::into).collect(),
+        limit: filter.limit.map(Into::into),
+    };
+
+    let from = block_number_ref(&filter.from_block).unwrap();
+    let to = block_number_ref(&filter.to_block).unwrap();
+
+    let blocks = filter.bloom_possibilities().iter()
+        .map(|bloom| {
+            CHAIN.blocks_with_bloom(bloom, from, to)
+        })
+    .flat_map(|m| m)
+        // remove duplicate elements
+        .collect::<HashSet<u64>>()
+        .into_iter()
+        .filter_map(|n| CHAIN.block_hash(n))
+        .collect::<Vec<H256>>();
+
+    CHAIN
+        .logs(blocks, |entry| filter.matches(entry), filter.limit)
+        .into_iter()
+        .map(|l| lle_to_log(l))
+        .collect()
 }
 
 pub enum BlockOffset {
