@@ -344,10 +344,6 @@ pub fn block_by_hash(hash: H256) -> Option<Block> {
     CHAIN.block(&hash)
 }
 
-pub fn get_latest_block() -> Option<Block> {
-    block_by_number(get_latest_block_number())
-}
-
 pub fn get_latest_block_number() -> BlockNumber {
     CHAIN.best_block_number()
 }
