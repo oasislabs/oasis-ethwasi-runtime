@@ -94,7 +94,7 @@ enum PendingTransactionId {
     Location(PendingOrBlock, usize),
 }
 
-impl EthClient where {
+impl EthClient {
     /// Creates new EthClient.
     pub fn new(client: &Arc<Client>) -> Self {
         EthClient {
