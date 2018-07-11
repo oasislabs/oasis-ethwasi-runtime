@@ -40,9 +40,6 @@ run_test() {
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
 
-    # Ensure jq is installed (used by test_origin.sh)
-    apt-get install jq
-
     # Start dummy node.
     $dummy_node_runner
     sleep 1
@@ -66,10 +63,14 @@ run_test() {
         --threads 100 &> gateway.log &
     sleep 2
 
-    # Run origin test script
-    echo "Running origin test script."
-    pushd ${WORKDIR}/scripts/ > /dev/null
-    . test_origin.sh
+    # Run truffle tests
+    echo "Installing truffle-hdwallet-provider."
+    npm install truffle-hdwallet-provider
+    sleep 2
+
+    echo "Running truffle tests."
+    pushd ${WORKDIR}/tests/ > /dev/null
+    truffle test
     popd > /dev/null
 
     # Cleanup.
