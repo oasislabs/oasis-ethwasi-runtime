@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Ethcore client application.
+//! web3 gateway for Oasis Ethereum runtime.
 
 #![feature(use_extern_macros)]
 
@@ -41,8 +41,6 @@ use fdlimit::raise_fd_limit;
 use log::LevelFilter;
 use parking_lot::{Condvar, Mutex};
 use std::sync::Arc;
-
-use web3_gateway::start;
 
 // Run our version of parity.
 fn main() {
@@ -71,7 +69,7 @@ fn main() {
         .expect("failed to initialize component container");
 
     let num_threads = value_t!(args, "threads", usize).unwrap();
-    let client = start(args, container, num_threads).unwrap();
+    let client = web3_gateway::start(args, container, num_threads).unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
     CtrlC::set_handler({

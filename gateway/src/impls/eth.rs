@@ -462,11 +462,7 @@ impl Eth for EthClient {
                 cumulative_gas_used: receipt.cumulative_gas_used.into(),
                 gas_used: receipt.gas_used.map(Into::into),
                 contract_address: receipt.contract_address.map(Into::into),
-                logs: receipt
-                    .logs
-                    .into_iter()
-                    .map(|l| log_to_rpc_log(l))
-                    .collect(),
+                logs: receipt.logs.into_iter().map(log_to_rpc_log).collect(),
                 state_root: receipt.state_root.map(Into::into),
                 logs_bloom: receipt.logs_bloom.into(),
                 status_code: receipt.status_code.map(Into::into),
@@ -507,7 +503,7 @@ impl Eth for EthClient {
         let logs = self.client
             .logs(filter.clone())
             .into_iter()
-            .map(|l| log_to_rpc_log(l))
+            .map(log_to_rpc_log)
             .collect();
         let logs = limit_logs(logs, filter.limit);
         Box::new(future::ok(logs))

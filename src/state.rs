@@ -56,8 +56,6 @@ pub(crate) fn get_backend() -> Backend {
 
 pub(crate) fn get_state() -> Result<State> {
     let backend = get_backend();
-    info!("GOT BACKEND");
-    println!("{:?}", CHAIN.best_block_header());
     let root = CHAIN.best_block_header().state_root().clone();
     Ok(ethcore::state::State::from_existing(
         backend,
@@ -216,7 +214,7 @@ pub fn get_logs(filter: &Filter) -> Vec<Log> {
     CHAIN
         .logs(blocks, |entry| filter.matches(entry), filter.limit)
         .into_iter()
-        .map(|l| lle_to_log(l))
+        .map(lle_to_log)
         .collect()
 }
 
@@ -334,7 +332,7 @@ pub fn get_receipt(hash: &H256) -> Option<Receipt> {
                 Action::Create => Some(get_contract_address(&tx)),
                 Action::Call(_) => None,
             },
-            logs: receipt.logs.into_iter().map(|l| le_to_log(l)).collect(),
+            logs: receipt.logs.into_iter().map(le_to_log).collect(),
             logs_bloom: receipt.log_bloom,
             state_root: match receipt.outcome {
                 TransactionOutcome::StateRoot(hash) => Some(hash),

@@ -69,7 +69,7 @@ impl Filterable for EthFilterClient {
             self.client
                 .logs(filter)
                 .into_iter()
-                .map(|l| log_to_rpc_log(l))
+                .map(log_to_rpc_log)
                 .collect()
         }))
     }
