@@ -32,7 +32,7 @@ run_compute_node() {
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/runtime-evm.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/contract/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_test() {
@@ -59,7 +59,7 @@ run_test() {
     # Start genesis state injector.
     echo "Starting genesis state injector."
     ${WORKDIR}/genesis/target/release/genesis \
-        --mr-enclave $(cat target_benchmark/contract/runtime-evm.mrenclave) \
+        --mr-enclave $(cat target_benchmark/contract/runtime-ethereum.mrenclave) \
 	${WORKDIR}/genesis/state-9999.json &> genesis.log &
     genesis_pid=$!
 
@@ -68,12 +68,9 @@ run_test() {
 
     # Run the client.
     echo "Starting web3 gateway."
-    pushd ${WORKDIR}/client/ > /dev/null
-    target/release/web3-client \
-        --mr-enclave $(cat ${WORKDIR}/target_benchmark/contract/runtime-evm.mrenclave) \
-        --threads 100 &> ${WORKDIR}/client.log &
-    popd > /dev/null
-    client_pid=$!
+    gateway/target/release/gateway \
+        --mr-enclave $(cat ${WORKDIR}/target_benchmark/contract/runtime-ethereum.mrenclave) \
+        --threads 100 &> ${WORKDIR}/gateway.log &
     sleep 5
 
     # Run transaction playback.

@@ -1,5 +1,5 @@
 [package]
-name = "runtime-evm"
+name = "runtime-ethereum"
 version = "0.1.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
