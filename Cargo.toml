@@ -21,5 +21,8 @@ sha3 = "0.6"
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
+[dev-dependencies]
+ethkey = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
+
 [features]
 benchmark = []

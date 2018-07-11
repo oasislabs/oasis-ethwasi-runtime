@@ -310,47 +310,48 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    extern crate ethkey;
 
+    use self::ethkey::{KeyPair, Secret};
+    use super::*;
     use ethcore::{self, executive::contract_address, vm};
     use hex;
 
     struct Client {
-        address: Address,
+        keypair: KeyPair,
     }
 
     impl Client {
         fn new() -> Self {
             Self {
-                address: Address::from("0x7110316b618d20d0c44728ac2a3d683536ea682b"),
+                // address: 0x7110316b618d20d0c44728ac2a3d683536ea682
+                keypair: KeyPair::from_secret(
+                    Secret::from_str(
+                        "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c",
+                    ).unwrap(),
+                ).unwrap(),
             }
         }
 
         fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> Address {
-            let contract = contract_address(
-                vm::CreateContractAddress::FromCodeHash,
-                &self.address,
-                &U256::zero(),
-                &code,
-            ).0;
+            let tx = EthcoreTransaction {
+                action: Action::Create,
+                nonce: get_account_nonce(&self.keypair.address()).unwrap(),
+                gas_price: U256::from(0),
+                gas: U256::max_value(),
+                value: *balance,
+                data: code,
+            }.sign(&self.keypair.secret(), None);
 
-            let tx = TransactionRequest {
-                caller: Some(self.address),
-                is_call: false,
-                address: None,
-                input: Some(code),
-                value: Some(*balance),
-                nonce: None,
-            };
-
-            debug_execute_unsigned_transaction(&tx).unwrap();
-
-            contract
+            let raw = rlp::encode(&tx);
+            let hash = execute_raw_transaction(&raw.into_vec()).unwrap();
+            let receipt = get_receipt(&hash).unwrap().unwrap();
+            receipt.contract_address.unwrap()
         }
 
         fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> Vec<u8> {
             let tx = TransactionRequest {
-                caller: Some(self.address),
+                caller: Some(self.keypair.address()),
                 is_call: true,
                 address: Some(*contract),
                 input: Some(data),
@@ -373,8 +374,14 @@ mod tests {
         let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
         let contract = client.create_contract(code, &contract_bal);
 
-        assert_eq!(get_account_balance(&client.address).unwrap(), remaining_bal);
-        assert_eq!(get_account_nonce(&client.address).unwrap(), U256::one());
+        assert_eq!(
+            get_account_balance(&client.keypair.address()).unwrap(),
+            remaining_bal
+        );
+        assert_eq!(
+            get_account_nonce(&client.keypair.address()).unwrap(),
+            U256::one()
+        );
         assert_eq!(get_account_balance(&contract).unwrap(), contract_bal);
         assert_eq!(
             get_storage_at(&(contract, H256::zero())).unwrap(),
