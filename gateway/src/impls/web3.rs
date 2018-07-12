@@ -33,8 +33,7 @@ impl Web3Client {
 impl Web3 for Web3Client {
     fn client_version(&self) -> Result<String> {
         measure_counter_inc!("web3_clientVersion");
-        // TODO: version name?
-        Ok("oasis".to_string())
+        Ok(format!("oasis/{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION")))
     }
 
     fn sha3(&self, data: Bytes) -> Result<H256> {
