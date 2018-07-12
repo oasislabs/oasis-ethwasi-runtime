@@ -79,6 +79,8 @@ extern crate client_utils;
 extern crate ekiden_contract_client;
 extern crate ekiden_core;
 extern crate ekiden_di;
+#[macro_use]
+extern crate ekiden_instrumentation;
 extern crate ekiden_rpc_client;
 extern crate evm_api;
 

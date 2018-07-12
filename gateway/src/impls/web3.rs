@@ -32,11 +32,13 @@ impl Web3Client {
 
 impl Web3 for Web3Client {
     fn client_version(&self) -> Result<String> {
+        measure_counter_inc!("web3_clientVersion");
         // TODO: version name?
         Ok("oasis".to_string())
     }
 
     fn sha3(&self, data: Bytes) -> Result<H256> {
+        measure_counter_inc!("web3_sha3");
         Ok(keccak(&data.0).into())
     }
 }

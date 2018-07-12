@@ -38,14 +38,17 @@ impl Traces for TracesClient {
     type Metadata = Metadata;
 
     fn filter(&self, _filter: TraceFilter) -> Result<Option<Vec<LocalizedTrace>>> {
+        measure_counter_inc!("trace_filter");
         Err(errors::unimplemented(None))
     }
 
     fn block_traces(&self, _block_number: BlockNumber) -> Result<Option<Vec<LocalizedTrace>>> {
+        measure_counter_inc!("trace_block");
         Err(errors::unimplemented(None))
     }
 
     fn transaction_traces(&self, _transaction_hash: H256) -> Result<Option<Vec<LocalizedTrace>>> {
+        measure_counter_inc!("trace_transaction");
         Err(errors::unimplemented(None))
     }
 
@@ -54,6 +57,7 @@ impl Traces for TracesClient {
         _transaction_hash: H256,
         _address: Vec<Index>,
     ) -> Result<Option<LocalizedTrace>> {
+        measure_counter_inc!("trace_get");
         Err(errors::unimplemented(None))
     }
 
@@ -64,6 +68,7 @@ impl Traces for TracesClient {
         _flags: TraceOptions,
         _block: Trailing<BlockNumber>,
     ) -> Result<TraceResults> {
+        measure_counter_inc!("trace_call");
         Err(errors::unimplemented(None))
     }
 
@@ -73,6 +78,7 @@ impl Traces for TracesClient {
         _request: Vec<(CallRequest, TraceOptions)>,
         _block: Trailing<BlockNumber>,
     ) -> Result<Vec<TraceResults>> {
+        measure_counter_inc!("trace_callMany");
         Err(errors::unimplemented(None))
     }
 
@@ -82,6 +88,7 @@ impl Traces for TracesClient {
         _flags: TraceOptions,
         _block: Trailing<BlockNumber>,
     ) -> Result<TraceResults> {
+        measure_counter_inc!("trace_rawTransaction");
         Err(errors::unimplemented(None))
     }
 
@@ -90,6 +97,7 @@ impl Traces for TracesClient {
         _transaction_hash: H256,
         _flags: TraceOptions,
     ) -> Result<TraceResults> {
+        measure_counter_inc!("trace_replayTransaction");
         Err(errors::unimplemented(None))
     }
 
@@ -98,6 +106,7 @@ impl Traces for TracesClient {
         _block_number: BlockNumber,
         _flags: TraceOptions,
     ) -> Result<Vec<TraceResults>> {
+        measure_counter_inc!("trace_replayBlockTransactions");
         Err(errors::unimplemented(None))
     }
 }

@@ -30,15 +30,18 @@ impl NetClient {
 
 impl Net for NetClient {
     fn version(&self) -> Result<String> {
+        measure_counter_inc!("net_version");
         // FIXME: why 4447? copied from old contract-evm
         Ok(format!("{}", 4447))
     }
 
     fn peer_count(&self) -> Result<String> {
+        measure_counter_inc!("net_peerCount");
         Ok(format!("0x{:x}", 0))
     }
 
     fn is_listening(&self) -> Result<bool> {
+        measure_counter_inc!("net_listening");
         Ok(true)
     }
 }
