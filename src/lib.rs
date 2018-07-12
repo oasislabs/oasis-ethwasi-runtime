@@ -119,7 +119,7 @@ pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<(
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
-fn inject_account_storage(storage: &Vec<(Address, U256, M256)>) -> Result<()> {
+fn inject_account_storage(storage: &Vec<(Address, H256, H256)>) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
 
