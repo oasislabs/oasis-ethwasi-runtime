@@ -168,7 +168,7 @@ mod tests {
       println!("exec: {:?}", exec);
 
       let output = str::from_utf8(exec.output.as_ref()).unwrap();
-      println!("output: {}", output);
+      //println!("output: {}", output);
       miner::mine_block(Some(tx.hash()), root);
       self.nonce += U256::one();
 
@@ -303,5 +303,31 @@ mod tests {
     println!("{:?}", output);
     //assert_eq!(output, H256::from_slice(&b"success"[..]));
     assert_eq!(output, H256::from(U256::from(9i32)));
+  }
+
+  #[test]
+  fn test_sterling() {
+    let mut client = Client::new(&U256::from("1000000"));
+    let state = get_state().unwrap();
+
+    let mut provider_file = match File::open("../marketplace/provider/target/provider.wasm") {
+      Err(why) => panic!(why),
+      Ok(file) => file,
+    };
+
+    let mut provider_buffer = Vec::new();
+    provider_file.read_to_end(&mut provider_buffer);
+
+    let mut consumer_file = match File::open("../marketplace/consumer/target/consumer.wasm") {
+      Err(why) => panic!(why),
+      Ok(file) => file,
+    };
+
+    let mut consumer_buffer = Vec::new();
+    consumer_file.read_to_end(&mut consumer_buffer);
+
+    let provider_contract = client.create_contract(provider_buffer, &U256::from(10));
+    let output = client.call(&provider_contract, "write_data()".into(), &U256::zero());
+    //assert_eq!(&*output, "write_data(data)".as_bytes());
   }
 }

@@ -17,6 +17,7 @@ extern "C" {
 #[no_mangle]
 pub fn deploy() {
   unsafe { add(4, 5) };
+  //pwasm_ethereum::ret(&b"deployed"[..]);
 }
 
 #[no_mangle]

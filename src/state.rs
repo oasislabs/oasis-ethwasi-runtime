@@ -40,7 +40,7 @@ pub(crate) fn get_backend() -> Backend {
   ))
 }
 
-pub(crate) fn get_state() -> Result<EthState> {
+pub fn get_state() -> Result<EthState> {
   let backend = get_backend();
   if let Some(block) = get_latest_block() {
     Ok(ethcore::state::State::from_existing(

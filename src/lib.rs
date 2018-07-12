@@ -11,11 +11,11 @@ extern crate log;
 extern crate protobuf;
 extern crate sha3;
 
-mod evm;
+pub mod evm;
 #[macro_use]
 mod logger;
-mod miner;
-mod state;
+pub mod miner;
+pub mod state;
 mod util;
 
 use std::str::FromStr;
@@ -261,7 +261,7 @@ pub fn simulate_transaction(request: &Transaction) -> Result<SimulateTransaction
 #[cfg(debug_assertions)]
 pub fn debug_execute_unsigned_transaction(request: &Transaction) -> Result<H256> {
   info!("*** Execute transaction");
-  info!("Transaction: {:?}", request);
+  //info!("Transaction: {:?}", request);
   transact(make_unsigned_transaction(request)?)
 }
 
