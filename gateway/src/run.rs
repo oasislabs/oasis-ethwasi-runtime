@@ -27,7 +27,6 @@ use parity_reactor::EventLoop;
 use parity_rpc::{informant, Metadata, Origin};
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
-//use db;
 
 use runtime_evm;
 

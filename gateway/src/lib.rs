@@ -48,7 +48,6 @@ extern crate ethcore;
 extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
-//extern crate kvdb;
 extern crate journaldb;
 extern crate keccak_hash as hash;
 extern crate parity_reactor;

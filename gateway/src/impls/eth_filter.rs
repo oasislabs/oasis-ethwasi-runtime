@@ -30,9 +30,7 @@ use jsonrpc_core::futures::future;
 use jsonrpc_core::BoxFuture;
 use parity_rpc::v1::helpers::{PollFilter, PollManager};
 use parity_rpc::v1::impls::eth_filter::Filterable;
-use parity_rpc::v1::types::{H256 as RpcH256, Log as RpcLog, U256 as RpcU256};
-
-use evm_api::Log;
+use parity_rpc::v1::types::{H256 as RpcH256, Log as RpcLog};
 
 /// Eth filter rpc implementation for a full node.
 pub struct EthFilterClient {

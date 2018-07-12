@@ -20,22 +20,18 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use ethereum_types::{Address, H256, U256};
-use rlp::{self, Rlp};
 
 use client::Client;
 use util::log_to_rpc_log;
 
-use ethcore::client::{BlockId, Call, EngineInfo, StateClient, StateInfo, StateOrBlock,
-                      TransactionId};
+use ethcore::client::{BlockId, StateOrBlock};
 use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::log_entry::LogEntry;
-use transaction::{LocalizedTransaction, SignedTransaction};
 
 use jsonrpc_core::futures::future;
 use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::helpers::{errors, fake_sign, limit_logs};
+use parity_rpc::v1::helpers::{errors, limit_logs};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
@@ -205,25 +201,6 @@ impl EthClient {
             warn!("Only transction hash parameter supported");
             Ok(None)
         }
-        /*
-        let client_transaction = |id| match self.client.transaction(id) {
-            Some(t) => Ok(Some(Transaction::from_localized(t, 0))),
-            None => Ok(None),
-        };
-
-        match id {
-            PendingTransactionId::Hash(hash) => client_transaction(TransactionId::Hash(hash)),
-
-            PendingTransactionId::Location(PendingOrBlock::Block(block), index) => {
-                client_transaction(TransactionId::Location(block, index))
-            }
-
-            // we don't have pending blocks
-            PendingTransactionId::Location(PendingOrBlock::Pending, index) => {
-                return Ok(None);
-            }
-        }
-        */
     }
 
     fn get_state(&self, number: BlockNumber) -> StateOrBlock {
@@ -235,27 +212,6 @@ impl EthClient {
             BlockNumber::Pending => BlockId::Latest.into(),
         }
     }
-}
-
-fn check_known(client: &Client, number: BlockNumber) -> Result<()> {
-    // TODO: re-enable
-    /*
-    use ethcore::block_status::BlockStatus;
-
-    let id = match number {
-        BlockNumber::Pending => return Ok(()),
-
-        BlockNumber::Num(n) => BlockId::Number(n),
-        BlockNumber::Latest => BlockId::Latest,
-        BlockNumber::Earliest => BlockId::Earliest,
-    };
-
-    match client.block_status(id) {
-        BlockStatus::InChain => Ok(()),
-        _ => Err(errors::unknown_block()),
-    }
-    */
-    Ok(())
 }
 
 impl Eth for EthClient {
@@ -310,7 +266,6 @@ impl Eth for EthClient {
 
         info!("balance: address = {:?}, block_number = {:?}", address, num);
 
-        try_bf!(check_known(&*self.client, num.clone()));
         let res = match self.client.balance(&address, self.get_state(num)) {
             Some(balance) => Ok(balance.into()),
             None => Err(errors::state_pruned()),
@@ -331,7 +286,6 @@ impl Eth for EthClient {
 
         let num = num.unwrap_or_default();
 
-        try_bf!(check_known(&*self.client, num.clone()));
         let res = match self.client
             .storage_at(&address, &H256::from(position), self.get_state(num))
         {
@@ -361,13 +315,10 @@ impl Eth for EthClient {
                 Some(nonce) => Ok(nonce.into()),
                 None => Err(errors::database("latest nonce missing")),
             },
-            number => {
-                try_bf!(check_known(&*self.client, number.clone()));
-                match self.client.nonce(&address, block_number_to_id(number)) {
-                    Some(nonce) => Ok(nonce.into()),
-                    None => Err(errors::state_pruned()),
-                }
-            }
+            number => match self.client.nonce(&address, block_number_to_id(number)) {
+                Some(nonce) => Ok(nonce.into()),
+                None => Err(errors::state_pruned()),
+            },
         };
 
         Box::new(future::done(res))
@@ -409,8 +360,6 @@ impl Eth for EthClient {
         let num = num.unwrap_or_default();
 
         info!("code_at: address = {:?}, block_number = {:?}", address, num);
-
-        try_bf!(check_known(&*self.client, num.clone()));
 
         let res = match self.client.code(&address, self.get_state(num)) {
             Some(code) => Ok(code.map_or_else(Bytes::default, Bytes::new)),
@@ -571,31 +520,6 @@ impl Eth for EthClient {
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("eth_call");
         measure_histogram_timer!("eth_call_time");
-        /*
-        let request = CallRequest::into(request);
-        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let num = num.unwrap_or_default();
-
-        let (mut state, header) = {
-            // for "pending", just use latest block
-            let id = match num {
-                BlockNumber::Num(num) => BlockId::Number(num),
-                BlockNumber::Earliest => BlockId::Earliest,
-                BlockNumber::Latest => BlockId::Latest,
-                BlockNumber::Pending => BlockId::Latest,
-            };
-
-            let state = try_bf!(self.client.state_at(id).ok_or(errors::state_pruned()));
-            let header = try_bf!(
-                self.client
-                    .block_header(id)
-                    .ok_or(errors::state_pruned())
-                    .and_then(|h| h.decode().map_err(errors::decode))
-            );
-
-            (state, header)
-        };
-        */
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -616,31 +540,6 @@ impl Eth for EthClient {
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("eth_estimateGas");
         measure_histogram_timer!("eth_estimateGas_time");
-        /*
-        let request = CallRequest::into(request);
-        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let num = num.unwrap_or_default();
-
-        let (state, header) = {
-            // for "pending", just use latest block
-            let id = match num {
-                BlockNumber::Num(num) => BlockId::Number(num),
-                BlockNumber::Earliest => BlockId::Earliest,
-                BlockNumber::Latest => BlockId::Latest,
-                BlockNumber::Pending => BlockId::Latest,
-            };
-
-            let state = try_bf!(self.client.state_at(id).ok_or(errors::state_pruned()));
-            let header = try_bf!(
-                self.client
-                    .block_header(id)
-                    .ok_or(errors::state_pruned())
-                    .and_then(|h| h.decode().map_err(errors::decode))
-            );
-
-            (state, header)
-        };
-        */
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),

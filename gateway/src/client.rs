@@ -1,18 +1,15 @@
 use bytes::Bytes;
-use ethcore::client::{BlockId, BlockStatus, CallAnalytics, StateOrBlock, TransactionId};
+use ethcore::client::{BlockId, StateOrBlock};
 use ethcore::encoded;
 use ethcore::error::CallError;
-use ethcore::executive::Executed;
 use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::header::{BlockNumber, Header};
+use ethcore::header::BlockNumber;
 use ethcore::state::backend::Basic as BasicBackend;
-use ethcore::state::State;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use journaldb::overlaydb::OverlayDB;
 use runtime_evm;
 use rustc_hex::FromHex;
-use transaction::{LocalizedTransaction, SignedTransaction};
 
 use evm_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
@@ -29,17 +26,13 @@ impl Client {
         Self { client: client }
     }
 
-    // block-related
+    /// block-related
     pub fn best_block_number(&self) -> BlockNumber {
         let block_height = self.client.get_block_height(false).wait().unwrap();
         block_height.into()
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
-        /*
-        let chain = self.chain.read();
-        Self::block_hash(&chain, id).and_then(|hash| chain.block(&hash))
-        */
         let response = if let BlockId::Hash(hash) = id {
             self.client.get_block_by_hash(hash).wait().unwrap()
         } else {
@@ -73,26 +66,7 @@ impl Client {
         response.map(Into::into)
     }
 
-    pub fn block_header(&self, id: BlockId) -> Option<encoded::Header> {
-        /*
-        let chain = self.chain.read();
-        Self::block_hash(&chain, id).and_then(|hash| chain.block_header_data(&hash))
-        */
-        None
-    }
-
-    pub fn block_status(&self, id: BlockId) -> BlockStatus {
-        /*
-        let chain = self.chain.read();
-        match Self::block_hash(&chain, id) {
-            Some(ref hash) if chain.is_known(hash) => BlockStatus::InChain,
-            None => BlockStatus::Unknown
-        }
-        */
-        BlockStatus::Unknown
-    }
-
-    // transaction-related
+    /// transaction-related
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
         self.client.get_transaction(hash).wait().unwrap()
     }
@@ -115,14 +89,14 @@ impl Client {
         self.client.get_logs(filter).wait().unwrap()
     }
 
-    // account state-related
+    /// account state-related
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
         let balance = self.client.get_account_balance(*address).wait().unwrap();
         Some(balance)
     }
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
-        // TODO: differentiate between no account vs no code
+        // TODO: differentiate between no account vs no code?
         let code = self.client.get_account_code(*address).wait().unwrap();
         match FromHex::from_hex(code.as_str()) {
             Ok(bytes) => Some(Some(bytes)),
@@ -148,12 +122,7 @@ impl Client {
         Some(value)
     }
 
-    // state-related
-    pub fn state_at(&self, id: BlockId) -> Option<State<Backend>> {
-        None
-    }
-
-    // evm-related
+    /// evm-related
     pub fn call(&self, request: TransactionRequest) -> Result<Bytes, CallError> {
         match self.client.simulate_transaction(request).wait() {
             Ok(result) => Ok(result.result),
