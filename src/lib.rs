@@ -102,7 +102,7 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
 // TODO: secure this method so it can't be called by any client.
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
-    info!("*** Inject account storage");
+    info!("inject_account_storage");
     if has_genesis()? {
         return Err(Error::new("Genesis block already created"));
     }
@@ -126,7 +126,7 @@ fn inject_account_storage(storage: &Vec<(Address, H256, H256)>) -> Result<()> {
 // TODO: secure this method so it can't be called by any client.
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
-    info!("*** Init genesis block");
+    info!("init_genesis_block");
     if has_genesis()? {
         return Err(Error::new("Genesis block already created"));
     }
@@ -164,8 +164,7 @@ fn get_block_hash(id: &BlockId) -> Result<Option<H256>> {
 }
 
 fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
-    info!("*** Get block");
-    info!("id: {:?}", id);
+    info!("get_block, id: {:?}", id);
 
     let block = match *id {
         BlockId::Hash(hash) => block_by_hash(hash),
@@ -181,58 +180,48 @@ fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
 }
 
 fn get_logs(filter: &Filter) -> Result<Vec<Log>> {
-    info!("*** Get logs");
-    info!("Log filter: {:?}", filter);
+    info!("get_logs, filter: {:?}", filter);
     Ok(state::get_logs(filter))
 }
 
 pub fn get_transaction(hash: &H256) -> Result<Option<Transaction>> {
-    info!("*** Get transaction");
-    info!("Hash: {:?}", hash);
+    info!("get_transaction, hash: {:?}", hash);
     Ok(state::get_transaction(hash))
 }
 
 pub fn get_receipt(hash: &H256) -> Result<Option<Receipt>> {
-    info!("*** Get transaction receipt");
-    info!("Hash: {:?}", hash);
+    info!("get_receipt, hash: {:?}", hash);
     Ok(state::get_receipt(hash))
 }
 
 pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {
-    info!("*** Get account state");
-    info!("Address: {:?}", address);
+    info!("get_account_state, address: {:?}", address);
     state::get_account_state(address)
 }
 
 pub fn get_account_balance(address: &Address) -> Result<U256> {
-    info!("*** Get account balance");
-    info!("Address: {:?}", address);
+    info!("get_account_balance, address: {:?}", address);
     state::get_account_balance(address)
 }
 
 pub fn get_account_nonce(address: &Address) -> Result<U256> {
-    info!("*** Get account nonce");
-    info!("Address: {:?}", address);
+    info!("get_account_nonce, address: {:?}", address);
     state::get_account_nonce(address)
 }
 
 pub fn get_account_code(address: &Address) -> Result<Option<Vec<u8>>> {
-    info!("*** Get account code");
-    info!("Address: {:?}", address);
+    info!("get_account_code, address: {:?}", address);
     state::get_account_code(address)
 }
 
 pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
-    info!("*** Get account storage");
-    info!("Address: {:?}", pair);
+    info!("get_storage_at, address: {:?}", pair);
     state::get_account_storage(pair.0, pair.1)
 }
 
 pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<H256> {
-    info!("*** Execute raw transaction");
-    info!("Data: {:?}", request);
+    info!("execute_raw_transaction, request: {:?}", request);
     let transaction = SignedTransaction::new(rlp::decode(request)?)?;
-    info!("Calling transact: {:?}", transaction);
     transact(transaction)
 }
 
@@ -273,11 +262,9 @@ fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTrans
 }
 
 pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTransactionResponse> {
-    info!("*** Simulate transaction");
-    info!("Data: {:?}", request);
+    info!("simulate_transaction, request: {:?}", request);
     let tx = make_unsigned_transaction(request)?;
     let exec = evm::simulate_transaction(&tx)?;
-    trace!("*** Result: {:?}", exec.output);
     Ok(SimulateTransactionResponse {
         used_gas: exec.gas_used,
         exited_ok: exec.exception.is_none(),
@@ -289,6 +276,7 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
 mod tests {
     extern crate ethkey;
 
+    use std::str::FromStr;
     use std::sync::Mutex;
 
     use self::ethkey::{KeyPair, Secret};
@@ -449,7 +437,7 @@ mod tests {
 
     #[test]
     fn test_signature_verification() {
-        let mut client = CLIENT.lock().unwrap();
+        let client = CLIENT.lock().unwrap();
 
         let bad_sig = EthcoreTransaction {
             action: Action::Create,
