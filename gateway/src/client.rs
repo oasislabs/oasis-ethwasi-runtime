@@ -33,18 +33,7 @@ impl Client {
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
-        let response = if let BlockId::Hash(hash) = id {
-            self.client.get_block_by_hash(hash).wait().unwrap()
-        } else {
-            let number = match id {
-                BlockId::Hash(_) => unreachable!(),
-                BlockId::Number(number) => format!("{:x}", number),
-                BlockId::Earliest => "0".to_owned(),
-                BlockId::Latest => "latest".to_owned(),
-            };
-            self.client.get_block_by_number(number).wait().unwrap()
-        };
-
+        let response = self.client.get_block(from_block_id(id)).wait().unwrap();
         match response {
             Some(block) => Some(encoded::Block::new(block)),
             None => None,
@@ -55,13 +44,10 @@ impl Client {
         let response = if let BlockId::Hash(hash) = id {
             Some(hash)
         } else {
-            let number = match id {
-                BlockId::Hash(_) => unreachable!(),
-                BlockId::Number(number) => format!("{:x}", number),
-                BlockId::Earliest => "0".to_owned(),
-                BlockId::Latest => "latest".to_owned(),
-            };
-            self.client.get_block_hash(number).wait().unwrap()
+            self.client
+                .get_block_hash(from_block_id(id))
+                .wait()
+                .unwrap()
         };
         response.map(Into::into)
     }

@@ -18,21 +18,17 @@ mod evm;
 #[macro_use]
 mod logger;
 mod state;
-mod util;
-
-use std::str::FromStr;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
 use ethereum_types::{Address, H256, U256};
-use evm_api::{error::INVALID_BLOCK_NUMBER, with_api, AccountState, Filter, InitStateRequest, Log,
-              Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
+use evm_api::{with_api, AccountState, BlockId, Filter, InitStateRequest, Log, Receipt,
+              SimulateTransactionResponse, Transaction, TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
             new_block, with_state, BlockOffset};
-use util::strip_0x;
 
 enclave_init!();
 
@@ -157,50 +153,31 @@ pub fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
     )
 }
 
-fn get_block_hash(request: &String) -> Result<Option<H256>> {
-    let number = if *request == "latest" {
-        get_latest_block_number()
-    } else {
-        match U256::from_str(strip_0x(request)) {
-            Ok(val) => val.into(),
-            Err(_) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
-        }
+fn get_block_hash(id: &BlockId) -> Result<Option<H256>> {
+    let hash = match *id {
+        BlockId::Hash(hash) => Some(hash),
+        BlockId::Number(number) => block_hash(number.into()),
+        BlockId::Earliest => block_hash(0),
+        BlockId::Latest => block_hash(get_latest_block_number()),
     };
-
-    Ok(block_hash(number))
+    Ok(hash)
 }
 
-fn get_block_by_number(request: &String) -> Result<Option<Vec<u8>>> {
-    println!("*** Get block by number");
-    println!("Request: {:?}", request);
+fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
+    info!("*** Get block");
+    info!("id: {:?}", id);
 
-    let number = if *request == "latest" {
-        get_latest_block_number()
-    } else {
-        match U256::from_str(strip_0x(request)) {
-            Ok(val) => val.into(),
-            Err(_) => return Err(Error::new(INVALID_BLOCK_NUMBER)),
-        }
+    let block = match *id {
+        BlockId::Hash(hash) => block_by_hash(hash),
+        BlockId::Number(number) => block_by_number(number.into()),
+        BlockId::Earliest => block_by_number(0),
+        BlockId::Latest => block_by_number(get_latest_block_number()),
     };
 
-    let block = match block_by_number(number) {
-        Some(val) => val,
-        None => return Ok(None),
-    };
-
-    Ok(Some(block.into_inner()))
-}
-
-fn get_block_by_hash(hash: &H256) -> Result<Option<Vec<u8>>> {
-    println!("*** Get block by hash");
-    println!("Request: {:?}", hash);
-
-    let block = match block_by_hash(*hash) {
-        Some(val) => val,
-        None => return Ok(None),
-    };
-
-    Ok(Some(block.into_inner()))
+    match block {
+        Some(block) => Ok(Some(block.into_inner())),
+        None => Ok(None),
+    }
 }
 
 fn get_logs(filter: &Filter) -> Result<Vec<Log>> {

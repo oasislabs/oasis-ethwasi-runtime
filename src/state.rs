@@ -19,8 +19,9 @@ use ethcore::{self,
                       BlockNumber}};
 use ethereum_types::{Address, H256, U256};
 use evm_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
+use hex;
 
-use super::{evm::get_contract_address, util::to_hex};
+use super::evm::get_contract_address;
 
 lazy_static! {
   static ref SPEC: Spec = {
@@ -67,7 +68,6 @@ pub(crate) fn get_state() -> Result<State> {
 
 pub(crate) fn new_block() -> Result<OpenBlock<'static>> {
     let parent = CHAIN.best_block_header();
-    println!("{:?}", parent);
     Ok(OpenBlock::new(
         &*SPEC.engine,
         Default::default(),                                     /* factories */
@@ -103,6 +103,10 @@ impl StateDb {
     pub fn instance() -> Self {
         Self::new()
     }
+}
+
+fn to_hex<T: AsRef<Vec<u8>>>(bytes: T) -> String {
+    hex::encode(bytes.as_ref())
 }
 
 pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {

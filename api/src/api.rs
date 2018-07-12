@@ -28,11 +28,9 @@ contract_api! {
 
     pub fn get_account_code(Address) -> String;
 
-    pub fn get_block_hash(String) -> Option<H256>;
+    pub fn get_block_hash(BlockId) -> Option<H256>;
 
-    pub fn get_block_by_number(String) -> Option<Vec<u8>>;
-
-    pub fn get_block_by_hash(H256) -> Option<Vec<u8>>;
+    pub fn get_block(BlockId) -> Option<Vec<u8>>;
 
     pub fn get_storage_at((Address, H256)) -> H256;
 
