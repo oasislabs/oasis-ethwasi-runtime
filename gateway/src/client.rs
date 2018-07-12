@@ -11,27 +11,26 @@ use journaldb::overlaydb::OverlayDB;
 use runtime_evm;
 use rustc_hex::FromHex;
 
+use ekiden_core::error::Error;
 use evm_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 use util::from_block_id;
 
 type Backend = BasicBackend<OverlayDB>;
 
-// record contract call success
-macro_rules! contract_call_ok {
-    ($ret:expr) => {{
-        measure_counter_inc!("contract_call_succeeded");
-        $ret
-    }};
-}
-
-// record contract call failure
-macro_rules! contract_call_error {
-    ($call:expr, $e:ident, $ret:expr) => {{
-        measure_counter_inc!("contract_call_failed");
-        error!("{}: {:?}", $call, $e);
-        $ret
-    }};
+// record contract call outcome
+fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
+    match result {
+        Ok(val) => {
+            measure_counter_inc!("contract_call_succeeded");
+            val
+        }
+        Err(e) => {
+            measure_counter_inc!("contract_call_failed");
+            error!("{}: {:?}", call, e);
+            default
+        }
+    }
 }
 
 pub struct Client {
@@ -45,43 +44,44 @@ impl Client {
 
     /// block-related
     pub fn best_block_number(&self) -> BlockNumber {
-        match self.client.get_block_height(false).wait() {
-            Ok(height) => contract_call_ok!(height.into()),
-            Err(e) => contract_call_error!("get_block_height", e, 0),
-        }
+        contract_call_result(
+            "get_block_height",
+            self.client.get_block_height(false).wait(),
+            U256::from(0),
+        ).into()
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
-        match self.client.get_block(from_block_id(id)).wait() {
-            Ok(response) => contract_call_ok!(response.map(|block| encoded::Block::new(block))),
-            Err(e) => contract_call_error!("get_block", e, None),
-        }
+        contract_call_result::<Option<Vec<u8>>>(
+            "get_block",
+            self.client.get_block(from_block_id(id)).wait(),
+            None,
+        ).map(|block| encoded::Block::new(block))
     }
 
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
         if let BlockId::Hash(hash) = id {
             Some(hash)
         } else {
-            match self.client.get_block_hash(from_block_id(id)).wait() {
-                Ok(response) => contract_call_ok!(response),
-                Err(e) => contract_call_error!("get_block_hash", e, None),
-            }
+            contract_call_result(
+                "get_block_hash",
+                self.client.get_block_hash(from_block_id(id)).wait(),
+                None,
+            )
         }
     }
 
     /// transaction-related
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
-        match self.client.get_transaction(hash).wait() {
-            Ok(response) => contract_call_ok!(response),
-            Err(e) => contract_call_error!("get_transaction", e, None),
-        }
+        contract_call_result(
+            "get_transaction",
+            self.client.get_transaction(hash).wait(),
+            None,
+        )
     }
 
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
-        match self.client.get_receipt(hash).wait() {
-            Ok(response) => contract_call_ok!(response),
-            Err(e) => contract_call_error!("get_receipt", e, None),
-        }
+        contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
     }
 
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<Log> {
@@ -95,33 +95,33 @@ impl Client {
             topics: filter.topics.into_iter().map(Into::into).collect(),
             limit: filter.limit.map(Into::into),
         };
-        match self.client.get_logs(filter).wait() {
-            Ok(response) => contract_call_ok!(response),
-            Err(e) => contract_call_error!("get_logs", e, vec![]),
-        }
+        contract_call_result("get_logs", self.client.get_logs(filter).wait(), vec![])
     }
 
     /// account state-related
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
-        match self.client.get_account_balance(*address).wait() {
-            Ok(balance) => contract_call_ok!(Some(balance)),
-            Err(e) => contract_call_error!("get_account_balance", e, None),
-        }
+        contract_call_result(
+            "get_account_balance",
+            self.client.get_account_balance(*address).wait().map(Some),
+            None,
+        )
     }
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
-        match self.client.get_account_code(*address).wait() {
-            Ok(response) => contract_call_ok!(Some(response)),
-            Err(e) => contract_call_error!("get_account_code", e, None),
-        }
+        contract_call_result(
+            "get_account_code",
+            self.client.get_account_code(*address).wait().map(Some),
+            None,
+        )
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
-        match self.client.get_account_nonce(*address).wait() {
-            Ok(nonce) => contract_call_ok!(Some(nonce)),
-            Err(e) => contract_call_error!("get_account_nonce", e, None),
-        }
+        contract_call_result(
+            "get_account_nonce",
+            self.client.get_account_nonce(*address).wait().map(Some),
+            None,
+        )
     }
 
     pub fn storage_at(
@@ -130,10 +130,14 @@ impl Client {
         position: &H256,
         state: StateOrBlock,
     ) -> Option<H256> {
-        match self.client.get_storage_at((*address, *position)).wait() {
-            Ok(value) => contract_call_ok!(Some(value)),
-            Err(e) => contract_call_error!("get_storage_at", e, None),
-        }
+        contract_call_result(
+            "get_storage_at",
+            self.client
+                .get_storage_at((*address, *position))
+                .wait()
+                .map(Some),
+            None,
+        )
     }
 
     /// evm-related
