@@ -26,7 +26,7 @@ contract_api! {
 
     pub fn get_account_nonce(Address) -> U256;
 
-    pub fn get_account_code(Address) -> String;
+    pub fn get_account_code(Address) -> Option<Vec<u8>>;
 
     pub fn get_block_hash(BlockId) -> Option<H256>;
 

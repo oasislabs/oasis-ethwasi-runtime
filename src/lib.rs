@@ -216,10 +216,10 @@ pub fn get_account_nonce(address: &Address) -> Result<U256> {
     state::get_account_nonce(address)
 }
 
-pub fn get_account_code(address: &Address) -> Result<String> {
+pub fn get_account_code(address: &Address) -> Result<Option<Vec<u8>>> {
     info!("*** Get account code");
     info!("Address: {:?}", address);
-    state::get_code_string(address)
+    state::get_account_code(address)
 }
 
 pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {

@@ -138,9 +138,9 @@ pub fn get_account_balance(address: &Address) -> Result<U256> {
     Ok(get_state()?.balance(&address)?)
 }
 
-// returns a hex-encoded string directly from storage to avoid unnecessary conversions
-pub fn get_code_string(address: &Address) -> Result<String> {
-    Ok(get_code_string_from_state(&get_state()?, address)?)
+pub fn get_account_code(address: &Address) -> Result<Option<Vec<u8>>> {
+    // convert from Option<Arc<Vec<u8>>> to Option<Vec<u8>>
+    Ok(get_state()?.code(&address)?.map(|c| (&*c).clone()))
 }
 
 fn block_number_ref(id: &BlockId) -> Option<BlockNumber> {
