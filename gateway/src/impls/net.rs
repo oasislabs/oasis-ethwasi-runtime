@@ -31,8 +31,8 @@ impl NetClient {
 impl Net for NetClient {
     fn version(&self) -> Result<String> {
         measure_counter_inc!("net_version");
-        // FIXME: why 4447? copied from old contract-evm
-        Ok(format!("{}", 4447))
+        // 0A515 1AB5
+        Ok(format!("{}", 0xa515))
     }
 
     fn peer_count(&self) -> Result<String> {
