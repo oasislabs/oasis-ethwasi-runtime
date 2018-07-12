@@ -21,8 +21,8 @@ cargo ekiden build-contract --output-identity --release
 
 # Package all binaries and resources.
 mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib target/docker-deployment/context/res
-ln target/contract/evm.so target/docker-deployment/context/lib
-ln target/contract/evm.mrenclave target/docker-deployment/context/res
+ln target/contract/runtime-ethereum.so target/docker-deployment/context/lib
+ln target/contract/runtime-ethereum.mrenclave target/docker-deployment/context/res
 cp -r resources/genesis target/docker-deployment/context/res
 ln target/release/web3-client target/docker-deployment/context/bin
 ln docker/deployment/Dockerfile target/docker-deployment/context/Dockerfile

@@ -127,7 +127,7 @@ spec:
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
             - --storage-client-port
             - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - ekiden/lib/evm.so
+            - ekiden/lib/runtime-ethereum.so
 
 ---
 kind: Service
@@ -169,4 +169,4 @@ spec:
               --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
               --scheduler-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-              --mr-enclave $$(cat ekiden/res/evm.mrenclave)
+              --mr-enclave $$(cat ekiden/res/runtime-ethereum.mrenclave)
