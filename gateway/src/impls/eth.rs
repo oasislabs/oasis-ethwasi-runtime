@@ -615,7 +615,7 @@ impl Eth for EthClient {
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("eth_estimateGas");
-        measure_histogram_timer!("eth_call_time");
+        measure_histogram_timer!("eth_estimateGas_time");
         /*
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
