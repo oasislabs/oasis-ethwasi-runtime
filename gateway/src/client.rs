@@ -42,7 +42,7 @@ impl Client {
         Self { client: client }
     }
 
-    /// block-related
+    // block-related
     pub fn best_block_number(&self) -> BlockNumber {
         contract_call_result(
             "get_block_height",
@@ -71,7 +71,7 @@ impl Client {
         }
     }
 
-    /// transaction-related
+    // transaction-related
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
         contract_call_result(
             "get_transaction",
@@ -98,7 +98,7 @@ impl Client {
         contract_call_result("get_logs", self.client.get_logs(filter).wait(), vec![])
     }
 
-    /// account state-related
+    // account state-related
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
         contract_call_result(
             "get_account_balance",
@@ -140,7 +140,7 @@ impl Client {
         )
     }
 
-    /// evm-related
+    // transaction-related
     pub fn call(&self, request: TransactionRequest) -> Result<Bytes, CallError> {
         match self.client.simulate_transaction(request).wait() {
             Ok(result) => Ok(result.result),

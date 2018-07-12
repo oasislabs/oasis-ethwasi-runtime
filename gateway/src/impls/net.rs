@@ -30,18 +30,18 @@ impl NetClient {
 
 impl Net for NetClient {
     fn version(&self) -> Result<String> {
-        measure_counter_inc!("net_version");
+        measure_counter_inc!("version");
         // 0A515 1AB5
         Ok(format!("{}", 0xa515))
     }
 
     fn peer_count(&self) -> Result<String> {
-        measure_counter_inc!("net_peerCount");
+        measure_counter_inc!("peerCount");
         Ok(format!("0x{:x}", 0))
     }
 
     fn is_listening(&self) -> Result<bool> {
-        measure_counter_inc!("net_listening");
+        measure_counter_inc!("listening");
         Ok(true)
     }
 }
