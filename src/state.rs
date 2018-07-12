@@ -17,8 +17,8 @@ use ethcore::{self,
                       log_entry::{LocalizedLogEntry, LogEntry},
                       receipt::TransactionOutcome,
                       BlockNumber}};
+use ethereum_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
-use evm_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use hex;
 
 use super::evm::get_contract_address;

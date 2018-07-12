@@ -39,7 +39,7 @@ use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransac
                             Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus,
                             Transaction as RpcTransaction, U256 as RpcU256, Work};
 
-use evm_api::TransactionRequest;
+use ethereum_api::TransactionRequest;
 
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.

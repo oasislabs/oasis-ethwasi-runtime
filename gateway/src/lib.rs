@@ -81,7 +81,7 @@ extern crate ekiden_di;
 #[macro_use]
 extern crate ekiden_instrumentation;
 extern crate ekiden_rpc_client;
-extern crate evm_api;
+extern crate ethereum_api;
 
 use std::sync::Arc;
 
@@ -91,12 +91,12 @@ use ekiden_contract_client::create_contract_client;
 use ekiden_core::{bytes::B256, ring::signature::Ed25519KeyPair, signature::InMemorySigner,
                   untrusted};
 use ekiden_di::Container;
-use evm_api::with_api;
+use ethereum_api::with_api;
 
 pub use self::run::RunningClient;
 
 with_api! {
-    create_contract_client!(runtime_evm, evm_api, api);
+    create_contract_client!(runtime_ethereum, ethereum_api, api);
 }
 
 /// Generate client key pair.
@@ -112,7 +112,7 @@ pub fn start(
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let signer = create_key_pair();
-    let client = contract_client!(signer, runtime_evm, args, container);
+    let client = contract_client!(signer, runtime_ethereum, args, container);
 
     run::execute(client, num_threads)
 }

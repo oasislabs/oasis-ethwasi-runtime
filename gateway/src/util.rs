@@ -1,4 +1,4 @@
-use evm_api::{BlockId as EkidenBlockId, Log};
+use ethereum_api::{BlockId as EkidenBlockId, Log};
 
 use ethcore::client::BlockId;
 use parity_rpc::v1::types::Log as RpcLog;

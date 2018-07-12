@@ -5,8 +5,8 @@ extern crate common_types as ethcore_types;
 extern crate ekiden_core;
 extern crate ekiden_trusted;
 extern crate ethcore;
+extern crate ethereum_api;
 extern crate ethereum_types;
-extern crate evm_api;
 extern crate hex;
 #[macro_use]
 extern crate lazy_static;
@@ -23,9 +23,9 @@ use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
+use ethereum_api::{with_api, AccountState, BlockId, Filter, InitStateRequest, Log, Receipt,
+                   SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
-use evm_api::{with_api, AccountState, BlockId, Filter, InitStateRequest, Log, Receipt,
-              SimulateTransactionResponse, Transaction, TransactionRequest};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
             new_block, with_state, BlockOffset};

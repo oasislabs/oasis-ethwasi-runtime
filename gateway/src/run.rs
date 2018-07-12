@@ -28,10 +28,10 @@ use parity_rpc::{informant, Metadata, Origin};
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 
-use runtime_evm;
+use runtime_ethereum;
 
 pub fn execute(
-    ekiden_client: runtime_evm::Client,
+    ekiden_client: runtime_ethereum::Client,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(ekiden_client));

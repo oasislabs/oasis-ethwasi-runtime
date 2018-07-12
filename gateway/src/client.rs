@@ -8,11 +8,11 @@ use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use journaldb::overlaydb::OverlayDB;
-use runtime_evm;
+use runtime_ethereum;
 use rustc_hex::FromHex;
 
 use ekiden_core::error::Error;
-use evm_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
+use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 use util::from_block_id;
 
@@ -34,11 +34,11 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 }
 
 pub struct Client {
-    client: runtime_evm::Client,
+    client: runtime_ethereum::Client,
 }
 
 impl Client {
-    pub fn new(client: runtime_evm::Client) -> Self {
+    pub fn new(client: runtime_ethereum::Client) -> Self {
         Self { client: client }
     }
 
