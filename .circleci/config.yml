@@ -49,8 +49,10 @@ jobs:
           environment:
             CARGO_TARGET_DIR: target_benchmark
           command: cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
-      # Run the contract tests.
-      - run: cargo test -- --test-threads=1
+      # Run the runtime tests.
+      - run:
+          name: Run the runtime tests
+          command: cargo test
       # Build the web3 gateway.
       - run:
           name: Build the web3 gateway
@@ -58,6 +60,11 @@ jobs:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo build
+      # Run the gateway tests.
+      - run:
+          name: Run the gateway tests
+          working_directory: gateway
+          command: cargo test
       # Build the web3 microbenchmark.
       - run:
           name: Build the web3 microbenchmark

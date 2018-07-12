@@ -312,6 +312,8 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
 mod tests {
     extern crate ethkey;
 
+    use std::sync::Mutex;
+
     use self::ethkey::{KeyPair, Secret};
     use super::*;
     use ethcore::{self, executive::contract_address, vm};
@@ -363,13 +365,19 @@ mod tests {
         }
     }
 
+    lazy_static! {
+        static ref CLIENT: Mutex<Client> = Mutex::new(Client::new());
+    }
+
     #[test]
     fn test_create_balance() {
-        let init_bal = U256::from("56bc75e2d63100000"); // 1e20
+        let mut client = CLIENT.lock().unwrap();
+
+        let init_bal = get_account_balance(&client.keypair.address()).unwrap();
         let contract_bal = U256::from(10);
         let remaining_bal = init_bal - contract_bal;
 
-        let mut client = Client::new();
+        let init_nonce = get_account_nonce(&client.keypair.address()).unwrap();
 
         let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
         let contract = client.create_contract(code, &contract_bal);
@@ -380,7 +388,7 @@ mod tests {
         );
         assert_eq!(
             get_account_nonce(&client.keypair.address()).unwrap(),
-            U256::one()
+            init_nonce + U256::one()
         );
         assert_eq!(get_account_balance(&contract).unwrap(), contract_bal);
         assert_eq!(
@@ -397,7 +405,7 @@ mod tests {
         //     }
         // }
 
-        let mut client = Client::new();
+        let mut client = CLIENT.lock().unwrap();
 
         let blockhash_code = hex::decode("608060405234801561001057600080fd5b5060c78061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063cc8ee489146044575b600080fd5b348015604f57600080fd5b50606f600480360381019080803560ff169060200190929190505050608d565b60405180826000191660001916815260200191505060405180910390f35b60008160ff164090509190505600a165627a7a72305820349ccb60d12533bc99c8a927d659ee80298e4f4e056054211bcf7518f773f3590029").unwrap();
 
@@ -420,7 +428,7 @@ mod tests {
             "0000000000000000000000000000000000000000000000000000000000000000"
         );
         assert_eq!(
-            hex::encode(blockhash(5)),
+            hex::encode(blockhash(100)),
             "0000000000000000000000000000000000000000000000000000000000000000"
         );
     }
@@ -440,7 +448,7 @@ mod tests {
         //         }
         // }
 
-        let mut client = Client::new();
+        let mut client = CLIENT.lock().unwrap();
 
         let contract_a_code = hex::decode("608060405234801561001057600080fd5b5061015d806100206000396000f3006080604052600436106100405763ffffffff7c0100000000000000000000000000000000000000000000000000000000600035041663e3f300558114610045575b600080fd5b34801561005157600080fd5b5061007673ffffffffffffffffffffffffffffffffffffffff60043516602435610088565b60408051918252519081900360200190f35b6000808390508073ffffffffffffffffffffffffffffffffffffffff1663346fb5c9846040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050602060405180830381600087803b1580156100fd57600080fd5b505af1158015610111573d6000803e3d6000fd5b505050506040513d602081101561012757600080fd5b50519493505050505600a165627a7a7230582062a004e161bd855be0a78838f92bafcbb4cef5df9f9ac673c2f7d174eff863fb0029").unwrap();
         let contract_a = client.create_contract(contract_a_code, &U256::zero());
@@ -460,5 +468,33 @@ mod tests {
             hex::encode(output),
             "000000000000000000000000000000000000000000000000000000000000002a"
         );
+    }
+
+    #[test]
+    fn test_signature_verification() {
+        let mut client = CLIENT.lock().unwrap();
+
+        let bad_sig = EthcoreTransaction {
+            action: Action::Create,
+            nonce: get_account_nonce(&client.keypair.address()).unwrap(),
+            gas_price: U256::from(0),
+            gas: U256::max_value(),
+            value: U256::from(0),
+            data: vec![],
+        }.fake_sign(client.keypair.address());
+        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec());
+
+        let good_sig = EthcoreTransaction {
+            action: Action::Create,
+            nonce: get_account_nonce(&client.keypair.address()).unwrap(),
+            gas_price: U256::from(0),
+            gas: U256::max_value(),
+            value: U256::from(0),
+            data: vec![],
+        }.sign(client.keypair.secret(), None);
+        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec());
+
+        assert!(bad_result.is_err());
+        assert!(good_result.is_ok());
     }
 }
