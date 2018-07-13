@@ -25,14 +25,13 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
+	--batch-storage immediate_remote \
 	--max-batch-timeout 100 \
-	--max-batch-size 50 \
-        --batch-storage immediate_remote \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --port ${port} \
+	--port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/runtime-ethereum.so &> compute${id}.log &
+        ${WORKDIR}/target/contract/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_test() {
@@ -56,38 +55,30 @@ run_test() {
     ekiden-node-dummy-controller set-epoch --epoch 1
     sleep 2
 
-    # Start genesis state injector.
-    echo "Starting genesis state injector."
-    ${WORKDIR}/genesis/target/release/genesis \
-        --mr-enclave $(cat target_benchmark/contract/runtime-ethereum.mrenclave) \
-	${WORKDIR}/genesis/state-9999.json &> genesis.log &
-    genesis_pid=$!
-
-    # Wait on genesis.
-    wait ${genesis_pid}
-
-    # Run the client.
+    # Run the client. We run the client first so that we test whether it waits for the
+    # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
-    gateway/target/release/gateway \
-        --mr-enclave $(cat ${WORKDIR}/target_benchmark/contract/runtime-ethereum.mrenclave) \
-        --threads 100 &> ${WORKDIR}/gateway.log &
-    sleep 5
+    target/debug/gateway \
+        --mr-enclave $(cat $WORKDIR/target/contract/runtime-ethereum.mrenclave) \
+        --threads 100 \
+        --prometheus-metrics-addr 0.0.0.0:3000 \
+        --prometheus-mode pull &> gateway.log &
 
-    # Run transaction playback.
-    echo "Starting transaction playback."
-    ${WORKDIR}/playback/target/release/playback \
-	--transactions 10000 \
-	--threads 100 \
-	${WORKDIR}/playback/blocks-10000-1000000.bin &> playback.log &
-    playback_pid=$!
+    # Run truffle tests
+    echo "Installing truffle-hdwallet-provider."
+    npm install truffle-hdwallet-provider
 
-    # Wait on playback.
-    wait ${playback_pid}
+    echo "Running truffle tests."
+    pushd ${WORKDIR}/tests/ > /dev/null
+    truffle test
+    popd > /dev/null
+
+    # Dump the metrics.
+    curl -v http://localhost:3000/metrics
 
     # Cleanup.
     echo "Cleaning up."
     pkill -P $$
-    wait || true
 }
 
 run_test run_dummy_node_default

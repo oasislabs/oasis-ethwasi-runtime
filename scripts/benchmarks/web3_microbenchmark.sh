@@ -6,7 +6,9 @@ run_dummy_node_default() {
     echo "Starting dummy node."
 
     ekiden-node-dummy \
-        --time-source mockrpc \
+	--random-beacon-backend dummy \
+	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+	--time-source-notifier mockrpc \
         --storage-backend dummy \
         &> dummy.log &
 }
@@ -24,11 +26,13 @@ run_compute_node() {
     ekiden-compute \
         --no-persist-identity \
 	--max-batch-timeout 100 \
+	--max-batch-size 50 \
+        --batch-storage immediate_remote \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/evm.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/contract/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_test() {
@@ -55,11 +59,9 @@ run_test() {
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
-    pushd ${WORKDIR}/client/ > /dev/null
-    target/release/web3-client \
-        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/evm.mrenclave) \
-        --threads 100 &> ${WORKDIR}/client.log &
-    popd > /dev/null
+    gateway/target/release/gateway \
+        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/runtime-ethereum.mrenclave) \
+        --threads 100 &> gateway.log &
     sleep 2
 
     # Start benchmark.

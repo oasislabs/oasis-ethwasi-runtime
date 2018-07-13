@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: ekiden/testing:0.1.0
-    resource_class: large
+    resource_class: xlarge
     steps:
       # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
@@ -45,31 +45,45 @@ jobs:
       # Build the benchmarking version of the contract (in release mode)
       - run: mkdir target_benchmark
       - run:
+          name: Build the benchmarking version of the runtime
           environment:
             CARGO_TARGET_DIR: target_benchmark
           command: cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
-      # Run the contract tests.
-      - run: cargo test
+      # Run the runtime tests.
+      - run:
+          name: Run the runtime tests
+          command: cargo test
       # Build the web3 gateway.
       - run:
+          name: Build the web3 gateway
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
-          working_directory: client
+          working_directory: gateway
           command: cargo build
+      # Run the gateway tests.
+      - run:
+          name: Run the gateway tests
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
+          working_directory: gateway
+          command: cargo test
       # Build the web3 microbenchmark.
       - run:
+          name: Build the web3 microbenchmark
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: benchmark
           command: cargo build
       # Build the genesis state injector program.
       - run:
+          name: Build the genesis state injector tool
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: genesis
           command: cargo build
       # Build the playback program.
       - run:
+          name: Build the transaction playback tool
           environment:
             CARGO_BUILD_TARGET_DIR: ../target
           working_directory: playback
@@ -77,34 +91,8 @@ jobs:
       # Check style. This needs to be after everything is built.
       - run: cargo fmt -- --write-mode=check
 
-      # Contract end-to-end tests.
-
-      # Start shared dummy node.
-      - run:
-          command: ekiden-node-dummy --time-source-notifier mockrpc --random-beacon-backend dummy --storage-backend dummy
-          background: true
-      # Start EVM compute node.
-      - run:
-          command: ekiden-compute target/contract/evm.so --identity-file identity-evm.pb --max-batch-timeout 10 --time-source-notifier system --entity-ethereum-address 0000000000000000000000000000000000000000 --batch-storage immediate_remote
-          background: true
-      # Advance epoch.
-      - run: |
-          # Sleep so everything gets ready.
-          sleep 10
-
-          # Advance epoch to elect a new committee.
-          ekiden-node-dummy-controller set-epoch --epoch 1
-
-          # Sleep some more.
-          sleep 5
-      # Start web3 proxy.
-      - run:
-          command: ./target/debug/web3-client --mr-enclave $(cat ../target/contract/evm.mrenclave)
-          background: true
-      # TODO: Run a test script.
-      # - run:
-      #     working_directory: scripts
-      #     command: ./test_counter.sh
+      # End-to-end tests.
+      - run: ./scripts/test-e2e.sh
 
   deploy:
     docker:

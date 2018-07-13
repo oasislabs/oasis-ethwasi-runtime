@@ -1,4 +1,4 @@
-# EVM Ekiden contract
+# Ekiden Ethereum runtime
 
 ## Setting up the development environment
 
@@ -37,35 +37,40 @@ $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden
 
 If you later need to update them to a new version use the `--force` flag to update.
 
-## Building the EVM contract
+## Building the runtime
 
-To build the EVM contract simply run:
+To build the runtime simply run:
 ```bash
 $ cargo ekiden build-contract
 ```
 
-The built contract will be stored under `target/contract/evm.so`.
+The built contract will be stored under `target/contract/runtime-ethereum.so`.
 
-## Running the contract
+## Running the runtime
 
 You need to run multiple Ekiden services, so it is recommended to run each of these in a
 separate container shell, attached to the same container.
 
 To start the shared dummy node:
 ```
-$ ekiden-node-dummy --time-source mockrpc --storage-backend dummy
+$ ekiden-node-dummy \
+    --random-beacon-backend dummy \
+    --entity-ethereum-address 0000000000000000000000000000000000000000 \
+    --time-source-notifier mockrpc \
+    --storage-backend dummy
 ```
 
-To start the compute node for the EVM contract (you need to start at least two, on different ports):
+To start the compute node (you need to start at least two, on different ports):
 ```bash
 $ ekiden-compute \
     --no-persist-identity \
+    --batch-storage immediate_remote \
     --max-batch-timeout 10 \
     --time-source-notifier system \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --batch-storage immediate_remote \
     --port <port number> \
-    target/contract/evm.so
+    target/contract/runtime-ethereum.so
 ```
 
 After starting the nodes, to manually advance the epoch in the shared dummy node:
@@ -77,13 +82,13 @@ The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `900
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/evm.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
+* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-ethereum.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Building the web3 gateway
 
-The web3 gateway is located under `client` and it may be built using:
+The web3 gateway is located under `gateway` and it may be built using:
 ```bash
-$ cd client
+$ cd gateway
 $ cargo build
 ```
 
@@ -96,14 +101,14 @@ For `<mr-enclave>` you can use the value reported when starting the compute node
 
 ## Benchmarking
 
-To build the benchmarking version of the contract (release build, logging suppressed, nonce checking disabled):
+To build the benchmarking version of the runtime (release build, logging suppressed, nonce checking disabled):
 ```bash
 $ CARGO_TARGET_DIR=target_benchmark cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
 ```
 
-The built contract will be stored under `target_benchmark/contract/evm.so`.
+The built contract will be stored under `target_benchmark/contract/runtime-ethereum.so`.
 
-Release builds of `benchmark`, `client`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
+Release builds of `benchmark`, `gateway`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
 ```bash
 $ cd <component>
 $ cargo build --release

@@ -2,9 +2,10 @@
 use std::collections::{BTreeMap, HashMap};
 use std::str::FromStr;
 
-extern crate bigint;
 extern crate clap;
 use clap::{crate_authors, crate_description, crate_name, crate_version, value_t_or_exit, App, Arg};
+extern crate ethereum_types;
+use ethereum_types::{Address, H256, U256};
 extern crate filebuffer;
 extern crate futures;
 use futures::future::Future;
@@ -26,13 +27,13 @@ extern crate ekiden_core;
 use ekiden_core::bytes::B256;
 extern crate ekiden_rpc_client;
 
-extern crate evm_api;
-use evm_api::{with_api, AccountState};
+extern crate ethereum_api;
+use ethereum_api::{with_api, AccountState};
 
 use std::time::{Duration, Instant};
 
 with_api! {
-    create_contract_client!(evm, evm_api, api);
+    create_contract_client!(ethereum, ethereum_api, api);
 }
 
 /// When restoring an exported state, inject this many accounts at a time.
@@ -56,6 +57,14 @@ fn to_ms(d: Duration) -> f64 {
     d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
+fn strip_0x<'a>(hex: &'a str) -> &'a str {
+    if hex.starts_with("0x") {
+        hex.get(2..).unwrap()
+    } else {
+        hex
+    }
+}
+
 fn main() {
     let seed = ekiden_core::bytes::B256::random();
     let seed_input = ekiden_core::untrusted::Input::from(&seed);
@@ -76,7 +85,7 @@ fn main() {
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
 
-    let client = contract_client!(signer, evm, args, container);
+    let client = contract_client!(signer, ethereum, args, container);
 
     let state_path = args.value_of("exported_state").unwrap();
     debug!("Parsing state JSON");
@@ -91,12 +100,12 @@ fn main() {
         let mut accounts_req = Vec::new();
         let mut storage_req = Vec::new();
         for (addr, account) in chunk {
-            let address = bigint::Address::from_str(&addr).unwrap();
+            let address = Address::from_str(strip_0x(&addr)).unwrap();
 
             let mut account_state = AccountState {
-                nonce: bigint::U256::from_str(&account.nonce).unwrap(),
+                nonce: U256::from_str(strip_0x(&account.nonce)).unwrap(),
                 address: address,
-                balance: bigint::U256::from_str(&account.balance).unwrap(),
+                balance: U256::from_str(strip_0x(&account.balance)).unwrap(),
                 code: match account.code {
                     Some(code) => code,
                     None => String::new(),
@@ -106,8 +115,8 @@ fn main() {
                 for (key, value) in storage {
                     storage_req.push((
                         address,
-                        bigint::U256::from_str(&key).unwrap(),
-                        bigint::M256::from_str(&value).unwrap(),
+                        H256::from_str(strip_0x(&key)).unwrap(),
+                        H256::from_str(strip_0x(&value)).unwrap(),
                     ));
                 }
             }
@@ -140,7 +149,7 @@ fn main() {
     }
     debug!("Done injecting accounts");
     let res = client
-        .init_genesis_block(evm_api::InitStateRequest {})
+        .init_genesis_block(ethereum_api::InitStateRequest {})
         .wait()
         .unwrap();
 }

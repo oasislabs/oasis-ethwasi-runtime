@@ -1,5 +1,6 @@
 #![feature(use_extern_macros)]
 
+extern crate ethereum_types;
 #[macro_use]
 extern crate clap;
 use clap::{App, Arg};
