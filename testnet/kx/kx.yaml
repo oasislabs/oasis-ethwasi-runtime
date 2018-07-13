@@ -164,7 +164,7 @@ spec:
           args:
             - -c
             - >-
-              exec web3-client
+              exec gateway
               --entity-registry-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
               --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
