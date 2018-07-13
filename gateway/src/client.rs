@@ -141,24 +141,36 @@ impl Client {
     }
 
     // transaction-related
-    pub fn call(&self, request: TransactionRequest) -> Result<Bytes, CallError> {
-        match self.client.simulate_transaction(request).wait() {
-            Ok(result) => Ok(result.result),
-            Err(_e) => Err(CallError::Exceptional),
-        }
+    pub fn call(&self, request: TransactionRequest) -> Result<Bytes, String> {
+        contract_call_result(
+            "simulate_transaction",
+            self.client
+                .simulate_transaction(request)
+                .wait()
+                .map(|r| r.result),
+            Err("no response from runtime".to_string()),
+        )
     }
 
-    pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, CallError> {
-        match self.client.simulate_transaction(request).wait() {
-            Ok(result) => Ok(result.used_gas),
-            Err(_e) => Err(CallError::Exceptional),
-        }
+    pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, String> {
+        contract_call_result(
+            "simulate_transaction",
+            self.client
+                .simulate_transaction(request)
+                .wait()
+                .map(|r| Ok(r.used_gas)),
+            Err("no response from runtime".to_string()),
+        )
     }
 
-    pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, CallError> {
-        match self.client.execute_raw_transaction(raw).wait() {
-            Ok(result) => Ok(result),
-            Err(_e) => Err(CallError::Exceptional),
-        }
+    pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, String> {
+        contract_call_result(
+            "execute_raw_transaction",
+            self.client
+                .execute_raw_transaction(raw)
+                .wait()
+                .map(|r| r.hash),
+            Err("no response from runtime".to_string()),
+        )
     }
 }

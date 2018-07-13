@@ -23,8 +23,9 @@ use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
-use ethereum_api::{with_api, AccountState, BlockId, Filter, InitStateRequest, Log, Receipt,
-                   SimulateTransactionResponse, Transaction, TransactionRequest};
+use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter,
+                   InitStateRequest, Log, Receipt, SimulateTransactionResponse, Transaction,
+                   TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
@@ -219,10 +220,27 @@ pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
     state::get_account_storage(pair.0, pair.1)
 }
 
-pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<H256> {
+pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionResponse> {
     info!("execute_raw_transaction, request: {:?}", request);
-    let transaction = SignedTransaction::new(rlp::decode(request)?)?;
-    transact(transaction)
+    let decoded = match rlp::decode(request) {
+        Ok(t) => t,
+        Err(e) => {
+            return Ok(ExecuteTransactionResponse {
+                hash: Err(e.to_string()),
+            })
+        }
+    };
+    let signed = match SignedTransaction::new(decoded) {
+        Ok(t) => t,
+        Err(e) => {
+            return Ok(ExecuteTransactionResponse {
+                hash: Err(e.to_string()),
+            })
+        }
+    };
+    Ok(ExecuteTransactionResponse {
+        hash: transact(signed).map_err(|e| e.to_string()),
+    })
 }
 
 fn transact(transaction: SignedTransaction) -> Result<H256> {
@@ -263,12 +281,27 @@ fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTrans
 
 pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTransactionResponse> {
     info!("simulate_transaction, request: {:?}", request);
-    let tx = make_unsigned_transaction(request)?;
-    let exec = evm::simulate_transaction(&tx)?;
+    let tx = match make_unsigned_transaction(request) {
+        Ok(t) => t,
+        Err(e) => {
+            return Ok(SimulateTransactionResponse {
+                used_gas: U256::from(0),
+                result: Err(e.to_string()),
+            })
+        }
+    };
+    let exec = match evm::simulate_transaction(&tx) {
+        Ok(exec) => exec,
+        Err(e) => {
+            return Ok(SimulateTransactionResponse {
+                used_gas: U256::from(0),
+                result: Err(e.to_string()),
+            })
+        }
+    };
     Ok(SimulateTransactionResponse {
         used_gas: exec.gas_used,
-        exited_ok: exec.exception.is_none(),
-        result: exec.output,
+        result: Ok(exec.output),
     })
 }
 
@@ -311,7 +344,10 @@ mod tests {
             }.sign(&self.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let hash = execute_raw_transaction(&raw.into_vec()).unwrap();
+            let hash = execute_raw_transaction(&raw.into_vec())
+                .unwrap()
+                .hash
+                .unwrap();
             let receipt = get_receipt(&hash).unwrap().unwrap();
             receipt.contract_address.unwrap()
         }
@@ -326,7 +362,7 @@ mod tests {
                 nonce: None,
             };
 
-            simulate_transaction(&tx).unwrap().result
+            simulate_transaction(&tx).unwrap().result.unwrap()
         }
     }
 
@@ -447,7 +483,9 @@ mod tests {
             value: U256::from(0),
             data: vec![],
         }.fake_sign(client.keypair.address());
-        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec());
+        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec())
+            .unwrap()
+            .hash;
 
         let good_sig = EthcoreTransaction {
             action: Action::Create,
@@ -457,7 +495,9 @@ mod tests {
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
-        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec());
+        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec())
+            .unwrap()
+            .hash;
 
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());

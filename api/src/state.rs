@@ -93,10 +93,14 @@ pub struct TransactionRequest {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct ExecuteTransactionResponse {
+    pub hash: Result<H256, String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SimulateTransactionResponse {
+    pub result: Result<Vec<u8>, String>,
     pub used_gas: U256,
-    pub exited_ok: bool, // ExitedOk => true
-    pub result: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -527,7 +527,7 @@ impl Eth for EthClient {
         self.client
             .send_raw_transaction(raw.into())
             .map(Into::into)
-            .map_err(errors::call)
+            .map_err(errors::execution)
     }
 
     fn submit_transaction(&self, raw: Bytes) -> Result<RpcH256> {
@@ -558,7 +558,9 @@ impl Eth for EthClient {
             value: request.value.map(Into::into),
         };
         let result = self.client.call(request);
-        Box::new(future::done(result.map_err(errors::call).map(Into::into)))
+        Box::new(future::done(
+            result.map_err(errors::execution).map(Into::into),
+        ))
     }
 
     fn estimate_gas(
@@ -583,7 +585,9 @@ impl Eth for EthClient {
             value: request.value.map(Into::into),
         };
         let result = self.client.estimate_gas(request);
-        Box::new(future::done(result.map_err(errors::call).map(Into::into)))
+        Box::new(future::done(
+            result.map_err(errors::execution).map(Into::into),
+        ))
     }
 
     fn compile_lll(&self, _: String) -> Result<Bytes> {

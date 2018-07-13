@@ -10,7 +10,7 @@ contract_api! {
 
     pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
 
-    pub fn execute_raw_transaction(Vec<u8>) -> H256;
+    pub fn execute_raw_transaction(Vec<u8>) -> ExecuteTransactionResponse;
 
     pub fn get_block_height(bool) -> U256;
 
