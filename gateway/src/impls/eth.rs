@@ -218,7 +218,7 @@ impl Eth for EthClient {
 
     fn protocol_version(&self) -> Result<String> {
         measure_counter_inc!("protocolVersion");
-        // TODO: why 63? copied from original contract-evm
+        // Ethereum wire protocol version: https://github.com/ethereum/wiki/wiki/Ethereum-Wire-Protocol#fast-synchronization-pv63
         Ok(format!("{}", 63))
     }
 
