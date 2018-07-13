@@ -169,7 +169,6 @@ impl EthClient {
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
         if let PendingTransactionId::Hash(hash) = id {
             let hash: H256 = hash.into();
-            info!("transaction: hash = {:?}", hash);
             if let Some(tx) = self.client.transaction(hash) {
                 let transaction = RpcTransaction {
                     hash: tx.hash.into(),
@@ -264,7 +263,7 @@ impl Eth for EthClient {
         let address = address.into();
         let num = num.unwrap_or_default();
 
-        info!("balance: address = {:?}, block_number = {:?}", address, num);
+        info!("eth_getBalance(address: {:?}, number: {:?})", address, num);
 
         let res = match self.client.balance(&address, self.get_state(num)) {
             Some(balance) => Ok(balance.into()),
@@ -283,8 +282,12 @@ impl Eth for EthClient {
         measure_counter_inc!("getStorageAt");
         let address: Address = RpcH160::into(address);
         let position: U256 = RpcU256::into(pos);
-
         let num = num.unwrap_or_default();
+
+        info!(
+            "eth_getStorageAt(address: {:?}, position: {:?}, number: {:?})",
+            address, position, num
+        );
 
         let res = match self.client
             .storage_at(&address, &H256::from(position), self.get_state(num))
@@ -306,7 +309,7 @@ impl Eth for EthClient {
         let num = num.unwrap_or_default();
 
         info!(
-            "transaction_count: address = {:?}, block_number = {:?}",
+            "eth_getTransactionCount(address: {:?}, number: {:?})",
             address, num
         );
 
@@ -326,6 +329,7 @@ impl Eth for EthClient {
 
     fn block_transaction_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getBlockTransactionCountByHash");
+        info!("eth_getBlockTransactionCountByHash(hash: {:?})", hash);
         Box::new(future::ok(
             self.client
                 .block(BlockId::Hash(hash.into()))
@@ -335,6 +339,7 @@ impl Eth for EthClient {
 
     fn block_transaction_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getBlockTransactionCountByNumber");
+        info!("eth_getBlockTransactionCountByNumber(number: {:?})", num);
         Box::new(future::ok(
             self.client
                 .block(block_number_to_id(num))
@@ -359,7 +364,7 @@ impl Eth for EthClient {
         let address: Address = RpcH160::into(address);
         let num = num.unwrap_or_default();
 
-        info!("code_at: address = {:?}, block_number = {:?}", address, num);
+        info!("eth_getCode(address: {:?}, number: {:?})", address, num);
 
         let res = match self.client.code(&address, self.get_state(num)) {
             Some(code) => Ok(code.map_or_else(Bytes::default, Bytes::new)),
@@ -371,6 +376,10 @@ impl Eth for EthClient {
 
     fn block_by_hash(&self, hash: RpcH256, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
         measure_counter_inc!("getBlockByHash");
+        info!(
+            "eth_getBlockByHash(hash: {:?}, full: {:?})",
+            hash, include_txs
+        );
         Box::new(future::done(self.rich_block(
             BlockId::Hash(hash.into()).into(),
             include_txs,
@@ -379,11 +388,16 @@ impl Eth for EthClient {
 
     fn block_by_number(&self, num: BlockNumber, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
         measure_counter_inc!("getBlockByNumber");
+        info!(
+            "eth_getBlockByNumber(number: {:?}, full: {:?})",
+            num, include_txs
+        );
         Box::new(future::done(self.rich_block(num.into(), include_txs)))
     }
 
     fn transaction_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcTransaction>> {
         measure_counter_inc!("getTransactionByHash");
+        info!("eth_getTransactionByHash(hash: {:?})", hash);
         let hash: H256 = hash.into();
         let tx = try_bf!(self.transaction(PendingTransactionId::Hash(hash)));
         Box::new(future::ok(tx))
@@ -395,6 +409,10 @@ impl Eth for EthClient {
         index: Index,
     ) -> BoxFuture<Option<RpcTransaction>> {
         measure_counter_inc!("getTransactionByBlockHashAndIndex");
+        info!(
+            "eth_getTransactionByBlockHashAndIndex(hash: {:?}, index: {:?})",
+            hash, index
+        );
         let id = PendingTransactionId::Location(
             PendingOrBlock::Block(BlockId::Hash(hash.into())),
             index.value(),
@@ -408,6 +426,10 @@ impl Eth for EthClient {
         index: Index,
     ) -> BoxFuture<Option<RpcTransaction>> {
         measure_counter_inc!("getTransactionByBlockNumberAndIndex");
+        info!(
+            "eth_getTransactionByBlockNumberAndIndex(number: {:?}, index: {:?})",
+            num, index
+        );
         let block_id = match num {
             BlockNumber::Latest => PendingOrBlock::Block(BlockId::Latest),
             BlockNumber::Earliest => PendingOrBlock::Block(BlockId::Earliest),
@@ -422,7 +444,7 @@ impl Eth for EthClient {
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         measure_counter_inc!("getTransactionReceipt");
         let hash: H256 = hash.into();
-        info!("transaction_receipt: hash = {:?}", hash);
+        info!("eth_getTransactionReceipt(hash: {:?})", hash);
         if let Some(receipt) = self.client.transaction_receipt(hash) {
             let rpc_receipt = RpcReceipt {
                 transaction_hash: receipt.hash.map(Into::into),
@@ -472,7 +494,7 @@ impl Eth for EthClient {
 
     fn logs(&self, filter: Filter) -> BoxFuture<Vec<RpcLog>> {
         measure_counter_inc!("getLogs");
-        info!("logs: filter = {:?}", filter);
+        info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
         let logs = self.client
             .logs(filter.clone())
@@ -501,6 +523,7 @@ impl Eth for EthClient {
     fn send_raw_transaction(&self, raw: Bytes) -> Result<RpcH256> {
         measure_counter_inc!("sendRawTransaction");
         measure_histogram_timer!("sendRawTransaction_time");
+        info!("eth_sendRawTransaction(data: {:?})", raw);
         self.client
             .send_raw_transaction(raw.into())
             .map(Into::into)
@@ -509,6 +532,7 @@ impl Eth for EthClient {
 
     fn submit_transaction(&self, raw: Bytes) -> Result<RpcH256> {
         measure_counter_inc!("submitTransaction");
+        info!("eth_submitTransaction(data: {:?})", raw);
         self.send_raw_transaction(raw)
     }
 
@@ -520,6 +544,11 @@ impl Eth for EthClient {
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("call");
         measure_histogram_timer!("call_time");
+        info!(
+            "eth_call(request: {:?}, number: {:?})",
+            request,
+            num.unwrap_or_default()
+        );
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -540,6 +569,11 @@ impl Eth for EthClient {
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("estimateGas");
         measure_histogram_timer!("estimateGas_time");
+        info!(
+            "eth_estimateGas(request: {:?}, number: {:?})",
+            request,
+            num.unwrap_or_default()
+        );
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),

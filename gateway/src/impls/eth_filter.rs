@@ -63,7 +63,7 @@ impl Filterable for EthFilterClient {
 
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<RpcLog>> {
         measure_counter_inc!("getFilterLogs");
-        info!("logs: filter = {:?}", filter);
+        info!("eth_getFilterLogs(filter: {:?})", filter);
         Box::new(future::ok({
             self.client
                 .logs(filter)
