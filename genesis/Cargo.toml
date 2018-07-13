@@ -22,4 +22,4 @@ ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch =
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
-evm-api = { path = "../api" }
+ethereum-api = { path = "../api" }

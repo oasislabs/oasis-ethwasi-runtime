@@ -8,17 +8,17 @@ contract_api! {
 
     pub fn debug_null_call(bool) -> ();
 
-    pub fn debug_execute_unsigned_transaction(Transaction) -> H256;
+    pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
 
-    pub fn simulate_transaction(Transaction) -> SimulateTransactionResponse;
-
-    pub fn execute_raw_transaction(String) -> H256;
+    pub fn execute_raw_transaction(Vec<u8>) -> ExecuteTransactionResponse;
 
     pub fn get_block_height(bool) -> U256;
 
     pub fn get_latest_block_hashes(U256) -> Vec<H256>;
 
-    pub fn get_transaction_record(H256) -> Option<TransactionRecord>;
+    pub fn get_transaction(H256) -> Option<Transaction>;
+
+    pub fn get_receipt(H256) -> Option<Receipt>;
 
     pub fn get_account_state(Address) -> Option<AccountState>;
 
@@ -26,13 +26,13 @@ contract_api! {
 
     pub fn get_account_nonce(Address) -> U256;
 
-    pub fn get_account_code(Address) -> String;
+    pub fn get_account_code(Address) -> Option<Vec<u8>>;
 
-    pub fn get_block_by_number(BlockRequestByNumber) -> Option<Block>;
+    pub fn get_block_hash(BlockId) -> Option<H256>;
 
-    pub fn get_block_by_hash(BlockRequestByHash) -> Option<Block>;
+    pub fn get_block(BlockId) -> Option<Vec<u8>>;
 
     pub fn get_storage_at((Address, H256)) -> H256;
 
-    pub fn get_logs(LogFilter) -> Vec<FilteredLog>;
+    pub fn get_logs(Filter) -> Vec<Log>;
 }

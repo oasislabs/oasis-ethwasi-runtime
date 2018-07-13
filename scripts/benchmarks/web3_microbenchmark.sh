@@ -32,7 +32,7 @@ run_compute_node() {
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/runtime-evm.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/contract/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_test() {
@@ -59,11 +59,9 @@ run_test() {
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
-    pushd ${WORKDIR}/client/ > /dev/null
-    target/release/web3-client \
-        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/runtime-evm.mrenclave) \
-        --threads 100 &> ${WORKDIR}/client.log &
-    popd > /dev/null
+    gateway/target/release/gateway \
+        --mr-enclave $(cat $WORKDIR/target_benchmark/contract/runtime-ethereum.mrenclave) \
+        --threads 100 &> gateway.log &
     sleep 2
 
     # Start benchmark.

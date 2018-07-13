@@ -10,7 +10,6 @@ ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch =
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
-evm-api = { path = "../api" }
 crossbeam-deque = "0.4"
 filebuffer = "0.4.0"
 futures = "0.1.18"

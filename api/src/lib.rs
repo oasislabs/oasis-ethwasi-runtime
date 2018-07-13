@@ -1,6 +1,5 @@
 #![feature(use_extern_macros)]
 
-extern crate common_types as ethcore_types;
 extern crate protobuf;
 extern crate serde;
 
@@ -20,8 +19,3 @@ pub use generated::api::*;
 
 mod state;
 pub use state::*;
-
-mod filter;
-pub use filter::*;
-
-pub mod error;

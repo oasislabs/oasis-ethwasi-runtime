@@ -1,5 +1,5 @@
 [package]
-name = "runtime-evm"
+name = "runtime-ethereum"
 version = "0.1.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
@@ -10,8 +10,9 @@ ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethcore = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
-evm-api = { path = "./api" }
+ethereum-api = { path = "./api" }
 hex = "0.3"
+lazy_static = "1.0.1"
 log = "0.4"
 protobuf = "~2.0"
 sha3 = "0.6"
@@ -19,6 +20,9 @@ sha3 = "0.6"
 [build-dependencies]
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+
+[dev-dependencies]
+ethkey = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
 
 [features]
 benchmark = []
