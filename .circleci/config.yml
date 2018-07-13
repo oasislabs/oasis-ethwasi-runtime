@@ -63,6 +63,8 @@ jobs:
       # Run the gateway tests.
       - run:
           name: Run the gateway tests
+          environment:
+            CARGO_BUILD_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo test
       # Build the web3 microbenchmark.
@@ -94,7 +96,8 @@ jobs:
 
   deploy:
     docker:
-      - image: ekiden/testing:0.1.0-alpha.4
+      - image: ekiden/testing:0.1.0
+    resource_class: large
     steps:
       # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV

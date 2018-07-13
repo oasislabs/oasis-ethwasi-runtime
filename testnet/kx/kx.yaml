@@ -47,16 +47,25 @@ spec:
           command:
             - ekiden-node-dummy
           args:
-            - --time-source
+            - --random-beacon-backend
+            - dummy
+            - --time-source-notifier
             - mock
             - --mock-epoch-interval
             - "600"
             - --storage-backend
-            - dynamodb
-            - --storage-dynamodb-region
-            - us-west-2
-            - --storage-dynamodb-table-name
-            - kx-evm
+            - persistent
+            - --prometheus-metrics-addr
+            - "0.0.0.0:3000"
+            - --prometheus-mode
+            - pull
+          volumeMounts:
+            - mountPath: /persistent-storage
+              name: kx-evm-dummy-storage-persistent
+      volumes:
+        - name: kx-evm-dummy-storage-persistent
+          awsElasticBlockStore:
+            volumeID: vol-0559e233828c46577
 ---
 kind: Service
 apiVersion: v1
@@ -95,6 +104,16 @@ spec:
           env:
             - name: LD_LIBRARY_PATH
               value: /opt/intel/sgxsdk/lib64
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret
           command:
             - ekiden-compute
           args:
@@ -105,8 +124,10 @@ spec:
             - "system"
             - --entity-ethereum-address
             - "0000000000000000000000000000000000000000"
-            - --metrics-addr
+            - --prometheus-metrics-addr
             - "0.0.0.0:3000"
+            - --prometheus-mode
+            - pull
             - --consensus-client-host
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
             - --consensus-client-port
@@ -123,11 +144,17 @@ spec:
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
             - --scheduler-client-port
             - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - --storage-client-host
+            - --batch-storage
+            - multilayer
+            - --storage-multilayer-sled-storage-base
+            - /tmp/ekiden-storage-persistent
+            - --storage-multilayer-bottom-backend
+            - remote
+            - --storage-multilayer-client-host
             - $(EVM_NODE_DUMMY_SERVICE_HOST)
-            - --storage-client-port
+            - --storage-multilayer-client-port
             - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - ekiden/lib/evm.so
+            - ekiden/lib/runtime-ethereum.so
 
 ---
 kind: Service
@@ -155,6 +182,7 @@ spec:
     metadata:
       labels:
         copper: web3-client
+        app: ekiden
     spec:
       containers:
         - name: web3-client
@@ -164,9 +192,11 @@ spec:
           args:
             - -c
             - >-
-              exec web3-client
+              exec gateway
+              --prometheus-metrics-addr 0.0.0.0:3000
+              --prometheus-mode pull
               --entity-registry-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
               --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
               --scheduler-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-              --mr-enclave $$(cat ekiden/res/evm.mrenclave)
+              --mr-enclave $$(cat ekiden/res/runtime-ethereum.mrenclave)
