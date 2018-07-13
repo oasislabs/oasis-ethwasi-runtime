@@ -68,6 +68,7 @@ $ ekiden-compute \
     --max-batch-timeout 10 \
     --time-source-notifier system \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
+    --batch-storage immediate_remote \
     --port <port number> \
     target/contract/runtime-ethereum.so
 ```
