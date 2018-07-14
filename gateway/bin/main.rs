@@ -29,7 +29,6 @@ extern crate web3_gateway;
 // Ekiden client packages
 #[macro_use]
 extern crate clap;
-extern crate grpcio;
 extern crate rand;
 
 #[macro_use]

@@ -43,7 +43,13 @@ pub fn execute(
     let cpu_pool = CpuPool::new(4);
 
     let ws_conf = WsConfiguration::default();
+
+    // expose the http server to the world
+    // conf corresponds to parity command-line options "--unsafe-expose" + "--jsonrpc-cors=all"
     let mut http_conf = HttpConfiguration::default();
+    http_conf.cors = None;
+    http_conf.hosts = None;
+    http_conf.interface = "0.0.0.0".into();
     http_conf.processing_threads = num_threads;
 
     // start RPCs
