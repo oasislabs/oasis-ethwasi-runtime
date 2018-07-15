@@ -306,7 +306,7 @@ pub fn get_transaction(hash: &H256) -> Option<Transaction> {
             gas: tx.gas,
             input: tx.data.clone(),
             creates: match tx.action {
-                Action::Create => Some(get_contract_address(&tx)),
+                Action::Create => Some(get_contract_address(&mut tx)),
                 Action::Call(_) => None,
             },
             raw: ::rlp::encode(&tx.signed).into_vec(),
@@ -323,7 +323,7 @@ pub fn get_transaction(hash: &H256) -> Option<Transaction> {
 
 pub fn get_receipt(hash: &H256) -> Option<Receipt> {
     CHAIN.transaction_address(hash).map(|addr| {
-        let tx = CHAIN.transaction(&addr).unwrap();
+        let mut tx = CHAIN.transaction(&addr).unwrap();
         let receipt = CHAIN.transaction_receipt(&addr).unwrap();
         Receipt {
             hash: Some(tx.hash()),
@@ -333,7 +333,7 @@ pub fn get_receipt(hash: &H256) -> Option<Receipt> {
             cumulative_gas_used: receipt.gas_used, // TODO: get from block header
             gas_used: Some(receipt.gas_used),
             contract_address: match tx.action {
-                Action::Create => Some(get_contract_address(&tx)),
+                Action::Create => Some(get_contract_address(&mut tx)),
                 Action::Call(_) => None,
             },
             logs: receipt.logs.into_iter().map(le_to_log).collect(),

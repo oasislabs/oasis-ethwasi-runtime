@@ -4,7 +4,7 @@ use ekiden_core::error::Result;
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
               machine::EthereumMachine,
               spec::CommonParams,
-              transaction::{SignedTransaction, Transaction},
+              transaction::{LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
 
@@ -19,6 +19,7 @@ macro_rules! evm_params {
         params.network_id = 0x01;
         params.max_code_size = 24576;
         params.eip98_transition = <u64>::max_value();
+        params.eip86_transition = <u64>::max_value();
         params.gas_limit_bound_divisor = 0x0400.into();
         params.registrar = "0xc6d9d2cd449a754c494264e1809c50e34d64562b".into();
         params
@@ -46,11 +47,12 @@ pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed>
     Ok(exec)
 }
 
-pub fn get_contract_address(transaction: &Transaction) -> Address {
+// pre-EIP86, contract addresses are calculated using the FromSenderAndNonce scheme
+pub fn get_contract_address(transaction: &mut LocalizedTransaction) -> Address {
     contract_address(
-        vm::CreateContractAddress::FromCodeHash,
-        &Address::zero(), // unused
-        &U256::zero(),    // unused
+        vm::CreateContractAddress::FromSenderAndNonce,
+        &transaction.sender(),
+        &transaction.nonce,
         &transaction.data,
     ).0
 }
