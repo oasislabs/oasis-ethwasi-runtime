@@ -338,7 +338,7 @@ mod tests {
                 action: Action::Create,
                 nonce: get_account_nonce(&self.keypair.address()).unwrap(),
                 gas_price: U256::from(0),
-                gas: U256::max_value(),
+                gas: U256::from(1000000),
                 value: *balance,
                 data: code,
             }.sign(&self.keypair.secret(), None);
@@ -479,7 +479,7 @@ mod tests {
             action: Action::Create,
             nonce: get_account_nonce(&client.keypair.address()).unwrap(),
             gas_price: U256::from(0),
-            gas: U256::max_value(),
+            gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.fake_sign(client.keypair.address());
@@ -491,7 +491,7 @@ mod tests {
             action: Action::Create,
             nonce: get_account_nonce(&client.keypair.address()).unwrap(),
             gas_price: U256::from(0),
-            gas: U256::max_value(),
+            gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
