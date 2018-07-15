@@ -146,7 +146,8 @@ impl EthClient {
                                     .view()
                                     .localized_transactions()
                                     .into_iter()
-                                    .map(|t| RpcTransaction::from_localized(t, 0))
+                                    // disable EIP-86 transition
+                                    .map(|t| RpcTransaction::from_localized(t, <u64>::max_value()))
                                     .collect(),
                             ),
                             false => BlockTransactions::Hashes(
