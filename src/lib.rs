@@ -314,7 +314,7 @@ mod tests {
 
     use self::ethkey::{KeyPair, Secret};
     use super::*;
-    use ethcore::{self, executive::contract_address, vm};
+    use ethcore::{self, vm};
     use hex;
 
     struct Client {

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, io::Cursor, mem, sync::Arc};
+use std::{collections::HashSet, mem, sync::Arc};
 
 use ekiden_core::error::Result;
 use ekiden_trusted::db::{Database, DatabaseHandle};
@@ -10,7 +10,6 @@ use ethcore::{self,
               filter::Filter as EthcoreFilter,
               journaldb::overlaydb::OverlayDB,
               kvdb::{self, KeyValueDB},
-              spec::Spec,
               state::backend::Basic as BasicBackend,
               transaction::Action,
               types::{ids::BlockId,
@@ -21,26 +20,19 @@ use ethereum_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt,
 use ethereum_types::{Address, H256, U256};
 use hex;
 
-use super::evm::get_contract_address;
+use super::evm::{get_contract_address, SPEC};
 
 lazy_static! {
-  static ref SPEC: Spec = {
-    #[cfg(not(feature = "benchmark"))]
-    let spec_json = include_str!("../resources/genesis/genesis.json");
-    #[cfg(feature = "benchmark")]
-    let spec_json = include_str!("../resources/genesis/genesis_benchmarking.json");
-    Spec::load(Cursor::new(spec_json)).unwrap()
-  };
-  static ref CHAIN: BlockChain = {
-    let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */).unwrap();
-    db.0.commit().unwrap();
+    static ref CHAIN: BlockChain = {
+        let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */).unwrap();
+        db.0.commit().unwrap();
 
-    BlockChain::new(
-      Default::default() /* config */,
-      &*SPEC.genesis_block(),
-      Arc::new(StateDb::instance())
-    )
-  };
+        BlockChain::new(
+            Default::default() /* config */,
+            &*SPEC.genesis_block(),
+            Arc::new(StateDb::instance())
+        )
+    };
 }
 
 pub struct StateDb {}
