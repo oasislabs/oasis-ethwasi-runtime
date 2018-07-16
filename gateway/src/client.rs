@@ -4,6 +4,7 @@ use ethcore::encoded;
 use ethcore::error::CallError;
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
+use ethcore::spec::Spec;
 use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
@@ -35,11 +36,19 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 
 pub struct Client {
     client: runtime_ethereum::Client,
+    eip86_transition: u64,
 }
 
 impl Client {
-    pub fn new(client: runtime_ethereum::Client) -> Self {
-        Self { client: client }
+    pub fn new(spec: &Spec, client: runtime_ethereum::Client) -> Self {
+        Self {
+            client: client,
+            eip86_transition: spec.params().eip86_transition,
+        }
+    }
+
+    pub fn eip86_transition(&self) -> u64 {
+        return <u64>::max_value();
     }
 
     // block-related

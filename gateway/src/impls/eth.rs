@@ -55,6 +55,7 @@ macro_rules! try_bf {
 /// Eth rpc implementation.
 pub struct EthClient {
     client: Arc<Client>,
+    eip86_transition: u64,
 }
 
 #[derive(Debug)]
@@ -95,6 +96,7 @@ impl EthClient {
     pub fn new(client: &Arc<Client>) -> Self {
         EthClient {
             client: client.clone(),
+            eip86_transition: client.eip86_transition(),
         }
     }
 
@@ -146,8 +148,9 @@ impl EthClient {
                                     .view()
                                     .localized_transactions()
                                     .into_iter()
-                                    // disable EIP-86 transition
-                                    .map(|t| RpcTransaction::from_localized(t, <u64>::max_value()))
+                                    .map(|t| {
+                                        RpcTransaction::from_localized(t, self.eip86_transition)
+                                    })
                                     .collect(),
                             ),
                             false => BlockTransactions::Hashes(
