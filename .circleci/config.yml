@@ -112,16 +112,16 @@ jobs:
           echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
           BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
       # Push deployment image.
-      - run: docker push oasislabs/ekiden-contract-evm:latest
+      - run: docker push oasislabs/ekiden-runtime-ethereum:latest
       # Update testnet.
       # https://stackoverflow.com/a/33511811/1864688
       - run: |
-          REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-contract-evm:latest)
+          REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-runtime-ethereum:latest)
           mkdir -p ~/.kube
           echo "$KUBECONFIG_CONTENT_BASE64" | base64 -di >~/.kube/config
-          kubectl set image deployments/evm-node-dummy ekiden-node-dummy=$REPO_DIGEST
-          kubectl set image deployments/evm ekiden-compute=$REPO_DIGEST
-          kubectl set image deployments/web3-client web3-client=$REPO_DIGEST
+          kubectl set image deployments/runtime-node-dummy ekiden-node-dummy=$REPO_DIGEST
+          kubectl set image deployments/runtime ekiden-compute=$REPO_DIGEST
+          kubectl set image deployments/web3-gateway web3-gateway=$REPO_DIGEST
 
 workflows:
   version: 2

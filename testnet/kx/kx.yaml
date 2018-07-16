@@ -4,35 +4,35 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: evm-node-dummy
+  name: runtime-node-dummy
 spec:
   ports:
     - name: dummy-grpc
       port: 42261
   selector:
-    copper: evm-node-dummy
+    copper: runtime-node-dummy
   # type: ClusterIP
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: evm-node-dummy
+  name: runtime-node-dummy
   labels:
     app: ekiden
 spec:
   selector:
     matchLabels:
-      copper: evm-node-dummy
+      copper: runtime-node-dummy
   # replicas: 1
   template:
     metadata:
       labels:
-        copper: evm-node-dummy
+        copper: runtime-node-dummy
         app: ekiden
     spec:
       containers:
         - name: ekiden-node-dummy
-          image: docker.io/oasislabs/ekiden-contract-evm:latest
+          image: docker.io/oasislabs/ekiden-runtime-ethereum:latest
           env:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
@@ -70,13 +70,13 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: evm
+  name: runtime
 spec:
   ports:
     - name: contract-grpc
       port: 9001
   selector:
-    copper: evm
+    copper: runtime
   # Change this to make the network public.
   # type: ClusterIP
 ---
@@ -84,23 +84,23 @@ spec:
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: evm
+  name: runtime
   labels:
     app: ekiden
 spec:
   selector:
     matchLabels:
-      copper: evm
+      copper: runtime
   replicas: 24
   template:
     metadata:
       labels:
-        copper: evm
+        copper: runtime
         app: ekiden
     spec:
       containers:
         - name: ekiden-compute
-          image: docker.io/oasislabs/ekiden-contract-evm:latest
+          image: docker.io/oasislabs/ekiden-runtime-ethereum:latest
           env:
             - name: LD_LIBRARY_PATH
               value: /opt/intel/sgxsdk/lib64
@@ -160,33 +160,33 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: web3-client
+  name: web3-gateway
 spec:
   ports:
     - name: web3
       port: 8545
       nodePort: 8545
   selector:
-    copper: web3-client
+    copper: web3-gateway
   type: NodePort
 ---
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
-  name: web3-client
+  name: web3-gateway
 spec:
   selector:
     matchLabels:
-      copper: web3-client
+      copper: web3-gateway
   template:
     metadata:
       labels:
-        copper: web3-client
+        copper: web3-gateway
         app: ekiden
     spec:
       containers:
-        - name: web3-client
-          image: docker.io/oasislabs/ekiden-contract-evm:latest
+        - name: web3-gateway
+          image: docker.io/oasislabs/ekiden-runtime-ethereum:latest
           command:
             - sh
           args:
