@@ -23,4 +23,4 @@ else
 fi
 
 # Build the deployable image from the output.
-docker build --rm --force-rm -t oasislabs/ekiden-contract-evm - <target/docker-deployment/context.tar.gz
+docker build --rm --force-rm -t oasislabs/ekiden-runtime-ethereum - <target/docker-deployment/context.tar.gz
