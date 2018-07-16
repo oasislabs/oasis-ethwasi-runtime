@@ -48,7 +48,7 @@ impl Client {
     }
 
     pub fn eip86_transition(&self) -> u64 {
-        return <u64>::max_value();
+        self.eip86_transition
     }
 
     // block-related
