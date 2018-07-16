@@ -29,12 +29,13 @@ use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 
 use runtime_ethereum;
+use util;
 
 pub fn execute(
     ekiden_client: runtime_ethereum::Client,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
-    let client = Arc::new(Client::new(ekiden_client));
+    let client = Arc::new(Client::new(&util::load_spec(), ekiden_client));
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
     // spin up event loop

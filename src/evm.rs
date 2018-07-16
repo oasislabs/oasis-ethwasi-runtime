@@ -1,28 +1,23 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{io::Cursor, sync::Arc};
 
 use ekiden_core::error::Result;
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
               machine::EthereumMachine,
-              spec::CommonParams,
-              transaction::{SignedTransaction, Transaction},
+              spec::Spec,
+              transaction::{LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
 
 use super::state::{block_hashes_since, get_latest_block_number, get_state, BlockOffset};
 
-/// as per https://github.com/paritytech/parity/blob/master/ethcore/res/ethereum/byzantium_test.json
-macro_rules! evm_params {
-    () => {{
-        let mut params = CommonParams::default();
-        params.maximum_extra_data_size = 0x20;
-        params.min_gas_limit = 0x1388.into();
-        params.network_id = 0x01;
-        params.max_code_size = 24576;
-        params.eip98_transition = <u64>::max_value();
-        params.gas_limit_bound_divisor = 0x0400.into();
-        params.registrar = "0xc6d9d2cd449a754c494264e1809c50e34d64562b".into();
-        params
-    }};
+lazy_static! {
+    pub(crate) static ref SPEC: Spec = {
+        #[cfg(not(feature = "benchmark"))]
+        let spec_json = include_str!("../resources/genesis/genesis.json");
+        #[cfg(feature = "benchmark")]
+        let spec_json = include_str!("../resources/genesis/genesis_benchmarking.json");
+        Spec::load(Cursor::new(spec_json)).unwrap()
+    };
 }
 
 fn get_env_info() -> vm::EnvInfo {
@@ -34,23 +29,22 @@ fn get_env_info() -> vm::EnvInfo {
 }
 
 pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed> {
-    let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
-
     let mut state = get_state()?;
     #[cfg(not(feature = "benchmark"))]
     let options = TransactOptions::with_no_tracing();
     #[cfg(feature = "benchmark")]
     let options = TransactOptions::with_no_tracing().dont_check_nonce();
-    let exec = Executive::new(&mut state, &get_env_info(), &machine)
+    let exec = Executive::new(&mut state, &get_env_info(), SPEC.engine.machine())
         .transact_virtual(&transaction, options)?;
     Ok(exec)
 }
 
-pub fn get_contract_address(transaction: &Transaction) -> Address {
+// pre-EIP86, contract addresses are calculated using the FromSenderAndNonce scheme
+pub fn get_contract_address(sender: &Address, transaction: &LocalizedTransaction) -> Address {
     contract_address(
-        vm::CreateContractAddress::FromCodeHash,
-        &Address::zero(), // unused
-        &U256::zero(),    // unused
+        SPEC.engine.create_address_scheme(transaction.block_number),
+        sender,
+        &transaction.nonce,
         &transaction.data,
     ).0
 }
