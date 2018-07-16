@@ -40,10 +40,10 @@ pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed>
 }
 
 // pre-EIP86, contract addresses are calculated using the FromSenderAndNonce scheme
-pub fn get_contract_address(transaction: &mut LocalizedTransaction) -> Address {
+pub fn get_contract_address(sender: &Address, transaction: &LocalizedTransaction) -> Address {
     contract_address(
         SPEC.engine.create_address_scheme(transaction.block_number),
-        &transaction.sender(),
+        sender,
         &transaction.nonce,
         &transaction.data,
     ).0
