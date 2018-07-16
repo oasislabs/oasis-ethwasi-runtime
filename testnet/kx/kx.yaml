@@ -199,4 +199,9 @@ spec:
               --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
               --scheduler-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --consensus-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --consensus-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --storage-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
+              --storage-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --mr-enclave $$(cat ekiden/res/runtime-ethereum.mrenclave)
+              --threads 100
