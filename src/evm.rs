@@ -42,11 +42,6 @@ fn get_env_info() -> vm::EnvInfo {
 
 pub fn execute_transaction(transaction: &SignedTransaction) -> Result<(Executed, H256)> {
   let machine = EthereumMachine::regular(evm_params!(), BTreeMap::new() /* builtins */);
-  println!(
-    "machine schedule: {:?}",
-    machine.schedule(get_env_info().number).create_data_limit
-  );
-
   with_state(|state| {
     Ok(Executive::new(state, &get_env_info(), &machine)
       .transact(&transaction, TransactOptions::with_no_tracing())?)
@@ -163,7 +158,7 @@ mod tests {
       let (exec, root) = execute_transaction(&tx).unwrap();
       match exec.exception {
         Some(err) => panic!(err),
-        None => println!("No exception"),
+        None => None,
       }
       println!("exec: {:?}", exec);
 
