@@ -94,7 +94,7 @@ $ cargo build
 
 To run (in the same directory):
 ```bash
-$ cargo run -- --mr-enclave <mr-enclave>
+$ cargo run -- --mr-enclave <mr-enclave> --threads <number of threads for http server>
 ```
 
 For `<mr-enclave>` you can use the value reported when starting the compute node.
