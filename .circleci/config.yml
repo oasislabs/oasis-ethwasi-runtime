@@ -97,7 +97,7 @@ jobs:
   deploy:
     docker:
       - image: ekiden/testing:0.1.0
-    resource_class: large
+    resource_class: xlarge
     steps:
       # Set up
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
