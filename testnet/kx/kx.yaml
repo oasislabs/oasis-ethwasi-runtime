@@ -129,21 +129,21 @@ spec:
             - --prometheus-mode
             - pull
             - --consensus-client-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
             - --consensus-client-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - --contract-registry-client-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
             - --contract-registry-client-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - --entity-registry-client-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
             - --entity-registry-client-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - --scheduler-client-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
             - --scheduler-client-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - --batch-storage
             - multilayer
             - --storage-multilayer-sled-storage-base
@@ -151,9 +151,9 @@ spec:
             - --storage-multilayer-bottom-backend
             - remote
             - --storage-multilayer-client-host
-            - $(EVM_NODE_DUMMY_SERVICE_HOST)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
             - --storage-multilayer-client-port
-            - $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+            - $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
             - ekiden/lib/runtime-ethereum.so
 
 ---
@@ -195,13 +195,13 @@ spec:
               exec gateway
               --prometheus-metrics-addr 0.0.0.0:3000
               --prometheus-mode pull
-              --entity-registry-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
-              --entity-registry-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-              --scheduler-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
-              --scheduler-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-              --consensus-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
-              --consensus-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-              --storage-client-host $(EVM_NODE_DUMMY_SERVICE_HOST)
-              --storage-client-port $(EVM_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --entity-registry-client-host $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
+              --entity-registry-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --scheduler-client-host $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
+              --scheduler-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --consensus-client-host $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
+              --consensus-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --storage-client-host $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
+              --storage-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --mr-enclave $$(cat ekiden/res/runtime-ethereum.mrenclave)
               --threads 100
