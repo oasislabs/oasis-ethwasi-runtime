@@ -9,7 +9,6 @@ use ethereum_types::{Address, H256, U256};
 extern crate filebuffer;
 extern crate futures;
 use futures::future::Future;
-extern crate grpcio;
 extern crate hex;
 extern crate log;
 use log::{debug, log};

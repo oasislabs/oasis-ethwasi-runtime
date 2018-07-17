@@ -40,15 +40,15 @@ jobs:
             --branch master
             --debug
             ekiden-node-dummy
-      # Build the contract.
-      - run: cargo ekiden build-contract --output-identity
-      # Build the benchmarking version of the contract (in release mode)
+      # Build the runtime.
+      - run: cargo ekiden build-enclave --output-identity
+      # Build the benchmarking version of the runtime (in release mode)
       - run: mkdir target_benchmark
       - run:
           name: Build the benchmarking version of the runtime
           environment:
             CARGO_TARGET_DIR: target_benchmark
-          command: cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
+          command: cargo ekiden build-enclave --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
       # Run the runtime tests.
       - run:
           name: Run the runtime tests

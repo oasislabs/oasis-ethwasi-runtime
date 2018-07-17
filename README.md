@@ -41,10 +41,10 @@ If you later need to update them to a new version use the `--force` flag to upda
 
 To build the runtime simply run:
 ```bash
-$ cargo ekiden build-contract
+$ cargo ekiden build-enclave
 ```
 
-The built contract will be stored under `target/contract/runtime-ethereum.so`.
+The built enclave will be stored under `target/enclave/runtime-ethereum.so`.
 
 ## Running the runtime
 
@@ -70,7 +70,7 @@ $ ekiden-compute \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --batch-storage immediate_remote \
     --port <port number> \
-    target/contract/runtime-ethereum.so
+    target/enclave/runtime-ethereum.so
 ```
 
 After starting the nodes, to manually advance the epoch in the shared dummy node:
@@ -78,11 +78,11 @@ After starting the nodes, to manually advance the epoch in the shared dummy node
 $ ekiden-node-dummy-controller set-epoch --epoch 1
 ```
 
-The contract's compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
+The compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
 
 Development notes:
 
-* If you are developing a contract and changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-ethereum.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
+* If you are changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-ethereum.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Building the web3 gateway
 
@@ -103,10 +103,10 @@ For `<mr-enclave>` you can use the value reported when starting the compute node
 
 To build the benchmarking version of the runtime (release build, logging suppressed, nonce checking disabled):
 ```bash
-$ CARGO_TARGET_DIR=target_benchmark cargo ekiden build-contract --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
+$ CARGO_TARGET_DIR=target_benchmark cargo ekiden build-enclave --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
 ```
 
-The built contract will be stored under `target_benchmark/contract/runtime-ethereum.so`.
+The built enclave will be stored under `target_benchmark/enclave/runtime-ethereum.so`.
 
 Release builds of `benchmark`, `gateway`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
 ```bash

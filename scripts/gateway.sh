@@ -31,7 +31,7 @@ run_compute_node() {
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
 	--port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target/contract/runtime-ethereum.so &> compute${id}.log &
+        ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_test() {
@@ -59,7 +59,7 @@ run_test() {
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
     gateway/target/debug/gateway \
-        --mr-enclave $(cat $WORKDIR/target/contract/runtime-ethereum.mrenclave) \
+        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> gateway.log &
     gateway_pid=$!
 
