@@ -44,7 +44,7 @@ run_compute_node_default() {
         --batch-storage immediate_remote \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/runtime-ethereum.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_compute_node_storage_multilayer() {
@@ -70,7 +70,7 @@ run_compute_node_storage_multilayer() {
         --storage-multilayer-aws-table-name test \
         --port ${port} \
         ${extra_args} \
-        ${WORKDIR}/target_benchmark/contract/runtime-ethereum.so &> compute${id}.log &
+        ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
 }
 
 run_test() {
@@ -98,7 +98,7 @@ run_test() {
     # Start genesis state injector.
     echo "Starting genesis state injector."
     ${WORKDIR}/genesis/target/release/genesis \
-        --mr-enclave $(cat ${WORKDIR}/target_benchmark/contract/runtime-ethereum.mrenclave) \
+        --mr-enclave $(cat ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.mrenclave) \
 	${WORKDIR}/genesis/state-999999.json &
     genesis_pid=$!
 
