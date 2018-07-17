@@ -10,7 +10,7 @@ ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekide
 protobuf = "~1.4"
 serde = "1.0"
 serde_derive = "1.0"
-common-types = { git = "https://github.com/ekiden/parity", branch = "ekiden" }
+common-types = { git = "https://github.com/ekiden/parity", branch = "sterling" }
 
 [build-dependencies]
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
