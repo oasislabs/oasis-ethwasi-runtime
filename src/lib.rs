@@ -307,9 +307,11 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
 
 #[cfg(test)]
 mod tests {
+    use ethcore::blockchain::BlockChain;
     extern crate ethkey;
 
     use std::str::FromStr;
+    use std::sync::Arc;
     use std::sync::Mutex;
 
     use self::ethkey::{KeyPair, Secret};
@@ -520,5 +522,49 @@ mod tests {
 
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());
+    }
+
+    fn get_account_nonce_chain(chain: &BlockChain, address: &Address) -> U256 {
+        let backend = state::get_backend();
+        let root = chain.best_block_header().state_root().clone();
+        ethcore::state::State::from_existing(
+            backend,
+            root,
+            U256::zero(),       /* account_start_nonce */
+            Default::default(), /* factories */
+        ).unwrap()
+            .nonce(address)
+            .unwrap()
+    }
+
+    #[test]
+    fn test_hiatus() {
+        let mut client = CLIENT.lock().unwrap();
+        let client_address = client.keypair.address();
+
+        // Initialize the DB.
+        let reference_nonce_before = get_account_nonce(&client_address).unwrap();
+
+        // Create a chain representing node A, which is initially the leader.
+        let chain_a = BlockChain::new(
+            Default::default(), /* config */
+            &*evm::SPEC.genesis_block(),
+            Arc::new(state::StateDb::instance()),
+        );
+        let nonce_a_before = get_account_nonce_chain(&chain_a, &client_address);
+
+        // The default node becomes the leader.
+        // Do some transaction. Here we deploy an empty contract.
+        // pragma solidity ^0.4.24;
+        // contract Empty { }
+        let code_empty = hex::decode("6080604052348015600f57600080fd5b50603580601d6000396000f3006080604052600080fd00a165627a7a723058209c0fbaf927d5bcdab687e32584f12a46fbcd505bcefb4fec306c065651c73a3e0029").unwrap();
+        client.create_contract(code_empty, &U256::zero());
+
+        // Save the new nonce from the default node, which is currently leader.
+        let reference_nonce = get_account_nonce(&client_address).unwrap();
+
+        // When node A is leader again, getting the nonce should give an up to date value.
+        let nonce_a = get_account_nonce_chain(&chain_a, &client_address);
+        assert_eq!(nonce_a, reference_nonce);
     }
 }
