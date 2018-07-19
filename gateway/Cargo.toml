@@ -31,6 +31,7 @@ ethcore-bytes = { git = "https://github.com/ekiden/parity", branch = "ekiden-web
 ethcore-transaction = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
+rlp_compress = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity-machine = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity-reactor = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
@@ -52,6 +53,7 @@ clap = "2.29.1"
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -63,6 +65,10 @@ rustc_version = "0.2"
 
 [patch.crates-io]
 ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden" }
+
+[features]
+default = ["caching"]
+caching = []
 
 [[bin]]
 name = "gateway"

@@ -53,10 +53,12 @@ extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
 extern crate journaldb;
 extern crate keccak_hash as hash;
+extern crate kvdb;
 extern crate parity_reactor;
 extern crate parity_rpc;
 extern crate path;
 extern crate registrar;
+extern crate rlp_compress;
 
 // for client.rs
 extern crate common_types;
@@ -74,12 +76,14 @@ mod rpc;
 mod rpc_apis;
 mod run;
 mod servers;
+mod state;
 mod util;
 
 #[macro_use]
 extern crate client_utils;
 extern crate ekiden_contract_client;
 extern crate ekiden_core;
+extern crate ekiden_db_trusted;
 extern crate ekiden_di;
 #[macro_use]
 extern crate ekiden_instrumentation;
@@ -107,5 +111,9 @@ pub fn start(
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
 
-    run::execute(client, num_threads)
+    let contract_id = value_t_or_exit!(args, "mr-enclave", B256);
+    let snapshot_manager =
+        client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
+
+    run::execute(client, snapshot_manager, num_threads)
 }

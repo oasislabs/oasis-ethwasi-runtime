@@ -21,6 +21,7 @@ use std::time::{Duration, Instant};
 
 use client::Client;
 
+use client_utils;
 use futures_cpupool::CpuPool;
 use jsonrpc_core;
 use parity_reactor::EventLoop;
@@ -33,9 +34,14 @@ use util;
 
 pub fn execute(
     ekiden_client: runtime_ethereum::Client,
+    snapshot_manager: client_utils::db::Manager,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
-    let client = Arc::new(Client::new(&util::load_spec(), ekiden_client));
+    let client = Arc::new(Client::new(
+        &util::load_spec(),
+        snapshot_manager,
+        ekiden_client,
+    ));
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
     // spin up event loop

@@ -1,23 +1,25 @@
+use std::sync::Arc;
+
 use bytes::Bytes;
+use ethcore::blockchain::BlockChain;
 use ethcore::client::{BlockId, StateOrBlock};
 use ethcore::encoded;
 use ethcore::error::CallError;
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::spec::Spec;
-use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
-use journaldb::overlaydb::OverlayDB;
 use runtime_ethereum;
 use rustc_hex::FromHex;
+//use state::StateDb;
 
+use client_utils;
 use ekiden_core::error::Error;
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
+use state::{self, EthState, StateDb};
 use util::from_block_id;
-
-type Backend = BasicBackend<OverlayDB>;
 
 // record contract call outcome
 fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
@@ -35,14 +37,24 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 }
 
 pub struct Client {
+    //    chain: Arc<BlockChain>,
     client: runtime_ethereum::Client,
+    snapshot_manager: client_utils::db::Manager,
+    genesis_block: Bytes,
     eip86_transition: u64,
 }
 
 impl Client {
-    pub fn new(spec: &Spec, client: runtime_ethereum::Client) -> Self {
+    pub fn new(
+        spec: &Spec,
+        snapshot_manager: client_utils::db::Manager,
+        client: runtime_ethereum::Client,
+    ) -> Self {
         Self {
+            //            chain: Arc::new(BlockChain::new(Default::default(), &spec.genesis_block(), Arc::new(StateDb::instance()))),
             client: client,
+            snapshot_manager: snapshot_manager,
+            genesis_block: spec.genesis_block(),
             eip86_transition: spec.params().eip86_transition,
         }
     }
@@ -51,7 +63,18 @@ impl Client {
         self.eip86_transition
     }
 
+    #[cfg(feature = "caching")]
+    fn get_db_snapshot(&self) -> StateDb {
+        state::StateDb::new(self.snapshot_manager.get_snapshot())
+    }
+
     // block-related
+    #[cfg(feature = "caching")]
+    pub fn best_block_number(&self) -> BlockNumber {
+        self.get_db_snapshot().best_block_number()
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn best_block_number(&self) -> BlockNumber {
         contract_call_result(
             "get_block_height",
@@ -60,6 +83,21 @@ impl Client {
         ).into()
     }
 
+    #[cfg(feature = "caching")]
+    pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
+        let snapshot = self.get_db_snapshot();
+        match id {
+            BlockId::Hash(hash) => snapshot.block(&hash),
+            //BlockId::Number(number) => block_by_number(number.into()),
+            BlockId::Number(number) => None,
+            //BlockId::Earliest => block_by_number(0),
+            BlockId::Earliest => None,
+            //BlockId::Latest => block_by_number(get_latest_block_number()),
+            BlockId::Latest => snapshot.block(&snapshot.best_block_hash()),
+        }
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
         contract_call_result::<Option<Vec<u8>>>(
             "get_block",
@@ -108,6 +146,17 @@ impl Client {
     }
 
     // account state-related
+    #[cfg(feature = "caching")]
+    fn get_ethstate_snapshot(&self) -> EthState {
+        state::get_ethstate(self.snapshot_manager.get_snapshot()).unwrap()
+    }
+
+    #[cfg(feature = "caching")]
+    pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
+        Some(self.get_ethstate_snapshot().balance(&address).unwrap())
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
         contract_call_result(
             "get_account_balance",
