@@ -5,11 +5,12 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
+common-types = { git = "https://github.com/ekiden/parity", branch = "sterling-storage" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
-ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
+ethcore = { git = "https://github.com/ekiden/parity", branch = "sterling-storage" }
+ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 ethereum-api = { path = "./api" }
 hex = "0.3"
 lazy_static = "1.0.1"
