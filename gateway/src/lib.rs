@@ -88,8 +88,6 @@ use std::sync::Arc;
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
-use ekiden_core::{bytes::B256, ring::signature::Ed25519KeyPair, signature::InMemorySigner,
-                  untrusted};
 use ekiden_di::Container;
 use ethereum_api::with_api;
 
@@ -99,20 +97,12 @@ with_api! {
     create_contract_client!(runtime_ethereum, ethereum_api, api);
 }
 
-/// Generate client key pair.
-fn create_key_pair() -> Arc<InMemorySigner> {
-    let key_pair =
-        Ed25519KeyPair::from_seed_unchecked(untrusted::Input::from(&B256::random())).unwrap();
-    Arc::new(InMemorySigner::new(key_pair))
-}
-
 pub fn start(
     args: ArgMatches,
     mut container: Container,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
-    let signer = create_key_pair();
-    let client = contract_client!(signer, runtime_ethereum, args, container);
+    let client = contract_client!(runtime_ethereum, args, container);
 
     run::execute(client, num_threads)
 }

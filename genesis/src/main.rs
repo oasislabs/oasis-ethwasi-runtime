@@ -65,11 +65,6 @@ fn strip_0x<'a>(hex: &'a str) -> &'a str {
 }
 
 fn main() {
-    let seed = ekiden_core::bytes::B256::random();
-    let seed_input = ekiden_core::untrusted::Input::from(&seed);
-    let key_pair =
-        ekiden_core::ring::signature::Ed25519KeyPair::from_seed_unchecked(seed_input).unwrap();
-    let signer = std::sync::Arc::new(ekiden_core::signature::InMemorySigner::new(key_pair));
     let known_components = client_utils::components::create_known_components();
     let args = default_app!()
         .args(&known_components.get_arguments())
@@ -84,7 +79,7 @@ fn main() {
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
 
-    let client = contract_client!(signer, ethereum, args, container);
+    let client = contract_client!(ethereum, args, container);
 
     let state_path = args.value_of("exported_state").unwrap();
     debug!("Parsing state JSON");
