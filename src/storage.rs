@@ -7,14 +7,14 @@ pub struct StorageImpl {}
 impl Storage for StorageImpl {
     fn request_bytes(&mut self, key: H256) -> Option<Vec<u8>> {
         let mut db = DatabaseHandle::instance();
-        let mut key_bytes = Vec::new();
+        let mut key_bytes: Vec<u8> = Vec::with_capacity(32);
         key.copy_to(&mut key_bytes);
         db.get(&key_bytes)
     }
 
     fn store_bytes(&mut self, key: H256, bytes: &[u8]) {
         let mut db = DatabaseHandle::instance();
-        let mut key_bytes = Vec::new();
+        let mut key_bytes: Vec<u8> = Vec::with_capacity(32);
         key.copy_to(&mut key_bytes);
         db.insert(&mut key_bytes, bytes);
     }
