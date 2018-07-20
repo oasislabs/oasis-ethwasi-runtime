@@ -8,6 +8,7 @@ build = "build.rs"
 common-types = { git = "https://github.com/oasislabs/parity", branch = "sterling-storage" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethcore = { git = "https://github.com/oasislabs/parity", branch = "sterling-storage" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
