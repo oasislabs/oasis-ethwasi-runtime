@@ -3,7 +3,6 @@
 
 extern crate common_types as ethcore_types;
 extern crate ekiden_core;
-extern crate ekiden_db_trusted;
 extern crate ekiden_trusted;
 extern crate ethcore;
 extern crate ethereum_api;
