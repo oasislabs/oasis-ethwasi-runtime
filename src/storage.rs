@@ -39,4 +39,11 @@ impl Storage for StorageImpl {
             Err(err) => Err(Error::Storage(err.description().to_string())),
         }
     }
+
+    fn store_bytes(&mut self, key: H256, bytes: &[u8]) {
+        let mut db = DatabaseHandle::instance();
+        let mut key_bytes = Vec::new();
+        key.copy_to(&mut key_bytes);
+        db.insert(&mut key_bytes, bytes);
+    }
 }
