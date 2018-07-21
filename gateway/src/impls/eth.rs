@@ -56,8 +56,8 @@ lazy_static! {
     // dummy-valued PoW-related block extras
     static ref BLOCK_EXTRA_INFO: BTreeMap<String, String> = {
         let mut map = BTreeMap::new();
-        map.insert("mixHash".into(), format!("0x{:?}", H256::default()));
-        map.insert("nonce".into(), format!("0x{:?}", H64::default()));
+        map.insert("mixHash".into(), format!("0x{:x}", H256::default()));
+        map.insert("nonce".into(), format!("0x{:x}", H64::default()));
         map
     };
 }
