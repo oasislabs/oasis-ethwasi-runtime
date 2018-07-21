@@ -84,14 +84,7 @@ impl Client {
         #[cfg(feature = "caching")]
         {
             if let Some(snapshot) = self.get_db_snapshot() {
-                match id {
-                    BlockId::Hash(hash) => return snapshot.block(&hash),
-                    //BlockId::Number(number) => return snapshot.block_hash(number).map(|hash| snapshot.block(&hash)).unwrap(),
-                    BlockId::Number(number) => (),
-                    //BlockId::Earliest => block_by_number(0),
-                    BlockId::Earliest => (),
-                    BlockId::Latest => return snapshot.block(&snapshot.best_block_hash().unwrap()),
-                }
+                return self.block_hash(id).and_then(|h| snapshot.block(&h));
             }
         }
         contract_call_result::<Option<Vec<u8>>>(
