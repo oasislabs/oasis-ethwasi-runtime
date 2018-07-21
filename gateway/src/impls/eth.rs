@@ -19,7 +19,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use ethereum_types::{Address, H256, U256};
+use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
 use util::log_to_rpc_log;
@@ -49,6 +49,16 @@ macro_rules! try_bf {
             Ok(val) => val,
             Err(e) => return Box::new(::jsonrpc_core::futures::future::err(e.into())),
         }
+    };
+}
+
+lazy_static! {
+    // dummy-valued PoW-related block extras
+    static ref BLOCK_EXTRA_INFO: BTreeMap<String, String> = {
+        let mut map = BTreeMap::new();
+        map.insert("mixHash".into(), format!("0x{:?}", H256::default()));
+        map.insert("nonce".into(), format!("0x{:?}", H64::default()));
+        map
     };
 }
 
@@ -163,7 +173,7 @@ impl EthClient {
                         },
                         extra_data: Bytes::new(view.extra_data()),
                     },
-                    extra_info: BTreeMap::new(),
+                    extra_info: BLOCK_EXTRA_INFO.clone(),
                 }))
             }
             _ => Ok(None),

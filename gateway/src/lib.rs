@@ -33,6 +33,9 @@ extern crate jsonrpc_ipc_server;
 extern crate jsonrpc_pubsub;
 extern crate jsonrpc_ws_server;
 
+#[macro_use]
+extern crate lazy_static;
+
 extern crate parking_lot;
 extern crate regex;
 extern crate rlp;
