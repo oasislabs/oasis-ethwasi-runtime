@@ -1,9 +1,11 @@
 use std::{mem,
+          ops,
           sync::{Arc, Mutex}};
 
 use bytes::Bytes;
 use ethcore;
-use ethcore::db;
+//use ethcore::blockchain::extras;
+use ethcore::db::{self, Key, Readable};
 use ethcore::encoded;
 use ethcore::header::{BlockNumber, Header};
 use ethcore::state::backend::Basic as BasicBackend;
@@ -13,6 +15,7 @@ use kvdb::{self, KeyValueDB};
 use rlp_compress::{blocks_swapper, decompress};
 
 use client_utils::db::Snapshot;
+use ekiden_core;
 use ekiden_core::error::Result;
 use ekiden_db_trusted::Database;
 
@@ -21,15 +24,19 @@ pub struct StateDb {
 }
 
 impl StateDb {
-    pub fn new(snapshot: Snapshot) -> Self {
-        Self { snapshot: snapshot }
+    pub fn new(snapshot: Snapshot) -> Option<Self> {
+        let db = Self { snapshot: snapshot };
+        match db.best_block_hash() {
+            Some(_) => Some(db),
+            None => None,
+        }
     }
 
-    pub fn best_block_hash(&self) -> H256 {
-        self.get(db::COL_EXTRA, b"best")
-            .unwrap()
-            .map(|best| H256::from_slice(&best))
-            .unwrap()
+    pub fn best_block_hash(&self) -> Option<H256> {
+        match self.get(db::COL_EXTRA, b"best") {
+            Ok(best) => best.map(|best| H256::from_slice(&best)),
+            Err(_) => None,
+        }
     }
 
     fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
@@ -55,35 +62,47 @@ impl StateDb {
         ))
     }
 
+    pub fn block_hash(&self, index: BlockNumber) -> Option<H256> {
+        self.read(db::COL_EXTRA, &index)
+    }
+
     // convenience function
-    pub fn best_block_state_root(&self) -> H256 {
-        let block_hash = self.best_block_hash();
-        self.block_header_data(&block_hash)
-            .map(|h| h.state_root().clone())
-            .unwrap()
+    pub fn best_block_state_root(&self) -> Option<H256> {
+        match self.best_block_hash() {
+            Some(hash) => self.block_header_data(&hash)
+                .map(|h| h.state_root().clone()),
+            None => None,
+        }
     }
 
     pub fn best_block_number(&self) -> BlockNumber {
-        let block_hash = self.best_block_hash();
-        self.block_header_data(&block_hash)
-            .map(|h| h.number())
-            .unwrap_or(0)
+        match self.best_block_hash() {
+            Some(hash) => self.block_header_data(&hash)
+                .map(|h| h.number())
+                .unwrap_or(0),
+            None => 0,
+        }
     }
 }
 
 type Backend = BasicBackend<OverlayDB>;
 pub type EthState = ethcore::state::State<Backend>;
 
-pub fn get_ethstate(snapshot: Snapshot) -> Result<EthState> {
-    let db = StateDb::new(snapshot);
-    let root = db.best_block_state_root();
-    let backend = BasicBackend(OverlayDB::new(Arc::new(db), None /* col */));
-    Ok(ethcore::state::State::from_existing(
-        backend,
-        root,
-        U256::zero(),       /* account_start_nonce */
-        Default::default(), /* factories */
-    )?)
+pub fn get_ethstate(snapshot: Snapshot) -> Option<EthState> {
+    if let Some(db) = StateDb::new(snapshot) {
+        let root = db.best_block_state_root().unwrap();
+        let backend = BasicBackend(OverlayDB::new(Arc::new(db), None /* col */));
+        Some(
+            ethcore::state::State::from_existing(
+                backend,
+                root,
+                U256::zero(),       /* account_start_nonce */
+                Default::default(), /* factories */
+            ).unwrap(),
+        )
+    } else {
+        None
+    }
 }
 
 pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {

@@ -12,7 +12,6 @@ use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
 use rustc_hex::FromHex;
-//use state::StateDb;
 
 use client_utils;
 use ekiden_core::error::Error;
@@ -40,7 +39,6 @@ pub struct Client {
     //    chain: Arc<BlockChain>,
     client: runtime_ethereum::Client,
     snapshot_manager: client_utils::db::Manager,
-    genesis_block: Bytes,
     eip86_transition: u64,
 }
 
@@ -54,7 +52,6 @@ impl Client {
             //            chain: Arc::new(BlockChain::new(Default::default(), &spec.genesis_block(), Arc::new(StateDb::instance()))),
             client: client,
             snapshot_manager: snapshot_manager,
-            genesis_block: spec.genesis_block(),
             eip86_transition: spec.params().eip86_transition,
         }
     }
@@ -64,18 +61,18 @@ impl Client {
     }
 
     #[cfg(feature = "caching")]
-    fn get_db_snapshot(&self) -> StateDb {
+    fn get_db_snapshot(&self) -> Option<StateDb> {
         state::StateDb::new(self.snapshot_manager.get_snapshot())
     }
 
     // block-related
-    #[cfg(feature = "caching")]
     pub fn best_block_number(&self) -> BlockNumber {
-        self.get_db_snapshot().best_block_number()
-    }
-
-    #[cfg(not(feature = "caching"))]
-    pub fn best_block_number(&self) -> BlockNumber {
+        #[cfg(feature = "caching")]
+        {
+            if let Some(snapshot) = self.get_db_snapshot() {
+                return snapshot.best_block_number();
+            }
+        }
         contract_call_result(
             "get_block_height",
             self.client.get_block_height(false).wait(),
@@ -83,22 +80,20 @@ impl Client {
         ).into()
     }
 
-    #[cfg(feature = "caching")]
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
-        let snapshot = self.get_db_snapshot();
-        match id {
-            BlockId::Hash(hash) => snapshot.block(&hash),
-            //BlockId::Number(number) => block_by_number(number.into()),
-            BlockId::Number(number) => None,
-            //BlockId::Earliest => block_by_number(0),
-            BlockId::Earliest => None,
-            //BlockId::Latest => block_by_number(get_latest_block_number()),
-            BlockId::Latest => snapshot.block(&snapshot.best_block_hash()),
+        #[cfg(feature = "caching")]
+        {
+            if let Some(snapshot) = self.get_db_snapshot() {
+                match id {
+                    BlockId::Hash(hash) => return snapshot.block(&hash),
+                    //BlockId::Number(number) => return snapshot.block_hash(number).map(|hash| snapshot.block(&hash)).unwrap(),
+                    BlockId::Number(number) => (),
+                    //BlockId::Earliest => block_by_number(0),
+                    BlockId::Earliest => (),
+                    BlockId::Latest => return snapshot.block(&snapshot.best_block_hash().unwrap()),
+                }
+            }
         }
-    }
-
-    #[cfg(not(feature = "caching"))]
-    pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
         contract_call_result::<Option<Vec<u8>>>(
             "get_block",
             self.client.get_block(from_block_id(id)).wait(),
@@ -106,6 +101,25 @@ impl Client {
         ).map(|block| encoded::Block::new(block))
     }
 
+    #[cfg(feature = "caching")]
+    pub fn block_hash(&self, id: BlockId) -> Option<H256> {
+        if let BlockId::Hash(hash) = id {
+            Some(hash)
+        } else {
+            if let Some(snapshot) = self.get_db_snapshot() {
+                match id {
+                    BlockId::Hash(hash) => unreachable!(),
+                    BlockId::Number(number) => snapshot.block_hash(number),
+                    BlockId::Earliest => snapshot.block_hash(0),
+                    BlockId::Latest => snapshot.best_block_hash(),
+                }
+            } else {
+                None
+            }
+        }
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
         if let BlockId::Hash(hash) = id {
             Some(hash)
@@ -147,17 +161,20 @@ impl Client {
 
     // account state-related
     #[cfg(feature = "caching")]
-    fn get_ethstate_snapshot(&self) -> EthState {
-        state::get_ethstate(self.snapshot_manager.get_snapshot()).unwrap()
+    fn get_ethstate_snapshot(&self) -> Option<EthState> {
+        state::get_ethstate(self.snapshot_manager.get_snapshot())
     }
 
-    #[cfg(feature = "caching")]
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
-        Some(self.get_ethstate_snapshot().balance(&address).unwrap())
-    }
-
-    #[cfg(not(feature = "caching"))]
-    pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
+        #[cfg(feature = "caching")]
+        {
+            if let Some(snapshot) = self.get_ethstate_snapshot() {
+                match snapshot.balance(&address) {
+                    Ok(balance) => return Some(balance),
+                    Err(_) => return None,
+                }
+            }
+        }
         contract_call_result(
             "get_account_balance",
             self.client.get_account_balance(*address).wait().map(Some),
@@ -167,6 +184,15 @@ impl Client {
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
+        #[cfg(feature = "caching")]
+        {
+            if let Some(snapshot) = self.get_ethstate_snapshot() {
+                match snapshot.code(&address) {
+                    Ok(code) => return Some(code.map(|c| (&*c).clone())),
+                    Err(_) => return None,
+                }
+            }
+        }
         contract_call_result(
             "get_account_code",
             self.client.get_account_code(*address).wait().map(Some),
@@ -175,6 +201,15 @@ impl Client {
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
+        #[cfg(feature = "caching")]
+        {
+            if let Some(snapshot) = self.get_ethstate_snapshot() {
+                match snapshot.nonce(&address) {
+                    Ok(nonce) => return Some(nonce),
+                    Err(_) => return None,
+                }
+            }
+        }
         contract_call_result(
             "get_account_nonce",
             self.client.get_account_nonce(*address).wait().map(Some),
@@ -188,6 +223,15 @@ impl Client {
         position: &H256,
         state: StateOrBlock,
     ) -> Option<H256> {
+        #[cfg(feature = "caching")]
+        {
+            if let Some(snapshot) = self.get_ethstate_snapshot() {
+                match snapshot.storage_at(address, position) {
+                    Ok(val) => return Some(val),
+                    Err(_) => return None,
+                }
+            }
+        }
         contract_call_result(
             "get_storage_at",
             self.client

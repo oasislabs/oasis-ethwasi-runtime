@@ -95,6 +95,7 @@ use std::sync::Arc;
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
+use ekiden_core::bytes::B256;
 use ekiden_di::Container;
 use ethereum_api::with_api;
 
