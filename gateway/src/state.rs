@@ -35,22 +35,35 @@ impl StateDb {
     pub fn best_block_hash(&self) -> Option<H256> {
         match self.get(db::COL_EXTRA, b"best") {
             Ok(best) => best.map(|best| H256::from_slice(&best)),
-            Err(_) => None,
+            Err(e) => {
+                warn!("Could not fetch best_block_hash from snapshot: {:?}", e);
+                None
+            }
         }
     }
 
     fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
-        self.get(db::COL_HEADERS, &hash)
-            .unwrap()
-            .map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
+        match self.get(db::COL_HEADERS, &hash) {
+            Ok(hash) => {
+                hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
+            }
+            Err(e) => {
+                warn!("Could not fetch block_header_data from snapshot: {:?}", e);
+                None
+            }
+        }
     }
 
     fn block_body(&self, hash: &H256) -> Option<encoded::Body> {
-        // Read from DB and populate cache
-        let b = self.get(db::COL_BODIES, hash)
-            .expect("Low level database error. Some issue with disk?")?;
-        let body = encoded::Body::new(decompress(&b, blocks_swapper()).into_vec());
-        Some(body)
+        match self.get(db::COL_BODIES, hash) {
+            Ok(body) => {
+                body.map(|b| encoded::Body::new(decompress(&b, blocks_swapper()).into_vec()))
+            }
+            Err(e) => {
+                warn!("Could not fetch block_body from snapshot: {:?}", e);
+                None
+            }
+        }
     }
 
     pub fn block(&self, hash: &H256) -> Option<encoded::Block> {
