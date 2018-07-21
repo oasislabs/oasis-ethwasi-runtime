@@ -90,8 +90,6 @@ extern crate ekiden_instrumentation;
 extern crate ekiden_rpc_client;
 extern crate ethereum_api;
 
-use std::sync::Arc;
-
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;

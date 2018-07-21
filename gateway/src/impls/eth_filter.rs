@@ -73,7 +73,7 @@ impl Filterable for EthFilterClient {
         }))
     }
 
-    fn pending_logs(&self, block_number: u64, filter: &EthcoreFilter) -> Vec<RpcLog> {
+    fn pending_logs(&self, _block_number: u64, _filter: &EthcoreFilter) -> Vec<RpcLog> {
         Vec::new()
     }
 

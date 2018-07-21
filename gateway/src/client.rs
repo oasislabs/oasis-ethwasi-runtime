@@ -1,17 +1,12 @@
-use std::sync::Arc;
-
 use bytes::Bytes;
-use ethcore::blockchain::BlockChain;
 use ethcore::client::{BlockId, StateOrBlock};
 use ethcore::encoded;
-use ethcore::error::CallError;
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::spec::Spec;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
-use rustc_hex::FromHex;
 
 use client_utils;
 use ekiden_core::error::Error;
@@ -36,7 +31,6 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 }
 
 pub struct Client {
-    //    chain: Arc<BlockChain>,
     client: runtime_ethereum::Client,
     snapshot_manager: client_utils::db::Manager,
     eip86_transition: u64,
@@ -49,7 +43,6 @@ impl Client {
         client: runtime_ethereum::Client,
     ) -> Self {
         Self {
-            //            chain: Arc::new(BlockChain::new(Default::default(), &spec.genesis_block(), Arc::new(StateDb::instance()))),
             client: client,
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
@@ -101,7 +94,7 @@ impl Client {
         } else {
             if let Some(snapshot) = self.get_db_snapshot() {
                 match id {
-                    BlockId::Hash(hash) => unreachable!(),
+                    BlockId::Hash(_hash) => unreachable!(),
                     BlockId::Number(number) => snapshot.block_hash(number),
                     BlockId::Earliest => snapshot.block_hash(0),
                     BlockId::Latest => snapshot.best_block_hash(),

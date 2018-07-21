@@ -20,7 +20,6 @@
 
 extern crate ctrlc;
 extern crate fdlimit;
-#[macro_use]
 extern crate log;
 extern crate parking_lot;
 

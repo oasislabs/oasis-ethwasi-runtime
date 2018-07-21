@@ -1,13 +1,9 @@
-use std::{mem,
-          ops,
-          sync::{Arc, Mutex}};
+use std::{mem, sync::Arc};
 
-use bytes::Bytes;
 use ethcore;
-//use ethcore::blockchain::extras;
-use ethcore::db::{self, Key, Readable};
+use ethcore::db::{self, Readable};
 use ethcore::encoded;
-use ethcore::header::{BlockNumber, Header};
+use ethcore::header::BlockNumber;
 use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{H256, U256};
 use journaldb::overlaydb::OverlayDB;
@@ -15,8 +11,6 @@ use kvdb::{self, KeyValueDB};
 use rlp_compress::{blocks_swapper, decompress};
 
 use client_utils::db::Snapshot;
-use ekiden_core;
-use ekiden_core::error::Result;
 use ekiden_db_trusted::Database;
 
 pub struct StateDb {
@@ -145,7 +139,7 @@ impl kvdb::KeyValueDB for StateDb {
         unimplemented!();
     }
 
-    fn write_buffered(&self, transaction: kvdb::DBTransaction) {
+    fn write_buffered(&self, _transaction: kvdb::DBTransaction) {
         unimplemented!();
     }
 

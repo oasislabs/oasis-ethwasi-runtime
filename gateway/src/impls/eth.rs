@@ -91,11 +91,6 @@ enum PendingOrBlock {
     Pending,
 }
 
-struct PendingUncleId {
-    id: PendingOrBlock,
-    position: usize,
-}
-
 enum PendingTransactionId {
     Hash(H256),
     Location(PendingOrBlock, usize),
@@ -211,7 +206,7 @@ impl EthClient {
                 Ok(None)
             }
         } else {
-            warn!("Only transction hash parameter supported");
+            warn!("Only transaction hash parameter supported");
             Ok(None)
         }
     }
@@ -552,7 +547,7 @@ impl Eth for EthClient {
 
     fn call(
         &self,
-        meta: Self::Metadata,
+        _meta: Self::Metadata,
         request: CallRequest,
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<Bytes> {
