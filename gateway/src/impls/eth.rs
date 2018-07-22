@@ -175,6 +175,24 @@ impl EthClient {
         }
     }
 
+    #[cfg(feature = "caching")]
+    fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
+        if let PendingTransactionId::Hash(hash) = id {
+            let hash: H256 = hash.into();
+            match self.client.transaction(hash) {
+                Some(t) => Ok(Some(RpcTransaction::from_localized(
+                    t,
+                    self.eip86_transition,
+                ))),
+                None => Ok(None),
+            }
+        } else {
+            warn!("Only transaction hash parameter supported");
+            Ok(None)
+        }
+    }
+
+    #[cfg(not(feature = "caching"))]
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
         if let PendingTransactionId::Hash(hash) = id {
             let hash: H256 = hash.into();

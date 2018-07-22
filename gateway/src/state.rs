@@ -1,6 +1,7 @@
 use std::{mem, sync::Arc};
 
 use ethcore;
+use ethcore::blockchain::{BlockReceipts, TransactionAddress};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
@@ -9,6 +10,7 @@ use ethereum_types::{H256, U256};
 use journaldb::overlaydb::OverlayDB;
 use kvdb::{self, KeyValueDB};
 use rlp_compress::{blocks_swapper, decompress};
+use transaction::LocalizedTransaction;
 
 use client_utils::db::Snapshot;
 use ekiden_db_trusted::Database;
@@ -73,6 +75,10 @@ impl StateDb {
         self.read(db::COL_EXTRA, &index)
     }
 
+    fn block_number(&self, hash: &H256) -> Option<BlockNumber> {
+        self.block_header_data(hash).map(|header| header.number())
+    }
+
     // convenience function
     pub fn best_block_state_root(&self) -> Option<H256> {
         match self.best_block_hash() {
@@ -89,6 +95,16 @@ impl StateDb {
                 .unwrap_or(0),
             None => 0,
         }
+    }
+
+    pub fn transaction(&self, hash: &H256) -> Option<LocalizedTransaction> {
+        let address: TransactionAddress = self.read(db::COL_EXTRA, hash)?;
+        self.block_body(&address.block_hash).and_then(|body| {
+            self.block_number(&address.block_hash).and_then(|n| {
+                body.view()
+                    .localized_transaction_at(&address.block_hash, n, address.index)
+            })
+        })
     }
 }
 

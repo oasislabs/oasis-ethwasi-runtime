@@ -7,6 +7,7 @@ use ethcore::spec::Spec;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
+use transaction::LocalizedTransaction;
 
 use client_utils;
 use ekiden_core::error::Error;
@@ -119,6 +120,16 @@ impl Client {
     }
 
     // transaction-related
+    #[cfg(feature = "caching")]
+    pub fn transaction(&self, hash: H256) -> Option<LocalizedTransaction> {
+        if let Some(snapshot) = self.get_db_snapshot() {
+            snapshot.transaction(&hash)
+        } else {
+            None
+        }
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
         contract_call_result(
             "get_transaction",
