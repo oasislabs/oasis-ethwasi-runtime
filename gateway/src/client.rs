@@ -1,13 +1,19 @@
+use std::sync::Arc;
+
 use bytes::Bytes;
+use common_types::log_entry::LocalizedLogEntry;
 use ethcore::client::{BlockId, StateOrBlock};
 use ethcore::encoded;
+use ethcore::engines::EthEngine;
+use ethcore::executive::contract_address;
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
+use ethcore::receipt::LocalizedReceipt;
 use ethcore::spec::Spec;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
-use transaction::LocalizedTransaction;
+use transaction::{Action, LocalizedTransaction};
 
 use client_utils;
 use ekiden_core::error::Error;
@@ -33,6 +39,7 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 
 pub struct Client {
     client: runtime_ethereum::Client,
+    engine: Arc<EthEngine>,
     snapshot_manager: client_utils::db::Manager,
     eip86_transition: u64,
 }
@@ -45,6 +52,7 @@ impl Client {
     ) -> Self {
         Self {
             client: client,
+            engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
         }
@@ -138,6 +146,58 @@ impl Client {
         )
     }
 
+    #[cfg(feature = "caching")]
+    pub fn transaction_receipt(&self, hash: H256) -> Option<LocalizedReceipt> {
+        if let Some(snapshot) = self.get_db_snapshot() {
+            let receipt = snapshot.transaction_receipt(&hash)?;
+            let mut tx = snapshot.transaction(&hash)?;
+
+            let transaction_hash = tx.hash();
+            let block_hash = tx.block_hash;
+            let block_number = tx.block_number;
+            let transaction_index = tx.transaction_index;
+
+            Some(LocalizedReceipt {
+                transaction_hash: transaction_hash,
+                transaction_index: transaction_index,
+                block_hash: block_hash,
+                block_number: block_number,
+                cumulative_gas_used: receipt.gas_used,
+                gas_used: receipt.gas_used,
+                contract_address: match tx.action {
+                    Action::Call(_) => None,
+                    Action::Create => Some(
+                        contract_address(
+                            self.engine.create_address_scheme(block_number),
+                            &tx.sender(),
+                            &tx.nonce,
+                            &tx.data,
+                        ).0,
+                    ),
+                },
+                logs: receipt
+                    .logs
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, log)| LocalizedLogEntry {
+                        entry: log,
+                        block_hash: block_hash,
+                        block_number: block_number,
+                        transaction_hash: transaction_hash,
+                        transaction_index: transaction_index,
+                        transaction_log_index: i,
+                        log_index: i,
+                    })
+                    .collect(),
+                log_bloom: receipt.log_bloom,
+                outcome: receipt.outcome,
+            })
+        } else {
+            None
+        }
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
         contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
     }

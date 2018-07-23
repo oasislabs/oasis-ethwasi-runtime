@@ -5,6 +5,7 @@ use ethcore::blockchain::{BlockReceipts, TransactionAddress};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
+use ethcore::receipt::{LocalizedReceipt, Receipt};
 use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{H256, U256};
 use journaldb::overlaydb::OverlayDB;
@@ -105,6 +106,16 @@ impl StateDb {
                     .localized_transaction_at(&address.block_hash, n, address.index)
             })
         })
+    }
+
+    fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {
+        self.read(db::COL_EXTRA, hash)
+    }
+
+    pub fn transaction_receipt(&self, hash: &H256) -> Option<Receipt> {
+        let address: TransactionAddress = self.read(db::COL_EXTRA, hash)?;
+        self.block_receipts(&address.block_hash)
+            .and_then(|br| br.receipts.into_iter().nth(0))
     }
 }
 

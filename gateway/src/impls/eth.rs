@@ -468,6 +468,16 @@ impl Eth for EthClient {
         Box::new(future::done(self.transaction(transaction_id)))
     }
 
+    #[cfg(feature = "caching")]
+    fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
+        measure_counter_inc!("getTransactionReceipt");
+        let hash: H256 = hash.into();
+        info!("eth_getTransactionReceipt(hash: {:?})", hash);
+        let receipt = self.client.transaction_receipt(hash);
+        Box::new(future::ok(receipt.map(Into::into)))
+    }
+
+    #[cfg(not(feature = "caching"))]
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         measure_counter_inc!("getTransactionReceipt");
         let hash: H256 = hash.into();
