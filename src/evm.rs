@@ -2,7 +2,6 @@ use std::{io::Cursor, sync::Arc};
 
 use ekiden_core::error::Result;
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
-              machine::EthereumMachine,
               spec::Spec,
               transaction::{LocalizedTransaction, SignedTransaction},
               vm};

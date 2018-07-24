@@ -16,9 +16,8 @@ use ethcore::{self,
                       log_entry::{LocalizedLogEntry, LogEntry},
                       receipt::TransactionOutcome,
                       BlockNumber}};
-use ethereum_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
+use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
-use hex;
 
 use super::evm::{get_contract_address, SPEC};
 
@@ -95,27 +94,6 @@ impl StateDb {
     pub fn instance() -> Self {
         Self::new()
     }
-}
-
-fn to_hex<T: AsRef<Vec<u8>>>(bytes: T) -> String {
-    hex::encode(bytes.as_ref())
-}
-
-pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {
-    let state = get_state()?;
-    if !state.exists_and_not_null(address)? {
-        return Ok(None);
-    }
-    Ok(Some(AccountState {
-        address: address.clone(),
-        nonce: state.nonce(address)?,
-        balance: state.balance(address)?,
-        code: get_code_string_from_state(&state, address)?,
-    }))
-}
-
-fn get_code_string_from_state(state: &State, address: &Address) -> Result<String> {
-    Ok(state.code(address)?.map(to_hex).unwrap_or(String::new()))
 }
 
 pub fn get_account_storage(address: Address, key: H256) -> Result<H256> {

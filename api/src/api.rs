@@ -20,8 +20,6 @@ contract_api! {
 
     pub fn get_receipt(H256) -> Option<Receipt>;
 
-    pub fn get_account_state(Address) -> Option<AccountState>;
-
     pub fn get_account_balance(Address) -> U256;
 
     pub fn get_account_nonce(Address) -> U256;
