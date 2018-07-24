@@ -2,7 +2,10 @@
 #![feature(use_extern_macros)]
 
 extern crate common_types as ethcore_types;
+extern crate ekiden_common;
 extern crate ekiden_core;
+extern crate ekiden_storage_base;
+extern crate ekiden_storage_dummy;
 extern crate ekiden_trusted;
 extern crate ethcore;
 extern crate ethereum_api;
