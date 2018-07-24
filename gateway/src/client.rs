@@ -217,8 +217,8 @@ impl Client {
             let fetch_logs = || {
                 let from_hash = Self::id_to_block_hash(&snapshot, filter.from_block)?;
                 let from_number = snapshot.block_number(&from_hash)?;
-                // TODO: should this be to_block or from_block?
-                // appears to be a bug in parity: https://github.com/ekiden/parity/blob/master/ethcore/src/client/client.rs#L1856
+                // NOTE: there appears to be a bug in parity with to_hash:
+                // https://github.com/ekiden/parity/blob/master/ethcore/src/client/client.rs#L1856
                 let to_hash = Self::id_to_block_hash(&snapshot, filter.to_block)?;
 
                 let blooms = filter.bloom_possibilities();

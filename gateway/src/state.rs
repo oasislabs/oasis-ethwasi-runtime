@@ -12,7 +12,6 @@ use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{H256, U256};
 use journaldb::overlaydb::OverlayDB;
 use kvdb::{self, KeyValueDB};
-//use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use rlp_compress::{blocks_swapper, decompress};
 use transaction::LocalizedTransaction;
@@ -205,16 +204,20 @@ pub type EthState = ethcore::state::State<Backend>;
 
 pub fn get_ethstate(snapshot: Snapshot) -> Option<EthState> {
     if let Some(db) = StateDb::new(snapshot) {
-        let root = db.best_block_state_root().unwrap();
+        let root = db.best_block_state_root()?;
         let backend = BasicBackend(OverlayDB::new(Arc::new(db), None /* col */));
-        Some(
-            ethcore::state::State::from_existing(
-                backend,
-                root,
-                U256::zero(),       /* account_start_nonce */
-                Default::default(), /* factories */
-            ).unwrap(),
-        )
+        match ethcore::state::State::from_existing(
+            backend,
+            root,
+            U256::zero(),       /* account_start_nonce */
+            Default::default(), /* factories */
+        ) {
+            Ok(state) => Some(state),
+            Err(e) => {
+                error!("Could not construct EthState from snapshot");
+                None
+            }
+        }
     } else {
         None
     }
