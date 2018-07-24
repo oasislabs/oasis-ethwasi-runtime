@@ -534,7 +534,7 @@ impl Eth for EthClient {
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
         #[cfg(feature = "caching")]
-        let mut logs = self.client
+        let logs = self.client
             .logs(filter.clone())
             .into_iter()
             .map(From::from)
