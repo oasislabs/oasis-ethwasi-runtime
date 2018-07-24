@@ -202,6 +202,68 @@ impl Client {
         contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
     }
 
+    fn id_to_block_hash(snapshot: &StateDb, id: BlockId) -> Option<H256> {
+        match id {
+            BlockId::Hash(hash) => Some(hash),
+            BlockId::Number(number) => snapshot.block_hash(number),
+            BlockId::Earliest => snapshot.block_hash(0),
+            BlockId::Latest => snapshot.best_block_hash(),
+        }
+    }
+
+    #[cfg(feature = "caching")]
+    pub fn logs(&self, filter: EthcoreFilter) -> Vec<LocalizedLogEntry> {
+        if let Some(snapshot) = self.get_db_snapshot() {
+            // TODO: use bloom filter?
+            let fetch_logs = || {
+                let from_hash = Self::id_to_block_hash(&snapshot, filter.from_block)?;
+                let from_number = snapshot.block_number(&from_hash)?;
+                // TODO: should this be to_block or from_block?
+                let to_hash = Self::id_to_block_hash(&snapshot, filter.to_block)?;
+
+                let blooms = filter.bloom_possibilities();
+                let bloom_match = |header: &encoded::Header| {
+                    blooms
+                        .iter()
+                        .any(|bloom| header.log_bloom().contains_bloom(bloom))
+                };
+
+                let (blocks, last_hash) = {
+                    let mut blocks = Vec::new();
+                    let mut current_hash = to_hash;
+
+                    loop {
+                        let header = snapshot.block_header_data(&current_hash)?;
+                        if bloom_match(&header) {
+                            blocks.push(current_hash);
+                        }
+
+                        // Stop if `from` block is reached.
+                        if header.number() <= from_number {
+                            break;
+                        }
+                        current_hash = header.parent_hash();
+                    }
+
+                    blocks.reverse();
+                    (blocks, current_hash)
+                };
+
+                // Check if we've actually reached the expected `from` block.
+                if last_hash != from_hash || blocks.is_empty() {
+                    return None;
+                }
+
+                Some(snapshot.logs(blocks, |entry| filter.matches(entry), filter.limit))
+            };
+
+            fetch_logs().unwrap_or_default()
+        } else {
+            vec![]
+        }
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<Log> {
         let filter = Filter {
             from_block: from_block_id(filter.from_block),

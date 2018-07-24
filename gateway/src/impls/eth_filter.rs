@@ -61,6 +61,20 @@ impl Filterable for EthFilterClient {
         Vec::new()
     }
 
+    #[cfg(feature = "caching")]
+    fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<RpcLog>> {
+        measure_counter_inc!("getFilterLogs");
+        info!("eth_getFilterLogs(filter: {:?})", filter);
+        Box::new(future::ok({
+            self.client
+                .logs(filter)
+                .into_iter()
+                .map(From::from)
+                .collect::<Vec<RpcLog>>()
+        }))
+    }
+
+    #[cfg(not(feature = "caching"))]
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<RpcLog>> {
         measure_counter_inc!("getFilterLogs");
         info!("eth_getFilterLogs(filter: {:?})", filter);

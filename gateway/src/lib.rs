@@ -57,6 +57,7 @@ extern crate kvdb;
 extern crate parity_reactor;
 extern crate parity_rpc;
 extern crate path;
+extern crate rayon;
 extern crate registrar;
 extern crate rlp_compress;
 

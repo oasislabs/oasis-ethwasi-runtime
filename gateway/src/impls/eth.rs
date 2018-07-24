@@ -533,6 +533,13 @@ impl Eth for EthClient {
         measure_counter_inc!("getLogs");
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
+        #[cfg(feature = "caching")]
+        let mut logs = self.client
+            .logs(filter.clone())
+            .into_iter()
+            .map(From::from)
+            .collect::<Vec<RpcLog>>();
+        #[cfg(not(feature = "caching"))]
         let logs = self.client
             .logs(filter.clone())
             .into_iter()

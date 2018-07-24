@@ -1,15 +1,19 @@
 use std::{mem, sync::Arc};
 
+use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
 use ethcore::blockchain::{BlockReceipts, TransactionAddress};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
+use ethcore::filter::Filter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::{LocalizedReceipt, Receipt};
 use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{H256, U256};
 use journaldb::overlaydb::OverlayDB;
 use kvdb::{self, KeyValueDB};
+//use rayon::iter::IntoParallelIterator;
+use rayon::prelude::*;
 use rlp_compress::{blocks_swapper, decompress};
 use transaction::LocalizedTransaction;
 
@@ -39,7 +43,7 @@ impl StateDb {
         }
     }
 
-    fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
+    pub fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
         match self.get(db::COL_HEADERS, &hash) {
             Ok(hash) => {
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
@@ -76,7 +80,7 @@ impl StateDb {
         self.read(db::COL_EXTRA, &index)
     }
 
-    fn block_number(&self, hash: &H256) -> Option<BlockNumber> {
+    pub fn block_number(&self, hash: &H256) -> Option<BlockNumber> {
         self.block_header_data(hash).map(|header| header.number())
     }
 
@@ -116,6 +120,83 @@ impl StateDb {
         let address: TransactionAddress = self.read(db::COL_EXTRA, hash)?;
         self.block_receipts(&address.block_hash)
             .and_then(|br| br.receipts.into_iter().nth(0))
+    }
+
+    /// Returns logs matching given filter. The order of logs returned will be the same as the order of the blocks
+    /// provided. And it's the callers responsibility to sort blocks provided in advance.
+    pub fn logs<F>(
+        &self,
+        mut blocks: Vec<H256>,
+        matches: F,
+        limit: Option<usize>,
+    ) -> Vec<LocalizedLogEntry>
+    where
+        F: Fn(&LogEntry) -> bool + Send + Sync,
+        Self: Sized,
+    {
+        // sort in reverse order
+        blocks.reverse();
+
+        let mut logs = blocks
+            .chunks(128)
+            .flat_map(move |blocks_chunk| {
+                blocks_chunk
+                    .into_par_iter()
+                    .filter_map(|hash| self.block_number(&hash).map(|r| (r, hash)))
+                    .filter_map(|(number, hash)| {
+                        self.block_receipts(&hash)
+                            .map(|r| (number, hash, r.receipts))
+                    })
+                    .filter_map(|(number, hash, receipts)| {
+                        self.block_body(&hash)
+                            .map(|ref b| (number, hash, receipts, b.transaction_hashes()))
+                    })
+                    .flat_map(|(number, hash, mut receipts, mut hashes)| {
+                        if receipts.len() != hashes.len() {
+                            warn!("Block {} ({}) has different number of receipts ({}) to transactions ({}). Database corrupt?", number, hash, receipts.len(), hashes.len());
+                            assert!(false);
+                        }
+                        let mut log_index = receipts
+                            .iter()
+                            .fold(0, |sum, receipt| sum + receipt.logs.len());
+
+                        let receipts_len = receipts.len();
+                        hashes.reverse();
+                        receipts.reverse();
+                        receipts
+                            .into_iter()
+                            .map(|receipt| receipt.logs)
+                            .zip(hashes)
+                            .enumerate()
+                            .flat_map(move |(index, (mut logs, tx_hash))| {
+                                let current_log_index = log_index;
+                                let no_of_logs = logs.len();
+                                log_index -= no_of_logs;
+
+                                logs.reverse();
+                                logs.into_iter().enumerate().map(move |(i, log)| {
+                                    LocalizedLogEntry {
+                                        entry: log,
+                                        block_hash: *hash,
+                                        block_number: number,
+                                        transaction_hash: tx_hash,
+                                        // iterating in reverse order
+                                        transaction_index: receipts_len - index - 1,
+                                        transaction_log_index: no_of_logs - i - 1,
+                                        log_index: current_log_index - i - 1,
+                                    }
+                                })
+                            })
+                            .filter(|log_entry| matches(&log_entry.entry))
+                            .take(limit.unwrap_or(::std::usize::MAX))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .take(limit.unwrap_or(::std::usize::MAX))
+            .collect::<Vec<LocalizedLogEntry>>();
+        logs.reverse();
+        logs
     }
 }
 
