@@ -7,10 +7,13 @@ build = "build.rs"
 [dependencies]
 common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
 common-types = { git = "https://github.com/ekiden/parity", branch = "sterling-storage" }
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-api = { path = "./api" }
 hex = "0.3"
 lazy_static = "1.0.1"
