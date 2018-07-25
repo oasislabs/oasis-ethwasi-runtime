@@ -119,9 +119,9 @@ impl StateDb {
     }
 
     pub fn transaction_receipt(&self, hash: &H256) -> Option<Receipt> {
-        let address: TransactionAddress = self.read(db::COL_EXTRA, hash)?;
+        let address: TransactionAddress = self.transaction_address(hash)?;
         self.block_receipts(&address.block_hash)
-            .and_then(|br| br.receipts.into_iter().nth(0))
+            .and_then(|br| br.receipts.into_iter().nth(address.index))
     }
 
     /// Returns logs matching given filter. The order of logs returned will be the same as the order of the blocks
