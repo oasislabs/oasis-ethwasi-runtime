@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ekiden/testing:0.1.0
+      - image: ekiden/testing:0.3.0
     resource_class: xlarge
     steps:
       # Set up
@@ -96,7 +96,7 @@ jobs:
 
   deploy:
     docker:
-      - image: ekiden/testing:0.1.0
+      - image: ekiden/testing:0.3.0
     resource_class: xlarge
     steps:
       # Set up
