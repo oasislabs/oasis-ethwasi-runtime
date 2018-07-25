@@ -50,7 +50,7 @@ spec:
             - --random-beacon-backend
             - dummy
             - --time-source-notifier
-            - mock
+            - mockrpc
             - --mock-epoch-interval
             - "600"
             - --storage-backend
@@ -120,6 +120,8 @@ spec:
             - --no-persist-identity
             - --max-batch-timeout
             - "10"
+            - --compute-replicas
+            - "4"
             - --time-source-notifier
             - "system"
             - --entity-ethereum-address
