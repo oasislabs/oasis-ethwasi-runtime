@@ -120,6 +120,8 @@ spec:
             - --no-persist-identity
             - --max-batch-timeout
             - "10"
+            - --compute-replicas
+            - "4"
             - --time-source-notifier
             - "system"
             - --entity-ethereum-address
