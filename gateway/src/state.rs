@@ -101,14 +101,17 @@ impl StateDb {
         }
     }
 
-    pub fn transaction(&self, hash: &H256) -> Option<LocalizedTransaction> {
-        let address: TransactionAddress = self.read(db::COL_EXTRA, hash)?;
+    pub fn transaction(&self, address: &TransactionAddress) -> Option<LocalizedTransaction> {
         self.block_body(&address.block_hash).and_then(|body| {
             self.block_number(&address.block_hash).and_then(|n| {
                 body.view()
                     .localized_transaction_at(&address.block_hash, n, address.index)
             })
         })
+    }
+
+    pub fn transaction_address(&self, hash: &H256) -> Option<TransactionAddress> {
+        self.read(db::COL_EXTRA, hash)
     }
 
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {

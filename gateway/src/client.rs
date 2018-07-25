@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
-use ethcore::client::{BlockId, StateOrBlock};
+use ethcore::blockchain::TransactionAddress;
+use ethcore::client::{BlockId, StateOrBlock, TransactionId};
 use ethcore::encoded;
 use ethcore::engines::EthEngine;
 use ethcore::executive::contract_address;
@@ -129,9 +130,18 @@ impl Client {
 
     // transaction-related
     #[cfg(feature = "caching")]
-    pub fn transaction(&self, hash: H256) -> Option<LocalizedTransaction> {
+    pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
         if let Some(snapshot) = self.get_db_snapshot() {
-            snapshot.transaction(&hash)
+            let address = match id {
+                TransactionId::Hash(ref hash) => snapshot.transaction_address(hash),
+                TransactionId::Location(id, index) => {
+                    Self::id_to_block_hash(&snapshot, id).map(|hash| TransactionAddress {
+                        block_hash: hash,
+                        index: index,
+                    })
+                }
+            };
+            address.and_then(|addr| snapshot.transaction(&addr))
         } else {
             None
         }
@@ -150,7 +160,8 @@ impl Client {
     pub fn transaction_receipt(&self, hash: H256) -> Option<LocalizedReceipt> {
         if let Some(snapshot) = self.get_db_snapshot() {
             let receipt = snapshot.transaction_receipt(&hash)?;
-            let mut tx = snapshot.transaction(&hash)?;
+            let address = snapshot.transaction_address(&hash)?;
+            let mut tx = snapshot.transaction(&address)?;
 
             let transaction_hash = tx.hash();
             let block_hash = tx.block_hash;

@@ -24,7 +24,7 @@ use ethereum_types::{Address, H256, H64, U256};
 use client::Client;
 use util::log_to_rpc_log;
 
-use ethcore::client::{BlockId, StateOrBlock};
+use ethcore::client::{BlockId, StateOrBlock, TransactionId};
 use ethcore::filter::Filter as EthcoreFilter;
 
 use jsonrpc_core::futures::future;
@@ -177,18 +177,23 @@ impl EthClient {
 
     #[cfg(feature = "caching")]
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
-        if let PendingTransactionId::Hash(hash) = id {
-            let hash: H256 = hash.into();
-            match self.client.transaction(hash) {
-                Some(t) => Ok(Some(RpcTransaction::from_localized(
-                    t,
-                    self.eip86_transition,
-                ))),
-                None => Ok(None),
+        let client_transaction = |id| match self.client.transaction(id) {
+            Some(t) => Ok(Some(RpcTransaction::from_localized(
+                t,
+                self.eip86_transition,
+            ))),
+            None => Ok(None),
+        };
+
+        match id {
+            PendingTransactionId::Hash(hash) => client_transaction(TransactionId::Hash(hash)),
+            PendingTransactionId::Location(PendingOrBlock::Block(block), index) => {
+                client_transaction(TransactionId::Location(block, index))
             }
-        } else {
-            warn!("Only transaction hash parameter supported");
-            Ok(None)
+            PendingTransactionId::Location(PendingOrBlock::Pending, index) => {
+                // we don't have pending blocks
+                Ok(None)
+            }
         }
     }
 
