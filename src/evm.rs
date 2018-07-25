@@ -35,7 +35,7 @@ pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed>
     let options = TransactOptions::with_no_tracing();
     #[cfg(feature = "benchmark")]
     let options = TransactOptions::with_no_tracing().dont_check_nonce();
-    let mut storage = StorageImpl {};
+    let mut storage = StorageImpl::new();
     let exec = Executive::new(
         &mut state,
         &get_env_info(),
