@@ -50,7 +50,7 @@ spec:
             - --random-beacon-backend
             - dummy
             - --time-source-notifier
-            - mockrpc
+            - mock
             - --mock-epoch-interval
             - "600"
             - --storage-backend
