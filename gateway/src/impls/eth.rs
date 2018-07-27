@@ -31,7 +31,7 @@ use jsonrpc_core::futures::future;
 use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::helpers::{errors, limit_logs};
+use parity_rpc::v1::helpers::{errors, fake_sign, limit_logs};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
@@ -585,6 +585,35 @@ impl Eth for EthClient {
         self.send_raw_transaction(raw)
     }
 
+    #[cfg(feature = "caching")]
+    fn call(
+        &self,
+        meta: Self::Metadata,
+        request: CallRequest,
+        num: Trailing<BlockNumber>,
+    ) -> BoxFuture<Bytes> {
+        measure_counter_inc!("call");
+        measure_histogram_timer!("call_time");
+        info!(
+            "eth_call(request: {:?}, number: {:?})",
+            request,
+            num.unwrap_or_default()
+        );
+        let request = CallRequest::into(request);
+        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
+        let result = self.client.call(&signed);
+        Box::new(future::done(
+            result
+                .map_err(errors::call)
+                .and_then(|executed| match executed.exception {
+                    Some(ref exception) => Err(errors::vm(exception, &executed.output)),
+                    None => Ok(executed),
+                })
+                .map(|b| b.output.into()),
+        ))
+    }
+
+    #[cfg(not(feature = "caching"))]
     fn call(
         &self,
         _meta: Self::Metadata,
@@ -612,6 +641,27 @@ impl Eth for EthClient {
         ))
     }
 
+    #[cfg(feature = "caching")]
+    fn estimate_gas(
+        &self,
+        meta: Self::Metadata,
+        request: CallRequest,
+        num: Trailing<BlockNumber>,
+    ) -> BoxFuture<RpcU256> {
+        measure_counter_inc!("estimateGas");
+        measure_histogram_timer!("estimateGas_time");
+        info!(
+            "eth_estimateGas(request: {:?}, number: {:?})",
+            request,
+            num.unwrap_or_default()
+        );
+        let request = CallRequest::into(request);
+        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
+        let result = self.client.estimate_gas(&signed);
+        Box::new(future::done(result.map(Into::into).map_err(errors::call)))
+    }
+
+    #[cfg(not(feature = "caching"))]
     fn estimate_gas(
         &self,
         meta: Self::Metadata,

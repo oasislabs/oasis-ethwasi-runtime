@@ -3,10 +3,11 @@ use std::sync::Arc;
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
 use ethcore::blockchain::TransactionAddress;
-use ethcore::client::{BlockId, StateOrBlock, TransactionId};
+use ethcore::client::{BlockId, EnvInfo, LastHashes, StateOrBlock, TransactionId};
 use ethcore::encoded;
 use ethcore::engines::EthEngine;
-use ethcore::executive::contract_address;
+use ethcore::error::CallError;
+use ethcore::executive::{contract_address, Executed, Executive, TransactOptions};
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::LocalizedReceipt;
@@ -14,7 +15,7 @@ use ethcore::spec::Spec;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
-use transaction::{Action, LocalizedTransaction};
+use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils;
 use ekiden_core::error::Error;
@@ -292,7 +293,7 @@ impl Client {
     // account state-related
     #[cfg(feature = "caching")]
     fn get_ethstate_snapshot(&self) -> Option<EthState> {
-        state::get_ethstate(self.snapshot_manager.get_snapshot())
+        self.get_db_snapshot()?.get_ethstate()
     }
 
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
@@ -372,7 +373,66 @@ impl Client {
         )
     }
 
+    fn last_hashes(snapshot: &StateDb, parent_hash: &H256) -> Arc<LastHashes> {
+        let mut last_hashes = LastHashes::new();
+        last_hashes.resize(256, H256::default());
+        last_hashes[0] = parent_hash.clone();
+        for i in 0..255 {
+            match snapshot.block_details(&last_hashes[i]) {
+                Some(details) => {
+                    last_hashes[i + 1] = details.parent.clone();
+                }
+                None => break,
+            }
+        }
+        Arc::new(last_hashes)
+    }
+
+    fn get_env_info(snapshot: &StateDb) -> EnvInfo {
+        let header = snapshot
+            .best_block_hash()
+            .and_then(|hash| snapshot.block_header_data(&hash))
+            .expect("No best block");
+        EnvInfo {
+            number: header.number(),
+            author: header.author().clone(),
+            timestamp: header.timestamp(),
+            difficulty: header.difficulty().clone(),
+            last_hashes: Self::last_hashes(snapshot, &header.parent_hash()),
+            gas_used: U256::default(),
+            gas_limit: U256::max_value(),
+        }
+    }
+
     // transaction-related
+    #[cfg(feature = "caching")]
+    pub fn call(&self, transaction: &SignedTransaction) -> Result<Executed, CallError> {
+        let db = match self.get_db_snapshot() {
+            Some(snapshot) => snapshot,
+            None => {
+                error!("Could not get state snapshot");
+                return Err(CallError::StateCorrupt);
+            }
+        };
+        let mut state = match db.get_ethstate() {
+            Some(state) => state,
+            None => {
+                error!("Could not get state snapshot");
+                return Err(CallError::StateCorrupt);
+            }
+        };
+
+        let env_info = Self::get_env_info(&db);
+        let machine = self.engine.machine();
+        let options = TransactOptions::with_no_tracing()
+            .dont_check_nonce()
+            .save_output_from_contract();
+        let ret =
+            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+        Ok(ret)
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn call(&self, request: TransactionRequest) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
@@ -384,6 +444,34 @@ impl Client {
         )
     }
 
+    #[cfg(feature = "caching")]
+    pub fn estimate_gas(&self, transaction: &SignedTransaction) -> Result<U256, CallError> {
+        let db = match self.get_db_snapshot() {
+            Some(snapshot) => snapshot,
+            None => {
+                error!("Could not get state snapshot");
+                return Err(CallError::StateCorrupt);
+            }
+        };
+        let mut state = match db.get_ethstate() {
+            Some(state) => state,
+            None => {
+                error!("Could not get state snapshot");
+                return Err(CallError::StateCorrupt);
+            }
+        };
+
+        let env_info = Self::get_env_info(&db);
+        let machine = self.engine.machine();
+        let options = TransactOptions::with_no_tracing()
+            .dont_check_nonce()
+            .save_output_from_contract();
+        let ret =
+            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+        Ok(ret.gas_used)
+    }
+
+    #[cfg(not(feature = "caching"))]
     pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",

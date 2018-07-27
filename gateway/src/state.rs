@@ -2,7 +2,7 @@ use std::{mem, sync::Arc};
 
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
-use ethcore::blockchain::{BlockReceipts, TransactionAddress};
+use ethcore::blockchain::{BlockDetails, BlockReceipts, TransactionAddress};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::filter::Filter;
@@ -19,13 +19,18 @@ use transaction::LocalizedTransaction;
 use client_utils::db::Snapshot;
 use ekiden_db_trusted::Database;
 
+type Backend = BasicBackend<OverlayDB>;
+pub type EthState = ethcore::state::State<Backend>;
+
 pub struct StateDb {
-    snapshot: Snapshot,
+    snapshot: Arc<Snapshot>,
 }
 
 impl StateDb {
     pub fn new(snapshot: Snapshot) -> Option<Self> {
-        let db = Self { snapshot: snapshot };
+        let db = Self {
+            snapshot: Arc::new(snapshot),
+        };
         match db.best_block_hash() {
             Some(_) => Some(db),
             None => None,
@@ -75,6 +80,10 @@ impl StateDb {
         ))
     }
 
+    pub fn block_details(&self, hash: &H256) -> Option<BlockDetails> {
+        self.read(db::COL_EXTRA, hash)
+    }
+
     pub fn block_hash(&self, index: BlockNumber) -> Option<H256> {
         self.read(db::COL_EXTRA, &index)
     }
@@ -98,6 +107,28 @@ impl StateDb {
                 .map(|h| h.number())
                 .unwrap_or(0),
             None => 0,
+        }
+    }
+
+    pub fn get_ethstate(&self) -> Option<EthState> {
+        let root = self.best_block_state_root()?;
+        let backend = BasicBackend(OverlayDB::new(
+            Arc::new(StateDb {
+                snapshot: self.snapshot.clone(),
+            }),
+            None, /* col */
+        ));
+        match ethcore::state::State::from_existing(
+            backend,
+            root,
+            U256::zero(),       /* account_start_nonce */
+            Default::default(), /* factories */
+        ) {
+            Ok(state) => Some(state),
+            Err(e) => {
+                error!("Could not construct EthState from snapshot");
+                None
+            }
         }
     }
 
@@ -199,30 +230,6 @@ impl StateDb {
             .collect::<Vec<LocalizedLogEntry>>();
         logs.reverse();
         logs
-    }
-}
-
-type Backend = BasicBackend<OverlayDB>;
-pub type EthState = ethcore::state::State<Backend>;
-
-pub fn get_ethstate(snapshot: Snapshot) -> Option<EthState> {
-    if let Some(db) = StateDb::new(snapshot) {
-        let root = db.best_block_state_root()?;
-        let backend = BasicBackend(OverlayDB::new(Arc::new(db), None /* col */));
-        match ethcore::state::State::from_existing(
-            backend,
-            root,
-            U256::zero(),       /* account_start_nonce */
-            Default::default(), /* factories */
-        ) {
-            Ok(state) => Some(state),
-            Err(e) => {
-                error!("Could not construct EthState from snapshot");
-                None
-            }
-        }
-    } else {
-        None
     }
 }
 
