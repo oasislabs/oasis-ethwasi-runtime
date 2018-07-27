@@ -27,22 +27,6 @@ pub struct StateDb {
 }
 
 impl BlockProvider for StateDb {
-    fn is_known(&self, hash: &H256) -> bool {
-        unimplemented!();
-    }
-
-    fn first_block(&self) -> Option<H256> {
-        unimplemented!();
-    }
-
-    fn best_ancient_block(&self) -> Option<H256> {
-        unimplemented!();
-    }
-
-    fn best_ancient_number(&self) -> Option<BlockNumber> {
-        unimplemented!();
-    }
-
     fn block(&self, hash: &H256) -> Option<encoded::Block> {
         let header = self.block_header_data(hash)?;
         let body = self.block_body(hash)?;
@@ -90,15 +74,6 @@ impl BlockProvider for StateDb {
 
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {
         self.read(db::COL_EXTRA, hash)
-    }
-
-    fn blocks_with_bloom(
-        &self,
-        bloom: &Bloom,
-        from_block: BlockNumber,
-        to_block: BlockNumber,
-    ) -> Vec<BlockNumber> {
-        unimplemented!();
     }
 
     /// Returns logs matching given filter. The order of logs returned will be the same as the order of the blocks
@@ -177,6 +152,31 @@ impl BlockProvider for StateDb {
         logs.reverse();
         logs
     }
+
+    fn is_known(&self, _hash: &H256) -> bool {
+        unimplemented!();
+    }
+
+    fn first_block(&self) -> Option<H256> {
+        unimplemented!();
+    }
+
+    fn best_ancient_block(&self) -> Option<H256> {
+        unimplemented!();
+    }
+
+    fn best_ancient_number(&self) -> Option<BlockNumber> {
+        unimplemented!();
+    }
+
+    fn blocks_with_bloom(
+        &self,
+        _bloom: &Bloom,
+        _from_block: BlockNumber,
+        _to_block: BlockNumber,
+    ) -> Vec<BlockNumber> {
+        unimplemented!();
+    }
 }
 
 impl StateDb {
@@ -206,7 +206,7 @@ impl StateDb {
         ) {
             Ok(state) => Some(state),
             Err(e) => {
-                error!("Could not construct EthState from snapshot");
+                error!("Could not construct EthState from snapshot: {:?}", e);
                 None
             }
         }
@@ -222,7 +222,7 @@ impl StateDb {
         }
     }
 
-    pub fn best_block_state_root(&self) -> Option<H256> {
+    fn best_block_state_root(&self) -> Option<H256> {
         match self.best_block_hash() {
             Some(hash) => self.block_header_data(&hash)
                 .map(|h| h.state_root().clone()),
@@ -237,12 +237,6 @@ impl StateDb {
                 .unwrap_or(0),
             None => 0,
         }
-    }
-
-    pub fn transaction_receipt(&self, hash: &H256) -> Option<Receipt> {
-        let address: TransactionAddress = self.transaction_address(hash)?;
-        self.block_receipts(&address.block_hash)
-            .and_then(|br| br.receipts.into_iter().nth(address.index))
     }
 }
 

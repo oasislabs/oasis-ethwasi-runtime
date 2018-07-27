@@ -160,8 +160,8 @@ impl Client {
     #[cfg(feature = "caching")]
     pub fn transaction_receipt(&self, hash: H256) -> Option<LocalizedReceipt> {
         if let Some(snapshot) = self.get_db_snapshot() {
-            let receipt = snapshot.transaction_receipt(&hash)?;
             let address = snapshot.transaction_address(&hash)?;
+            let receipt = snapshot.transaction_receipt(&address)?;
             let mut tx = snapshot.transaction(&address)?;
 
             let transaction_hash = tx.hash();
