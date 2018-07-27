@@ -61,7 +61,7 @@ impl Filterable for EthFilterClient {
         Vec::new()
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<RpcLog>> {
         measure_counter_inc!("getFilterLogs");
         info!("eth_getFilterLogs(filter: {:?})", filter);
@@ -74,7 +74,7 @@ impl Filterable for EthFilterClient {
         }))
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<RpcLog>> {
         measure_counter_inc!("getFilterLogs");
         info!("eth_getFilterLogs(filter: {:?})", filter);

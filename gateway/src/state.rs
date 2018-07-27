@@ -153,6 +153,7 @@ impl BlockProvider for StateDb {
         logs
     }
 
+    // we don't use the remaining functions
     fn is_known(&self, _hash: &H256) -> bool {
         unimplemented!();
     }
@@ -257,6 +258,7 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
 }
 
 impl kvdb::KeyValueDB for StateDb {
+    // we only use get
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
         Ok(self.snapshot
             .get(&get_key(col, key))

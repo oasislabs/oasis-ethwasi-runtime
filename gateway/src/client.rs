@@ -64,14 +64,14 @@ impl Client {
         self.eip86_transition
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn get_db_snapshot(&self) -> Option<StateDb> {
         state::StateDb::new(self.snapshot_manager.get_snapshot())
     }
 
     // block-related
     pub fn best_block_number(&self) -> BlockNumber {
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         {
             if let Some(snapshot) = self.get_db_snapshot() {
                 return snapshot.best_block_number();
@@ -85,7 +85,7 @@ impl Client {
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         {
             if let Some(snapshot) = self.get_db_snapshot() {
                 return self.block_hash(id).and_then(|h| snapshot.block(&h));
@@ -98,7 +98,7 @@ impl Client {
         ).map(|block| encoded::Block::new(block))
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
         if let BlockId::Hash(hash) = id {
             Some(hash)
@@ -116,7 +116,7 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
         if let BlockId::Hash(hash) = id {
             Some(hash)
@@ -130,7 +130,7 @@ impl Client {
     }
 
     // transaction-related
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
         if let Some(snapshot) = self.get_db_snapshot() {
             let address = match id {
@@ -148,7 +148,7 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
         contract_call_result(
             "get_transaction",
@@ -157,7 +157,7 @@ impl Client {
         )
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     pub fn transaction_receipt(&self, hash: H256) -> Option<LocalizedReceipt> {
         if let Some(snapshot) = self.get_db_snapshot() {
             let address = snapshot.transaction_address(&hash)?;
@@ -209,7 +209,7 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
         contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
     }
@@ -223,7 +223,7 @@ impl Client {
         }
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<LocalizedLogEntry> {
         if let Some(snapshot) = self.get_db_snapshot() {
             let fetch_logs = || {
@@ -275,7 +275,7 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<Log> {
         let filter = Filter {
             from_block: from_block_id(filter.from_block),
@@ -291,13 +291,13 @@ impl Client {
     }
 
     // account state-related
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn get_ethstate_snapshot(&self) -> Option<EthState> {
         self.get_db_snapshot()?.get_ethstate()
     }
 
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.balance(&address) {
@@ -315,7 +315,7 @@ impl Client {
 
     pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.code(&address) {
@@ -332,7 +332,7 @@ impl Client {
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.nonce(&address) {
@@ -354,7 +354,7 @@ impl Client {
         position: &H256,
         state: StateOrBlock,
     ) -> Option<H256> {
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.storage_at(address, position) {
@@ -405,12 +405,12 @@ impl Client {
     }
 
     // transaction-related
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     pub fn call(&self, transaction: &SignedTransaction) -> Result<Executed, CallError> {
         let db = match self.get_db_snapshot() {
             Some(snapshot) => snapshot,
             None => {
-                error!("Could not get state snapshot");
+                error!("Could not get db snapshot");
                 return Err(CallError::StateCorrupt);
             }
         };
@@ -432,7 +432,7 @@ impl Client {
         Ok(ret)
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     pub fn call(&self, request: TransactionRequest) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
@@ -444,12 +444,12 @@ impl Client {
         )
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     pub fn estimate_gas(&self, transaction: &SignedTransaction) -> Result<U256, CallError> {
         let db = match self.get_db_snapshot() {
             Some(snapshot) => snapshot,
             None => {
-                error!("Could not get state snapshot");
+                error!("Could not get db snapshot");
                 return Err(CallError::StateCorrupt);
             }
         };
@@ -471,7 +471,7 @@ impl Client {
         Ok(ret.gas_used)
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",

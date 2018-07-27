@@ -175,7 +175,7 @@ impl EthClient {
         }
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
         let client_transaction = |id| match self.client.transaction(id) {
             Some(t) => Ok(Some(RpcTransaction::from_localized(
@@ -197,7 +197,7 @@ impl EthClient {
         }
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
         if let PendingTransactionId::Hash(hash) = id {
             let hash: H256 = hash.into();
@@ -473,7 +473,7 @@ impl Eth for EthClient {
         Box::new(future::done(self.transaction(transaction_id)))
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         measure_counter_inc!("getTransactionReceipt");
         let hash: H256 = hash.into();
@@ -482,7 +482,7 @@ impl Eth for EthClient {
         Box::new(future::ok(receipt.map(Into::into)))
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         measure_counter_inc!("getTransactionReceipt");
         let hash: H256 = hash.into();
@@ -538,13 +538,13 @@ impl Eth for EthClient {
         measure_counter_inc!("getLogs");
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
-        #[cfg(feature = "caching")]
+        #[cfg(feature = "read_state")]
         let logs = self.client
             .logs(filter.clone())
             .into_iter()
             .map(From::from)
             .collect::<Vec<RpcLog>>();
-        #[cfg(not(feature = "caching"))]
+        #[cfg(not(feature = "read_state"))]
         let logs = self.client
             .logs(filter.clone())
             .into_iter()
@@ -585,7 +585,7 @@ impl Eth for EthClient {
         self.send_raw_transaction(raw)
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn call(
         &self,
         meta: Self::Metadata,
@@ -613,7 +613,7 @@ impl Eth for EthClient {
         ))
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     fn call(
         &self,
         _meta: Self::Metadata,
@@ -641,7 +641,7 @@ impl Eth for EthClient {
         ))
     }
 
-    #[cfg(feature = "caching")]
+    #[cfg(feature = "read_state")]
     fn estimate_gas(
         &self,
         meta: Self::Metadata,
@@ -661,7 +661,7 @@ impl Eth for EthClient {
         Box::new(future::done(result.map(Into::into).map_err(errors::call)))
     }
 
-    #[cfg(not(feature = "caching"))]
+    #[cfg(not(feature = "read_state"))]
     fn estimate_gas(
         &self,
         meta: Self::Metadata,

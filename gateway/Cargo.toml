@@ -68,8 +68,8 @@ rustc_version = "0.2"
 ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden" }
 
 [features]
-default = ["caching"]
-caching = []
+default = ["read_state"]
+read_state = []
 
 [[bin]]
 name = "gateway"
