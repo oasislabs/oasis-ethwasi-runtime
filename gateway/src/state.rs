@@ -2,14 +2,14 @@ use std::{mem, sync::Arc};
 
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
-use ethcore::blockchain::{BlockDetails, BlockReceipts, TransactionAddress};
+use ethcore::blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::filter::Filter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::{LocalizedReceipt, Receipt};
 use ethcore::state::backend::Basic as BasicBackend;
-use ethereum_types::{H256, U256};
+use ethereum_types::{Bloom, H256, U256};
 use journaldb::overlaydb::OverlayDB;
 use kvdb::{self, KeyValueDB};
 use rayon::prelude::*;
@@ -26,28 +26,33 @@ pub struct StateDb {
     snapshot: Arc<Snapshot>,
 }
 
-impl StateDb {
-    pub fn new(snapshot: Snapshot) -> Option<Self> {
-        let db = Self {
-            snapshot: Arc::new(snapshot),
-        };
-        match db.best_block_hash() {
-            Some(_) => Some(db),
-            None => None,
-        }
+impl BlockProvider for StateDb {
+    fn is_known(&self, hash: &H256) -> bool {
+        unimplemented!();
     }
 
-    pub fn best_block_hash(&self) -> Option<H256> {
-        match self.get(db::COL_EXTRA, b"best") {
-            Ok(best) => best.map(|best| H256::from_slice(&best)),
-            Err(e) => {
-                warn!("Could not fetch best_block_hash from snapshot: {:?}", e);
-                None
-            }
-        }
+    fn first_block(&self) -> Option<H256> {
+        unimplemented!();
     }
 
-    pub fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
+    fn best_ancient_block(&self) -> Option<H256> {
+        unimplemented!();
+    }
+
+    fn best_ancient_number(&self) -> Option<BlockNumber> {
+        unimplemented!();
+    }
+
+    fn block(&self, hash: &H256) -> Option<encoded::Block> {
+        let header = self.block_header_data(hash)?;
+        let body = self.block_body(hash)?;
+        Some(encoded::Block::new_from_header_and_body(
+            &header.view(),
+            &body.view(),
+        ))
+    }
+
+    fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
         match self.get(db::COL_HEADERS, &hash) {
             Ok(hash) => {
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
@@ -71,77 +76,15 @@ impl StateDb {
         }
     }
 
-    pub fn block(&self, hash: &H256) -> Option<encoded::Block> {
-        let header = self.block_header_data(hash)?;
-        let body = self.block_body(hash)?;
-        Some(encoded::Block::new_from_header_and_body(
-            &header.view(),
-            &body.view(),
-        ))
-    }
-
-    pub fn block_details(&self, hash: &H256) -> Option<BlockDetails> {
+    fn block_details(&self, hash: &H256) -> Option<BlockDetails> {
         self.read(db::COL_EXTRA, hash)
     }
 
-    pub fn block_hash(&self, index: BlockNumber) -> Option<H256> {
+    fn block_hash(&self, index: BlockNumber) -> Option<H256> {
         self.read(db::COL_EXTRA, &index)
     }
 
-    pub fn block_number(&self, hash: &H256) -> Option<BlockNumber> {
-        self.block_header_data(hash).map(|header| header.number())
-    }
-
-    // convenience function
-    pub fn best_block_state_root(&self) -> Option<H256> {
-        match self.best_block_hash() {
-            Some(hash) => self.block_header_data(&hash)
-                .map(|h| h.state_root().clone()),
-            None => None,
-        }
-    }
-
-    pub fn best_block_number(&self) -> BlockNumber {
-        match self.best_block_hash() {
-            Some(hash) => self.block_header_data(&hash)
-                .map(|h| h.number())
-                .unwrap_or(0),
-            None => 0,
-        }
-    }
-
-    pub fn get_ethstate(&self) -> Option<EthState> {
-        let root = self.best_block_state_root()?;
-        let backend = BasicBackend(OverlayDB::new(
-            Arc::new(StateDb {
-                snapshot: self.snapshot.clone(),
-            }),
-            None, /* col */
-        ));
-        match ethcore::state::State::from_existing(
-            backend,
-            root,
-            U256::zero(),       /* account_start_nonce */
-            Default::default(), /* factories */
-        ) {
-            Ok(state) => Some(state),
-            Err(e) => {
-                error!("Could not construct EthState from snapshot");
-                None
-            }
-        }
-    }
-
-    pub fn transaction(&self, address: &TransactionAddress) -> Option<LocalizedTransaction> {
-        self.block_body(&address.block_hash).and_then(|body| {
-            self.block_number(&address.block_hash).and_then(|n| {
-                body.view()
-                    .localized_transaction_at(&address.block_hash, n, address.index)
-            })
-        })
-    }
-
-    pub fn transaction_address(&self, hash: &H256) -> Option<TransactionAddress> {
+    fn transaction_address(&self, hash: &H256) -> Option<TransactionAddress> {
         self.read(db::COL_EXTRA, hash)
     }
 
@@ -149,15 +92,18 @@ impl StateDb {
         self.read(db::COL_EXTRA, hash)
     }
 
-    pub fn transaction_receipt(&self, hash: &H256) -> Option<Receipt> {
-        let address: TransactionAddress = self.transaction_address(hash)?;
-        self.block_receipts(&address.block_hash)
-            .and_then(|br| br.receipts.into_iter().nth(address.index))
+    fn blocks_with_bloom(
+        &self,
+        bloom: &Bloom,
+        from_block: BlockNumber,
+        to_block: BlockNumber,
+    ) -> Vec<BlockNumber> {
+        unimplemented!();
     }
 
     /// Returns logs matching given filter. The order of logs returned will be the same as the order of the blocks
     /// provided. And it's the callers responsibility to sort blocks provided in advance.
-    pub fn logs<F>(
+    fn logs<F>(
         &self,
         mut blocks: Vec<H256>,
         matches: F,
@@ -233,7 +179,74 @@ impl StateDb {
     }
 }
 
-pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
+impl StateDb {
+    pub fn new(snapshot: Snapshot) -> Option<Self> {
+        let db = Self {
+            snapshot: Arc::new(snapshot),
+        };
+        match db.best_block_hash() {
+            Some(_) => Some(db),
+            None => None,
+        }
+    }
+
+    pub fn get_ethstate(&self) -> Option<EthState> {
+        let root = self.best_block_state_root()?;
+        let backend = BasicBackend(OverlayDB::new(
+            Arc::new(StateDb {
+                snapshot: self.snapshot.clone(),
+            }),
+            None, /* col */
+        ));
+        match ethcore::state::State::from_existing(
+            backend,
+            root,
+            U256::zero(),       /* account_start_nonce */
+            Default::default(), /* factories */
+        ) {
+            Ok(state) => Some(state),
+            Err(e) => {
+                error!("Could not construct EthState from snapshot");
+                None
+            }
+        }
+    }
+
+    pub fn best_block_hash(&self) -> Option<H256> {
+        match self.get(db::COL_EXTRA, b"best") {
+            Ok(best) => best.map(|best| H256::from_slice(&best)),
+            Err(e) => {
+                warn!("Could not fetch best_block_hash from snapshot: {:?}", e);
+                None
+            }
+        }
+    }
+
+    pub fn best_block_state_root(&self) -> Option<H256> {
+        match self.best_block_hash() {
+            Some(hash) => self.block_header_data(&hash)
+                .map(|h| h.state_root().clone()),
+            None => None,
+        }
+    }
+
+    pub fn best_block_number(&self) -> BlockNumber {
+        match self.best_block_hash() {
+            Some(hash) => self.block_header_data(&hash)
+                .map(|h| h.number())
+                .unwrap_or(0),
+            None => 0,
+        }
+    }
+
+    pub fn transaction_receipt(&self, hash: &H256) -> Option<Receipt> {
+        let address: TransactionAddress = self.transaction_address(hash)?;
+        self.block_receipts(&address.block_hash)
+            .and_then(|br| br.receipts.into_iter().nth(address.index))
+    }
+}
+
+fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
     unsafe { mem::transmute(num) }
 }
 

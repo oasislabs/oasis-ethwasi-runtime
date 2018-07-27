@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
-use ethcore::blockchain::TransactionAddress;
+use ethcore::blockchain::{BlockProvider, TransactionAddress};
 use ethcore::client::{BlockId, EnvInfo, LastHashes, StateOrBlock, TransactionId};
 use ethcore::encoded;
 use ethcore::engines::EthEngine;
