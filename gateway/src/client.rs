@@ -21,6 +21,7 @@ use client_utils;
 use ekiden_core::error::Error;
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
+#[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
 use util::from_block_id;
 
@@ -60,6 +61,8 @@ impl Client {
         }
     }
 
+    // block number at which EIP-86 transition occurs
+    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-86.md
     pub fn eip86_transition(&self) -> u64 {
         self.eip86_transition
     }
@@ -214,6 +217,7 @@ impl Client {
         contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
     }
 
+    #[cfg(feature = "read_state")]
     fn id_to_block_hash(snapshot: &StateDb, id: BlockId) -> Option<H256> {
         match id {
             BlockId::Hash(hash) => Some(hash),
@@ -373,6 +377,7 @@ impl Client {
         )
     }
 
+    #[cfg(feature = "read_state")]
     fn last_hashes(snapshot: &StateDb, parent_hash: &H256) -> Arc<LastHashes> {
         let mut last_hashes = LastHashes::new();
         last_hashes.resize(256, H256::default());
@@ -388,6 +393,7 @@ impl Client {
         Arc::new(last_hashes)
     }
 
+    #[cfg(feature = "read_state")]
     fn get_env_info(snapshot: &StateDb) -> EnvInfo {
         let header = snapshot
             .best_block_hash()

@@ -24,21 +24,14 @@ extern crate env_logger;
 #[macro_use]
 extern crate futures;
 extern crate futures_cpupool;
-extern crate jsonrpc_core;
-
-#[macro_use]
-extern crate jsonrpc_macros;
-extern crate jsonrpc_http_server;
-extern crate jsonrpc_ipc_server;
-extern crate jsonrpc_pubsub;
-extern crate jsonrpc_ws_server;
-
 #[macro_use]
 extern crate lazy_static;
-
+#[macro_use]
+extern crate log;
 extern crate parking_lot;
+extern crate path;
+extern crate rayon;
 extern crate regex;
-extern crate rlp;
 extern crate rustc_hex;
 extern crate serde;
 extern crate serde_json;
@@ -46,39 +39,32 @@ extern crate serde_json;
 extern crate serde_derive;
 extern crate toml;
 
+extern crate jsonrpc_core;
+#[macro_use]
+extern crate jsonrpc_macros;
+extern crate jsonrpc_http_server;
+extern crate jsonrpc_ipc_server;
+extern crate jsonrpc_pubsub;
+extern crate jsonrpc_ws_server;
+
+extern crate common_types;
 #[macro_use]
 extern crate ethcore;
 extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
+extern crate evm;
 extern crate journaldb;
 extern crate keccak_hash as hash;
 extern crate kvdb;
+extern crate parity_machine;
 extern crate parity_reactor;
 extern crate parity_rpc;
-extern crate path;
-extern crate rayon;
 extern crate registrar;
+extern crate rlp;
 extern crate rlp_compress;
-
-// for client.rs
-extern crate common_types;
-extern crate evm;
-extern crate parity_machine;
 extern crate util_error;
 extern crate vm;
-
-#[macro_use]
-extern crate log as rlog;
-
-mod client;
-mod impls;
-mod rpc;
-mod rpc_apis;
-mod run;
-mod servers;
-mod state;
-mod util;
 
 #[macro_use]
 extern crate client_utils;
@@ -90,6 +76,16 @@ extern crate ekiden_di;
 extern crate ekiden_instrumentation;
 extern crate ekiden_rpc_client;
 extern crate ethereum_api;
+
+mod client;
+mod impls;
+mod rpc;
+mod rpc_apis;
+mod run;
+mod servers;
+#[cfg(feature = "read_state")]
+mod state;
+mod util;
 
 use clap::ArgMatches;
 
