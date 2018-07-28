@@ -19,6 +19,7 @@
 use std::sync::Arc;
 
 use client::Client;
+#[cfg(not(feature = "read_state"))]
 use util::log_to_rpc_log;
 
 use ethcore::client::BlockId;

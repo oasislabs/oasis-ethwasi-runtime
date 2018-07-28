@@ -5,16 +5,13 @@ use ethcore;
 use ethcore::blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
-use ethcore::filter::Filter;
 use ethcore::header::BlockNumber;
-use ethcore::receipt::{LocalizedReceipt, Receipt};
 use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{Bloom, H256, U256};
 use journaldb::overlaydb::OverlayDB;
 use kvdb::{self, KeyValueDB};
 use rayon::prelude::*;
 use rlp_compress::{blocks_swapper, decompress};
-use transaction::LocalizedTransaction;
 
 use client_utils::db::Snapshot;
 use ekiden_db_trusted::Database;

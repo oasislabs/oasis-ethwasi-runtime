@@ -22,6 +22,7 @@ use std::sync::Arc;
 use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
+#[cfg(not(feature = "read_state"))]
 use util::log_to_rpc_log;
 
 use ethcore::client::{BlockId, StateOrBlock, TransactionId};
@@ -39,6 +40,7 @@ use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransac
                             Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus,
                             Transaction as RpcTransaction, U256 as RpcU256, Work};
 
+#[cfg(not(feature = "read_state"))]
 use ethereum_api::TransactionRequest;
 
 // short for "try_boxfuture"

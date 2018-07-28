@@ -19,6 +19,7 @@ use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils;
 use ekiden_core::error::Error;
+#[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 #[cfg(feature = "read_state")]
