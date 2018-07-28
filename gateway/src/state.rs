@@ -42,7 +42,7 @@ impl BlockProvider for StateDb {
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
             }
             Err(e) => {
-                warn!("Could not fetch block_header_data from snapshot: {:?}", e);
+                error!("Could not get block header from snapshot: {:?}", e);
                 None
             }
         }
@@ -54,7 +54,7 @@ impl BlockProvider for StateDb {
                 body.map(|b| encoded::Body::new(decompress(&b, blocks_swapper()).into_vec()))
             }
             Err(e) => {
-                warn!("Could not fetch block_body from snapshot: {:?}", e);
+                error!("Could not get block body from snapshot: {:?}", e);
                 None
             }
         }
@@ -207,7 +207,7 @@ impl StateDb {
         ) {
             Ok(state) => Some(state),
             Err(e) => {
-                error!("Could not construct EthState from snapshot: {:?}", e);
+                error!("Could not get EthState from snapshot: {:?}", e);
                 None
             }
         }
@@ -217,7 +217,7 @@ impl StateDb {
         match self.get(db::COL_EXTRA, b"best") {
             Ok(best) => best.map(|best| H256::from_slice(&best)),
             Err(e) => {
-                warn!("Could not fetch best_block_hash from snapshot: {:?}", e);
+                error!("Could not get best block hash from snapshot: {:?}", e);
                 None
             }
         }

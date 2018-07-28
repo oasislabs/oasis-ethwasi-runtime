@@ -306,7 +306,10 @@ impl Client {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.balance(&address) {
                     Ok(balance) => return Some(balance),
-                    Err(_) => return None,
+                    Err(e) => {
+                        error!("Could not get balance from snapshot: {:?}", e);
+                        return None;
+                    }
                 }
             }
         }
@@ -324,7 +327,10 @@ impl Client {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.code(&address) {
                     Ok(code) => return Some(code.map(|c| (&*c).clone())),
-                    Err(_) => return None,
+                    Err(e) => {
+                        error!("Could not get code from snapshot: {:?}", e);
+                        return None;
+                    }
                 }
             }
         }
@@ -341,7 +347,10 @@ impl Client {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.nonce(&address) {
                     Ok(nonce) => return Some(nonce),
-                    Err(_) => return None,
+                    Err(e) => {
+                        error!("Could not get nonce from snapshot: {:?}", e);
+                        return None;
+                    }
                 }
             }
         }
@@ -363,7 +372,10 @@ impl Client {
             if let Some(snapshot) = self.get_ethstate_snapshot() {
                 match snapshot.storage_at(address, position) {
                     Ok(val) => return Some(val),
-                    Err(_) => return None,
+                    Err(e) => {
+                        error!("Could not get storage from snapshot: {:?}", e);
+                        return None;
+                    }
                 }
             }
         }
