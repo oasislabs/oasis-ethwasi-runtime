@@ -160,7 +160,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let allowed_origins = into_domains(with_domain(conf.origins, domain, &conf.dapps_address));
     let allowed_hosts = into_domains(with_domain(conf.hosts, domain, &Some(url.clone().into())));
 
-    let start_result = rpc::start_ws(
+    let start_result = servers::start_ws(
         &addr,
         handler,
         remote.clone(),
