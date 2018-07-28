@@ -149,7 +149,7 @@ impl EthClient {
                         logs_bloom: Some(view.log_bloom().into()),
                         timestamp: view.timestamp().into(),
                         difficulty: view.difficulty().into(),
-                        total_difficulty: None,
+                        total_difficulty: Some(RpcU256::from(0)),
                         seal_fields: view.seal().into_iter().map(Into::into).collect(),
                         uncles: block.uncle_hashes().into_iter().map(Into::into).collect(),
                         transactions: match include_txs {
