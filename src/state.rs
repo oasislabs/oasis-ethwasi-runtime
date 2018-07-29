@@ -345,11 +345,13 @@ pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
     unsafe { mem::transmute(num) }
 }
 
-// parity expects the database to namespace keys by column
-// the ekiden db doesn't [yet?] have this feature, so we emulate by
-// prepending the column id to the actual key
+// Parity expects the database to namespace keys by column. The Ekiden db
+// doesn't [yet?] have this feature, so we emulate by prepending the column id
+// to the actual key. Columns None and 0 should be distinct, so we use the
+// prefix 0xffffffff for None.
 fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| to_bytes(id.to_le())).unwrap_or([0, 0, 0, 0]);
+    let col_bytes = col.map(|id| to_bytes(id.to_le()))
+        .unwrap_or([0xff, 0xff, 0xff, 0xff]);
     col_bytes
         .into_iter()
         .chain(key.into_iter())
