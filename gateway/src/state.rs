@@ -303,10 +303,45 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    struct MockDb {
+        map: BTreeMap<Vec<u8>, Vec<u8>>,
+    }
+
+    impl MockDb {
+        fn new() -> Self {
+            Self {
+                map: BTreeMap::new(),
+            }
+        }
+    }
+
+    impl Database for MockDb {
+        fn contains_key(&self, key: &[u8]) -> bool {
+            self.map.contains_key(key)
+        }
+
+        fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+            self.map.get(key).cloned()
+        }
+
+        fn insert(&mut self, key: &[u8], value: &[u8]) -> Option<Vec<u8>> {
+            self.map.insert(key.to_vec(), value.to_vec())
+        }
+
+        fn remove(&mut self, key: &[u8]) -> Option<Vec<u8>> {
+            self.map.remove(key)
+        }
+
+        fn clear(&mut self) {
+            self.map.clear()
+        }
+    }
+
     #[test]
     fn test_get_key() {
-        use super::get_key;
-
         let value = b"somevalue";
         let col_none = get_key(None, value);
         let col_0 = get_key(Some(0), value);
@@ -314,5 +349,23 @@ mod tests {
 
         let col_3 = get_key(Some(3), b"three");
         assert_eq!(col_3, b"\x03\0\0\0three");
+    }
+
+    #[test]
+    fn test_get_statedb_empty() {
+        let state = StateDb::new(MockDb::new());
+        assert!(state.is_none());
+    }
+
+    #[test]
+    fn test_get_statedb() {
+        let mut db = MockDb::new();
+        // insert a valid best block hash
+        db.insert(
+            &get_key(db::COL_EXTRA, b"best"),
+            &H256::from("0xec891bd71e6d6a64ec299b8641c6cce3638989c03a4a41fd5898a2c0356c7ae6"),
+        );
+        let state = StateDb::new(db);
+        assert!(state.is_some());
     }
 }
