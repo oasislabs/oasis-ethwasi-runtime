@@ -1,3 +1,5 @@
+//! Read-only interface to blockchain and account state, backed by an Ekiden Database.
+
 use std::marker::{Send, Sync};
 use std::mem;
 use std::sync::Arc;
