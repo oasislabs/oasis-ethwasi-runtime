@@ -18,6 +18,8 @@ use runtime_ethereum;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils;
+#[cfg(feature = "read_state")]
+use client_utils::db::Snapshot;
 use ekiden_core::error::Error;
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
@@ -69,7 +71,7 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn get_db_snapshot(&self) -> Option<StateDb> {
+    fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         state::StateDb::new(self.snapshot_manager.get_snapshot())
     }
 
@@ -77,8 +79,8 @@ impl Client {
     pub fn best_block_number(&self) -> BlockNumber {
         #[cfg(feature = "read_state")]
         {
-            if let Some(snapshot) = self.get_db_snapshot() {
-                return snapshot.best_block_number();
+            if let Some(db) = self.get_db_snapshot() {
+                return db.best_block_number();
             }
         }
         // fall back to contract call if database has not been initialized
@@ -92,8 +94,8 @@ impl Client {
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(snapshot) = self.get_db_snapshot() {
-                return self.block_hash(id).and_then(|h| snapshot.block(&h));
+            if let Some(db) = self.get_db_snapshot() {
+                return self.block_hash(id).and_then(|h| db.block(&h));
             }
         }
         // fall back to contract call if database has not been initialized
@@ -109,12 +111,12 @@ impl Client {
         if let BlockId::Hash(hash) = id {
             Some(hash)
         } else {
-            if let Some(snapshot) = self.get_db_snapshot() {
+            if let Some(db) = self.get_db_snapshot() {
                 match id {
                     BlockId::Hash(_hash) => unreachable!(),
-                    BlockId::Number(number) => snapshot.block_hash(number),
-                    BlockId::Earliest => snapshot.block_hash(0),
-                    BlockId::Latest => snapshot.best_block_hash(),
+                    BlockId::Number(number) => db.block_hash(number),
+                    BlockId::Earliest => db.block_hash(0),
+                    BlockId::Latest => db.best_block_hash(),
                 }
             } else {
                 None
@@ -138,17 +140,17 @@ impl Client {
     // transaction-related
     #[cfg(feature = "read_state")]
     pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
-        if let Some(snapshot) = self.get_db_snapshot() {
+        if let Some(db) = self.get_db_snapshot() {
             let address = match id {
-                TransactionId::Hash(ref hash) => snapshot.transaction_address(hash),
+                TransactionId::Hash(ref hash) => db.transaction_address(hash),
                 TransactionId::Location(id, index) => {
-                    Self::id_to_block_hash(&snapshot, id).map(|hash| TransactionAddress {
+                    Self::id_to_block_hash(&db, id).map(|hash| TransactionAddress {
                         block_hash: hash,
                         index: index,
                     })
                 }
             };
-            address.and_then(|addr| snapshot.transaction(&addr))
+            address.and_then(|addr| db.transaction(&addr))
         } else {
             None
         }
@@ -165,10 +167,10 @@ impl Client {
 
     #[cfg(feature = "read_state")]
     pub fn transaction_receipt(&self, hash: H256) -> Option<LocalizedReceipt> {
-        if let Some(snapshot) = self.get_db_snapshot() {
-            let address = snapshot.transaction_address(&hash)?;
-            let receipt = snapshot.transaction_receipt(&address)?;
-            let mut tx = snapshot.transaction(&address)?;
+        if let Some(db) = self.get_db_snapshot() {
+            let address = db.transaction_address(&hash)?;
+            let receipt = db.transaction_receipt(&address)?;
+            let mut tx = db.transaction(&address)?;
 
             let transaction_hash = tx.hash();
             let block_hash = tx.block_hash;
@@ -221,24 +223,24 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn id_to_block_hash(snapshot: &StateDb, id: BlockId) -> Option<H256> {
+    fn id_to_block_hash(db: &StateDb<Snapshot>, id: BlockId) -> Option<H256> {
         match id {
             BlockId::Hash(hash) => Some(hash),
-            BlockId::Number(number) => snapshot.block_hash(number),
-            BlockId::Earliest => snapshot.block_hash(0),
-            BlockId::Latest => snapshot.best_block_hash(),
+            BlockId::Number(number) => db.block_hash(number),
+            BlockId::Earliest => db.block_hash(0),
+            BlockId::Latest => db.best_block_hash(),
         }
     }
 
     #[cfg(feature = "read_state")]
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<LocalizedLogEntry> {
-        if let Some(snapshot) = self.get_db_snapshot() {
+        if let Some(db) = self.get_db_snapshot() {
             let fetch_logs = || {
-                let from_hash = Self::id_to_block_hash(&snapshot, filter.from_block)?;
-                let from_number = snapshot.block_number(&from_hash)?;
+                let from_hash = Self::id_to_block_hash(&db, filter.from_block)?;
+                let from_number = db.block_number(&from_hash)?;
                 // NOTE: there appears to be a bug in parity with to_hash:
                 // https://github.com/ekiden/parity/blob/master/ethcore/src/client/client.rs#L1856
-                let to_hash = Self::id_to_block_hash(&snapshot, filter.to_block)?;
+                let to_hash = Self::id_to_block_hash(&db, filter.to_block)?;
 
                 let blooms = filter.bloom_possibilities();
                 let bloom_match = |header: &encoded::Header| {
@@ -252,7 +254,7 @@ impl Client {
                     let mut current_hash = to_hash;
 
                     loop {
-                        let header = snapshot.block_header_data(&current_hash)?;
+                        let header = db.block_header_data(&current_hash)?;
                         if bloom_match(&header) {
                             blocks.push(current_hash);
                         }
@@ -273,7 +275,7 @@ impl Client {
                     return None;
                 }
 
-                Some(snapshot.logs(blocks, |entry| filter.matches(entry), filter.limit))
+                Some(db.logs(blocks, |entry| filter.matches(entry), filter.limit))
             };
 
             fetch_logs().unwrap_or_default()
@@ -306,11 +308,11 @@ impl Client {
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(snapshot) = self.get_ethstate_snapshot() {
-                match snapshot.balance(&address) {
+            if let Some(state) = self.get_ethstate_snapshot() {
+                match state.balance(&address) {
                     Ok(balance) => return Some(balance),
                     Err(e) => {
-                        error!("Could not get balance from snapshot: {:?}", e);
+                        error!("Could not get balance from ethstate: {:?}", e);
                         return None;
                     }
                 }
@@ -328,11 +330,11 @@ impl Client {
         // TODO: differentiate between no account vs no code?
         #[cfg(feature = "read_state")]
         {
-            if let Some(snapshot) = self.get_ethstate_snapshot() {
-                match snapshot.code(&address) {
+            if let Some(state) = self.get_ethstate_snapshot() {
+                match state.code(&address) {
                     Ok(code) => return Some(code.map(|c| (&*c).clone())),
                     Err(e) => {
-                        error!("Could not get code from snapshot: {:?}", e);
+                        error!("Could not get code from ethstate: {:?}", e);
                         return None;
                     }
                 }
@@ -349,11 +351,11 @@ impl Client {
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(snapshot) = self.get_ethstate_snapshot() {
-                match snapshot.nonce(&address) {
+            if let Some(state) = self.get_ethstate_snapshot() {
+                match state.nonce(&address) {
                     Ok(nonce) => return Some(nonce),
                     Err(e) => {
-                        error!("Could not get nonce from snapshot: {:?}", e);
+                        error!("Could not get nonce from ethstate: {:?}", e);
                         return None;
                     }
                 }
@@ -375,11 +377,11 @@ impl Client {
     ) -> Option<H256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(snapshot) = self.get_ethstate_snapshot() {
-                match snapshot.storage_at(address, position) {
+            if let Some(state) = self.get_ethstate_snapshot() {
+                match state.storage_at(address, position) {
                     Ok(val) => return Some(val),
                     Err(e) => {
-                        error!("Could not get storage from snapshot: {:?}", e);
+                        error!("Could not get storage from ethstate: {:?}", e);
                         return None;
                     }
                 }
@@ -397,12 +399,12 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn last_hashes(snapshot: &StateDb, parent_hash: &H256) -> Arc<LastHashes> {
+    fn last_hashes(db: &StateDb<Snapshot>, parent_hash: &H256) -> Arc<LastHashes> {
         let mut last_hashes = LastHashes::new();
         last_hashes.resize(256, H256::default());
         last_hashes[0] = parent_hash.clone();
         for i in 0..255 {
-            match snapshot.block_details(&last_hashes[i]) {
+            match db.block_details(&last_hashes[i]) {
                 Some(details) => {
                     last_hashes[i + 1] = details.parent.clone();
                 }
@@ -413,17 +415,16 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn get_env_info(snapshot: &StateDb) -> EnvInfo {
-        let header = snapshot
-            .best_block_hash()
-            .and_then(|hash| snapshot.block_header_data(&hash))
+    fn get_env_info(db: &StateDb<Snapshot>) -> EnvInfo {
+        let header = db.best_block_hash()
+            .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
         EnvInfo {
             number: header.number(),
             author: header.author().clone(),
             timestamp: header.timestamp(),
             difficulty: header.difficulty().clone(),
-            last_hashes: Self::last_hashes(snapshot, &header.parent_hash()),
+            last_hashes: Self::last_hashes(db, &header.parent_hash()),
             gas_used: U256::default(),
             gas_limit: U256::max_value(),
         }
@@ -433,7 +434,7 @@ impl Client {
     #[cfg(feature = "read_state")]
     pub fn call(&self, transaction: &SignedTransaction) -> Result<Executed, CallError> {
         let db = match self.get_db_snapshot() {
-            Some(snapshot) => snapshot,
+            Some(db) => db,
             None => {
                 error!("Could not get db snapshot");
                 return Err(CallError::StateCorrupt);
@@ -472,7 +473,7 @@ impl Client {
     #[cfg(feature = "read_state")]
     pub fn estimate_gas(&self, transaction: &SignedTransaction) -> Result<U256, CallError> {
         let db = match self.get_db_snapshot() {
-            Some(snapshot) => snapshot,
+            Some(db) => db,
             None => {
                 error!("Could not get db snapshot");
                 return Err(CallError::StateCorrupt);

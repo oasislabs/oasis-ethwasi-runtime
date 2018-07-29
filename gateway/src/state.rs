@@ -1,4 +1,6 @@
-use std::{mem, sync::Arc};
+use std::marker::{Send, Sync};
+use std::mem;
+use std::sync::Arc;
 
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
@@ -13,17 +15,19 @@ use kvdb::{self, KeyValueDB};
 use rayon::prelude::*;
 use rlp_compress::{blocks_swapper, decompress};
 
-use client_utils::db::Snapshot;
 use ekiden_db_trusted::Database;
 
 type Backend = BasicBackend<OverlayDB>;
 pub type EthState = ethcore::state::State<Backend>;
 
-pub struct StateDb {
-    snapshot: Arc<Snapshot>,
+pub struct StateDb<T: Database + Send + Sync> {
+    db: Arc<T>,
 }
 
-impl BlockProvider for StateDb {
+impl<T> BlockProvider for StateDb<T>
+where
+    T: Database + Send + Sync,
+{
     fn block(&self, hash: &H256) -> Option<encoded::Block> {
         let header = self.block_header_data(hash)?;
         let body = self.block_body(hash)?;
@@ -39,7 +43,7 @@ impl BlockProvider for StateDb {
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
             }
             Err(e) => {
-                error!("Could not get block header from snapshot: {:?}", e);
+                error!("Could not get block header from database: {:?}", e);
                 None
             }
         }
@@ -51,7 +55,7 @@ impl BlockProvider for StateDb {
                 body.map(|b| encoded::Body::new(decompress(&b, blocks_swapper()).into_vec()))
             }
             Err(e) => {
-                error!("Could not get block body from snapshot: {:?}", e);
+                error!("Could not get block body from database: {:?}", e);
                 None
             }
         }
@@ -177,14 +181,15 @@ impl BlockProvider for StateDb {
     }
 }
 
-impl StateDb {
+impl<T> StateDb<T>
+where
+    T: 'static + Database + Send + Sync,
+{
     // returns None if the database has not been initialized (i.e., no best block)
-    pub fn new(snapshot: Snapshot) -> Option<Self> {
-        let db = Self {
-            snapshot: Arc::new(snapshot),
-        };
-        match db.best_block_hash() {
-            Some(_) => Some(db),
+    pub fn new(db: T) -> Option<Self> {
+        let state_db = Self { db: Arc::new(db) };
+        match state_db.best_block_hash() {
+            Some(_) => Some(state_db),
             None => None,
         }
     }
@@ -194,7 +199,7 @@ impl StateDb {
         let root = self.best_block_state_root()?;
         let backend = BasicBackend(OverlayDB::new(
             Arc::new(StateDb {
-                snapshot: self.snapshot.clone(),
+                db: self.db.clone(),
             }),
             None, /* col */
         ));
@@ -206,7 +211,7 @@ impl StateDb {
         ) {
             Ok(state) => Some(state),
             Err(e) => {
-                error!("Could not get EthState from snapshot: {:?}", e);
+                error!("Could not get EthState from database: {:?}", e);
                 None
             }
         }
@@ -216,7 +221,7 @@ impl StateDb {
         match self.get(db::COL_EXTRA, b"best") {
             Ok(best) => best.map(|best| H256::from_slice(&best)),
             Err(e) => {
-                error!("Could not get best block hash from snapshot: {:?}", e);
+                error!("Could not get best block hash from database: {:?}", e);
                 None
             }
         }
@@ -258,12 +263,13 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
         .collect()
 }
 
-impl kvdb::KeyValueDB for StateDb {
+impl<T> kvdb::KeyValueDB for StateDb<T>
+where
+    T: Database + Send + Sync,
+{
     // we only use get
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-        Ok(self.snapshot
-            .get(&get_key(col, key))
-            .map(kvdb::DBValue::from_vec))
+        Ok(self.db.get(&get_key(col, key)).map(kvdb::DBValue::from_vec))
     }
 
     fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {
