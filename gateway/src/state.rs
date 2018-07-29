@@ -178,6 +178,7 @@ impl BlockProvider for StateDb {
 }
 
 impl StateDb {
+    // returns None if the database has not been initialized (i.e., no best block)
     pub fn new(snapshot: Snapshot) -> Option<Self> {
         let db = Self {
             snapshot: Arc::new(snapshot),
@@ -188,6 +189,7 @@ impl StateDb {
         }
     }
 
+    // returns None if the database has not been initialized (i.e., no best block state root)
     pub fn get_ethstate(&self) -> Option<EthState> {
         let root = self.best_block_state_root()?;
         let backend = BasicBackend(OverlayDB::new(

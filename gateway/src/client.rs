@@ -81,6 +81,7 @@ impl Client {
                 return snapshot.best_block_number();
             }
         }
+        // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_block_height",
             self.client.get_block_height(false).wait(),
@@ -95,6 +96,7 @@ impl Client {
                 return self.block_hash(id).and_then(|h| snapshot.block(&h));
             }
         }
+        // fall back to contract call if database has not been initialized
         contract_call_result::<Option<Vec<u8>>>(
             "get_block",
             self.client.get_block(from_block_id(id)).wait(),
@@ -314,6 +316,7 @@ impl Client {
                 }
             }
         }
+        // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_balance",
             self.client.get_account_balance(*address).wait().map(Some),
@@ -335,6 +338,7 @@ impl Client {
                 }
             }
         }
+        // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_code",
             self.client.get_account_code(*address).wait().map(Some),
@@ -355,6 +359,7 @@ impl Client {
                 }
             }
         }
+        // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_nonce",
             self.client.get_account_nonce(*address).wait().map(Some),
@@ -380,6 +385,7 @@ impl Client {
                 }
             }
         }
+        // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_storage_at",
             self.client
