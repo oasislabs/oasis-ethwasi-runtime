@@ -1,3 +1,4 @@
+use std::marker::{Send, Sync};
 use std::sync::Arc;
 
 use bytes::Bytes;
@@ -21,6 +22,8 @@ use client_utils;
 #[cfg(feature = "read_state")]
 use client_utils::db::Snapshot;
 use ekiden_core::error::Error;
+#[cfg(feature = "read_state")]
+use ekiden_db_trusted::Database;
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
@@ -223,7 +226,10 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn id_to_block_hash(db: &StateDb<Snapshot>, id: BlockId) -> Option<H256> {
+    fn id_to_block_hash<T>(db: &StateDb<T>, id: BlockId) -> Option<H256>
+    where
+        T: 'static + Database + Send + Sync,
+    {
         match id {
             BlockId::Hash(hash) => Some(hash),
             BlockId::Number(number) => db.block_hash(number),
@@ -399,7 +405,10 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn last_hashes(db: &StateDb<Snapshot>, parent_hash: &H256) -> Arc<LastHashes> {
+    fn last_hashes<T>(db: &StateDb<T>, parent_hash: &H256) -> Arc<LastHashes>
+    where
+        T: 'static + Database + Send + Sync,
+    {
         let mut last_hashes = LastHashes::new();
         last_hashes.resize(256, H256::default());
         last_hashes[0] = parent_hash.clone();
@@ -415,7 +424,10 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn get_env_info(db: &StateDb<Snapshot>) -> EnvInfo {
+    fn get_env_info<T>(db: &StateDb<T>) -> EnvInfo
+    where
+        T: 'static + Database + Send + Sync,
+    {
         let header = db.best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
@@ -518,5 +530,70 @@ impl Client {
                 .map(|r| r.hash),
             Err("no response from runtime".to_string()),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ethereum_types::{Address, H256};
+    use test_helpers::MockDb;
+
+    #[test]
+    fn test_last_hashes() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // start with best block
+        let hashes = Client::last_hashes(
+            &state,
+            &H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199"),
+        );
+
+        assert_eq!(
+            hashes[0],
+            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+        );
+        assert_eq!(
+            hashes[1],
+            H256::from("c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3")
+        );
+        assert_eq!(
+            hashes[2],
+            H256::from("17a7a94ad21879641349b6e90ccd7e42e63551ad81b3fda561cd2df4860fbd3f")
+        );
+        assert_eq!(
+            hashes[3],
+            H256::from("d56eee931740bb35eb9bf9f97cfebb66ac51a1d88988c1255b52677b958d658b")
+        );
+        assert_eq!(
+            hashes[4],
+            H256::from("f39c325375fa2d5381a950850abd9999abd2ff64cd0f184139f5bb5d74afb14e")
+        );
+        assert_eq!(hashes[5], H256::zero());
+    }
+
+    #[test]
+    fn test_envinfo() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        let envinfo = Client::get_env_info(&state);
+        assert_eq!(envinfo.number, 4);
+        assert_eq!(envinfo.author, Address::default());
+        assert_eq!(envinfo.timestamp, 0);
+        assert_eq!(envinfo.difficulty, U256::zero());
+        assert_eq!(
+            envinfo.last_hashes[0],
+            H256::from("c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3")
+        );
     }
 }
