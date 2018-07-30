@@ -349,8 +349,9 @@ mod tests {
         let col_0 = get_key(Some(0), value);
         assert_ne!(col_none, col_0);
 
+        // prefix for column Some(3) is 4=3+1
         let col_3 = get_key(Some(3), b"three");
-        assert_eq!(col_3, b"\x03\0\0\0three");
+        assert_eq!(col_3, b"\x04\0\0\0three");
     }
 
     #[test]
