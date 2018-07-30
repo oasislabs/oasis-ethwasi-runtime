@@ -347,11 +347,11 @@ pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
 
 // Parity expects the database to namespace keys by column. The Ekiden db
 // doesn't [yet?] have this feature, so we emulate by prepending the column id
-// to the actual key. Columns None and 0 should be distinct, so we use the
-// prefix 0xffffffff for None.
+// to the actual key. Columns None and 0 should be distinct, so we use prefix
+// 0x000000 for None and col+1 for Some(col).
 fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| to_bytes(id.to_le()))
-        .unwrap_or([0xff, 0xff, 0xff, 0xff]);
+    let col_bytes = col.map(|id| to_bytes((id + 1).to_le()))
+        .unwrap_or([0, 0, 0, 0]);
     col_bytes
         .into_iter()
         .chain(key.into_iter())
