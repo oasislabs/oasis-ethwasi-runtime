@@ -255,7 +255,7 @@ fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
 // doesn't [yet?] have this feature, so we emulate by prepending the column id
 // to the actual key. Columns None and 0 should be distinct, so we use prefix
 // 0x000000 for None and col+1 for Some(col).
-fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
+pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
     let col_bytes = col.map(|id| to_bytes((id + 1).to_le()))
         .unwrap_or([0, 0, 0, 0]);
     col_bytes
@@ -306,41 +306,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::BTreeMap;
-
-    struct MockDb {
-        map: BTreeMap<Vec<u8>, Vec<u8>>,
-    }
-
-    impl MockDb {
-        fn new() -> Self {
-            Self {
-                map: BTreeMap::new(),
-            }
-        }
-    }
-
-    impl Database for MockDb {
-        fn contains_key(&self, key: &[u8]) -> bool {
-            self.map.contains_key(key)
-        }
-
-        fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-            self.map.get(key).cloned()
-        }
-
-        fn insert(&mut self, key: &[u8], value: &[u8]) -> Option<Vec<u8>> {
-            self.map.insert(key.to_vec(), value.to_vec())
-        }
-
-        fn remove(&mut self, key: &[u8]) -> Option<Vec<u8>> {
-            self.map.remove(key)
-        }
-
-        fn clear(&mut self) {
-            self.map.clear()
-        }
-    }
+    use test_helpers::MockDb;
 
     #[test]
     fn test_get_key() {
@@ -370,5 +336,91 @@ mod tests {
         );
         let state = StateDb::new(db);
         assert!(state.is_some());
+    }
+
+    #[test]
+    fn test_best_block() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+        let state = StateDb::new(db).unwrap();
+        assert_eq!(state.best_block_number(), 4);
+    }
+
+    #[test]
+    fn test_logs() {
+        use ethcore::client::BlockId;
+        use ethcore::filter::Filter;
+
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // all blocks
+        let mut blocks = Vec::new();
+        blocks.push(H256::from(
+            "f39c325375fa2d5381a950850abd9999abd2ff64cd0f184139f5bb5d74afb14e",
+        ));
+        blocks.push(H256::from(
+            "d56eee931740bb35eb9bf9f97cfebb66ac51a1d88988c1255b52677b958d658b",
+        ));
+        blocks.push(H256::from(
+            "17a7a94ad21879641349b6e90ccd7e42e63551ad81b3fda561cd2df4860fbd3f",
+        ));
+        blocks.push(H256::from(
+            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
+        ));
+        blocks.push(H256::from(
+            "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
+        ));
+
+        // query over all blocks
+        let filter = Filter {
+            from_block: BlockId::Earliest,
+            to_block: BlockId::Latest,
+            address: None,
+            topics: vec![None, None, None, None],
+            limit: None,
+        };
+
+        // get logs
+        let logs = state.logs(blocks, |entry| filter.matches(entry), filter.limit);
+
+        // one log entry expected
+        assert_eq!(logs.len(), 1);
+    }
+
+    #[test]
+    fn test_account_state() {
+        use ethereum_types::{Address, H256, U256};
+
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // get ethstate
+        let ethstate = state.get_ethstate().unwrap();
+
+        // an account in the genesis block containing 100 ETH, no storage, and no code
+        let balance_only = Address::from("7110316b618d20d0c44728ac2a3d683536ea682b");
+        let balance = ethstate.balance(&balance_only).unwrap();
+        assert_eq!(balance, U256::from("56bc75e2d63100000"));
+        let code = ethstate.code(&balance_only).unwrap().unwrap();
+        assert_eq!(code.len(), 0);
+        let val = ethstate.storage_at(&balance_only, &H256::zero()).unwrap();
+        assert_eq!(val, H256::zero());
+        let nonce = ethstate.nonce(&balance_only).unwrap();
+        assert_eq!(nonce, U256::zero());
+
+        // a deployed contract
+        let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
+        let code = ethstate.code(&deployed_contract).unwrap().unwrap();
+        assert!(code.len() > 0);
     }
 }

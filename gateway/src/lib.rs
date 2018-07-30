@@ -54,6 +54,8 @@ extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
 extern crate evm;
+#[cfg(test)]
+extern crate hex;
 extern crate journaldb;
 extern crate keccak_hash as hash;
 extern crate kvdb;
@@ -85,6 +87,8 @@ mod run;
 mod servers;
 #[cfg(feature = "read_state")]
 mod state;
+#[cfg(test)]
+mod test_helpers;
 mod util;
 
 use clap::ArgMatches;
