@@ -87,7 +87,7 @@ mod run;
 mod servers;
 #[cfg(feature = "read_state")]
 mod state;
-#[cfg(test)]
+#[cfg(all(feature = "read_state", test))]
 mod test_helpers;
 mod util;
 

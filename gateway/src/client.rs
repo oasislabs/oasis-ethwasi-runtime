@@ -537,9 +537,11 @@ impl Client {
 mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
+    #[cfg(feature = "read_state")]
     use test_helpers::MockDb;
 
     #[test]
+    #[cfg(feature = "read_state")]
     fn test_last_hashes() {
         let mut db = MockDb::new();
         // populate the db with test data
@@ -578,6 +580,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "read_state")]
     fn test_envinfo() {
         let mut db = MockDb::new();
         // populate the db with test data
