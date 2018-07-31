@@ -23,7 +23,6 @@ use client_utils::{contract_client, default_app};
 extern crate ekiden_contract_client;
 use ekiden_contract_client::create_contract_client;
 extern crate ekiden_core;
-use ekiden_core::bytes::B256;
 extern crate ekiden_rpc_client;
 
 extern crate ethereum_api;
@@ -142,8 +141,4 @@ fn main() {
         debug!("Injected {} accounts", num_accounts_injected);
     }
     debug!("Done injecting accounts");
-    let res = client
-        .init_genesis_block(ethereum_api::InitStateRequest {})
-        .wait()
-        .unwrap();
 }
