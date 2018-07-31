@@ -9,6 +9,7 @@ log = "0.4"
 env_logger = "0.4"
 rustc-hex = "1.0"
 parking_lot = "0.5"
+rayon = "1.0"
 regex = "0.2"
 toml = "0.4"
 serde = "=1.0.59"
@@ -31,7 +32,7 @@ ethcore-bytes = { git = "https://github.com/ekiden/parity", branch = "ekiden-web
 ethcore-transaction = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
 rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-parity = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
+rlp_compress = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity-machine = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity-reactor = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
 parity-rpc = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
@@ -52,6 +53,7 @@ clap = "2.29.1"
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -61,8 +63,15 @@ rand = "0.4"
 [build-dependencies]
 rustc_version = "0.2"
 
+[dev-dependencies]
+hex = "0.3"
+
 [patch.crates-io]
 ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden" }
+
+[features]
+default = ["read_state"]
+read_state = []
 
 [[bin]]
 name = "gateway"

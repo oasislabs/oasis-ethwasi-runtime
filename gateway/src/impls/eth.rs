@@ -22,16 +22,17 @@ use std::sync::Arc;
 use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
+#[cfg(not(feature = "read_state"))]
 use util::log_to_rpc_log;
 
-use ethcore::client::{BlockId, StateOrBlock};
+use ethcore::client::{BlockId, StateOrBlock, TransactionId};
 use ethcore::filter::Filter as EthcoreFilter;
 
 use jsonrpc_core::futures::future;
 use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::helpers::{errors, limit_logs};
+use parity_rpc::v1::helpers::{errors, fake_sign, limit_logs};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
@@ -39,6 +40,7 @@ use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransac
                             Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus,
                             Transaction as RpcTransaction, U256 as RpcU256, Work};
 
+#[cfg(not(feature = "read_state"))]
 use ethereum_api::TransactionRequest;
 
 // short for "try_boxfuture"
@@ -89,11 +91,6 @@ impl From<BlockNumber> for BlockNumberOrId {
 enum PendingOrBlock {
     Block(BlockId),
     Pending,
-}
-
-struct PendingUncleId {
-    id: PendingOrBlock,
-    position: usize,
 }
 
 enum PendingTransactionId {
@@ -180,6 +177,29 @@ impl EthClient {
         }
     }
 
+    #[cfg(feature = "read_state")]
+    fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
+        let client_transaction = |id| match self.client.transaction(id) {
+            Some(t) => Ok(Some(RpcTransaction::from_localized(
+                t,
+                self.eip86_transition,
+            ))),
+            None => Ok(None),
+        };
+
+        match id {
+            PendingTransactionId::Hash(hash) => client_transaction(TransactionId::Hash(hash)),
+            PendingTransactionId::Location(PendingOrBlock::Block(block), index) => {
+                client_transaction(TransactionId::Location(block, index))
+            }
+            PendingTransactionId::Location(PendingOrBlock::Pending, index) => {
+                // we don't have pending blocks
+                Ok(None)
+            }
+        }
+    }
+
+    #[cfg(not(feature = "read_state"))]
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
         if let PendingTransactionId::Hash(hash) = id {
             let hash: H256 = hash.into();
@@ -211,7 +231,7 @@ impl EthClient {
                 Ok(None)
             }
         } else {
-            warn!("Only transction hash parameter supported");
+            warn!("Only transaction hash parameter supported");
             Ok(None)
         }
     }
@@ -455,6 +475,16 @@ impl Eth for EthClient {
         Box::new(future::done(self.transaction(transaction_id)))
     }
 
+    #[cfg(feature = "read_state")]
+    fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
+        measure_counter_inc!("getTransactionReceipt");
+        let hash: H256 = hash.into();
+        info!("eth_getTransactionReceipt(hash: {:?})", hash);
+        let receipt = self.client.transaction_receipt(hash);
+        Box::new(future::ok(receipt.map(Into::into)))
+    }
+
+    #[cfg(not(feature = "read_state"))]
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         measure_counter_inc!("getTransactionReceipt");
         let hash: H256 = hash.into();
@@ -510,6 +540,13 @@ impl Eth for EthClient {
         measure_counter_inc!("getLogs");
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
+        #[cfg(feature = "read_state")]
+        let logs = self.client
+            .logs(filter.clone())
+            .into_iter()
+            .map(From::from)
+            .collect::<Vec<RpcLog>>();
+        #[cfg(not(feature = "read_state"))]
         let logs = self.client
             .logs(filter.clone())
             .into_iter()
@@ -550,9 +587,38 @@ impl Eth for EthClient {
         self.send_raw_transaction(raw)
     }
 
+    #[cfg(feature = "read_state")]
     fn call(
         &self,
         meta: Self::Metadata,
+        request: CallRequest,
+        num: Trailing<BlockNumber>,
+    ) -> BoxFuture<Bytes> {
+        measure_counter_inc!("call");
+        measure_histogram_timer!("call_time");
+        info!(
+            "eth_call(request: {:?}, number: {:?})",
+            request,
+            num.unwrap_or_default()
+        );
+        let request = CallRequest::into(request);
+        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
+        let result = self.client.call(&signed);
+        Box::new(future::done(
+            result
+                .map_err(errors::call)
+                .and_then(|executed| match executed.exception {
+                    Some(ref exception) => Err(errors::vm(exception, &executed.output)),
+                    None => Ok(executed),
+                })
+                .map(|b| b.output.into()),
+        ))
+    }
+
+    #[cfg(not(feature = "read_state"))]
+    fn call(
+        &self,
+        _meta: Self::Metadata,
         request: CallRequest,
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<Bytes> {
@@ -577,6 +643,27 @@ impl Eth for EthClient {
         ))
     }
 
+    #[cfg(feature = "read_state")]
+    fn estimate_gas(
+        &self,
+        meta: Self::Metadata,
+        request: CallRequest,
+        num: Trailing<BlockNumber>,
+    ) -> BoxFuture<RpcU256> {
+        measure_counter_inc!("estimateGas");
+        measure_histogram_timer!("estimateGas_time");
+        info!(
+            "eth_estimateGas(request: {:?}, number: {:?})",
+            request,
+            num.unwrap_or_default()
+        );
+        let request = CallRequest::into(request);
+        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
+        let result = self.client.estimate_gas(&signed);
+        Box::new(future::done(result.map(Into::into).map_err(errors::call)))
+    }
+
+    #[cfg(not(feature = "read_state"))]
     fn estimate_gas(
         &self,
         meta: Self::Metadata,

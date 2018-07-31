@@ -1,4 +1,4 @@
-use std::{collections::HashSet, mem, sync::Arc};
+use std::{collections::HashSet, sync::Arc};
 
 use ekiden_core::error::Result;
 use ekiden_trusted::db::{Database, DatabaseHandle};
@@ -16,9 +16,8 @@ use ethcore::{self,
                       log_entry::{LocalizedLogEntry, LogEntry},
                       receipt::TransactionOutcome,
                       BlockNumber}};
-use ethereum_api::{AccountState, BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
+use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
-use hex;
 
 use super::evm::{get_contract_address, SPEC};
 
@@ -97,27 +96,6 @@ impl StateDb {
     }
 }
 
-fn to_hex<T: AsRef<Vec<u8>>>(bytes: T) -> String {
-    hex::encode(bytes.as_ref())
-}
-
-pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {
-    let state = get_state()?;
-    if !state.exists_and_not_null(address)? {
-        return Ok(None);
-    }
-    Ok(Some(AccountState {
-        address: address.clone(),
-        nonce: state.nonce(address)?,
-        balance: state.balance(address)?,
-        code: get_code_string_from_state(&state, address)?,
-    }))
-}
-
-fn get_code_string_from_state(state: &State, address: &Address) -> Result<String> {
-    Ok(state.code(address)?.map(to_hex).unwrap_or(String::new()))
-}
-
 pub fn get_account_storage(address: Address, key: H256) -> Result<H256> {
     Ok(get_state()?.storage_at(&address, &key)?)
 }
@@ -193,8 +171,15 @@ pub fn get_logs(filter: &Filter) -> Vec<Log> {
         limit: filter.limit.map(Into::into),
     };
 
-    let from = block_number_ref(&filter.from_block).unwrap();
-    let to = block_number_ref(&filter.to_block).unwrap();
+    // if either the from or to block is invalid, return an empty Vec
+    let from = match block_number_ref(&filter.from_block) {
+        Some(n) => n,
+        None => return vec![],
+    };
+    let to = match block_number_ref(&filter.to_block) {
+        Some(n) => n,
+        None => return vec![],
+    };
 
     let blocks = filter.bloom_possibilities().iter()
         .map(|bloom| {
@@ -244,7 +229,7 @@ pub fn block_hashes_since(start: BlockOffset) -> Vec<H256> {
         head = CHAIN
             .block_header_data(head.parent_hash())
             .map(|enc| enc.decode().unwrap())
-            .expect("Parent block should exist?");
+            .expect("Chain is corrupt!");
     }
 
     hashes
@@ -279,66 +264,64 @@ pub fn add_block(block: LockedBlock) -> Result<()> {
 }
 
 pub fn get_transaction(hash: &H256) -> Option<Transaction> {
-    CHAIN.transaction_address(hash).map(|addr| {
-        let mut tx = CHAIN.transaction(&addr).unwrap();
-        let signature = tx.signature();
-        Transaction {
-            hash: tx.hash(),
-            nonce: tx.nonce,
-            block_hash: Some(tx.block_hash),
-            block_number: Some(U256::from(tx.block_number)),
-            index: Some(tx.transaction_index.into()),
-            from: tx.sender(),
-            to: match tx.action {
-                Action::Create => None,
-                Action::Call(address) => Some(address),
-            },
-            value: tx.value,
-            gas_price: tx.gas_price,
-            gas: tx.gas,
-            input: tx.data.clone(),
-            creates: match tx.action {
-                Action::Create => Some(get_contract_address(&tx.sender(), &tx)),
-                Action::Call(_) => None,
-            },
-            raw: ::rlp::encode(&tx.signed).into_vec(),
-            // TODO: recover pubkey
-            public_key: None,
-            chain_id: tx.chain_id().into(),
-            standard_v: tx.standard_v().into(),
-            v: tx.original_v().into(),
-            r: signature.r().into(),
-            s: signature.s().into(),
-        }
+    let addr = CHAIN.transaction_address(hash)?;
+    let mut tx = CHAIN.transaction(&addr)?;
+    let signature = tx.signature();
+    Some(Transaction {
+        hash: tx.hash(),
+        nonce: tx.nonce,
+        block_hash: Some(tx.block_hash),
+        block_number: Some(U256::from(tx.block_number)),
+        index: Some(tx.transaction_index.into()),
+        from: tx.sender(),
+        to: match tx.action {
+            Action::Create => None,
+            Action::Call(address) => Some(address),
+        },
+        value: tx.value,
+        gas_price: tx.gas_price,
+        gas: tx.gas,
+        input: tx.data.clone(),
+        creates: match tx.action {
+            Action::Create => Some(get_contract_address(&tx.sender(), &tx)),
+            Action::Call(_) => None,
+        },
+        raw: ::rlp::encode(&tx.signed).into_vec(),
+        // TODO: recover pubkey
+        public_key: None,
+        chain_id: tx.chain_id().into(),
+        standard_v: tx.standard_v().into(),
+        v: tx.original_v().into(),
+        r: signature.r().into(),
+        s: signature.s().into(),
     })
 }
 
 pub fn get_receipt(hash: &H256) -> Option<Receipt> {
-    CHAIN.transaction_address(hash).map(|addr| {
-        let mut tx = CHAIN.transaction(&addr).unwrap();
-        let receipt = CHAIN.transaction_receipt(&addr).unwrap();
-        Receipt {
-            hash: Some(tx.hash()),
-            index: Some(U256::from(addr.index)),
-            block_hash: Some(tx.block_hash),
-            block_number: Some(U256::from(tx.block_number)),
-            cumulative_gas_used: receipt.gas_used, // TODO: get from block header
-            gas_used: Some(receipt.gas_used),
-            contract_address: match tx.action {
-                Action::Create => Some(get_contract_address(&tx.sender(), &tx)),
-                Action::Call(_) => None,
-            },
-            logs: receipt.logs.into_iter().map(le_to_log).collect(),
-            logs_bloom: receipt.log_bloom,
-            state_root: match receipt.outcome {
-                TransactionOutcome::StateRoot(hash) => Some(hash),
-                _ => None,
-            },
-            status_code: match receipt.outcome {
-                TransactionOutcome::StatusCode(code) => Some(code.into()),
-                _ => None,
-            },
-        }
+    let addr = CHAIN.transaction_address(hash)?;
+    let mut tx = CHAIN.transaction(&addr)?;
+    let receipt = CHAIN.transaction_receipt(&addr)?;
+    Some(Receipt {
+        hash: Some(tx.hash()),
+        index: Some(U256::from(addr.index)),
+        block_hash: Some(tx.block_hash),
+        block_number: Some(U256::from(tx.block_number)),
+        cumulative_gas_used: receipt.gas_used, // TODO: get from block header
+        gas_used: Some(receipt.gas_used),
+        contract_address: match tx.action {
+            Action::Create => Some(get_contract_address(&tx.sender(), &tx)),
+            Action::Call(_) => None,
+        },
+        logs: receipt.logs.into_iter().map(le_to_log).collect(),
+        logs_bloom: receipt.log_bloom,
+        state_root: match receipt.outcome {
+            TransactionOutcome::StateRoot(hash) => Some(hash),
+            _ => None,
+        },
+        status_code: match receipt.outcome {
+            TransactionOutcome::StatusCode(code) => Some(code.into()),
+            _ => None,
+        },
     })
 }
 
@@ -358,15 +341,13 @@ pub fn get_latest_block_number() -> BlockNumber {
     CHAIN.best_block_number()
 }
 
-pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
-    unsafe { mem::transmute(num) }
-}
-
-// parity expects the database to namespace keys by column
-// the ekiden db doesn't [yet?] have this feature, so we emulate by
-// prepending the column id to the actual key
+// Parity expects the database to namespace keys by column. The Ekiden db
+// doesn't [yet?] have this feature, so we emulate by prepending the column id
+// to the actual key. Columns None and 0 should be distinct, so we use prefix 0
+// for None and col+1 for Some(col).
 fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| to_bytes(id.to_le())).unwrap_or([0, 0, 0, 0]);
+    let col_bytes = col.map(|id| (id + 1).to_le().to_bytes())
+        .unwrap_or([0, 0, 0, 0]);
     col_bytes
         .into_iter()
         .chain(key.into_iter())

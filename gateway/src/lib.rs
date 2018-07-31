@@ -24,21 +24,14 @@ extern crate env_logger;
 #[macro_use]
 extern crate futures;
 extern crate futures_cpupool;
-extern crate jsonrpc_core;
-
-#[macro_use]
-extern crate jsonrpc_macros;
-extern crate jsonrpc_http_server;
-extern crate jsonrpc_ipc_server;
-extern crate jsonrpc_pubsub;
-extern crate jsonrpc_ws_server;
-
 #[macro_use]
 extern crate lazy_static;
-
+#[macro_use]
+extern crate log;
 extern crate parking_lot;
+extern crate path;
+extern crate rayon;
 extern crate regex;
-extern crate rlp;
 extern crate rustc_hex;
 extern crate serde;
 extern crate serde_json;
@@ -46,27 +39,45 @@ extern crate serde_json;
 extern crate serde_derive;
 extern crate toml;
 
+extern crate jsonrpc_core;
+#[macro_use]
+extern crate jsonrpc_macros;
+extern crate jsonrpc_http_server;
+extern crate jsonrpc_ipc_server;
+extern crate jsonrpc_pubsub;
+extern crate jsonrpc_ws_server;
+
+extern crate common_types;
 #[macro_use]
 extern crate ethcore;
 extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
+extern crate evm;
+#[cfg(test)]
+extern crate hex;
 extern crate journaldb;
 extern crate keccak_hash as hash;
+extern crate kvdb;
+extern crate parity_machine;
 extern crate parity_reactor;
 extern crate parity_rpc;
-extern crate path;
 extern crate registrar;
-
-// for client.rs
-extern crate common_types;
-extern crate evm;
-extern crate parity_machine;
+extern crate rlp;
+extern crate rlp_compress;
 extern crate util_error;
 extern crate vm;
 
 #[macro_use]
-extern crate log as rlog;
+extern crate client_utils;
+extern crate ekiden_contract_client;
+extern crate ekiden_core;
+extern crate ekiden_db_trusted;
+extern crate ekiden_di;
+#[macro_use]
+extern crate ekiden_instrumentation;
+extern crate ekiden_rpc_client;
+extern crate ethereum_api;
 
 mod client;
 mod impls;
@@ -74,23 +85,16 @@ mod rpc;
 mod rpc_apis;
 mod run;
 mod servers;
+#[cfg(feature = "read_state")]
+mod state;
+#[cfg(all(feature = "read_state", test))]
+mod test_helpers;
 mod util;
-
-#[macro_use]
-extern crate client_utils;
-extern crate ekiden_contract_client;
-extern crate ekiden_core;
-extern crate ekiden_di;
-#[macro_use]
-extern crate ekiden_instrumentation;
-extern crate ekiden_rpc_client;
-extern crate ethereum_api;
-
-use std::sync::Arc;
 
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
+use ekiden_core::bytes::B256;
 use ekiden_di::Container;
 use ethereum_api::with_api;
 
@@ -107,5 +111,15 @@ pub fn start(
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
 
-    run::execute(client, num_threads)
+    #[cfg(feature = "read_state")]
+    {
+        let contract_id = value_t_or_exit!(args, "mr-enclave", B256);
+        let snapshot_manager =
+            client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
+
+        run::execute(client, Some(snapshot_manager), num_threads)
+    }
+
+    #[cfg(not(feature = "read_state"))]
+    run::execute(client, None, num_threads)
 }

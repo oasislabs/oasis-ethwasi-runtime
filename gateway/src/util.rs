@@ -5,6 +5,7 @@ use ethereum_api::{BlockId as EkidenBlockId, Log};
 
 use ethcore::client::BlockId;
 use ethcore::spec::{Spec, SpecParams};
+#[cfg(not(feature = "read_state"))]
 use parity_rpc::v1::types::Log as RpcLog;
 
 pub fn load_spec() -> Spec {
@@ -15,6 +16,7 @@ pub fn load_spec() -> Spec {
     Spec::load(SpecParams::from_path(Path::new("")), Cursor::new(spec_json)).unwrap()
 }
 
+#[cfg(not(feature = "read_state"))]
 pub fn log_to_rpc_log(log: Log) -> RpcLog {
     RpcLog {
         address: log.address.into(),

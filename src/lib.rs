@@ -195,11 +195,6 @@ pub fn get_receipt(hash: &H256) -> Result<Option<Receipt>> {
     Ok(state::get_receipt(hash))
 }
 
-pub fn get_account_state(address: &Address) -> Result<Option<AccountState>> {
-    info!("get_account_state, address: {:?}", address);
-    state::get_account_state(address)
-}
-
 pub fn get_account_balance(address: &Address) -> Result<U256> {
     info!("get_account_balance, address: {:?}", address);
     state::get_account_balance(address)
