@@ -113,7 +113,7 @@ pub fn start(
 
     #[cfg(feature = "read_state")]
     {
-        let contract_id = value_t_or_exit!(args, "mr-enclave", B256);
+        let contract_id = client_utils::args::get_contract_id(&args);
         let snapshot_manager =
             client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
 
