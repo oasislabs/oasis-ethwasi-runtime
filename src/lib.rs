@@ -23,9 +23,8 @@ use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
-use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter,
-                   InitStateRequest, Log, Receipt, SimulateTransactionResponse, Transaction,
-                   TransactionRequest};
+use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
+                   Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
@@ -43,30 +42,22 @@ fn debug_null_call(_request: &bool) -> Result<()> {
     Ok(())
 }
 
-fn has_genesis() -> Result<bool> {
-    Ok(true)
+fn strip_0x<'a>(hex: &'a str) -> &'a str {
+    if hex.starts_with("0x") {
+        hex.get(2..).unwrap()
+    } else {
+        hex
+    }
 }
 
-#[cfg(any(debug_assertions, feature = "benchmark"))]
-fn genesis_block_initialized(_request: &bool) -> Result<bool> {
-    has_genesis()
-}
-
-#[cfg(not(any(debug_assertions, feature = "benchmark")))]
-fn genesis_block_initialized(_request: &bool) -> Result<bool> {
-    Err(Error::new("API available only in debug builds"))
+fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
+    Ok(hex::decode(strip_0x(hex.as_ref()))?)
 }
 
 // TODO: secure this method so it can't be called by any client.
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
-    if has_genesis()? {
-        return Err(Error::new("Genesis block already created"));
-    }
-
-    // TODO: account injection for benchmarking
-    /*
-    let (_, root) = with_state(|state| {
+    let (_, _) = with_state(|state| {
         accounts.iter().try_for_each(|ref account| {
             state.new_contract(
                 &account.address,
@@ -88,10 +79,16 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
         })
     })?;
 
-    mine_block(None, root);
+    // to store state root
+    mine_empty_block()
+}
 
-    Ok(())
-    */
+#[cfg(any(debug_assertions, feature = "benchmark"))]
+fn mine_empty_block() -> Result<()> {
+    let mut block = new_block()?;
+    // set timestamp to 0, as blocks must be deterministic
+    block.set_timestamp(0);
+    add_block(block.close_and_lock())?;
     Ok(())
 }
 
@@ -104,10 +101,6 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
     info!("inject_account_storage");
-    if has_genesis()? {
-        return Err(Error::new("Genesis block already created"));
-    }
-
     let (_, _) = with_state(|state| {
         storages.iter().try_for_each(|&(addr, key, value)| {
             state
@@ -116,27 +109,12 @@ pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<(
         })
     })?;
 
-    Ok(())
+    // to store state root
+    mine_empty_block()
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn inject_account_storage(storage: &Vec<(Address, H256, H256)>) -> Result<()> {
-    Err(Error::new("API available only in debug builds"))
-}
-
-// TODO: secure this method so it can't be called by any client.
-#[cfg(any(debug_assertions, feature = "benchmark"))]
-fn init_genesis_block(_block: &InitStateRequest) -> Result<()> {
-    info!("init_genesis_block");
-    if has_genesis()? {
-        return Err(Error::new("Genesis block already created"));
-    }
-
-    Ok(())
-}
-
-#[cfg(not(any(debug_assertions, feature = "benchmark")))]
-fn init_genesis_block(block: &InitStateRequest) -> Result<()> {
     Err(Error::new("API available only in debug builds"))
 }
 

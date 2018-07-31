@@ -102,6 +102,3 @@ pub struct SimulateTransactionResponse {
     pub result: Result<Vec<u8>, String>,
     pub used_gas: U256,
 }
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct InitStateRequest {}

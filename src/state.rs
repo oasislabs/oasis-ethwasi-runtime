@@ -376,7 +376,8 @@ impl kvdb::KeyValueDB for StateDb {
                 DatabaseHandle::instance().insert(&get_key(col, key), value.to_vec().as_slice());
             }
             &kvdb::DBOp::Delete { ref key, col } => {
-                DatabaseHandle::instance().remove(&get_key(col, key));
+                info!("DELETE {:?} {:?}", key, col);
+                //DatabaseHandle::instance().remove(&get_key(col, key));
             }
         });
     }
