@@ -343,8 +343,8 @@ pub fn get_latest_block_number() -> BlockNumber {
 
 // Parity expects the database to namespace keys by column. The Ekiden db
 // doesn't [yet?] have this feature, so we emulate by prepending the column id
-// to the actual key. Columns None and 0 should be distinct, so we use prefix
-// 0x000000 for None and col+1 for Some(col).
+// to the actual key. Columns None and 0 should be distinct, so we use prefix 0
+// for None and col+1 for Some(col).
 fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
     let col_bytes = col.map(|id| (id + 1).to_le().to_bytes())
         .unwrap_or([0, 0, 0, 0]);
