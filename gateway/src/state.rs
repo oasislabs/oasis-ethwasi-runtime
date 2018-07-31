@@ -273,6 +273,7 @@ where
         unimplemented!();
     }
 
+    // this is a read only interface
     fn write_buffered(&self, _transaction: kvdb::DBTransaction) {
         unimplemented!();
     }
@@ -355,22 +356,13 @@ mod tests {
         let state = StateDb::new(db).unwrap();
 
         // all blocks
-        let mut blocks = Vec::new();
-        blocks.push(H256::from(
-            "f39c325375fa2d5381a950850abd9999abd2ff64cd0f184139f5bb5d74afb14e",
-        ));
-        blocks.push(H256::from(
-            "d56eee931740bb35eb9bf9f97cfebb66ac51a1d88988c1255b52677b958d658b",
-        ));
-        blocks.push(H256::from(
-            "17a7a94ad21879641349b6e90ccd7e42e63551ad81b3fda561cd2df4860fbd3f",
-        ));
-        blocks.push(H256::from(
-            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
-        ));
-        blocks.push(H256::from(
-            "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
-        ));
+        let blocks = vec![
+            H256::from("f39c325375fa2d5381a950850abd9999abd2ff64cd0f184139f5bb5d74afb14e"),
+            H256::from("d56eee931740bb35eb9bf9f97cfebb66ac51a1d88988c1255b52677b958d658b"),
+            H256::from("17a7a94ad21879641349b6e90ccd7e42e63551ad81b3fda561cd2df4860fbd3f"),
+            H256::from("c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3"),
+            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199"),
+        ];
 
         // query over all blocks
         let filter = Filter {

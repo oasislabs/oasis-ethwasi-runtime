@@ -67,12 +67,14 @@ impl Client {
         }
     }
 
-    // block number at which EIP-86 transition occurs
-    // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-86.md
+    /// block number at which EIP-86 transition occurs
+    /// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-86.md
     pub fn eip86_transition(&self) -> u64 {
         self.eip86_transition
     }
 
+    /// returns a StateDb backed by an Ekiden db snapshot, or None when the
+    /// blockchain database has not yet been initialized by the runtime
     #[cfg(feature = "read_state")]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         state::StateDb::new(self.snapshot_manager.get_snapshot())
@@ -306,6 +308,9 @@ impl Client {
     }
 
     // account state-related
+
+    /// returns an EthState backed by an Ekiden db snapshot, or None when the
+    /// blockchain database has not yet been initialized by the runtime
     #[cfg(feature = "read_state")]
     fn get_ethstate_snapshot(&self) -> Option<EthState> {
         self.get_db_snapshot()?.get_ethstate()
