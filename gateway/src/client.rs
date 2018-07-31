@@ -49,14 +49,14 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 pub struct Client {
     client: runtime_ethereum::Client,
     engine: Arc<EthEngine>,
-    snapshot_manager: client_utils::db::Manager,
+    snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
 }
 
 impl Client {
     pub fn new(
         spec: &Spec,
-        snapshot_manager: client_utils::db::Manager,
+        snapshot_manager: Option<client_utils::db::Manager>,
         client: runtime_ethereum::Client,
     ) -> Self {
         Self {
@@ -77,7 +77,10 @@ impl Client {
     /// blockchain database has not yet been initialized by the runtime
     #[cfg(feature = "read_state")]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
-        state::StateDb::new(self.snapshot_manager.get_snapshot())
+        match self.snapshot_manager {
+            Some(ref manager) => state::StateDb::new(manager.get_snapshot()),
+            None => None,
+        }
     }
 
     // block-related

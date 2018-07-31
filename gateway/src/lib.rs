@@ -111,9 +111,15 @@ pub fn start(
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
 
-    let contract_id = value_t_or_exit!(args, "mr-enclave", B256);
-    let snapshot_manager =
-        client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
+    #[cfg(feature = "read_state")]
+    {
+        let contract_id = value_t_or_exit!(args, "mr-enclave", B256);
+        let snapshot_manager =
+            client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
 
-    run::execute(client, snapshot_manager, num_threads)
+        run::execute(client, Some(snapshot_manager), num_threads)
+    }
+
+    #[cfg(not(feature = "read_state"))]
+    run::execute(client, None, num_threads)
 }

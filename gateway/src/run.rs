@@ -34,7 +34,7 @@ use util;
 
 pub fn execute(
     ekiden_client: runtime_ethereum::Client,
-    snapshot_manager: client_utils::db::Manager,
+    snapshot_manager: Option<client_utils::db::Manager>,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
