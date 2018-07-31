@@ -302,6 +302,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ethereum_types::{Address, H256, U256};
     use test_helpers::MockDb;
 
     #[test]
@@ -382,8 +383,6 @@ mod tests {
 
     #[test]
     fn test_account_state() {
-        use ethereum_types::{Address, H256, U256};
-
         let mut db = MockDb::new();
         // populate the db with test data
         db.populate();
@@ -409,5 +408,62 @@ mod tests {
         let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
         let code = ethstate.code(&deployed_contract).unwrap().unwrap();
         assert!(code.len() > 0);
+    }
+
+    #[test]
+    fn test_transaction() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // get the transaction from block 4
+        let tx = state
+            .transaction_address(&H256::from(
+                "0xcfb3d83aa4b9c7d9a698e9b8169383c819fbf6200848ae5fcaec25e414295790",
+            ))
+            .and_then(|addr| BlockProvider::transaction(&state, &addr))
+            .unwrap();
+
+        assert_eq!(tx.block_number, 4);
+    }
+
+    #[test]
+    fn test_receipt() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        let receipt = state
+            .transaction_address(&H256::from(
+                "0xcfb3d83aa4b9c7d9a698e9b8169383c819fbf6200848ae5fcaec25e414295790",
+            ))
+            .and_then(|addr| state.transaction_receipt(&addr))
+            .unwrap();
+
+        assert_eq!(receipt.logs.len(), 1);
+    }
+
+    #[test]
+    fn test_block() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // get best block
+        let best_block = state
+            .best_block_hash()
+            .and_then(|hash| state.block(&hash))
+            .unwrap();
+
+        assert_eq!(best_block.header_view().number(), 4);
     }
 }
