@@ -51,7 +51,7 @@ fn get_transactions_from_blocks(blocks_path: &str, max_num_transactions: usize) 
         // https://github.com/paritytech/parity/blob/v1.9.7/ethcore/src/views/block.rs#L101
         let transactions = block.at(1);
         for transaction in transactions.iter() {
-            ret.push(hex::encode(transaction.as_raw()));
+            ret.push(format!("0x{}", hex::encode(transaction.as_raw())));
             num_transactions += 1;
             if max_num_transactions != 0 && num_transactions >= max_num_transactions {
                 break 'outer;
