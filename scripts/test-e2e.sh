@@ -25,7 +25,9 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-        --batch-storage immediate_remote \
+        --batch-storage multilayer \
+        --storage-multilayer-sled-storage-base /tmp/ekiden-storage-persistent_${id} \
+        --storage-multilayer-bottom-backend remote \
         --max-batch-timeout 100 \
         --time-source-notifier system \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
