@@ -74,18 +74,6 @@ pub(crate) fn new_block() -> Result<OpenBlock<'static>> {
     )?)
 }
 
-pub fn with_state<R, F: FnOnce(&mut State) -> Result<R>>(cb: F) -> Result<(R, H256)> {
-    let mut state = get_state()?;
-
-    let ret = cb(&mut state)?;
-
-    state.commit()?;
-    let (state_root, mut db) = state.drop();
-    db.0.commit()?;
-
-    Ok((ret, state_root))
-}
-
 impl StateDb {
     fn new() -> Self {
         Self {}
