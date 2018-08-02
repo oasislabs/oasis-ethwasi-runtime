@@ -89,6 +89,8 @@ impl Client {
         {
             if let Some(db) = self.get_db_snapshot() {
                 return db.best_block_number();
+            } else {
+                warn!("Could not get db snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -104,6 +106,8 @@ impl Client {
         {
             if let Some(db) = self.get_db_snapshot() {
                 return self.block_hash(id).and_then(|h| db.block(&h));
+            } else {
+                warn!("Could not get db snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -127,6 +131,7 @@ impl Client {
                     BlockId::Latest => db.best_block_hash(),
                 }
             } else {
+                warn!("Could not get db snapshot");
                 None
             }
         }
@@ -160,6 +165,7 @@ impl Client {
             };
             address.and_then(|addr| db.transaction(&addr))
         } else {
+            warn!("Could not get db snapshot");
             None
         }
     }
@@ -221,6 +227,7 @@ impl Client {
                 outcome: receipt.outcome,
             })
         } else {
+            warn!("Could not get db snapshot");
             None
         }
     }
@@ -291,6 +298,7 @@ impl Client {
 
             fetch_logs().unwrap_or_default()
         } else {
+            warn!("Could not get db snapshot");
             vec![]
         }
     }
@@ -330,6 +338,8 @@ impl Client {
                         return None;
                     }
                 }
+            } else {
+                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -352,6 +362,8 @@ impl Client {
                         return None;
                     }
                 }
+            } else {
+                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -373,6 +385,8 @@ impl Client {
                         return None;
                     }
                 }
+            } else {
+                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -399,6 +413,8 @@ impl Client {
                         return None;
                     }
                 }
+            } else {
+                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
