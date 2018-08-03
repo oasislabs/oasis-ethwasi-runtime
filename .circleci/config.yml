@@ -104,6 +104,7 @@ jobs:
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
       - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+      - run: echo 'export DOCKER_TAG=$CIRCLE_SHA1'
       - checkout
       - setup_remote_docker
 
@@ -112,7 +113,7 @@ jobs:
           echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
           BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
       # Push deployment image.
-      - run: docker push oasislabs/ekiden-runtime-ethereum:$CIRCLE_SHA1
+      - run: docker push oasislabs/ekiden-runtime-ethereum:$DOCKER_TAG
       # Update testnet.
       # https://stackoverflow.com/a/33511811/1864688
       - run: |
