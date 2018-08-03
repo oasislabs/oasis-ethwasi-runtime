@@ -106,7 +106,7 @@ jobs:
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
       - checkout
       - setup_remote_docker
-      - run: echo 'export DOCKER_TAG=$CIRCLE_SHA1' >> $BASE_ENV
+      - run: echo 'export DOCKER_TAG=$CIRCLE_SHA1' >> $BASH_ENV
 
       # Build deployment image.
       - run: |
