@@ -200,7 +200,7 @@ pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
 }
 
 pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionResponse> {
-    info!("execute_raw_transaction, request: {:?}", request);
+    info!("execute_raw_transaction");
     let decoded = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
@@ -259,7 +259,7 @@ fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTrans
 }
 
 pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTransactionResponse> {
-    info!("simulate_transaction, request: {:?}", request);
+    info!("simulate_transaction");
     let tx = match make_unsigned_transaction(request) {
         Ok(t) => t,
         Err(e) => {
