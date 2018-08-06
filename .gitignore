@@ -1,6 +1,6 @@
 # Build.
 tests/build
-/target/
+target/
 **/*.rs.bk
 *.a
 *.o
