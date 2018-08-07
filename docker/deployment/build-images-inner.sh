@@ -23,7 +23,6 @@ cargo ekiden build-enclave --output-identity --release
 mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib target/docker-deployment/context/res
 ln target/enclave/runtime-ethereum.so target/docker-deployment/context/lib
 ln target/enclave/runtime-ethereum.mrenclave target/docker-deployment/context/res
-cp -r resources/genesis target/docker-deployment/context/res
 ln target/release/gateway target/docker-deployment/context/bin
 ln docker/deployment/Dockerfile target/docker-deployment/context/Dockerfile
 tar cvzhf target/docker-deployment/context.tar.gz -C target/docker-deployment/context .
