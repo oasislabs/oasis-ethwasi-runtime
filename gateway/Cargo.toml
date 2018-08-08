@@ -70,7 +70,7 @@ hex = "0.3"
 ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden" }
 
 [features]
-default = ["read_state"]
+default = []
 read_state = []
 
 [[bin]]
