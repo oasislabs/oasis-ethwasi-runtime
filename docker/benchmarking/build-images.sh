@@ -6,7 +6,7 @@ base_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )
 cd ${base_dir}
 
 if [ -n "$BUILD_IMAGES_NO_ENTER" ]; then
-    ./docker/deployment/build-images-inner.sh
+    ./docker/benchmarking/build-images-inner.sh
 elif [ -z "$BUILD_IMAGES_CONTAINER" ]; then
     # Build in a fresh container.
     docker run --rm \
@@ -15,12 +15,12 @@ elif [ -z "$BUILD_IMAGES_CONTAINER" ]; then
         -e INTEL_SGX_SDK=/opt/sgxsdk \
         -w /code \
         "$ekiden_image" \
-        /code/docker/deployment/build-images-inner.sh
+        /code/docker/benchmarking/build-images-inner.sh
 else
     # Build in a specified container.
     docker exec "$BUILD_IMAGES_CONTAINER" \
-        /code/docker/deployment/build-images-inner.sh
+        /code/docker/benchmarking/build-images-inner.sh
 fi
 
 # Build the deployable image from the output.
-docker build --rm --force-rm -t oasislabs/ekiden-runtime-ethereum - <target/docker-deployment/context.tar.gz
+docker build --rm --force-rm -t oasislabs/ekiden-runtime-ethereum:benchmarking-latest - <target/docker-benchmarking/context.tar.gz
