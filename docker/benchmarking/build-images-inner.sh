@@ -18,9 +18,9 @@ fi
 # Build all Ekiden binaries and resources.
 CARGO_TARGET_DIR=target cargo install --force --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 cargo ekiden build-enclave --output-identity --release --cargo-addendum feature.benchmark.addendum -- --features "benchmark"
-(cd gateway && CARGO_BUILD_TARGET_DIR=../target cargo build --release)
-(cd genesis && CARGO_BUILD_TARGET_DIR=../target cargo build --release)
-(cd playback && CARGO_BUILD_TARGET_DIR=../target cargo build --release)
+(cd gateway && CARGO_TARGET_DIR=../target cargo build --release)
+(cd genesis && CARGO_TARGET_DIR=../target cargo build --release)
+(cd playback && CARGO_TARGET_DIR=../target cargo build --release)
 
 # Package all binaries and resources.
 mkdir -p target/docker-benchmarking/context/bin target/docker-benchmarking/context/lib target/docker-benchmarking/context/res

@@ -57,35 +57,35 @@ jobs:
       - run:
           name: Build the web3 gateway
           environment:
-            CARGO_BUILD_TARGET_DIR: ../target
+            CARGO_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo build
       # Run the gateway tests.
       - run:
           name: Run the gateway tests
           environment:
-            CARGO_BUILD_TARGET_DIR: ../target
+            CARGO_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo test
       # Build the web3 microbenchmark.
       - run:
           name: Build the web3 microbenchmark
           environment:
-            CARGO_BUILD_TARGET_DIR: ../target
+            CARGO_TARGET_DIR: ../target
           working_directory: benchmark
           command: cargo build
       # Build the genesis state injector program.
       - run:
           name: Build the genesis state injector tool
           environment:
-            CARGO_BUILD_TARGET_DIR: ../target
+            CARGO_TARGET_DIR: ../target
           working_directory: genesis
           command: cargo build
       # Build the playback program.
       - run:
           name: Build the transaction playback tool
           environment:
-            CARGO_BUILD_TARGET_DIR: ../target
+            CARGO_TARGET_DIR: ../target
           working_directory: playback
           command: cargo build
       # Check style. This needs to be after everything is built.

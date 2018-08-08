@@ -18,7 +18,7 @@ fi
 # Build all Ekiden binaries and resources.
 CARGO_TARGET_DIR=target cargo install --force --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 cargo ekiden build-enclave --output-identity --release
-(cd gateway && CARGO_BUILD_TARGET_DIR=../target cargo build --release)
+(cd gateway && CARGO_TARGET_DIR=../target cargo build --release)
 
 # Package all binaries and resources.
 mkdir -p target/docker-deployment/context/bin target/docker-deployment/context/lib target/docker-deployment/context/res
