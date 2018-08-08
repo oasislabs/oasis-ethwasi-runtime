@@ -22,7 +22,8 @@ mod state;
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
 use ethcore::{rlp,
-              transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction}};
+              transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
+                            UnverifiedTransaction}};
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
                    Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
@@ -201,24 +202,29 @@ pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
 
 pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionResponse> {
     info!("execute_raw_transaction");
-    let decoded = match rlp::decode(request) {
+    let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
             return Ok(ExecuteTransactionResponse {
                 hash: Err(e.to_string()),
+                created_contract: false,
             })
         }
     };
+    let is_create = decoded.as_unsigned().action == Action::Create;
     let signed = match SignedTransaction::new(decoded) {
         Ok(t) => t,
         Err(e) => {
             return Ok(ExecuteTransactionResponse {
                 hash: Err(e.to_string()),
+                created_contract: false,
             })
         }
     };
+    let result = transact(signed).map_err(|e| e.to_string());
     Ok(ExecuteTransactionResponse {
-        hash: transact(signed).map_err(|e| e.to_string()),
+        created_contract: if result.is_err() { false } else { is_create },
+        hash: result,
     })
 }
 
