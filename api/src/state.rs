@@ -95,6 +95,7 @@ pub struct TransactionRequest {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ExecuteTransactionResponse {
     pub hash: Result<H256, String>,
+    pub created_contract: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
