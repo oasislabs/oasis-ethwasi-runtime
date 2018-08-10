@@ -27,26 +27,26 @@ jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
 wasmi = "=0.2.0"
-ethcore = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-ethcore-bytes = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-ethcore-transaction = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-rlp_compress = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-parity-machine = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-parity-reactor = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-parity-rpc = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-parity-rpc-client = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-path = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-keccak-hash = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-kvdb = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-journaldb = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-mem = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-evm = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-registrar = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-common-types = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-vm = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
-util-error = { git = "https://github.com/ekiden/parity", branch = "ekiden-web3" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+parity-machine = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+parity-rpc-client = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+path = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+journaldb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+evm = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+registrar = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+vm = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+util-error = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
 
 ## Ekiden client dependencies
 clap = "2.29.1"
@@ -67,7 +67,7 @@ rustc_version = "0.2"
 hex = "0.3"
 
 [patch.crates-io]
-ring = { git = "https://github.com/ekiden/ring", branch = "0.12.1-ekiden" }
+ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
 
 [features]
 default = ["read_state"]

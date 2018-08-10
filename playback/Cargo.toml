@@ -9,7 +9,7 @@ client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" 
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethereum-types = { git = "https://github.com/ekiden/primitives", branch = "ekiden" }
+ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 crossbeam-deque = "0.4"
 filebuffer = "0.4.0"
 futures = "0.1.18"
@@ -18,7 +18,7 @@ jsonrpc-client-core = "0.3.0"
 jsonrpc-client-http = "0.3.0"
 log = "0.4"
 pretty_env_logger = "0.2"
-etcommon-rlp = { git = "https://github.com/ekiden/etcommon-rs", branch = "ekiden" }
+etcommon-rlp = { git = "https://github.com/oasislabs/etcommon-rs", branch = "ekiden" }
 regex = "=1.0.0"
 serde = "=1.0.59"
 serde_derive = "1.0"
