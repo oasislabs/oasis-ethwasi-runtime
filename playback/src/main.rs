@@ -159,40 +159,41 @@ fn main() {
     let playback_end = Instant::now();
     let playback_dur = playback_end - playback_start;
     let mut transaction_durs: Vec<Duration> = rx.try_iter().flat_map(|v| v).collect();
-    info!(
-        "Played back {} transactions over {:.3} ms",
-        num_transactions,
-        to_ms(playback_dur)
-    );
+    let playback_dur_ms = to_ms(playback_dur);
+    println!("# TYPE num_transactions gauge");
+    println!("# HELP num_transactions Total transactions");
+    println!("num_transactions {}", num_transactions);
+    println!("# TYPE playback_dur_ms gauge");
+    println!("# HELP playback_dur_ms Total time (ms)");
+    println!("playback_dur_ms {}", playback_dur_ms);
     if num_transactions > 0 {
-        info!(
-            "Throughput: {:.3} ms/tx",
-            to_ms(playback_dur) / num_transactions as f64
-        );
-        info!(
-            "Throughput: {:.3} tx/sec",
-            num_transactions as f64 / to_ms(playback_dur) * 1000.
-        );
+        let throughput_inv = to_ms(playback_dur) / num_transactions as f64;
+        println!("# TYPE throughput_inv gauge");
+        println!("# HELP throughput_inv Inverse throughput (ms/tx)");
+        println!("throughput_inv {}", throughput_inv);
+        let throughput = num_transactions as f64 / to_ms(playback_dur) * 1000.;
+        println!("# TYPE throughput gauge");
+        println!("# HELP throughput Throughput (tx/sec)");
+        println!("throughput {}", throughput);
 
         transaction_durs.sort();
-        info!(
-            "Latency: min {:.3} ms",
-            to_ms(*transaction_durs.first().unwrap())
-        );
+        let latency_min = to_ms(*transaction_durs.first().unwrap());
+        println!("# TYPE latency_min gauge");
+        println!("# HELP latency_min Minimum latency (ms)");
+        println!("latency_min {}", latency_min);
         for pct in [1, 10, 50, 90, 99].iter() {
             let index = std::cmp::min(
                 num_transactions - 1,
                 (*pct as f64 / 100. * transaction_durs.len() as f64).ceil() as usize,
             );
-            info!(
-                "Latency: {:2}% {:?} ms",
-                pct,
-                to_ms(transaction_durs[index])
-            );
+            let latency_pct = to_ms(transaction_durs[index]);
+            println!("# TYPE latency_{} gauge", pct);
+            println!("# HELP latency_{} {} percentile latency (ms)", pct, pct);
+            println!("latency_{} {}", pct, latency_pct);
         }
-        info!(
-            "Latency: max {:?} ms",
-            to_ms(*transaction_durs.last().unwrap())
-        );
+        let latency_max = to_ms(*transaction_durs.last().unwrap());
+        println!("# TYPE latency_max gauge");
+        println!("# HELP latency_max Maximum latency (ms)");
+        println!("latency_max {}", latency_max);
     }
 }
