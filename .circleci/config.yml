@@ -110,7 +110,7 @@ jobs:
           paths: 
             - build_image_tag
 
-  deploy:
+  build-and-publish-docker-image:
     docker:
       - image: ekiden/testing:0.2.0
     resource_class: xlarge
@@ -134,17 +134,68 @@ jobs:
       - run: |
           echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
           BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
+
       # Push deployment image.
-      - run: docker push oasislabs/ekiden-runtime-ethereum:latest
-      # Update testnet.
-      # https://stackoverflow.com/a/33511811/1864688
+      - run: docker push oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+  
+  deploy-to-staging:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker tag
+          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+
+      - run:
+          name: Trigger a webhook on ops-production for a staging deploy
+          # This doesn't exist yet...
+          command: curl -d '{"type":"staging","repository":"oasislabs/ekiden","tag":"'${BUILD_IMAGE_TAG}'"}' -H "Content-Type: application/json" -X POST https://buildhook.ops-production.oasiscloud.io/webhook?token=sometoken
+
+  promote-to-production:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker tag
+          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+
+      # Login to docker
       - run: |
-          REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-runtime-ethereum:latest)
-          mkdir -p ~/.kube
-          echo "$KUBECONFIG_CONTENT_BASE64" | base64 -di >~/.kube/config
-          kubectl set image deployments/runtime-node-dummy ekiden-node-dummy=$REPO_DIGEST
-          kubectl set image deployments/runtime ekiden-compute=$REPO_DIGEST
-          kubectl set image deployments/web3-gateway web3-gateway=$REPO_DIGEST
+          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+      
+      - run:
+          name: Download the tag of ekiden for this current workflow
+          command: docker pull oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+
+      - run:
+          name: Tag the ekiden build on this workflow for production
+          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/testnet:$PRODUCTION_TAG
+
+      - run:
+          name: Push the new production tag of ekiden to dockerhub
+          command: docker push oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
+
+  deploy-to-production:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker tag
+          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+
+      - run:
+          name: Trigger a webhook on ops-production for a staging deploy
+          # This doesn't exist yet...
+          command: curl -d '{"type":"production","repository":"oasislabs/ekiden","tag":"'${BUILD_IMAGE_TAG}'"}' -H "Content-Type: application/json" -X POST https://buildhook.ops-production.oasiscloud.io/webhook?token=sometoken
 
 workflows:
   version: 2
@@ -152,12 +203,25 @@ workflows:
     jobs:
       - build
       - set-docker-tag
-      - deploy:
+      - build-and-publish-docker-image:
+          requires:
+            - set-docker-tag
+      - deploy-to-staging:
           filters:
             branches:
               only: master
           requires:
-            - build
+            - build-and-publish-docker-image
+      - hold-for-production:
+          requires:
+            - deploy-to-staging
+      - promote-to-production:
+          requires:
+            - hold-for-production
+      - deploy-to-production:
+          requires:
+            - promote-to-production
+
 experimental:
   notify:
     branches:
