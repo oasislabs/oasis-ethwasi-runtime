@@ -142,6 +142,7 @@ jobs:
     docker:
       - image: circleci/python:3.6.6-jessie
     steps:
+      - checkout
       - attach_workspace:
           at: /workspace
 
@@ -152,7 +153,7 @@ jobs:
       - run:
           name: Trigger a webhook on ops-production for a staging deploy
           # This doesn't exist yet...
-          command: curl -d '{"type":"staging","repository":"oasislabs/ekiden","tag":"'${BUILD_IMAGE_TAG}'"}' -H "Content-Type: application/json" -X POST https://buildhook.ops-production.oasiscloud.io/webhook?token=sometoken
+          command: ./scripts/webhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG some_secret_token
 
   promote-to-production:
     docker:
@@ -194,8 +195,7 @@ jobs:
 
       - run:
           name: Trigger a webhook on ops-production for a staging deploy
-          # This doesn't exist yet...
-          command: curl -d '{"type":"production","repository":"oasislabs/ekiden","tag":"'${BUILD_IMAGE_TAG}'"}' -H "Content-Type: application/json" -X POST https://buildhook.ops-production.oasiscloud.io/webhook?token=sometoken
+          command: ./scripts/webhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG some_secret_token
 
 workflows:
   version: 2
