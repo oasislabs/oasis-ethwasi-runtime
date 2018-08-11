@@ -42,6 +42,18 @@ run_test() {
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
 
+    # Run the gateway. We start the gateway first so that we test 1) whether the
+    # snapshot manager can recover after initially failing to connect to the
+    # root hash stream, and 2) whether the gateway waits for the committee to be
+    # elected and connects to the leader.
+    echo "Starting web3 gateway."
+    target/debug/gateway \
+        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
+        --threads 100 \
+        --prometheus-metrics-addr 0.0.0.0:3000 \
+        --prometheus-mode pull &> gateway.log &
+    sleep 3
+
     # Start dummy node.
     $dummy_node_runner
     sleep 1
@@ -56,15 +68,6 @@ run_test() {
     sleep 2
     ekiden-node-dummy-controller set-epoch --epoch 1
     sleep 2
-
-    # Run the client. We run the client first so that we test whether it waits for the
-    # committee to be elected and connects to the leader.
-    echo "Starting web3 gateway."
-    target/debug/gateway \
-        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
-        --threads 100 \
-        --prometheus-metrics-addr 0.0.0.0:3000 \
-        --prometheus-mode pull &> gateway.log &
 
     # Run truffle tests
     echo "Installing truffle-hdwallet-provider."

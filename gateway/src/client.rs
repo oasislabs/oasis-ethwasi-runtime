@@ -78,7 +78,14 @@ impl Client {
     #[cfg(feature = "read_state")]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         match self.snapshot_manager {
-            Some(ref manager) => state::StateDb::new(manager.get_snapshot()),
+            Some(ref manager) => {
+                let ret = state::StateDb::new(manager.get_snapshot());
+                if ret.is_none() {
+                    measure_counter_inc!("read_state_failed");
+                    error!("Could not get db snapshot");
+                }
+                ret
+            }
             None => None,
         }
     }
@@ -89,8 +96,6 @@ impl Client {
         {
             if let Some(db) = self.get_db_snapshot() {
                 return db.best_block_number();
-            } else {
-                warn!("Could not get db snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -106,8 +111,6 @@ impl Client {
         {
             if let Some(db) = self.get_db_snapshot() {
                 return self.block_hash(id).and_then(|h| db.block(&h));
-            } else {
-                warn!("Could not get db snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -131,7 +134,6 @@ impl Client {
                     BlockId::Latest => db.best_block_hash(),
                 }
             } else {
-                warn!("Could not get db snapshot");
                 None
             }
         }
@@ -165,7 +167,6 @@ impl Client {
             };
             address.and_then(|addr| db.transaction(&addr))
         } else {
-            warn!("Could not get db snapshot");
             None
         }
     }
@@ -227,7 +228,6 @@ impl Client {
                 outcome: receipt.outcome,
             })
         } else {
-            warn!("Could not get db snapshot");
             None
         }
     }
@@ -298,7 +298,6 @@ impl Client {
 
             fetch_logs().unwrap_or_default()
         } else {
-            warn!("Could not get db snapshot");
             vec![]
         }
     }
@@ -334,12 +333,11 @@ impl Client {
                 match state.balance(&address) {
                     Ok(balance) => return Some(balance),
                     Err(e) => {
+                        measure_counter_inc!("read_state_failed");
                         error!("Could not get balance from ethstate: {:?}", e);
                         return None;
                     }
                 }
-            } else {
-                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -358,12 +356,11 @@ impl Client {
                 match state.code(&address) {
                     Ok(code) => return Some(code.map(|c| (&*c).clone())),
                     Err(e) => {
+                        measure_counter_inc!("read_state_failed");
                         error!("Could not get code from ethstate: {:?}", e);
                         return None;
                     }
                 }
-            } else {
-                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -381,12 +378,11 @@ impl Client {
                 match state.nonce(&address) {
                     Ok(nonce) => return Some(nonce),
                     Err(e) => {
+                        measure_counter_inc!("read_state_failed");
                         error!("Could not get nonce from ethstate: {:?}", e);
                         return None;
                     }
                 }
-            } else {
-                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized
@@ -409,12 +405,11 @@ impl Client {
                 match state.storage_at(address, position) {
                     Ok(val) => return Some(val),
                     Err(e) => {
+                        measure_counter_inc!("read_state_failed");
                         error!("Could not get storage from ethstate: {:?}", e);
                         return None;
                     }
                 }
-            } else {
-                warn!("Could not get state snapshot");
             }
         }
         // fall back to contract call if database has not been initialized

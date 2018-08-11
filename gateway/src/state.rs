@@ -44,6 +44,7 @@ where
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
             }
             Err(e) => {
+                measure_counter_inc!("read_state_failed");
                 error!("Could not get block header from database: {:?}", e);
                 None
             }
@@ -56,6 +57,7 @@ where
                 body.map(|b| encoded::Body::new(decompress(&b, blocks_swapper()).into_vec()))
             }
             Err(e) => {
+                measure_counter_inc!("read_state_failed");
                 error!("Could not get block body from database: {:?}", e);
                 None
             }
@@ -212,6 +214,7 @@ where
         ) {
             Ok(state) => Some(state),
             Err(e) => {
+                measure_counter_inc!("read_state_failed");
                 error!("Could not get EthState from database: {:?}", e);
                 None
             }
@@ -222,6 +225,7 @@ where
         match self.get(db::COL_EXTRA, b"best") {
             Ok(best) => best.map(|best| H256::from_slice(&best)),
             Err(e) => {
+                measure_counter_inc!("read_state_failed");
                 error!("Could not get best block hash from database: {:?}", e);
                 None
             }
