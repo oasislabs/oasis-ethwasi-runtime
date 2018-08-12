@@ -41,7 +41,11 @@ fn make_tx(spec: Either<Vec<u8>, Address>) -> SignedTransaction {
 
 fn run(tx: SignedTransaction) -> Receipt {
     let res = execute_raw_transaction(&rlp::encode(&tx).to_vec()).unwrap();
-    get_receipt(&res.hash.unwrap()).unwrap().unwrap()
+    let receipt = get_receipt(res.hash.as_ref().unwrap()).unwrap().unwrap();
+    if !receipt.status_code.is_some() || receipt.status_code.unwrap() == 0 {
+        panic!("{:?}", &res);
+    }
+    receipt
 }
 
 fn main() {
@@ -66,6 +70,9 @@ fn main() {
     if let Some(tx_file) = args.value_of("dump-tx") {
         fs::write(tx_file, rlp::encode(&create_tx)).unwrap();
     }
-    let contract_addr = run(create_tx).contract_address.unwrap();
+    println!("\nDeploying contract...\n=====================");
+    let create_receipt = run(create_tx);
+    let contract_addr = create_receipt.contract_address.unwrap();
+    println!("\nCalling contract...\n=====================");
     println!("{:?}", run(make_tx(Either::Right(contract_addr))))
 }
