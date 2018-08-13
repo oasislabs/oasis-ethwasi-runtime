@@ -153,7 +153,7 @@ jobs:
       - run:
           name: Trigger a webhook on ops-production for a staging deploy
           # This doesn't exist yet...
-          command: ./scripts/webhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG some_secret_token
+          command: ./scripts/webhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
 
   promote-to-production:
     docker:
@@ -195,7 +195,7 @@ jobs:
 
       - run:
           name: Trigger a webhook on ops-production for a staging deploy
-          command: ./scripts/webhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG some_secret_token
+          command: ./scripts/webhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
 
 workflows:
   version: 2
