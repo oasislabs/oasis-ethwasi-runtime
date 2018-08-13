@@ -323,14 +323,14 @@ impl Client {
     /// snapshot, or None when the blockchain database has not yet been
     /// initialized by the runtime
     #[cfg(feature = "read_state")]
-    fn get_ethstate_snapshot(&self, state: StateOrBlock) -> Option<EthState> {
+    fn get_ethstate_snapshot_at(&self, state: StateOrBlock) -> Option<EthState> {
         self.get_db_snapshot()?.get_ethstate_at(state)
     }
 
     pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(s) = self.get_ethstate_snapshot(state) {
+            if let Some(s) = self.get_ethstate_snapshot_at(state) {
                 match s.balance(&address) {
                     Ok(balance) => return Some(balance),
                     Err(e) => {
@@ -353,7 +353,7 @@ impl Client {
         // TODO: differentiate between no account vs no code?
         #[cfg(feature = "read_state")]
         {
-            if let Some(s) = self.get_ethstate_snapshot(state) {
+            if let Some(s) = self.get_ethstate_snapshot_at(state) {
                 match s.code(&address) {
                     Ok(code) => return Some(code.map(|c| (&*c).clone())),
                     Err(e) => {
@@ -375,7 +375,7 @@ impl Client {
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(state) = self.get_ethstate_snapshot(id.into()) {
+            if let Some(state) = self.get_ethstate_snapshot_at(id.into()) {
                 match state.nonce(&address) {
                     Ok(nonce) => return Some(nonce),
                     Err(e) => {
@@ -402,7 +402,7 @@ impl Client {
     ) -> Option<H256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(s) = self.get_ethstate_snapshot(state) {
+            if let Some(s) = self.get_ethstate_snapshot_at(state) {
                 match s.storage_at(address, position) {
                     Ok(val) => return Some(val),
                     Err(e) => {
