@@ -3,12 +3,23 @@
 # Triggers the ops-production build hook service
 #
 # Usage:
-#   ./buildhook-notify.sh <target> <repository> <tag> <secret_token>
+#   ./buildhook-notify.sh <deploy_target> <repository> <deploy_tag> <private_ops_revision> <secret_token>
+#
+# <deploy-target> - The environment to deploy to
+# <repository> - The repository calling private-ops for deployment
+# <tag> - The deployment tag to use
+# <private_ops_revision> - The version of private ops to use for deployment
+# <secret_token> - The circleci token to make api requests
 ##
+set -euxo pipefail
 
-target=$1
+deploy_target=$1
 repository=$2
 tag=$3
-secret_token=$4
+private_ops_revision=$4
+secret_token=$5
 
-curl -d '{"target":"'"$target"'","repository":"'"$repository"'","tag":"'"$tag"'"}' -H "Content-Type: application/json" -X POST https://buildhook.ops-production.oasiscloud.io/webhook?token=$secret_token
+curl -X POST \
+     -h "Content-Type: application/json" \
+     -d '{"revision": "'${private_ops_revision}'", "build_parameters": {"CIRCLE_JOB": "deploy-'${deploy_target}'", "DEPLOY_IMAGE_TAG": "'${tag}'", "DEPLOY_CALLER":"'${repository}'"}}' \
+     https://circleci.com/api/v1.1/project/git/oasislabs/private-ops?circle-token=${secret_token}
