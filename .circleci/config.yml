@@ -202,7 +202,7 @@ workflows:
   build:
     jobs:
       - build
-      - set-docker-tag
+      - set-docker-tag:
           filters:
             branches:
               only: master
