@@ -364,7 +364,11 @@ impl kvdb::KeyValueDB for StateDb {
                 DatabaseHandle::instance().insert(&get_key(col, key), value.to_vec().as_slice());
             }
             &kvdb::DBOp::Delete { ref key, col } => {
-                DatabaseHandle::instance().remove(&get_key(col, key));
+                // This is a no-op for us. Parity cleans up old state (anything
+                // not part of the trie defined by the best block state root).
+                // We want to retain previous states to support web3 APIs that
+                // take a default block parameter:
+                // https://github.com/ethereum/wiki/wiki/JSON-RPC#the-default-block-parameter
             }
         });
     }

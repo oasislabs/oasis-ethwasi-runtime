@@ -6,6 +6,7 @@ use std::sync::Arc;
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
 use ethcore::blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress};
+use ethcore::client::{BlockId, StateOrBlock};
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
@@ -197,9 +198,13 @@ where
         }
     }
 
-    // returns None if the database has not been initialized (i.e., no best block state root)
-    pub fn get_ethstate(&self) -> Option<EthState> {
-        let root = self.best_block_state_root()?;
+    // returns None if the database has not been initialized
+    pub fn get_ethstate_at(&self, state: StateOrBlock) -> Option<EthState> {
+        let root = match state {
+            // we don't have pending state, so this is always a BlockId
+            StateOrBlock::State(_s) => unreachable!(),
+            StateOrBlock::Block(id) => self.state_root_at(id),
+        }?;
         let backend = BasicBackend(OverlayDB::new(
             Arc::new(StateDb {
                 db: self.db.clone(),
@@ -232,8 +237,14 @@ where
         }
     }
 
-    fn best_block_state_root(&self) -> Option<H256> {
-        match self.best_block_hash() {
+    fn state_root_at(&self, block: BlockId) -> Option<H256> {
+        let hash = match block {
+            BlockId::Hash(hash) => Some(hash),
+            BlockId::Number(number) => self.block_hash(number),
+            BlockId::Earliest => self.block_hash(0),
+            BlockId::Latest => self.best_block_hash(),
+        };
+        match hash {
             Some(hash) => self.block_header_data(&hash)
                 .map(|h| h.state_root().clone()),
             None => None,
@@ -395,7 +406,7 @@ mod tests {
         let state = StateDb::new(db).unwrap();
 
         // get ethstate
-        let ethstate = state.get_ethstate().unwrap();
+        let ethstate = state.get_ethstate_at(BlockId::Latest.into()).unwrap();
 
         // an account in the genesis block containing 100 ETH, no storage, and no code
         let balance_only = Address::from("7110316b618d20d0c44728ac2a3d683536ea682b");

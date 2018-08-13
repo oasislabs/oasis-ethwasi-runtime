@@ -192,7 +192,7 @@ impl EthClient {
             PendingTransactionId::Location(PendingOrBlock::Block(block), index) => {
                 client_transaction(TransactionId::Location(block, index))
             }
-            PendingTransactionId::Location(PendingOrBlock::Pending, index) => {
+            PendingTransactionId::Location(PendingOrBlock::Pending, _index) => {
                 // we don't have pending blocks
                 Ok(None)
             }
@@ -596,14 +596,13 @@ impl Eth for EthClient {
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("call");
         measure_histogram_timer!("call_time");
-        info!(
-            "eth_call(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_call(request: {:?}, number: {:?})", request, num);
+
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.call(&signed);
+        let result = self.client.call(&signed, self.get_state(num));
         Box::new(future::done(
             result
                 .map_err(errors::call)
@@ -624,11 +623,10 @@ impl Eth for EthClient {
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("call");
         measure_histogram_timer!("call_time");
-        info!(
-            "eth_call(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_call(request: {:?}, number: {:?})", request, num);
+
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -637,7 +635,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.call(request);
+        let result = self.client.call(request, self.get_state(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))
@@ -652,14 +650,13 @@ impl Eth for EthClient {
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("estimateGas");
         measure_histogram_timer!("estimateGas_time");
-        info!(
-            "eth_estimateGas(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_estimateGas(request: {:?}, number: {:?})", request, num);
+
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.estimate_gas(&signed);
+        let result = self.client.estimate_gas(&signed, self.get_state(num));
         Box::new(future::done(result.map(Into::into).map_err(errors::call)))
     }
 
@@ -672,11 +669,10 @@ impl Eth for EthClient {
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("estimateGas");
         measure_histogram_timer!("estimateGas_time");
-        info!(
-            "eth_estimateGas(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_estimateGas(request: {:?}, number: {:?})", request, num);
+
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -685,7 +681,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.estimate_gas(request);
+        let result = self.client.estimate_gas(request, self.get_state(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))
