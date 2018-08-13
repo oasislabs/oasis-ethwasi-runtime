@@ -13,13 +13,12 @@ timestamp=`date +%Y%m%d%H%M%S` # YYYYmmddHHMMSS
 
 if [ "$CIRCLE_BRANCH" = "master" ]; then
     # If the current branch is master then use the git-tag and a timestamp
-    export BUILD_IMAGE_TAG=${CIRCLE_TAG}-${timestamp}
+    export BUILD_IMAGE_TAG="${CIRCLE_TAG}-${timestamp}"
 else
     # Otherwise this is a pull-request and use the sha1
-    export BUILD_IMAGE_TAG=${CIRCLE_SHA1}
+    export BUILD_IMAGE_TAG="${CIRCLE_SHA1}"
 fi
 
 # Write the docker tag out to a specific file so we can
 # save it as an artifact for the build
-echo $BUILD_IMAGE_TAG > $1
-printf "export BUILD_IMAGE_TAG=%s\n" "$BUILD_IMAGE_TAG" >> $BASH_ENV
+echo "$BUILD_IMAGE_TAG" > $1

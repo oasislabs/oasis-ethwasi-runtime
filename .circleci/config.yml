@@ -127,8 +127,8 @@ jobs:
           at: /workspace
 
       - run: 
-          name: Load current docker tag
-          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       # Build deployment image.
       - run: |
@@ -147,8 +147,8 @@ jobs:
           at: /workspace
 
       - run: 
-          name: Load current docker tag
-          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       - run:
           name: Trigger a webhook on ops-production for a staging deploy
@@ -158,16 +158,19 @@ jobs:
     docker:
       - image: circleci/python:3.6.6-jessie
     steps:
+      # Set this as a variable so it can be changed quickly if necessary
+      - run: echo 'export PRODUCTION_TAG=latest' >> $BASH_ENV
+
       - attach_workspace:
           at: /workspace
 
       - run: 
-          name: Load current docker tag
-          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
-      # Login to docker
-      - run: |
-          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+      - run: 
+          name: Login to docker
+          command: echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
       
       - run:
           name: Download the tag of ekiden for this current workflow
@@ -175,7 +178,7 @@ jobs:
 
       - run:
           name: Tag the ekiden build on this workflow for production
-          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/testnet:$PRODUCTION_TAG
+          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/runtime-ethereum:$PRODUCTION_TAG
 
       - run:
           name: Push the new production tag of ekiden to dockerhub
@@ -189,8 +192,8 @@ jobs:
           at: /workspace
 
       - run: 
-          name: Load current docker tag
-          command: echo 'BUILD_IMAGE_TAG=`cat /workspace/build_image_tag`' >> $BASH_ENV
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       - run:
           name: Trigger a webhook on ops-production for a staging deploy
