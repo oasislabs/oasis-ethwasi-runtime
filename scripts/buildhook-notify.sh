@@ -20,6 +20,6 @@ private_ops_revision=$4
 secret_token=$5
 
 curl -X POST \
-     -h "Content-Type: application/json" \
+     -H "Content-Type: application/json" \
      -d '{"revision": "'${private_ops_revision}'", "build_parameters": {"CIRCLE_JOB": "deploy-'${deploy_target}'", "DEPLOY_IMAGE_TAG": "'${tag}'", "DEPLOY_CALLER":"'${repository}'"}}' \
-     https://circleci.com/api/v1.1/project/git/oasislabs/private-ops?circle-token=${secret_token}
+     https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/${private_ops_revision}?circle-token=${secret_token}
