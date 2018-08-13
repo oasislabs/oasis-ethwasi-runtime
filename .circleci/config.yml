@@ -203,7 +203,13 @@ workflows:
     jobs:
       - build
       - set-docker-tag
+          filters:
+            branches:
+              only: master
       - build-and-publish-docker-image:
+          filters:
+            branches:
+              only: master
           requires:
             - set-docker-tag
       - deploy-to-staging:
