@@ -26,7 +26,7 @@ use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
-use impls::{EthClient, EthFilterClient, NetClient, TracesClient, Web3Client};
+use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -40,6 +40,8 @@ pub enum Api {
     EthPubSub,
     /// Traces (Safe)
     Traces,
+    /// Oasis (Safe)
+    Oasis,
 }
 
 impl FromStr for Api {
@@ -54,6 +56,7 @@ impl FromStr for Api {
             "eth" => Ok(Eth),
             "pubsub" => Ok(EthPubSub),
             "traces" => Ok(Traces),
+            "oasis" => Ok(Oasis),
             api => Err(format!("Unknown api: {}", api)),
         }
     }
@@ -161,7 +164,7 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthFilter, Net, Traces, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, Net, Oasis, Traces, Web3};
 
         for api in apis {
             match *api {
@@ -184,6 +187,9 @@ impl FullDependencies {
                     // TODO: pub/sub
                 }
                 Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
+                Api::Oasis => {
+                    handler.extend_with(OasisClient::new().to_delegate());
+                }
             }
         }
     }
@@ -247,6 +253,7 @@ mod test {
         assert_eq!(Api::Eth, "eth".parse().unwrap());
         assert_eq!(Api::EthPubSub, "pubsub".parse().unwrap());
         assert_eq!(Api::Traces, "traces".parse().unwrap());
+        assert_eq!(Api::Oasis, "oasis".parse().unwrap());
         assert!("rp".parse::<Api>().is_err());
     }
 
@@ -272,6 +279,7 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Traces,
+            Api::Oasis,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::UnsafeContext.list_apis(), expected);
@@ -286,6 +294,7 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Traces,
+            Api::Oasis,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::IpcContext.list_apis(), expected);
@@ -300,6 +309,7 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Traces,
+            Api::Oasis,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::SafeContext.list_apis(), expected);
@@ -310,8 +320,14 @@ mod test {
         assert_eq!(
             "all".parse::<ApiSet>().unwrap(),
             ApiSet::List(
-                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Traces]
-                    .into_iter()
+                vec![
+                    Api::Web3,
+                    Api::Net,
+                    Api::Eth,
+                    Api::EthPubSub,
+                    Api::Traces,
+                    Api::Oasis,
+                ].into_iter()
                     .collect()
             )
         );
@@ -322,8 +338,14 @@ mod test {
         assert_eq!(
             "safe".parse::<ApiSet>().unwrap(),
             ApiSet::List(
-                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Traces]
-                    .into_iter()
+                vec![
+                    Api::Web3,
+                    Api::Net,
+                    Api::Eth,
+                    Api::EthPubSub,
+                    Api::Traces,
+                    Api::Oasis,
+                ].into_iter()
                     .collect()
             )
         );
