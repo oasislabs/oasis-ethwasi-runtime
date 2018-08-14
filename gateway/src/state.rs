@@ -481,4 +481,29 @@ mod tests {
 
         assert_eq!(best_block.header_view().number(), 4);
     }
+
+    #[test]
+    fn test_default_block_parameter() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // a deployed contract
+        let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
+
+        // get ethstate at block 0
+        let ethstate_0 = state.get_ethstate_at(BlockId::Number(0).into()).unwrap();
+        // code should be empty at block 0
+        let code_0 = ethstate_0.code(&deployed_contract).unwrap();
+        assert!(code_0.is_none());
+
+        // get ethstate at latest block
+        let ethstate_latest = state.get_ethstate_at(BlockId::Latest.into()).unwrap();
+        // code should be non-empty at latest block
+        let code_latest = ethstate_latest.code(&deployed_contract).unwrap().unwrap();
+        assert!(code_latest.len() > 0);
+    }
 }
