@@ -28,4 +28,5 @@ fi
 docker build --rm --force-rm \
     --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=$runtime_ethereum_commit_sha \
     --build-arg BASE_DOCKER_IMAGE_TAG=$base_docker_image_tag \
+    --build-arg RUNTIME_ETHEREUM_BUILD_IMAGE_TAG=$BUILD_IMAGE_TAG \
     -t oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG - <target/docker-deployment/context.tar.gz
