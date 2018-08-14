@@ -140,7 +140,7 @@ jobs:
   
   deploy-to-staging:
     docker:
-      - image: circleci/python:3.6.6-jessie
+      - image: ekiden/testing:0.2.0
     steps:
       - checkout
       - attach_workspace:
@@ -156,7 +156,7 @@ jobs:
 
   promote-to-production:
     docker:
-      - image: circleci/python:3.6.6-jessie
+      - image: ekiden/testing:0.2.0
     steps:
       # Set this as a variable so it can be changed quickly if necessary
       - run: echo 'export PRODUCTION_TAG=latest' >> $BASH_ENV
@@ -186,7 +186,7 @@ jobs:
 
   deploy-to-production:
     docker:
-      - image: circleci/python:3.6.6-jessie
+      - image: ekiden/testing:0.2.0
     steps:
       - attach_workspace:
           at: /workspace
