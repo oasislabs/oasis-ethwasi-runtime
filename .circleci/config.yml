@@ -213,6 +213,7 @@ workflows:
             branches:
               only: master
           requires:
+            - build
             - set-docker-tag
       - deploy-to-staging:
           filters:
