@@ -222,6 +222,7 @@ workflows:
           requires:
             - build-and-publish-docker-image
       - hold-for-production:
+          type: approval
           requires:
             - deploy-to-staging
       - promote-to-production:
