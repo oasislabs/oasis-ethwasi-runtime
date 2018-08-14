@@ -8,8 +8,9 @@ use ekiden_trusted::db::untrusted::UntrustedStorageBackend as StorageBackendImpl
 
 use jsonrpc_core::{Error, ErrorCode, Result};
 
-use parity_rpc::v1::traits::Oasis;
 use parity_rpc::v1::types::{H256 as RpcH256, U64 as RpcU64};
+
+use traits::v1::traits::Oasis;
 
 use std::str::FromStr;
 use std::sync::Arc;
