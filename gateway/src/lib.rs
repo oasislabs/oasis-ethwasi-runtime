@@ -83,6 +83,7 @@ extern crate ekiden_trusted;
 extern crate ethereum_api;
 
 mod client;
+mod traits;
 mod impls;
 mod rpc;
 mod rpc_apis;
