@@ -151,8 +151,8 @@ jobs:
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       - run:
-          name: Trigger a webhook on ops-production for a staging deploy
-          command: ./scripts/webhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
+          name: Trigger a buildhook that triggers a staging deploy
+          command: ./scripts/buildhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
 
   promote-to-production:
     docker:
@@ -196,8 +196,8 @@ jobs:
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       - run:
-          name: Trigger a webhook on ops-production for a staging deploy
-          command: ./scripts/webhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
+          name: Trigger a buildhook that triggers a production deploy
+          command: ./scripts/buildhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
 
 workflows:
   version: 2
