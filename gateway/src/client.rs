@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
 use ethcore::blockchain::{BlockProvider, TransactionAddress};
-use ethcore::client::{BlockId, EnvInfo, LastHashes, StateOrBlock, TransactionId};
+use ethcore::client::{BlockId, EnvInfo, LastHashes, TransactionId};
 use ethcore::encoded;
 use ethcore::engines::EthEngine;
 use ethcore::error::CallError;
@@ -319,17 +319,18 @@ impl Client {
 
     // account state-related
 
-    /// returns an EthState backed by an Ekiden db snapshot, or None when the
-    /// blockchain database has not yet been initialized by the runtime
+    /// returns an EthState at the specified BlockId, backed by an Ekiden db
+    /// snapshot, or None when the blockchain database has not yet been
+    /// initialized by the runtime
     #[cfg(feature = "read_state")]
-    fn get_ethstate_snapshot(&self) -> Option<EthState> {
-        self.get_db_snapshot()?.get_ethstate()
+    fn get_ethstate_snapshot_at(&self, id: BlockId) -> Option<EthState> {
+        self.get_db_snapshot()?.get_ethstate_at(id)
     }
 
-    pub fn balance(&self, address: &Address, state: StateOrBlock) -> Option<U256> {
+    pub fn balance(&self, address: &Address, id: BlockId) -> Option<U256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(state) = self.get_ethstate_snapshot() {
+            if let Some(state) = self.get_ethstate_snapshot_at(id) {
                 match state.balance(&address) {
                     Ok(balance) => return Some(balance),
                     Err(e) => {
@@ -348,11 +349,11 @@ impl Client {
         )
     }
 
-    pub fn code(&self, address: &Address, state: StateOrBlock) -> Option<Option<Bytes>> {
+    pub fn code(&self, address: &Address, id: BlockId) -> Option<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
         #[cfg(feature = "read_state")]
         {
-            if let Some(state) = self.get_ethstate_snapshot() {
+            if let Some(state) = self.get_ethstate_snapshot_at(id) {
                 match state.code(&address) {
                     Ok(code) => return Some(code.map(|c| (&*c).clone())),
                     Err(e) => {
@@ -374,7 +375,7 @@ impl Client {
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(state) = self.get_ethstate_snapshot() {
+            if let Some(state) = self.get_ethstate_snapshot_at(id) {
                 match state.nonce(&address) {
                     Ok(nonce) => return Some(nonce),
                     Err(e) => {
@@ -393,15 +394,10 @@ impl Client {
         )
     }
 
-    pub fn storage_at(
-        &self,
-        address: &Address,
-        position: &H256,
-        state: StateOrBlock,
-    ) -> Option<H256> {
+    pub fn storage_at(&self, address: &Address, position: &H256, id: BlockId) -> Option<H256> {
         #[cfg(feature = "read_state")]
         {
-            if let Some(state) = self.get_ethstate_snapshot() {
+            if let Some(state) = self.get_ethstate_snapshot_at(id) {
                 match state.storage_at(address, position) {
                     Ok(val) => return Some(val),
                     Err(e) => {
@@ -463,7 +459,11 @@ impl Client {
 
     // transaction-related
     #[cfg(feature = "read_state")]
-    pub fn call(&self, transaction: &SignedTransaction) -> Result<Executed, CallError> {
+    pub fn call(
+        &self,
+        transaction: &SignedTransaction,
+        id: BlockId,
+    ) -> Result<Executed, CallError> {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
@@ -471,7 +471,7 @@ impl Client {
                 return Err(CallError::StateCorrupt);
             }
         };
-        let mut state = match db.get_ethstate() {
+        let mut state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
                 error!("Could not get state snapshot");
@@ -490,7 +490,7 @@ impl Client {
     }
 
     #[cfg(not(feature = "read_state"))]
-    pub fn call(&self, request: TransactionRequest) -> Result<Bytes, String> {
+    pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
             self.client
@@ -502,7 +502,11 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    pub fn estimate_gas(&self, transaction: &SignedTransaction) -> Result<U256, CallError> {
+    pub fn estimate_gas(
+        &self,
+        transaction: &SignedTransaction,
+        id: BlockId,
+    ) -> Result<U256, CallError> {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
@@ -510,7 +514,7 @@ impl Client {
                 return Err(CallError::StateCorrupt);
             }
         };
-        let mut state = match db.get_ethstate() {
+        let mut state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
                 error!("Could not get state snapshot");
@@ -529,7 +533,7 @@ impl Client {
     }
 
     #[cfg(not(feature = "read_state"))]
-    pub fn estimate_gas(&self, request: TransactionRequest) -> Result<U256, String> {
+    pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",
             self.client

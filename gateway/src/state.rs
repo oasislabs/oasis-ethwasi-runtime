@@ -6,6 +6,7 @@ use std::sync::Arc;
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
 use ethcore::blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress};
+use ethcore::client::BlockId;
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
@@ -197,9 +198,9 @@ where
         }
     }
 
-    // returns None if the database has not been initialized (i.e., no best block state root)
-    pub fn get_ethstate(&self) -> Option<EthState> {
-        let root = self.best_block_state_root()?;
+    // returns None if the database has not been initialized
+    pub fn get_ethstate_at(&self, id: BlockId) -> Option<EthState> {
+        let root = self.state_root_at(id)?;
         let backend = BasicBackend(OverlayDB::new(
             Arc::new(StateDb {
                 db: self.db.clone(),
@@ -232,8 +233,14 @@ where
         }
     }
 
-    fn best_block_state_root(&self) -> Option<H256> {
-        match self.best_block_hash() {
+    fn state_root_at(&self, block: BlockId) -> Option<H256> {
+        let hash = match block {
+            BlockId::Hash(hash) => Some(hash),
+            BlockId::Number(number) => self.block_hash(number),
+            BlockId::Earliest => self.block_hash(0),
+            BlockId::Latest => self.best_block_hash(),
+        };
+        match hash {
             Some(hash) => self.block_header_data(&hash)
                 .map(|h| h.state_root().clone()),
             None => None,
@@ -394,8 +401,8 @@ mod tests {
         // get state
         let state = StateDb::new(db).unwrap();
 
-        // get ethstate
-        let ethstate = state.get_ethstate().unwrap();
+        // get ethstate at latest block
+        let ethstate = state.get_ethstate_at(BlockId::Latest).unwrap();
 
         // an account in the genesis block containing 100 ETH, no storage, and no code
         let balance_only = Address::from("7110316b618d20d0c44728ac2a3d683536ea682b");
@@ -469,5 +476,30 @@ mod tests {
             .unwrap();
 
         assert_eq!(best_block.header_view().number(), 4);
+    }
+
+    #[test]
+    fn test_default_block_parameter() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // a deployed contract
+        let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
+
+        // get ethstate at block 0
+        let ethstate_0 = state.get_ethstate_at(BlockId::Number(0)).unwrap();
+        // code should be empty at block 0
+        let code_0 = ethstate_0.code(&deployed_contract).unwrap();
+        assert!(code_0.is_none());
+
+        // get ethstate at latest block
+        let ethstate_latest = state.get_ethstate_at(BlockId::Latest).unwrap();
+        // code should be non-empty at latest block
+        let code_latest = ethstate_latest.code(&deployed_contract).unwrap().unwrap();
+        assert!(code_latest.len() > 0);
     }
 }

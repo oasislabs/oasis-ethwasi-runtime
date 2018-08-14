@@ -25,7 +25,7 @@ use client::Client;
 #[cfg(not(feature = "read_state"))]
 use util::log_to_rpc_log;
 
-use ethcore::client::{BlockId, StateOrBlock, TransactionId};
+use ethcore::client::{BlockId, TransactionId};
 use ethcore::filter::Filter as EthcoreFilter;
 
 use jsonrpc_core::futures::future;
@@ -192,7 +192,7 @@ impl EthClient {
             PendingTransactionId::Location(PendingOrBlock::Block(block), index) => {
                 client_transaction(TransactionId::Location(block, index))
             }
-            PendingTransactionId::Location(PendingOrBlock::Pending, index) => {
+            PendingTransactionId::Location(PendingOrBlock::Pending, _index) => {
                 // we don't have pending blocks
                 Ok(None)
             }
@@ -236,13 +236,13 @@ impl EthClient {
         }
     }
 
-    fn get_state(&self, number: BlockNumber) -> StateOrBlock {
+    fn get_block_id(&self, number: BlockNumber) -> BlockId {
         // for "pending", just use latest block
         match number {
-            BlockNumber::Num(num) => BlockId::Number(num).into(),
-            BlockNumber::Earliest => BlockId::Earliest.into(),
-            BlockNumber::Latest => BlockId::Latest.into(),
-            BlockNumber::Pending => BlockId::Latest.into(),
+            BlockNumber::Num(num) => BlockId::Number(num),
+            BlockNumber::Earliest => BlockId::Earliest,
+            BlockNumber::Latest => BlockId::Latest,
+            BlockNumber::Pending => BlockId::Latest,
         }
     }
 }
@@ -299,7 +299,7 @@ impl Eth for EthClient {
 
         info!("eth_getBalance(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.balance(&address, self.get_state(num)) {
+        let res = match self.client.balance(&address, self.get_block_id(num)) {
             Some(balance) => Ok(balance.into()),
             None => Err(errors::state_pruned()),
         };
@@ -323,12 +323,13 @@ impl Eth for EthClient {
             address, position, num
         );
 
-        let res = match self.client
-            .storage_at(&address, &H256::from(position), self.get_state(num))
-        {
-            Some(s) => Ok(s.into()),
-            None => Err(errors::state_pruned()),
-        };
+        let res =
+            match self.client
+                .storage_at(&address, &H256::from(position), self.get_block_id(num))
+            {
+                Some(s) => Ok(s.into()),
+                None => Err(errors::state_pruned()),
+            };
 
         Box::new(future::done(res))
     }
@@ -400,7 +401,7 @@ impl Eth for EthClient {
 
         info!("eth_getCode(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.code(&address, self.get_state(num)) {
+        let res = match self.client.code(&address, self.get_block_id(num)) {
             Some(code) => Ok(code.map_or_else(Bytes::default, Bytes::new)),
             None => Err(errors::state_pruned()),
         };
@@ -596,14 +597,13 @@ impl Eth for EthClient {
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("call");
         measure_histogram_timer!("call_time");
-        info!(
-            "eth_call(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_call(request: {:?}, number: {:?})", request, num);
+
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.call(&signed);
+        let result = self.client.call(&signed, self.get_block_id(num));
         Box::new(future::done(
             result
                 .map_err(errors::call)
@@ -624,11 +624,10 @@ impl Eth for EthClient {
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("call");
         measure_histogram_timer!("call_time");
-        info!(
-            "eth_call(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_call(request: {:?}, number: {:?})", request, num);
+
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -637,7 +636,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.call(request);
+        let result = self.client.call(request, self.get_block_id(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))
@@ -652,14 +651,13 @@ impl Eth for EthClient {
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("estimateGas");
         measure_histogram_timer!("estimateGas_time");
-        info!(
-            "eth_estimateGas(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_estimateGas(request: {:?}, number: {:?})", request, num);
+
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.estimate_gas(&signed);
+        let result = self.client.estimate_gas(&signed, self.get_block_id(num));
         Box::new(future::done(result.map(Into::into).map_err(errors::call)))
     }
 
@@ -672,11 +670,10 @@ impl Eth for EthClient {
     ) -> BoxFuture<RpcU256> {
         measure_counter_inc!("estimateGas");
         measure_histogram_timer!("estimateGas_time");
-        info!(
-            "eth_estimateGas(request: {:?}, number: {:?})",
-            request,
-            num.unwrap_or_default()
-        );
+        let num = num.unwrap_or_default();
+
+        info!("eth_estimateGas(request: {:?}, number: {:?})", request, num);
+
         let request = TransactionRequest {
             nonce: request.nonce.map(Into::into),
             caller: request.from.map(Into::into),
@@ -685,7 +682,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.estimate_gas(request);
+        let result = self.client.estimate_gas(request, self.get_block_id(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))
