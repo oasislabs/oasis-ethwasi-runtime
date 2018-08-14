@@ -6,7 +6,7 @@ use std::sync::Arc;
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
 use ethcore::blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress};
-use ethcore::client::{BlockId, StateOrBlock};
+use ethcore::client::BlockId;
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
@@ -199,12 +199,8 @@ where
     }
 
     // returns None if the database has not been initialized
-    pub fn get_ethstate_at(&self, state: StateOrBlock) -> Option<EthState> {
-        let root = match state {
-            // we don't have pending state, so this is always a BlockId
-            StateOrBlock::State(_s) => unreachable!(),
-            StateOrBlock::Block(id) => self.state_root_at(id),
-        }?;
+    pub fn get_ethstate_at(&self, id: BlockId) -> Option<EthState> {
+        let root = self.state_root_at(id)?;
         let backend = BasicBackend(OverlayDB::new(
             Arc::new(StateDb {
                 db: self.db.clone(),
@@ -405,8 +401,8 @@ mod tests {
         // get state
         let state = StateDb::new(db).unwrap();
 
-        // get ethstate
-        let ethstate = state.get_ethstate_at(BlockId::Latest.into()).unwrap();
+        // get ethstate at latest block
+        let ethstate = state.get_ethstate_at(BlockId::Latest).unwrap();
 
         // an account in the genesis block containing 100 ETH, no storage, and no code
         let balance_only = Address::from("7110316b618d20d0c44728ac2a3d683536ea682b");
@@ -495,13 +491,13 @@ mod tests {
         let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
 
         // get ethstate at block 0
-        let ethstate_0 = state.get_ethstate_at(BlockId::Number(0).into()).unwrap();
+        let ethstate_0 = state.get_ethstate_at(BlockId::Number(0)).unwrap();
         // code should be empty at block 0
         let code_0 = ethstate_0.code(&deployed_contract).unwrap();
         assert!(code_0.is_none());
 
         // get ethstate at latest block
-        let ethstate_latest = state.get_ethstate_at(BlockId::Latest.into()).unwrap();
+        let ethstate_latest = state.get_ethstate_at(BlockId::Latest).unwrap();
         // code should be non-empty at latest block
         let code_latest = ethstate_latest.code(&deployed_contract).unwrap().unwrap();
         assert!(code_latest.len() > 0);
