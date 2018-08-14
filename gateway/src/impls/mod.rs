@@ -28,5 +28,6 @@ pub mod web3;
 pub use self::eth::EthClient;
 pub use self::eth_filter::EthFilterClient;
 pub use self::net::NetClient;
+pub use self::oasis::OasisClient;
 pub use self::trace::TracesClient;
 pub use self::web3::Web3Client;

@@ -52,12 +52,15 @@ util-error = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web
 ## Ekiden client dependencies
 clap = "2.29.1"
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-api = { path = "../api" }
 rand = "0.4"
 
@@ -73,6 +76,27 @@ ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
 [features]
 default = ["read_state"]
 read_state = []
+
+[patch."https://github.com/oasislabs/parity"]
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+parity = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+parity-machine = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+parity-rpc-client = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+path = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+journaldb = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+evm = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+registrar = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+vm = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
+util-error = { git = "https://github.com/oasislabs/parity", branch = "gateway-storage" }
 
 [[bin]]
 name = "gateway"
