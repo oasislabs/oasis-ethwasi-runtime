@@ -94,7 +94,23 @@ jobs:
       # End-to-end tests.
       - run: ./scripts/test-e2e.sh
 
-  deploy:
+  set-docker-tag:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      # Setup version tracking environment variables
+      - checkout
+      - run: 
+          name: Load docker tag versioning into environment
+          command: ./scripts/determine-build-versioning.sh /tmp/build_image_tag
+
+      # Save docker tag
+      - persist_to_workspace:
+          root: /tmp
+          paths: 
+            - build_image_tag
+
+  build-and-publish-docker-image:
     docker:
       - image: ekiden/testing:0.2.0
     resource_class: xlarge
@@ -106,34 +122,114 @@ jobs:
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
       - checkout
       - setup_remote_docker
+    
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       # Build deployment image.
       - run: |
           echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
           BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
+
       # Push deployment image.
-      - run: docker push oasislabs/ekiden-runtime-ethereum:latest
-      # Update testnet.
-      # https://stackoverflow.com/a/33511811/1864688
-      - run: |
-          REPO_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-runtime-ethereum:latest)
-          mkdir -p ~/.kube
-          echo "$KUBECONFIG_CONTENT_BASE64" | base64 -di >~/.kube/config
-          kubectl set image deployments/runtime-node-dummy ekiden-node-dummy=$REPO_DIGEST
-          kubectl set image deployments/runtime ekiden-compute=$REPO_DIGEST
-          kubectl set image deployments/web3-gateway web3-gateway=$REPO_DIGEST
+      - run: docker push oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+  
+  deploy-to-staging:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      - checkout
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
+
+      - run:
+          name: Trigger a buildhook that triggers a staging deploy
+          command: ./scripts/buildhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
+
+  promote-to-production:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      # Set this as a variable so it can be changed quickly if necessary
+      - run: echo 'export PRODUCTION_TAG=latest' >> $BASH_ENV
+
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
+
+      - run: 
+          name: Login to docker
+          command: echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+      
+      - run:
+          name: Download the tag of ekiden for this current workflow
+          command: docker pull oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+
+      - run:
+          name: Tag the ekiden build on this workflow for production
+          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/runtime-ethereum:$PRODUCTION_TAG
+
+      - run:
+          name: Push the new production tag of ekiden to dockerhub
+          command: docker push oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
+
+  deploy-to-production:
+    docker:
+      - image: circleci/python:3.6.6-jessie
+    steps:
+      - attach_workspace:
+          at: /workspace
+
+      - run: 
+          name: Load current docker build tag
+          command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
+
+      - run:
+          name: Trigger a buildhook that triggers a production deploy
+          command: ./scripts/buildhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
 
 workflows:
   version: 2
   build:
     jobs:
       - build
-      - deploy:
+      - set-docker-tag:
+          filters:
+            branches:
+              only: master
+      - build-and-publish-docker-image:
           filters:
             branches:
               only: master
           requires:
-            - build
+            - set-docker-tag
+      - deploy-to-staging:
+          filters:
+            branches:
+              only: master
+          requires:
+            - build-and-publish-docker-image
+      - hold-for-production:
+          requires:
+            - deploy-to-staging
+      - promote-to-production:
+          requires:
+            - hold-for-production
+      - deploy-to-production:
+          requires:
+            - promote-to-production
+
 experimental:
   notify:
     branches:

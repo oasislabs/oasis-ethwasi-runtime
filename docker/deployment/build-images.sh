@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+runtime_ethereum_commit_sha=${CIRCLE_SHA1:-unknown}
+base_docker_image_tag=${BASE_DOCKER_IMAGE_TAG:-latest}
 ekiden_image=${EKIDEN_DOCKER_IMAGE:-ekiden/development:0.2.0}
 base_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )
 
@@ -23,4 +25,7 @@ else
 fi
 
 # Build the deployable image from the output.
-docker build --rm --force-rm -t oasislabs/ekiden-runtime-ethereum - <target/docker-deployment/context.tar.gz
+docker build --rm --force-rm \
+    --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=$runtime_ethereum_commit_sha \
+    --build-arg BASE_DOCKER_IMAGE_TAG=$base_docker_image_tag \
+    -t oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG - <target/docker-deployment/context.tar.gz
