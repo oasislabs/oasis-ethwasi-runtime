@@ -1,4 +1,4 @@
-use std::{io::Cursor, sync::Arc};
+use std::io::Cursor;
 
 use ekiden_core::error::Result;
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
@@ -7,7 +7,7 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
               vm};
 use ethereum_types::{Address, U256};
 
-use super::state::{block_hashes_since, get_latest_block_number, get_state, BlockOffset};
+use super::state::{best_block_header, get_state, last_hashes};
 
 lazy_static! {
     pub(crate) static ref SPEC: Spec = {
@@ -20,9 +20,10 @@ lazy_static! {
 }
 
 fn get_env_info() -> vm::EnvInfo {
+    let parent = best_block_header();
     let mut env_info = vm::EnvInfo::default();
-    env_info.last_hashes = Arc::new(block_hashes_since(BlockOffset::Offset(256)));
-    env_info.number = get_latest_block_number() + 1;
+    env_info.last_hashes = last_hashes(&parent.hash());
+    env_info.number = parent.number() + 1;
     env_info.gas_limit = U256::max_value();
     env_info
 }

@@ -8,6 +8,7 @@ use ethcore::{self,
               encoded::Block,
               engines::ForkChoice,
               filter::Filter as EthcoreFilter,
+              header::Header,
               journaldb::overlaydb::OverlayDB,
               kvdb::{self, KeyValueDB},
               state::backend::Basic as BasicBackend,
@@ -61,16 +62,16 @@ pub(crate) fn new_block() -> Result<OpenBlock<'static>> {
     let parent = CHAIN.best_block_header();
     Ok(OpenBlock::new(
         &*SPEC.engine,
-        Default::default(),                                     /* factories */
-        false,                                                  /* tracing */
-        get_backend(),                                          /* state_db */
-        &parent,                                                /* parent */
-        Arc::new(block_hashes_since(BlockOffset::Offset(256))), /* last hashes */
-        Address::default(),                                     /* author */
-        (U256::one(), U256::max_value()),                       /* gas_range_target */
-        vec![],                                                 /* extra data */
-        true,                                                   /* is epoch_begin */
-        &mut Vec::new().into_iter(),                            /* ancestry */
+        Default::default(),               /* factories */
+        false,                            /* tracing */
+        get_backend(),                    /* state_db */
+        &parent,                          /* parent */
+        last_hashes(&parent.hash()),      /* last hashes */
+        Address::default(),               /* author */
+        (U256::one(), U256::max_value()), /* gas_range_target */
+        vec![],                           /* extra data */
+        true,                             /* is epoch_begin */
+        &mut Vec::new().into_iter(),      /* ancestry */
     )?)
 }
 
@@ -187,40 +188,19 @@ pub fn get_logs(filter: &Filter) -> Vec<Log> {
         .collect()
 }
 
-pub enum BlockOffset {
-    Offset(u64),
-    Absolute(u64),
-}
-
-pub fn block_hashes_since(start: BlockOffset) -> Vec<H256> {
-    let mut head = CHAIN.best_block_header();
-
-    let start = match start {
-        BlockOffset::Offset(offset) => if head.number() < offset {
-            0
-        } else {
-            head.number() - offset
-        },
-        BlockOffset::Absolute(num) => if num <= head.number() {
-            num
-        } else {
-            return Vec::new();
-        },
-    };
-    let mut hashes = Vec::with_capacity((head.number() - start + 1) as usize);
-
-    loop {
-        hashes.push(head.hash());
-        if head.number() <= start {
-            break;
+pub fn last_hashes(parent_hash: &H256) -> Arc<Vec<H256>> {
+    let mut last_hashes = vec![];
+    last_hashes.resize(256, H256::default());
+    last_hashes[0] = parent_hash.clone();
+    for i in 0..255 {
+        match CHAIN.block_details(&last_hashes[i]) {
+            Some(details) => {
+                last_hashes[i + 1] = details.parent.clone();
+            }
+            None => break,
         }
-        head = CHAIN
-            .block_header_data(head.parent_hash())
-            .map(|enc| enc.decode().unwrap())
-            .expect("Chain is corrupt!");
     }
-
-    hashes
+    Arc::new(last_hashes)
 }
 
 pub fn add_block(block: LockedBlock) -> Result<()> {
@@ -327,6 +307,10 @@ pub fn block_by_hash(hash: H256) -> Option<Block> {
 
 pub fn get_latest_block_number() -> BlockNumber {
     CHAIN.best_block_number()
+}
+
+pub fn best_block_header() -> Header {
+    CHAIN.best_block_header()
 }
 
 // Parity expects the database to namespace keys by column. The Ekiden db
