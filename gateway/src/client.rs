@@ -443,15 +443,16 @@ impl Client {
     where
         T: 'static + Database + Send + Sync,
     {
-        let header = db.best_block_hash()
+        let parent = db.best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
         EnvInfo {
-            number: header.number(),
-            author: header.author().clone(),
-            timestamp: header.timestamp(),
-            difficulty: header.difficulty().clone(),
-            last_hashes: Self::last_hashes(db, &header.parent_hash()),
+            // next block
+            number: parent.number() + 1,
+            author: Address::default(),
+            timestamp: 0,
+            difficulty: U256::zero(),
+            last_hashes: Self::last_hashes(db, &parent.hash()),
             gas_used: U256::default(),
             gas_limit: U256::max_value(),
         }
@@ -615,13 +616,13 @@ mod tests {
         let state = StateDb::new(db).unwrap();
 
         let envinfo = Client::get_env_info(&state);
-        assert_eq!(envinfo.number, 4);
+        assert_eq!(envinfo.number, 5);
         assert_eq!(envinfo.author, Address::default());
         assert_eq!(envinfo.timestamp, 0);
         assert_eq!(envinfo.difficulty, U256::zero());
         assert_eq!(
             envinfo.last_hashes[0],
-            H256::from("c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3")
+            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
         );
     }
 }
