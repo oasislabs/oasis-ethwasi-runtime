@@ -5,11 +5,11 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "sterling-rt" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "sterling-rt" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -25,7 +25,7 @@ ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 [dev-dependencies]
-ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" }
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "sterling-rt" }
 
 [features]
 benchmark = []
