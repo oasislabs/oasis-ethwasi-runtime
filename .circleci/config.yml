@@ -227,7 +227,7 @@ jobs:
           curl -f \
             -H "Content-Type: application/json" \
             -d '{
-              "revision": "pro-wh/feature/b",
+              "revision": "master",
               "build_parameters": {
                 "CIRCLE_JOB": "benchmark-runtime-ethereum",
                 "BENCHMARK_IMAGE": "'"$benchmark_image"'",
@@ -235,7 +235,7 @@ jobs:
                 "BENCHMARK_MR_ENCLAVE": "'"$mr_enclave"'"
               }
             }' \
-            "https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/pro-wh/feature/b?circle-token=$CIRCLE_TOKEN"
+            "https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/master?circle-token=$CIRCLE_TOKEN"
 
 workflows:
   version: 2
