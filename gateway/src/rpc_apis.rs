@@ -20,6 +20,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use client::Client;
+use ekiden_storage_base::StorageBackend;
 use futures_cpupool::CpuPool;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
@@ -153,6 +154,7 @@ pub struct FullDependencies {
     pub ws_address: Option<Host>,
     pub pool: CpuPool,
     pub remote: parity_reactor::Remote,
+    pub storage: Arc<StorageBackend>,
 }
 
 impl FullDependencies {
@@ -189,7 +191,7 @@ impl FullDependencies {
                 }
                 Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
                 Api::Oasis => {
-                    handler.extend_with(OasisClient::new().to_delegate());
+                    handler.extend_with(OasisClient::new(&self.storage).to_delegate());
                 }
             }
         }
