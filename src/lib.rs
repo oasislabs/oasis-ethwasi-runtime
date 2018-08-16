@@ -29,7 +29,7 @@ use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, 
 use ethereum_types::{Address, H256, U256};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
-            new_block, BlockOffset};
+            new_block};
 
 enclave_init!();
 
@@ -128,15 +128,6 @@ fn inject_account_storage(storage: &Vec<(Address, H256, H256)>) -> Result<()> {
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 pub fn get_block_height(_request: &bool) -> Result<U256> {
     Ok(get_latest_block_number().into())
-}
-
-pub fn get_latest_block_hashes(block_height: &U256) -> Result<Vec<H256>> {
-    Ok(
-        state::block_hashes_since(BlockOffset::Absolute(block_height.low_u64()))
-            .into_iter()
-            .rev()
-            .collect(),
-    )
 }
 
 fn get_block_hash(id: &BlockId) -> Result<Option<H256>> {
@@ -387,37 +378,34 @@ mod tests {
 
     #[test]
     fn test_solidity_blockhash() {
+        // pragma solidity ^0.4.18;
         // contract The {
-        //   function hash(uint8 num) public pure returns (uint8) {
-        //       return blockhash;
-        //     }
+        //   function hash(uint64 num) public view returns (bytes32) {
+        //     return blockhash(num);
+        //   }
         // }
 
-        let mut client = CLIENT.lock().unwrap();
+        use std::mem::transmute;
 
-        let blockhash_code = hex::decode("608060405234801561001057600080fd5b5060c78061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063cc8ee489146044575b600080fd5b348015604f57600080fd5b50606f600480360381019080803560ff169060200190929190505050608d565b60405180826000191660001916815260200191505060405180910390f35b60008160ff164090509190505600a165627a7a72305820349ccb60d12533bc99c8a927d659ee80298e4f4e056054211bcf7518f773f3590029").unwrap();
+        let mut client = CLIENT.lock().unwrap();
+        let blockhash_code = hex::decode("608060405234801561001057600080fd5b5060d58061001f6000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff168063e432a10e146044575b600080fd5b348015604f57600080fd5b506076600480360381019080803567ffffffffffffffff1690602001909291905050506094565b60405180826000191660001916815260200191505060405180910390f35b60008167ffffffffffffffff164090509190505600a165627a7a7230582078c16bf994a1597df9b750bb680f3fc4b4e8c9c8f51607bbfcc28d9496a211d70029").unwrap();
 
         let (_, contract) = client.create_contract(blockhash_code, &U256::zero());
 
-        let mut blockhash = |num: u8| -> Vec<u8> {
+        let mut blockhash = |num: u64| -> Vec<u8> {
             let mut data = hex::decode(
-                "cc8ee4890000000000000000000000000000000000000000000000000000000000000000",
+                "e432a10e0000000000000000000000000000000000000000000000000000000000000000",
             ).unwrap();
-            data[35] = num;
+            let bytes: [u8; 8] = unsafe { transmute(num.to_be()) };
+            for i in 0..8 {
+                data[28 + i] = bytes[i];
+            }
             client.call(&contract, data, &U256::zero())
         };
 
-        assert_ne!(
-            hex::encode(blockhash(0)),
-            "0000000000000000000000000000000000000000000000000000000000000000"
-        );
-        assert_ne!(
-            hex::encode(blockhash(1)),
-            "0000000000000000000000000000000000000000000000000000000000000000"
-        );
         assert_eq!(
-            hex::encode(blockhash(100)),
-            "0000000000000000000000000000000000000000000000000000000000000000"
+            blockhash(get_latest_block_number()),
+            block_hash(get_latest_block_number()).unwrap().to_vec()
         );
     }
 
@@ -551,5 +539,26 @@ mod tests {
         // When node A is leader again, getting the nonce should give an up to date value.
         let nonce_a = get_account_nonce_chain(&chain_a, &client_address);
         assert_eq!(nonce_a, reference_nonce);
+    }
+
+    #[test]
+    fn test_last_hashes() {
+        use state::{best_block_header, block_hash, last_hashes};
+
+        let mut client = CLIENT.lock().unwrap();
+
+        // ensure that we have >256 blocks
+        for i in 0..260 {
+            client.create_contract(vec![], &U256::zero());
+        }
+
+        // get last_hashes from latest block
+        let last_hashes = last_hashes(&best_block_header().hash());
+
+        assert_eq!(last_hashes.len(), 256);
+        assert_eq!(
+            last_hashes[1],
+            block_hash(get_latest_block_number() - 1).unwrap()
+        );
     }
 }

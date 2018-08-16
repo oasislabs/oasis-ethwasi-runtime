@@ -13,8 +13,6 @@ contract_api! {
 
     pub fn get_block_height(bool) -> U256;
 
-    pub fn get_latest_block_hashes(U256) -> Vec<H256>;
-
     pub fn get_transaction(H256) -> Option<Transaction>;
 
     pub fn get_receipt(H256) -> Option<Receipt>;
