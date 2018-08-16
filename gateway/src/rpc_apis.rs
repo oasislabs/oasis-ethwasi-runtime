@@ -164,7 +164,8 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthFilter, Net, Oasis, Traces, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, Net, Traces, Web3};
+        use traits::Oasis;
 
         for api in apis {
             match *api {

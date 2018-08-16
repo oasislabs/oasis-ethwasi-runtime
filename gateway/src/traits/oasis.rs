@@ -1,5 +1,5 @@
 //! Eth rpc interface.
-use jsonrpc_core:::Result;
+use jsonrpc_core::Result;
 use jsonrpc_macros::Trailing;
 
 use parity_rpc::v1::types::{H256, U256, Bytes};
@@ -12,6 +12,6 @@ build_rpc_trait! {
 
         /// Store data in global storage.
         #[rpc(name = "oasis_storeBytes")]
-        fn store_bytes(&self, String, U64) -> Result<H256>;
+        fn store_bytes(&self, String, u64) -> Result<H256>;
     }
 }
