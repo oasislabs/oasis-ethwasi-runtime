@@ -100,7 +100,10 @@ use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
 use ekiden_di::Container;
+use ekiden_storage_base::StorageBackend;
 use ethereum_api::with_api;
+
+use std::sync::Arc;
 
 pub use self::run::RunningClient;
 
@@ -114,6 +117,7 @@ pub fn start(
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
+    let storage: Arc<StorageBackend> = container.inject().map_err(|err| err.description().to_string())?;
 
     #[cfg(feature = "read_state")]
     {
@@ -121,9 +125,9 @@ pub fn start(
         let snapshot_manager =
             client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
 
-        run::execute(client, Some(snapshot_manager), num_threads)
+        run::execute(client, Some(snapshot_manager), storage, num_threads)
     }
 
     #[cfg(not(feature = "read_state"))]
-    run::execute(client, None, num_threads)
+    run::execute(client, None, storage, num_threads)
 }

@@ -22,6 +22,7 @@ use std::time::{Duration, Instant};
 use client::Client;
 
 use client_utils;
+use ekiden_storage_base::StorageBackend;
 use futures_cpupool::CpuPool;
 use jsonrpc_core;
 use parity_reactor::EventLoop;
@@ -35,6 +36,7 @@ use util;
 pub fn execute(
     ekiden_client: runtime_ethereum::Client,
     snapshot_manager: Option<client_utils::db::Manager>,
+    storage: Arc<StorageBackend>,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
@@ -65,6 +67,7 @@ pub fn execute(
         ws_address: ws_conf.address(),
         pool: cpu_pool.clone(),
         remote: event_loop.remote(),
+        storage: storage.clone(),
     });
 
     let dependencies = rpc::Dependencies {
