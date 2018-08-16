@@ -199,6 +199,44 @@ jobs:
           name: Trigger a buildhook that triggers a production deploy
           command: ./scripts/buildhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
 
+  benchmark:
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+      - checkout
+      - setup_remote_docker
+
+      # Build benchmarking image.
+      - run: |
+          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          BUILD_IMAGES_NO_ENTER=1 ./docker/benchmarking/build-images.sh
+
+      # Push benchmarking image.
+      - run: docker push oasislabs/ekiden-runtime-ethereum:benchmarking-latest
+
+      # Trigger private-ops to run the benchmark.
+      - run: |
+          benchmark_image=$(docker inspect --format='{{index .RepoDigests 0}}' oasislabs/ekiden-runtime-ethereum:benchmarking-latest)
+          mr_enclave=$(cat target/enclave/runtime-ethereum.mrenclave)
+          curl -f \
+            -H "Content-Type: application/json" \
+            -d '{
+              "revision": "master",
+              "build_parameters": {
+                "CIRCLE_JOB": "benchmark-runtime-ethereum",
+                "BENCHMARK_IMAGE": "'"$benchmark_image"'",
+                "BENCHMARK_BUILD_NUM": "'"$CIRCLE_BUILD_NUM"'",
+                "BENCHMARK_MR_ENCLAVE": "'"$mr_enclave"'"
+              }
+            }' \
+            "https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/master?circle-token=$CIRCLE_TOKEN"
+
 workflows:
   version: 2
   build:
@@ -231,6 +269,16 @@ workflows:
       - deploy-to-production:
           requires:
             - promote-to-production
+  benchmarking:
+    triggers:
+      - schedule:
+          cron: "0 1 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - benchmark
 
 experimental:
   notify:
