@@ -78,6 +78,7 @@ extern crate ekiden_di;
 #[macro_use]
 extern crate ekiden_instrumentation;
 extern crate ekiden_rpc_client;
+extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
 extern crate ekiden_trusted;
 extern crate ethereum_api;
