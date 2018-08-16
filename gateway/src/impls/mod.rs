@@ -22,6 +22,7 @@
 pub mod eth;
 pub mod eth_filter;
 pub mod net;
+pub mod oasis;
 pub mod trace;
 pub mod web3;
 
