@@ -13,6 +13,22 @@ run_dummy_node_default() {
         &> dummy.log &
 }
 
+run_dummy_node_go_default() {
+    local datadir=/tmp/ekiden-dummy-data
+    rm -rf ${datadir}
+
+    ${WORKDIR}/ekiden-node \
+        --log.level debug \
+        --grpc.port 42261 \
+        --epochtime.backend mock \
+        --beacon.backend insecure \
+        --storage.backend memory \
+        --scheduler.backend trivial \
+        --registry.backend memory \
+        --datadir ${datadir} \
+        &> dummy.log &
+}
+
 run_compute_node() {
     local id=$1
     shift
@@ -89,3 +105,5 @@ run_test() {
 }
 
 run_test run_dummy_node_default
+
+run_test run_dummy_node_go_default
