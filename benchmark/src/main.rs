@@ -122,6 +122,18 @@ fn main() {
              .short("v")
              .multiple(true)
              .help("Sets the level of verbosity"))
+        .arg(
+            Arg::with_name("benchmark")
+                .required(true)
+                .multiple(true)
+                .possible_values(&[
+                    "eth_blockNumber",
+                    "net_version",
+                    "eth_getBlockByNumber",
+                    "debug_nullCall",
+                    "transfer",
+                ]),
+        )
         .get_matches();
 
     // Initialize logger.
@@ -138,14 +150,22 @@ fn main() {
     let threads = value_t!(args, "threads", usize).unwrap();
     let url = format!("http://{}:{}", host, port);
 
-    run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 5000);
-    run_scenario("net_version", net_version, &url, threads, 100000);
-    run_scenario(
-        "eth_getBlockByNumber",
-        eth_getBlockByNumber,
-        &url,
-        threads,
-        5000,
-    );
-    run_scenario("null call", debug_nullCall, &url, threads, 5000);
+    for benchmark in args.values_of("benchmark").unwrap() {
+        match benchmark {
+            "eth_blockNumber" => {
+                run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 5000)
+            }
+            "net_version" => run_scenario("net_version", net_version, &url, threads, 100000),
+            "eth_getBlockByNumber" => run_scenario(
+                "eth_getBlockByNumber",
+                eth_getBlockByNumber,
+                &url,
+                threads,
+                5000,
+            ),
+            "debug_nullCall" => run_scenario("null call", debug_nullCall, &url, threads, 5000),
+            "transfer" => unimplemented!(),
+            _ => unreachable!(),
+        }
+    }
 }
