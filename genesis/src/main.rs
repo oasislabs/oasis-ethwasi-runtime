@@ -11,7 +11,7 @@ extern crate futures;
 use futures::future::Future;
 extern crate hex;
 extern crate log;
-use log::{debug, log};
+use log::debug;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
@@ -55,7 +55,7 @@ fn to_ms(d: Duration) -> f64 {
     d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
-fn strip_0x<'a>(hex: &'a str) -> &'a str {
+fn strip_0x(hex: &str) -> &str {
     if hex.starts_with("0x") {
         hex.get(2..).unwrap()
     } else {
@@ -97,7 +97,7 @@ fn main() {
 
             let mut account_state = AccountState {
                 nonce: U256::from_str(strip_0x(&account.nonce)).unwrap(),
-                address: address,
+                address,
                 balance: U256::from_str(strip_0x(&account.balance)).unwrap(),
                 code: match account.code {
                     Some(code) => code,
@@ -119,14 +119,14 @@ fn main() {
             break;
         }
         let accounts_len = accounts_req.len();
-        let res = client.inject_accounts(accounts_req).wait().unwrap();
+        client.inject_accounts(accounts_req).wait().unwrap();
 
         debug!("Injecting {} account storage items", storage_req.len());
         for chunk in storage_req.chunks(INJECT_STORAGE_CHUNK_SIZE) {
             let chunk_len = chunk.len();
             let chunk_vec = chunk.to_vec();
             let start = Instant::now();
-            let res = client.inject_account_storage(chunk_vec).wait().unwrap();
+            client.inject_account_storage(chunk_vec).wait().unwrap();
             let end = Instant::now();
             let duration_ms = to_ms(end - start);
             debug!(
