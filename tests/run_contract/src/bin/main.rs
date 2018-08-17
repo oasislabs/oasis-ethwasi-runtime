@@ -37,6 +37,6 @@ fn main() {
     let contract_address = run_tx(create_tx).unwrap().contract_address.unwrap();
     println!(
         "{:?}",
-        run_tx(make_tx(Either::Right((contract_address, Vec::new())))).unwrap()
+        run_tx(make_tx(Either::Right(contract_address))).unwrap()
     )
 }
