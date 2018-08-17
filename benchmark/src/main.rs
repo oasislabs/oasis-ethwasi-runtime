@@ -4,18 +4,15 @@
 extern crate clap;
 use clap::{App, Arg};
 extern crate log;
-use log::{debug, info, log, LevelFilter};
+use log::{debug, info, LevelFilter};
 extern crate pretty_env_logger;
-
-extern crate threadpool;
-use threadpool::ThreadPool;
 
 #[macro_use]
 extern crate jsonrpc_client_core;
 extern crate jsonrpc_client_http;
 use jsonrpc_client_http::{HttpHandle, HttpTransport};
 
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -62,39 +59,112 @@ fn run_scenario(
     scenario: fn(&mut Web3Client<HttpHandle>),
     url: &str,
     threads: usize,
-    number: usize,
+    duration_millis: u64,
 ) {
-    info!("Starting {} benchmark...", name);
-    let pool = ThreadPool::with_name("clients".into(), threads);
+    let time_before = Instant::now();
     let counter = Arc::new(AtomicUsize::new(0));
-    let start = Instant::now();
-
-    for _ in 0..pool.max_count() {
-        let counter = counter.clone();
+    let stop = Arc::new(AtomicBool::new(false));
+    let mut thread_handles = vec![];
+    thread_handles.reserve_exact(threads);
+    info!("Starting {} benchmark...", name);
+    for _ in 0..threads {
+        let tl_counter = counter.clone();
+        let tl_stop = stop.clone();
         let transport = HttpTransport::new().unwrap();
-        let transport_handle = transport.handle(&url).unwrap();
-
-        pool.execute(move || {
+        let transport_handle = transport.handle(url).unwrap();
+        thread_handles.push(std::thread::spawn(move || {
             let mut client = Web3Client::new(transport_handle);
-            loop {
+            while !tl_stop.load(Ordering::Relaxed) {
                 scenario(&mut client);
-                if counter.fetch_add(1, Ordering::Relaxed) >= number {
-                    break;
-                }
+                tl_counter.fetch_add(1, Ordering::Relaxed);
             }
-        });
+        }));
     }
-    pool.join();
 
-    let end = Instant::now();
-    let total = counter.load(Ordering::SeqCst);
-    let duration = end - start;
+    let time_start = Instant::now();
+    let count_start = counter.load(Ordering::Relaxed);
+    info!("Threads started");
+
+    // First 10% of time will be discarded.
+    let ramp_up_millis = duration_millis / 10;
+    std::thread::sleep(Duration::from_millis(ramp_up_millis));
+
+    let time_mid_before = Instant::now();
+    let count_mid_before = counter.load(Ordering::Relaxed);
+
+    // Middle 80% of time will be counted.
+    let mid_millis = duration_millis / 10 * 8;
+    std::thread::sleep(Duration::from_millis(mid_millis));
+
+    let time_mid_after = Instant::now();
+    let count_mid_after = counter.load(Ordering::Relaxed);
+
+    // Last 10% of time will be discarded.
+    let ramp_down_millis = duration_millis / 10;
+    std::thread::sleep(Duration::from_millis(ramp_down_millis));
+
+    let time_end = Instant::now();
+    let count_end = counter.load(Ordering::Relaxed);
+    info!("Done, joining threads");
+
+    stop.store(true, Ordering::Relaxed);
+    for thread_handle in thread_handles.into_iter() {
+        thread_handle.join().unwrap();
+    }
+
+    let time_after = Instant::now();
+    let count_after = counter.load(Ordering::Relaxed);
+    info!("Threads joined");
+
+    let mid_count = count_mid_after - count_mid_before;
+    let mid_dur = time_mid_after - time_mid_before;
+    let mid_dur_ms = to_ms(mid_dur);
+    let throughput_inv = mid_dur_ms / mid_count as f64;
+    let throughput = mid_count as f64 / mid_dur_ms * 1000.;
+    println!("# TYPE {}_mid_count gauge", name);
+    println!("# HELP {}_mid_count {} call count", name, name);
+    println!("{}_mid_count {}", name, mid_count);
+    println!("# TYPE {}_mid_dur_ms gauge", name);
+    println!("# HELP {}_mid_dur_ms Total time (ms)", name);
+    println!("{}_dur_ms {}", name, mid_dur_ms);
+    println!("# TYPE {}_throughput_inv gauge", name);
+    println!("# HELP {}_throughput_inv Inverse throughput (ms/tx)", name);
+    println!("{}_throughput_inv {}", name, throughput_inv);
+    println!("# TYPE {}_throughput gauge", name);
+    println!("# HELP {}_throughput Throughput (tx/sec)", name);
+    println!("{}_throughput {}", name, throughput);
+
+    let total_count = count_end - count_start;
+    let total_dur = time_end - time_start;
+    let total_dur_ms = to_ms(total_dur);
     info!(
-        "{}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        "Overall {}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
         name,
-        total,
-        to_ms(duration),
-        total as f64 / to_ms(duration) * 1000.
+        total_count,
+        total_dur_ms,
+        total_count as f64 / total_dur_ms * 1000.
+    );
+
+    let before_count = count_start;
+    let before_dur = time_start - time_before;
+    let before_dur_ms = to_ms(before_dur);
+    info!(
+        "Ramp up {}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        name,
+        before_count,
+        before_dur_ms,
+        before_count as f64 / before_dur_ms * 1000.
+    );
+
+    let after_count = count_after - count_end;
+    let after_dur = time_after - time_end;
+    let after_dur_ms = to_ms(after_dur);
+    info!(
+        "Ramp down {}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        name,
+        after_count,
+        after_dur_ms,
+        after_count as f64 / after_dur_ms * 1000.
     );
 }
 
@@ -153,17 +223,17 @@ fn main() {
     for benchmark in args.values_of("benchmark").unwrap() {
         match benchmark {
             "eth_blockNumber" => {
-                run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 5000)
+                run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 30000)
             }
-            "net_version" => run_scenario("net_version", net_version, &url, threads, 100000),
+            "net_version" => run_scenario("net_version", net_version, &url, threads, 30000),
             "eth_getBlockByNumber" => run_scenario(
                 "eth_getBlockByNumber",
                 eth_getBlockByNumber,
                 &url,
                 threads,
-                5000,
+                30000,
             ),
-            "debug_nullCall" => run_scenario("null call", debug_nullCall, &url, threads, 5000),
+            "debug_nullCall" => run_scenario("null call", debug_nullCall, &url, threads, 30000),
             "transfer" => unimplemented!(),
             _ => unreachable!(),
         }
