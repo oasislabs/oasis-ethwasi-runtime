@@ -3,19 +3,32 @@
 #[macro_use]
 extern crate clap;
 use clap::{App, Arg};
+#[macro_use]
+extern crate lazy_static;
 extern crate log;
-use log::{debug, info, LevelFilter};
+use log::{debug, info, warn, LevelFilter};
 extern crate pretty_env_logger;
+extern crate rand;
+use rand::Rng;
 
 #[macro_use]
 extern crate jsonrpc_client_core;
 extern crate jsonrpc_client_http;
 use jsonrpc_client_http::{HttpHandle, HttpTransport};
 
+extern crate ethcore_transaction;
+extern crate ethkey;
+use ethkey::Generator;
+extern crate ethereum_types;
+use ethereum_types::{Address, U256};
+
+use std::str::FromStr;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
+extern crate hex;
+extern crate rlp;
 extern crate serde_json;
 use serde_json::Value;
 
@@ -29,53 +42,134 @@ jsonrpc_client!(pub struct Web3Client {
     pub fn eth_getBlockByNumber(&mut self, number: String, full: bool) -> RpcRequest<Value>;
     pub fn debug_nullCall(&mut self) -> RpcRequest<bool>;
     pub fn net_version(&mut self) -> RpcRequest<String>;
+    pub fn eth_sendRawTransaction(&mut self, data: String) -> RpcRequest<String>;
 });
 
+fn no_prep(_client: &mut Web3Client<HttpHandle>) -> () {
+    ()
+}
+
 // scenarios
-fn eth_blockNumber(client: &mut Web3Client<HttpHandle>) {
+fn eth_blockNumber(client: &mut Web3Client<HttpHandle>, _context: &mut ()) {
     let res = client.eth_blockNumber().call();
     debug!("result: {:?}", res);
 }
 
-fn eth_getBlockByNumber(client: &mut Web3Client<HttpHandle>) {
+fn eth_getBlockByNumber(client: &mut Web3Client<HttpHandle>, _context: &mut ()) {
     let res = client
         .eth_getBlockByNumber("latest".to_string(), true)
         .call();
     debug!("result: {:?}", res);
 }
 
-fn net_version(client: &mut Web3Client<HttpHandle>) {
+fn net_version(client: &mut Web3Client<HttpHandle>, _context: &mut ()) {
     let res = client.net_version().call();
     debug!("result: {:?}", res);
 }
 
-fn debug_nullCall(client: &mut Web3Client<HttpHandle>) {
+fn debug_nullCall(client: &mut Web3Client<HttpHandle>, _context: &mut ()) {
     let res = client.debug_nullCall().call();
     debug!("result: {:?}", res);
 }
 
-fn run_scenario(
+struct TransferAccount {
+    keypair: ethkey::KeyPair,
+    nonce: u64,
+}
+
+impl TransferAccount {
+    fn new() -> Self {
+        TransferAccount {
+            keypair: ethkey::Random.generate().unwrap(),
+            nonce: 0,
+        }
+    }
+}
+
+lazy_static! {
+    static ref FUND_ACCOUNT: Mutex<TransferAccount> = Mutex::new(TransferAccount {
+        // address: 0x7110316b618d20d0c44728ac2a3d683536ea682
+        keypair: ethkey::KeyPair::from_secret(
+            ethkey::Secret::from_str(
+                "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c",
+            ).unwrap(),
+        ).unwrap(),
+        nonce: 0,
+    });
+}
+
+fn transfer_prep(client: &mut Web3Client<HttpHandle>) -> TransferAccount {
+    let account = TransferAccount::new();
+    let mut fund_account = FUND_ACCOUNT.lock().unwrap();
+    let recipient = account.keypair.address();
+    let tx = ethcore_transaction::Transaction {
+        nonce: U256::from(fund_account.nonce),
+        gas_price: U256::zero(),
+        gas: U256::from(1000000),
+        action: ethcore_transaction::Action::Call(recipient),
+        value: U256::from(1000000),
+        data: vec![],
+    }.sign(fund_account.keypair.secret(), None);
+    let tx_raw = rlp::encode(&tx);
+    let tx_hex = format!("0x{}", hex::encode(tx_raw));
+    client.eth_sendRawTransaction(tx_hex).call().unwrap();
+    fund_account.nonce += 1;
+    info!("Funded account, fund_account nonce {}", fund_account.nonce);
+    account
+}
+
+fn transfer(client: &mut Web3Client<HttpHandle>, account: &mut TransferAccount) {
+    let mut recipient = Address::zero();
+    rand::thread_rng().fill_bytes(&mut recipient.0);
+    let tx = ethcore_transaction::Transaction {
+        nonce: U256::from(account.nonce),
+        gas_price: U256::zero(),
+        gas: U256::from(1000000),
+        action: ethcore_transaction::Action::Call(recipient),
+        value: U256::one(),
+        data: vec![],
+    }.sign(account.keypair.secret(), None);
+    let tx_raw = rlp::encode(&tx);
+    let tx_hex = format!("0x{}", hex::encode(tx_raw));
+    let res = client.eth_sendRawTransaction(tx_hex).call();
+    if let Err(e) = res {
+        warn!("Transaction failed: {:?}", e);
+    } else {
+        account.nonce += 1;
+    }
+}
+
+fn run_scenario<C: Send + 'static>(
     name: &str,
-    scenario: fn(&mut Web3Client<HttpHandle>),
+    prep: fn(&mut Web3Client<HttpHandle>) -> C,
+    scenario: fn(&mut Web3Client<HttpHandle>, &mut C),
     url: &str,
     threads: usize,
     duration_millis: u64,
 ) {
-    let time_before = Instant::now();
+    info!("Starting {} benchmark...", name);
+    let mut contexts = vec![];
+    contexts.reserve_exact(threads);
+    for _ in 0..threads {
+        let transport = HttpTransport::new().unwrap();
+        let transport_handle = transport.handle(url).unwrap();
+        let mut client = Web3Client::new(transport_handle);
+        let context = prep(&mut client);
+        contexts.push((client, context));
+    }
+    info!("Preparation done");
+
     let counter = Arc::new(AtomicUsize::new(0));
     let stop = Arc::new(AtomicBool::new(false));
     let mut thread_handles = vec![];
     thread_handles.reserve_exact(threads);
-    info!("Starting {} benchmark...", name);
-    for _ in 0..threads {
+    let time_before = Instant::now();
+    for (mut client, mut context) in contexts.into_iter() {
         let tl_counter = counter.clone();
         let tl_stop = stop.clone();
-        let transport = HttpTransport::new().unwrap();
-        let transport_handle = transport.handle(url).unwrap();
         thread_handles.push(std::thread::spawn(move || {
-            let mut client = Web3Client::new(transport_handle);
             while !tl_stop.load(Ordering::Relaxed) {
-                scenario(&mut client);
+                scenario(&mut client, &mut context);
                 tl_counter.fetch_add(1, Ordering::Relaxed);
             }
         }));
@@ -91,6 +185,7 @@ fn run_scenario(
 
     let time_mid_before = Instant::now();
     let count_mid_before = counter.load(Ordering::Relaxed);
+    info!("Begin middle 80%");
 
     // Middle 80% of time will be counted.
     let mid_millis = duration_millis / 10 * 8;
@@ -98,8 +193,10 @@ fn run_scenario(
 
     let time_mid_after = Instant::now();
     let count_mid_after = counter.load(Ordering::Relaxed);
+    info!("End middle 80%");
 
     // Last 10% of time will be discarded.
+    // This might not be as important, the way this benchmark works.
     let ramp_down_millis = duration_millis / 10;
     std::thread::sleep(Duration::from_millis(ramp_down_millis));
 
@@ -222,19 +319,29 @@ fn main() {
 
     for benchmark in args.values_of("benchmark").unwrap() {
         match benchmark {
-            "eth_blockNumber" => {
-                run_scenario("eth_blockNumber", eth_blockNumber, &url, threads, 30000)
+            "eth_blockNumber" => run_scenario(
+                "eth_blockNumber",
+                no_prep,
+                eth_blockNumber,
+                &url,
+                threads,
+                30000,
+            ),
+            "net_version" => {
+                run_scenario("net_version", no_prep, net_version, &url, threads, 30000)
             }
-            "net_version" => run_scenario("net_version", net_version, &url, threads, 30000),
             "eth_getBlockByNumber" => run_scenario(
                 "eth_getBlockByNumber",
+                no_prep,
                 eth_getBlockByNumber,
                 &url,
                 threads,
                 30000,
             ),
-            "debug_nullCall" => run_scenario("null call", debug_nullCall, &url, threads, 30000),
-            "transfer" => unimplemented!(),
+            "debug_nullCall" => {
+                run_scenario("null call", no_prep, debug_nullCall, &url, threads, 30000)
+            }
+            "transfer" => run_scenario("transfer", transfer_prep, transfer, &url, threads, 30000),
             _ => unreachable!(),
         }
     }
