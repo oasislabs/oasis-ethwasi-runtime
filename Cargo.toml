@@ -29,3 +29,16 @@ ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden3" 
 
 [features]
 benchmark = []
+
+[patch."https://github.com/oasislabs/parity-wasm"]
+parity-wasm = { path = "/sterling/parity-wasm" }
+
+[patch."https://github.com/oasislabs/wasm-utils"]
+pwasm-utils = { path = "/sterling/wasm-utils" }
+
+[patch."https://github.com/oasislabs/wasmi"]
+wasmi = { path = "/sterling/wasmi" }
+
+[patch.crates-io]
+parity-wasm = { path = "/sterling/parity-wasm" }
+wasmi = { path = "/sterling/wasmi" }
