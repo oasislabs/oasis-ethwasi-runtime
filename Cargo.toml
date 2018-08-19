@@ -8,7 +8,6 @@ build = "build.rs"
 common-types = { git = "https://github.com/oasislabs/parity", branch = "sterling-storage" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethcore = { git = "https://github.com/oasislabs/parity", branch = "sterling-storage" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
@@ -30,3 +29,16 @@ ethkey = { git = "https://github.com/oasislabs/parity", branch = "sterling-stora
 
 [features]
 benchmark = []
+
+[patch."https://github.com/oasislabs/parity-wasm"]
+parity-wasm = { path = "/sterling/parity-wasm" }
+
+[patch."https://github.com/oasislabs/wasm-utils"]
+pwasm-utils = { path = "/sterling/wasm-utils" }
+
+[patch."https://github.com/oasislabs/wasmi"]
+wasmi = { path = "/sterling/wasmi" }
+
+[patch.crates-io]
+parity-wasm = { path = "/sterling/parity-wasm" }
+wasmi = { path = "/sterling/wasmi" }
