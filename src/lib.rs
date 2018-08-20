@@ -141,7 +141,7 @@ fn get_block_hash(id: &BlockId) -> Result<Option<H256>> {
 }
 
 fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
-    info!("get_block, id: {:?}", id);
+    debug!("get_block, id: {:?}", id);
 
     let block = match *id {
         BlockId::Hash(hash) => block_by_hash(hash),
@@ -157,42 +157,42 @@ fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
 }
 
 fn get_logs(filter: &Filter) -> Result<Vec<Log>> {
-    info!("get_logs, filter: {:?}", filter);
+    debug!("get_logs, filter: {:?}", filter);
     Ok(state::get_logs(filter))
 }
 
 pub fn get_transaction(hash: &H256) -> Result<Option<Transaction>> {
-    info!("get_transaction, hash: {:?}", hash);
+    debug!("get_transaction, hash: {:?}", hash);
     Ok(state::get_transaction(hash))
 }
 
 pub fn get_receipt(hash: &H256) -> Result<Option<Receipt>> {
-    info!("get_receipt, hash: {:?}", hash);
+    debug!("get_receipt, hash: {:?}", hash);
     Ok(state::get_receipt(hash))
 }
 
 pub fn get_account_balance(address: &Address) -> Result<U256> {
-    info!("get_account_balance, address: {:?}", address);
+    debug!("get_account_balance, address: {:?}", address);
     state::get_account_balance(address)
 }
 
 pub fn get_account_nonce(address: &Address) -> Result<U256> {
-    info!("get_account_nonce, address: {:?}", address);
+    debug!("get_account_nonce, address: {:?}", address);
     state::get_account_nonce(address)
 }
 
 pub fn get_account_code(address: &Address) -> Result<Option<Vec<u8>>> {
-    info!("get_account_code, address: {:?}", address);
+    debug!("get_account_code, address: {:?}", address);
     state::get_account_code(address)
 }
 
 pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
-    info!("get_storage_at, address: {:?}", pair);
+    debug!("get_storage_at, address: {:?}", pair);
     state::get_account_storage(pair.0, pair.1)
 }
 
 pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionResponse> {
-    info!("execute_raw_transaction");
+    debug!("execute_raw_transaction");
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
@@ -256,7 +256,7 @@ fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTrans
 }
 
 pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTransactionResponse> {
-    info!("simulate_transaction");
+    debug!("simulate_transaction");
     let tx = match make_unsigned_transaction(request) {
         Ok(t) => t,
         Err(e) => {

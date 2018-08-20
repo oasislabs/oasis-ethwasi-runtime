@@ -3,6 +3,7 @@ extern crate clap;
 extern crate either;
 extern crate ethcore;
 extern crate run_contract;
+extern crate simple_logger;
 
 use std::fs;
 
@@ -27,7 +28,15 @@ fn main() {
                 .help("dump RLP-encoded transaction to file")
                 .takes_value(true),
         )
+        .arg(Arg::with_name("v")
+             .short("v")
+             .multiple(true)
+             .help("Sets the level of verbosity"))
         .get_matches();
+
+    if args.occurrences_of("v") > 0 {
+        simple_logger::init().unwrap();
+    }
 
     let contract = fs::read(args.value_of("contract").unwrap()).unwrap();
     let create_tx = make_tx(Either::Left(contract));

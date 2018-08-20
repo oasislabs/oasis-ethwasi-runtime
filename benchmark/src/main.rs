@@ -118,13 +118,20 @@ fn main() {
                 .takes_value(true)
                 .default_value("1"),
         )
+        .arg(Arg::with_name("v")
+             .short("v")
+             .multiple(true)
+             .help("Sets the level of verbosity"))
         .get_matches();
 
     // Initialize logger.
     pretty_env_logger::formatted_builder()
         .unwrap()
-        .filter(None, LevelFilter::Info)
-        .init();
+        .filter( None, match args.occurrences_of("v") {
+            0 => LevelFilter::Info,
+            1 => LevelFilter::Debug,
+            _ => LevelFilter::max(),
+        }).init();
 
     let host = value_t!(args, "host", String).unwrap();
     let port = value_t!(args, "port", String).unwrap();

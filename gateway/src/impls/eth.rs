@@ -32,6 +32,8 @@ use jsonrpc_core::futures::future;
 use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
+use log;
+
 use parity_rpc::v1::helpers::{errors, fake_sign, limit_logs};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
@@ -575,7 +577,11 @@ impl Eth for EthClient {
     fn send_raw_transaction(&self, raw: Bytes) -> Result<RpcH256> {
         measure_counter_inc!("sendRawTransaction");
         measure_histogram_timer!("sendRawTransaction_time");
-        info!("eth_sendRawTransaction(data: {:?})", raw);
+        if log_enabled!(log::Level::Debug) {
+            debug!("eth_sendRawTransaction(data: {:?})", raw);
+        } else {
+            info!("eth_sendRawTransaction(data: ...)");
+        }
         self.client
             .send_raw_transaction(raw.into())
             .map(Into::into)

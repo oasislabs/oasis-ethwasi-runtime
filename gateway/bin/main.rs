@@ -56,10 +56,20 @@ fn main() {
                 .default_value("1")
                 .takes_value(true),
         )
+        .arg(Arg::with_name("v")
+             .short("v")
+             .multiple(true)
+             .help("Sets the level of verbosity"))
         .get_matches();
 
     // reset max log level to Info after default_app macro sets it to Trace
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(match args.occurrences_of("v") {
+        0 => LevelFilter::Error,
+        1 => LevelFilter::Info,
+        2 => LevelFilter::Debug,
+        3 => LevelFilter::Trace,
+        _ => LevelFilter::max(),
+    });
 
     // Initialize component container.
     let container = known_components

@@ -63,7 +63,7 @@ pub(crate) fn new_block() -> Result<OpenBlock<'static>> {
     Ok(OpenBlock::new(
         &*SPEC.engine,
         Default::default(),               /* factories */
-        false,                            /* tracing */
+        cfg!(debug_assertions),           /* tracing */
         get_backend(),                    /* state_db */
         &parent,                          /* parent */
         last_hashes(&parent.hash()),      /* last hashes */
