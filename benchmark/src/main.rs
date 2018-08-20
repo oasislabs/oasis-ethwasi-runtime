@@ -6,7 +6,7 @@ use clap::{App, Arg};
 #[macro_use]
 extern crate lazy_static;
 extern crate log;
-use log::{debug, info, warn, LevelFilter};
+use log::{debug, info, error, LevelFilter};
 extern crate pretty_env_logger;
 extern crate rand;
 use rand::Rng;
@@ -133,7 +133,7 @@ fn transfer(client: &mut Web3Client<HttpHandle>, account: &mut TransferAccount) 
     let tx_hex = format!("0x{}", hex::encode(tx_raw));
     let res = client.eth_sendRawTransaction(tx_hex).call();
     if let Err(e) = res {
-        warn!("Transaction failed: {:?}", e);
+        error!("Transaction failed: {:?}", e);
     } else {
         account.nonce += 1;
     }
