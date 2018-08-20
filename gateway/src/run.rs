@@ -127,7 +127,7 @@ impl RunningClient {
                 client,
                 keep_alive,
             } => {
-                debug!("Finishing work, please wait...");
+                info!("Finishing work, please wait...");
                 // Create a weak reference to the client so that we can wait on shutdown
                 // until it is dropped
                 let weak_client = Arc::downgrade(&client);
