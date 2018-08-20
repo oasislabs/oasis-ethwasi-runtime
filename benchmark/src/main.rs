@@ -37,14 +37,14 @@ jsonrpc_client!(pub struct Web3Client {
 // scenarios
 fn eth_blockNumber(client: &mut Web3Client<HttpHandle>) {
     let res = client.eth_blockNumber().call();
-    info!("result: {:?}", res);
+    debug!("result: {:?}", res);
 }
 
 fn eth_getBlockByNumber(client: &mut Web3Client<HttpHandle>) {
     let res = client
         .eth_getBlockByNumber("latest".to_string(), true)
         .call();
-    info!("result: {:?}", res);
+    debug!("result: {:?}", res);
 }
 
 fn net_version(client: &mut Web3Client<HttpHandle>) {
@@ -64,7 +64,7 @@ fn run_scenario(
     threads: usize,
     number: usize,
 ) {
-    debug!("Starting {} benchmark...", name);
+    info!("Starting {} benchmark...", name);
     let pool = ThreadPool::with_name("clients".into(), threads);
     let counter = Arc::new(AtomicUsize::new(0));
     let start = Instant::now();
@@ -89,7 +89,7 @@ fn run_scenario(
     let end = Instant::now();
     let total = counter.load(Ordering::SeqCst);
     let duration = end - start;
-    debug!(
+    info!(
         "{}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
         name,
         total,
