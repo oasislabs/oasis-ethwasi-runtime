@@ -2,6 +2,13 @@
 
 WORKDIR=${1:-$(pwd)}
 
+setup_truffle() {
+    echo "Installing truffle-hdwallet-provider."
+    # Temporary fix for ethereumjs-wallet@0.6.1 incompatibility
+    npm install ethereumjs-wallet@=0.6.0
+    npm install truffle-hdwallet-provider
+}
+
 run_dummy_node_default() {
     echo "Starting dummy node."
 
@@ -17,6 +24,8 @@ run_dummy_node_go_default() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
 
+    echo "Starting Go dummy node."
+
     ${WORKDIR}/ekiden-node \
         --log.level debug \
         --grpc.port 42261 \
@@ -26,7 +35,7 @@ run_dummy_node_go_default() {
         --scheduler.backend trivial \
         --registry.backend memory \
         --datadir ${datadir} \
-        &> dummy.log &
+        &> dummy-go.log &
 }
 
 run_compute_node() {
@@ -66,7 +75,7 @@ run_test() {
     target/debug/gateway \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --threads 100 \
-        --prometheus-metrics-addr 0.0.0.0:3000 \
+        --prometheus-metrics-addr 0.0.0.0:3001 \
         --prometheus-mode pull &> gateway.log &
     sleep 3
 
@@ -86,24 +95,22 @@ run_test() {
     sleep 2
 
     # Run truffle tests
-    echo "Installing truffle-hdwallet-provider."
-    # Temporary fix for ethereumjs-wallet@0.6.1 incompatibility
-    npm install ethereumjs-wallet@=0.6.0
-    npm install truffle-hdwallet-provider
-
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
     truffle test
     popd > /dev/null
 
     # Dump the metrics.
-    curl -v http://localhost:3000/metrics
+    curl -v http://localhost:3001/metrics
 
     # Cleanup.
     echo "Cleaning up."
     pkill -P $$
+
+    # Sleep to allow gateway's ports to be freed
+    sleep 5
 }
 
+setup_truffle
 run_test run_dummy_node_default
-
 run_test run_dummy_node_go_default
