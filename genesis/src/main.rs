@@ -1,5 +1,5 @@
 #![feature(use_extern_macros)]
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::str::FromStr;
 
 extern crate clap;
@@ -11,12 +11,13 @@ extern crate futures;
 use futures::future::Future;
 extern crate hex;
 extern crate log;
-use log::{debug, log};
+use log::debug;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+use serde_json::{de::SliceRead, StreamDeserializer};
 
 extern crate client_utils;
 use client_utils::{contract_client, default_app};
@@ -46,20 +47,103 @@ struct ExportedAccount {
     code: Option<String>,
     storage: Option<HashMap<String, String>>,
 }
-#[derive(Deserialize)]
-struct ExportedState {
-    state: BTreeMap<String, ExportedAccount>,
-}
 
 fn to_ms(d: Duration) -> f64 {
     d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
 }
 
-fn strip_0x<'a>(hex: &'a str) -> &'a str {
+fn strip_0x(hex: &str) -> &str {
     if hex.starts_with("0x") {
         hex.get(2..).unwrap()
     } else {
         hex
+    }
+}
+
+const EXPORTED_STATE_START: &[u8] = b"{ \"state\": {";
+const EXPORTED_STATE_ACCOUNT_SEP: &[u8] = b",";
+const EXPORTED_STATE_ADDR_SEP: &[u8] = b": ";
+const EXPORTED_STATE_END: &[u8] = b"\n}}";
+
+enum StateParsingState {
+    /// { "state": {
+    ///             ^
+    First,
+    /// "0x...": {...}
+    ///               ^
+    Middle,
+    /// }}
+    ///   ^
+    End,
+}
+
+/// Streaming parser for Parity's exported state JSON.
+/// https://github.com/paritytech/parity-ethereum/blob/v1.9.7/parity/blockchain.rs#L633-L689
+struct StateParser<'a> {
+    src: &'a [u8],
+    state: StateParsingState,
+}
+
+impl<'a> StateParser<'a> {
+    fn new(src: &'a [u8]) -> Self {
+        let (start, rest) = src.split_at(EXPORTED_STATE_START.len());
+        assert_eq!(start, EXPORTED_STATE_START);
+        Self {
+            src: rest,
+            state: StateParsingState::First,
+        }
+    }
+}
+
+impl<'a> Iterator for StateParser<'a> {
+    type Item = (String, ExportedAccount);
+
+    fn next(&mut self) -> Option<(String, ExportedAccount)> {
+        // }}
+        //   ^
+        if let StateParsingState::End = self.state {
+            return None;
+        }
+
+        // \n}}
+        // --->^
+        let (end, rest) = self.src.split_at(EXPORTED_STATE_END.len());
+        if end == EXPORTED_STATE_END {
+            self.src = rest;
+            self.state = StateParsingState::End;
+            return None;
+        }
+
+        // ...,
+        //    >^
+        if let StateParsingState::Middle = self.state {
+            let (account_sep, rest) = self.src.split_at(EXPORTED_STATE_ACCOUNT_SEP.len());
+            assert_eq!(account_sep, EXPORTED_STATE_ACCOUNT_SEP);
+            self.src = rest;
+        }
+
+        // \n"0x...": {...}
+        // -------->^
+        let mut de_addr = StreamDeserializer::new(SliceRead::new(self.src));
+        let addr = de_addr.next().unwrap().unwrap();
+        let (_, rest) = self.src.split_at(de_addr.byte_offset());
+        self.src = rest;
+
+        // "0x...": {...}
+        //        ->^
+        let (addr_sep, rest) = self.src.split_at(EXPORTED_STATE_ADDR_SEP.len());
+        assert_eq!(addr_sep, EXPORTED_STATE_ADDR_SEP);
+        self.src = rest;
+
+        // "0x...": {...}
+        //          ---->^
+        let mut de_account = StreamDeserializer::new(SliceRead::new(self.src));
+        let account = de_account.next().unwrap().unwrap();
+        let (_, rest) = self.src.split_at(de_account.byte_offset());
+        self.src = rest;
+
+        self.state = StateParsingState::Middle;
+        Some((addr, account))
     }
 }
 
@@ -81,12 +165,8 @@ fn main() {
     let client = contract_client!(ethereum, args, container);
 
     let state_path = args.value_of("exported_state").unwrap();
-    debug!("Parsing state JSON");
-    let state: ExportedState =
-        serde_json::from_slice(&filebuffer::FileBuffer::open(state_path).unwrap()).unwrap();
-    debug!("Done parsing state JSON");
-    debug!("Injecting {} accounts", state.state.len());
-    let mut accounts = state.state.into_iter();
+    let state_fb = filebuffer::FileBuffer::open(state_path).unwrap();
+    let mut accounts = StateParser::new(&state_fb);
     let mut num_accounts_injected = 0;
     loop {
         let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
@@ -97,7 +177,7 @@ fn main() {
 
             let mut account_state = AccountState {
                 nonce: U256::from_str(strip_0x(&account.nonce)).unwrap(),
-                address: address,
+                address,
                 balance: U256::from_str(strip_0x(&account.balance)).unwrap(),
                 code: match account.code {
                     Some(code) => code,
@@ -119,14 +199,15 @@ fn main() {
             break;
         }
         let accounts_len = accounts_req.len();
-        let res = client.inject_accounts(accounts_req).wait().unwrap();
+        debug!("Injecting {} accounts", accounts_len);
+        client.inject_accounts(accounts_req).wait().unwrap();
 
         debug!("Injecting {} account storage items", storage_req.len());
         for chunk in storage_req.chunks(INJECT_STORAGE_CHUNK_SIZE) {
             let chunk_len = chunk.len();
             let chunk_vec = chunk.to_vec();
             let start = Instant::now();
-            let res = client.inject_account_storage(chunk_vec).wait().unwrap();
+            client.inject_account_storage(chunk_vec).wait().unwrap();
             let end = Instant::now();
             let duration_ms = to_ms(end - start);
             debug!(
@@ -138,7 +219,10 @@ fn main() {
         }
 
         num_accounts_injected += accounts_len;
-        debug!("Injected {} accounts", num_accounts_injected);
+        debug!(
+            "Injected {} accounts, {} total",
+            accounts_len, num_accounts_injected
+        );
     }
     debug!("Done injecting accounts");
 }

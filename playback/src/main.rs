@@ -167,11 +167,11 @@ fn main() {
     println!("# HELP playback_dur_ms Total time (ms)");
     println!("playback_dur_ms {}", playback_dur_ms);
     if num_transactions > 0 {
-        let throughput_inv = to_ms(playback_dur) / num_transactions as f64;
+        let throughput_inv = playback_dur_ms / num_transactions as f64;
         println!("# TYPE throughput_inv gauge");
         println!("# HELP throughput_inv Inverse throughput (ms/tx)");
         println!("throughput_inv {}", throughput_inv);
-        let throughput = num_transactions as f64 / to_ms(playback_dur) * 1000.;
+        let throughput = num_transactions as f64 / playback_dur_ms * 1000.;
         println!("# TYPE throughput gauge");
         println!("# HELP throughput Throughput (tx/sec)");
         println!("throughput {}", throughput);
