@@ -37,14 +37,14 @@ jsonrpc_client!(pub struct Web3Client {
 // scenarios
 fn eth_blockNumber(client: &mut Web3Client<HttpHandle>) {
     let res = client.eth_blockNumber().call();
-    debug!("result: {:?}", res);
+    info!("result: {:?}", res);
 }
 
 fn eth_getBlockByNumber(client: &mut Web3Client<HttpHandle>) {
     let res = client
         .eth_getBlockByNumber("latest".to_string(), true)
         .call();
-    debug!("result: {:?}", res);
+    info!("result: {:?}", res);
 }
 
 fn net_version(client: &mut Web3Client<HttpHandle>) {
@@ -64,7 +64,7 @@ fn run_scenario(
     threads: usize,
     number: usize,
 ) {
-    info!("Starting {} benchmark...", name);
+    debug!("Starting {} benchmark...", name);
     let pool = ThreadPool::with_name("clients".into(), threads);
     let counter = Arc::new(AtomicUsize::new(0));
     let start = Instant::now();
@@ -89,7 +89,7 @@ fn run_scenario(
     let end = Instant::now();
     let total = counter.load(Ordering::SeqCst);
     let duration = end - start;
-    info!(
+    debug!(
         "{}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
         name,
         total,
@@ -118,13 +118,20 @@ fn main() {
                 .takes_value(true)
                 .default_value("1"),
         )
+        .arg(Arg::with_name("v")
+             .short("v")
+             .multiple(true)
+             .help("Sets the level of verbosity"))
         .get_matches();
 
     // Initialize logger.
     pretty_env_logger::formatted_builder()
         .unwrap()
-        .filter(None, LevelFilter::Info)
-        .init();
+        .filter( None, match args.occurrences_of("v") {
+            0 => LevelFilter::Info,
+            1 => LevelFilter::Debug,
+            _ => LevelFilter::max(),
+        }).init();
 
     let host = value_t!(args, "host", String).unwrap();
     let port = value_t!(args, "port", String).unwrap();
