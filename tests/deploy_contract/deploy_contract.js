@@ -46,7 +46,16 @@ web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
   }
 
   return web3.eth.sendSignedTransaction(serializedTx).then(receipt => {
+    console.log('submitted tx');
     console.log(receipt);
+    console.log(receipt.contractAddress);
+    web3.eth.call({to: receipt.contractAddress,}).then(result => {
+      console.log("called contract");
+      console.log(result);
+    })
+    .catch(function(error) {
+      console.log(error);
+    });
   });
 }).catch(err => {
   console.error('ERROR: Could not deploy contract')
