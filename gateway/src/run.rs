@@ -37,6 +37,7 @@ pub fn execute(
     ekiden_client: runtime_ethereum::Client,
     snapshot_manager: Option<client_utils::db::Manager>,
     storage: Arc<StorageBackend>,
+    http_port: u16,
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
@@ -60,6 +61,7 @@ pub fn execute(
     http_conf.cors = None;
     http_conf.hosts = None;
     http_conf.interface = "0.0.0.0".into();
+    http_conf.port = http_port;
     http_conf.processing_threads = num_threads;
 
     // start RPCs
