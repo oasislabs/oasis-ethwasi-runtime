@@ -11,6 +11,13 @@ module.exports = {
       },
       network_id: "*",
       gasPrice: 0
+    },
+    development2: {
+      provider: function () {
+        return new HDWalletProvider(mnemonic, "http://localhost:8546/");
+      },
+      network_id: "*",
+      gasPrice: 0
     }
   }
 };
