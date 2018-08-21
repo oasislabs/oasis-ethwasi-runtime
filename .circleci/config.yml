@@ -92,7 +92,49 @@ jobs:
       - run: cargo fmt -- --write-mode=check
 
       # End-to-end tests.
+      - attach_workspace:
+          at: /workspace
+      - run: cp /workspace/go/bin/ekiden ekiden-node
       - run: ./scripts/test-e2e.sh
+
+  build-go:
+    working_directory: /go/src/github.com/oasislabs/
+    docker:
+      - image: circleci/golang:1.10
+    steps:
+      - restore_cache:
+          keys:
+            - go-cache
+      - run: |
+          wget 'https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip' && \
+          sudo unzip protoc-3.5.1-linux-x86_64.zip -x readme.txt -d /usr && \
+          rm protoc-3.5.1-linux-x86_64.zip && \
+          sudo chmod a+rx /usr/bin/protoc
+      - run: |
+          go get -d github.com/golang/protobuf/protoc-gen-go && \
+          cd $GOPATH/src/github.com/golang/protobuf && \
+          git checkout v1.0.0 && \
+          cd protoc-gen-go && \
+          go install
+      - run: |
+          mkdir ~/.ssh && echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
+          cd $GOPATH/src/github.com/oasislabs && \
+          git clone --depth 1 git@github.com:/oasislabs/ekiden && \
+          cd ekiden/go && \
+          dep ensure && \
+          go generate ./... && \
+          go build -v -o ./ekiden/ekiden ./ekiden && \
+          cd $GOPATH/src/github.com/oasislabs/ekiden/go/ekiden && \
+          go install
+      - save_cache:
+          key: go-cache
+          paths:
+            - "/go/pkg"
+      # Store built files.
+      - persist_to_workspace:
+          root: /
+          paths:
+            - go/bin
 
   set-docker-tag:
     docker:
@@ -252,7 +294,10 @@ workflows:
   version: 2
   build:
     jobs:
-      - build
+      - build-go
+      - build:
+          requires:
+           - build-go
       - set-docker-tag:
           filters:
             branches:
