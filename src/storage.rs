@@ -1,4 +1,5 @@
 use ekiden_common::bytes::H256 as EkidenH256;
+use ekiden_common::futures::FutureExt;
 use ekiden_core::futures::Future;
 use ekiden_storage_base::{hash_storage_key, StorageBackend};
 #[cfg(not(target_env = "sgx"))]
