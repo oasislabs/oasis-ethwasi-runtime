@@ -94,14 +94,14 @@ mod test_helpers;
 mod traits;
 mod util;
 
+use std::sync::Arc;
+
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
 use ekiden_di::Container;
 use ekiden_storage_base::StorageBackend;
 use ethereum_api::with_api;
-
-use std::sync::Arc;
 
 pub use self::run::RunningClient;
 

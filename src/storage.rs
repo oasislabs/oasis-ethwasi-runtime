@@ -13,16 +13,16 @@ use ethereum_types::H256;
 use std::str::FromStr;
 use std::sync::Arc;
 
-pub struct StorageImpl {}
+lazy_static! {
+    static ref BACKEND: Arc<StorageBackend> = Arc::new(StorageBackendImpl::new());
+}
+
+pub struct StorageImpl;
 
 impl StorageImpl {
     pub fn new() -> Self {
         StorageImpl {}
     }
-}
-
-lazy_static! {
-    static ref BACKEND: Arc<StorageBackend> = Arc::new(StorageBackendImpl::new());
 }
 
 impl Storage for StorageImpl {

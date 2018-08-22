@@ -81,6 +81,7 @@ run_test() {
         echo "Test passed."
     else
         echo "Incorrect output. Expected 0x0102030405."
+        exit 1
     fi
 
     # Cleanup.

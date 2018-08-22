@@ -15,20 +15,3 @@ lazy_static = "1.0.1"
 rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
 runtime-ethereum = { path = "../../" }
 simple_logger = "0.5.0"
-
-[patch."https://github.com/oasislabs/parity"]
-ethcore = { path = "/sterling/parity/ethcore" }
-ethkey = { path = "/sterling/parity/ethkey" }
-rlp = { path = "/sterling/parity/util/rlp" }
-
-[patch."https://github.com/oasislabs/wasmi"]
-wasmi = { path = "/sterling/wasmi" }
-
-[patch."https://github.com/oasislabs/parity-wasm"]
-parity-wasm = { path = "/sterling/parity-wasm" }
-
-[patch."https://github.com/oasislabs/wasm-utils"]
-pwasm-utils = { path = "/sterling/wasm-utils" }
-
-[patch.crates-io]
-parity-wasm = { path = "/sterling/parity-wasm" }
