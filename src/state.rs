@@ -24,7 +24,9 @@ use super::evm::{get_contract_address, SPEC};
 
 lazy_static! {
     static ref CHAIN: BlockChain = {
-        let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */).unwrap();
+        let mut db = SPEC
+            .ensure_db_good(get_backend(), &Default::default() /* factories */)
+            .unwrap();
         db.0.commit().unwrap();
 
         BlockChain::new(

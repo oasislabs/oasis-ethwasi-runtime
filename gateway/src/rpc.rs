@@ -213,9 +213,12 @@ pub fn new_http<D: rpc_apis::Dependencies>(
 
     match start_result {
         Ok(server) => Ok(Some(server)),
-        Err(ref err) if err.kind() == io::ErrorKind::AddrInUse => Err(
-            format!("{} address {} is already in use, make sure that another instance of an Ethereum client is not running or change the address using the --{}-port and --{}-interface options.", id, url, options, options)
-        ),
+        Err(ref err) if err.kind() == io::ErrorKind::AddrInUse => Err(format!(
+            "{} address {} is already in use, make sure that another instance \
+             of an Ethereum client is not running or change the address using \
+             the --{}-port and --{}-interface options.",
+            id, url, options, options
+        )),
         Err(e) => Err(format!("{} error: {:?}", id, e)),
     }
 }

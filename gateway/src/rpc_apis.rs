@@ -217,10 +217,11 @@ impl Dependencies for FullDependencies {
 
 impl ApiSet {
     pub fn list_apis(&self) -> HashSet<Api> {
-        let mut public_list: HashSet<Api> = [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis]
-            .into_iter()
-            .cloned()
-            .collect();
+        let mut public_list: HashSet<Api> =
+            [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis]
+                .into_iter()
+                .cloned()
+                .collect();
 
         match *self {
             ApiSet::List(ref apis) => apis.clone(),

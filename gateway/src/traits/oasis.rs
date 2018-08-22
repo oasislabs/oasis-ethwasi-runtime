@@ -2,7 +2,7 @@
 use jsonrpc_core::Result;
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::types::{H256, U256, Bytes};
+use parity_rpc::v1::types::{Bytes, H256, U256};
 
 build_rpc_trait! {
     pub trait Oasis {

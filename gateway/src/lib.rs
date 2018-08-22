@@ -82,7 +82,6 @@ extern crate ekiden_storage_base;
 extern crate ethereum_api;
 
 mod client;
-mod traits;
 mod impls;
 mod rpc;
 mod rpc_apis;
@@ -92,6 +91,7 @@ mod servers;
 mod state;
 #[cfg(all(feature = "read_state", test))]
 mod test_helpers;
+mod traits;
 mod util;
 
 use clap::ArgMatches;
@@ -115,7 +115,9 @@ pub fn start(
     num_threads: usize,
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
-    let storage: Arc<StorageBackend> = container.inject().map_err(|err| err.description().to_string())?;
+    let storage: Arc<StorageBackend> = container
+        .inject()
+        .map_err(|err| err.description().to_string())?;
 
     #[cfg(feature = "read_state")]
     {
