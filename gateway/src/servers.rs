@@ -50,6 +50,7 @@ where
         .threads(threads)
         .event_loop_remote(remote)
         .cors(cors_domains.into())
+        .max_request_body_size(1 * 1024 * 1024 * 1024) // 1 GiB
         .allowed_hosts(allowed_hosts.into());
 
     Ok(builder.start_http(addr)?)
