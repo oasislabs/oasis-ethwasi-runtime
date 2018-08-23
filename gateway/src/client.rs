@@ -13,6 +13,7 @@ use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::LocalizedReceipt;
 use ethcore::spec::Spec;
+use ethcore::storage::NullStorage;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
@@ -485,8 +486,9 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
+        let mut storage = NullStorage::new();
         let ret =
-            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &mut storage).transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -528,8 +530,9 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
+        let mut storage = NullStorage::new();
         let ret =
-            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &mut storage).transact_virtual(transaction, options)?;
         Ok(ret.gas_used)
     }
 
