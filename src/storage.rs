@@ -17,15 +17,15 @@ lazy_static! {
     static ref BACKEND: Arc<StorageBackend> = Arc::new(StorageBackendImpl::new());
 }
 
-pub struct StorageImpl;
+pub struct GlobalStorage;
 
-impl StorageImpl {
+impl GlobalStorage {
     pub fn new() -> Self {
-        StorageImpl {}
+        GlobalStorage {}
     }
 }
 
-impl Storage for StorageImpl {
+impl Storage for GlobalStorage {
     fn request_bytes(&mut self, key: H256) -> Result<Vec<u8>> {
         let result = BACKEND
             .get(EkidenH256::from_str(&format!("{:x}", key)).unwrap())

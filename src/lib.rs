@@ -34,7 +34,7 @@ use ethereum_types::{Address, H256, U256};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
             new_block};
-use storage::StorageImpl;
+use storage::GlobalStorage;
 
 enclave_init!();
 
@@ -227,7 +227,7 @@ pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionRe
 fn transact(transaction: SignedTransaction) -> Result<H256> {
     let mut block = new_block()?;
     let tx_hash = transaction.hash();
-    let mut storage = StorageImpl::new();
+    let mut storage = GlobalStorage::new();
     block.push_transaction(transaction, None, &mut storage)?;
     // set timestamp to 0, as blocks must be deterministic
     block.set_timestamp(0);

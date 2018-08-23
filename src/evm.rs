@@ -8,7 +8,7 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
 use ethereum_types::{Address, U256};
 
 use super::state::{best_block_header, get_state, last_hashes};
-use super::storage::StorageImpl;
+use super::storage::GlobalStorage;
 
 lazy_static! {
     pub(crate) static ref SPEC: Spec = {
@@ -35,7 +35,7 @@ pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed>
     let options = TransactOptions::with_no_tracing();
     #[cfg(feature = "benchmark")]
     let options = TransactOptions::with_no_tracing().dont_check_nonce();
-    let mut storage = StorageImpl::new();
+    let mut storage = GlobalStorage::new();
     let exec = Executive::new(
         &mut state,
         &get_env_info(),
