@@ -21,7 +21,7 @@ mod evm;
 #[macro_use]
 mod logger;
 mod state;
-mod storage;
+pub mod storage;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
