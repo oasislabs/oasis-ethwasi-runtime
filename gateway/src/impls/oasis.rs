@@ -27,8 +27,8 @@ impl OasisClient {
 }
 
 impl Oasis for OasisClient {
-    fn fetch_bytes(&self, key: &RpcH256) -> Result<Vec<u8>> {
-        let result = self.storage.get(H256::from_slice(key.0)).wait();
+    fn fetch_bytes(&self, key: RpcH256) -> Result<Vec<u8>> {
+        let result = self.storage.get(H256::from_slice(&key.0)).wait();
         result.map_err(|err| {
             let mut error = Error::new(ErrorCode::InternalError);
             error.message = err.description().to_string();
