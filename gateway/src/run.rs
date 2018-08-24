@@ -43,6 +43,7 @@ pub fn execute(
         &util::load_spec(),
         snapshot_manager,
         ekiden_client,
+        storage.clone(),
     ));
     let rpc_stats = Arc::new(informant::RpcStats::default());
 

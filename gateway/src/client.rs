@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::marker::{Send, Sync};
 use std::sync::Arc;
+use std::sync::Mutex;
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
@@ -13,7 +15,6 @@ use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::LocalizedReceipt;
 use ethcore::spec::Spec;
-use ethcore::storage::NullStorage;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
@@ -25,11 +26,13 @@ use client_utils::db::Snapshot;
 use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
+use ekiden_storage_base::StorageBackend;
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
+use storage::Web3GlobalStorage;
 use util::from_block_id;
 
 // record contract call outcome
@@ -52,6 +55,7 @@ pub struct Client {
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
+    storage: Arc<Mutex<Web3GlobalStorage>>,
 }
 
 impl Client {
@@ -59,12 +63,15 @@ impl Client {
         spec: &Spec,
         snapshot_manager: Option<client_utils::db::Manager>,
         client: runtime_ethereum::Client,
+        backend: Arc<StorageBackend>,
     ) -> Self {
+        let storage = Web3GlobalStorage::new(backend);
         Self {
             client: client,
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
+            storage: Arc::new(Mutex::new(storage)),
         }
     }
 
@@ -486,9 +493,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let mut storage = NullStorage::new();
         let ret =
-            Executive::new(&mut state, &env_info, machine, &mut storage).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &mut *self.storage.lock().unwrap()).transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -530,9 +536,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let mut storage = NullStorage::new();
         let ret =
-            Executive::new(&mut state, &env_info, machine, &mut storage).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &mut *self.storage.lock().unwrap()).transact_virtual(transaction, options)?;
         Ok(ret.gas_used)
     }
 
