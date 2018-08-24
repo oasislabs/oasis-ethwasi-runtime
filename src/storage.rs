@@ -26,7 +26,7 @@ impl GlobalStorage {
 }
 
 impl Storage for GlobalStorage {
-    fn request_bytes(&mut self, key: H256) -> Result<Vec<u8>> {
+    fn fetch_bytes(&self, key: &H256) -> Result<Vec<u8>> {
         let result = BACKEND
             .get(EkidenH256::from_str(&format!("{:x}", key)).unwrap())
             .wait();

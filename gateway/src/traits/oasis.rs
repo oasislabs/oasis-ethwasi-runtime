@@ -8,7 +8,7 @@ build_rpc_trait! {
     pub trait Oasis {
         /// Request data from storage.
         #[rpc(name = "oasis_requestBytes")]
-        fn request_bytes(&self, H256) -> Result<Vec<u8>>;
+        fn fetch_bytes(&self, &H256) -> Result<Vec<u8>>;
 
         /// Store data in global storage.
         #[rpc(name = "oasis_storeBytes")]
