@@ -66,6 +66,8 @@ run_test() {
     curl -X POST -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","method":"oasis_storeBytes","params":[[1, 2, 3, 4, 5], 9223372036854775807],"id":"1"}' localhost:8545 > /dev/null
 
     echo "Building contract."
+    rustup target add wasm32-unknown-unknown
+    cargo install --git https://github.com/oasislabs/wasm-utils --branch ekiden
     pushd ${WORKDIR}/tests/contracts/storage_contract > /dev/null
     ./build.sh
     popd > /dev/null
