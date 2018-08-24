@@ -56,9 +56,9 @@ run_test() {
     sleep 2
 
     echo "Starting web3 gateway."
-    gateway/target/debug/gateway \
+    target/debug/gateway \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
-        --threads 1 &> gateway.log &
+        --threads 100 &> gateway.log &
     sleep 3
 
 

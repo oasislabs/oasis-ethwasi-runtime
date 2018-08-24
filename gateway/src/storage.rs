@@ -22,7 +22,7 @@ impl Web3GlobalStorage {
 }
 
 impl Storage for Web3GlobalStorage {
-    fn request_bytes(&self, key: H256) -> Result<Vec<u8>> {
+    fn fetch_bytes(&self, key: &H256) -> Result<Vec<u8>> {
         let result = self.backend
             .get(EkidenH256::from_str(&format!("{:x}", key)).unwrap())
             .wait();

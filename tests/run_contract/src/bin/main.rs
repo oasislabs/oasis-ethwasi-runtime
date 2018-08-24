@@ -11,7 +11,7 @@ use clap::Arg;
 use either::Either;
 use ethcore::rlp;
 
-use run_contract::{make_tx, run_tx};
+use run_contract::{make_tx, run_tx, store_bytes};
 
 fn main() {
     let args = app_from_crate!()
@@ -38,6 +38,7 @@ fn main() {
         simple_logger::init().unwrap();
     }
 
+    println!("{:?}", store_bytes(&[1, 2, 3, 4, 5]));
     let contract = fs::read(args.value_of("contract").unwrap()).unwrap();
     let create_tx = make_tx(Either::Left(contract));
     if let Some(tx_file) = args.value_of("dump-tx") {
