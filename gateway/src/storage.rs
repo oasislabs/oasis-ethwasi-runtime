@@ -22,14 +22,14 @@ impl Web3GlobalStorage {
 }
 
 impl Storage for Web3GlobalStorage {
-    fn fetch_bytes(&mut self, key: &H256) -> Result<Vec<u8>> {
+    fn request_bytes(&self, key: H256) -> Result<Vec<u8>> {
         let result = self.backend
             .get(EkidenH256::from_str(&format!("{:x}", key)).unwrap())
             .wait();
         result.map_err(|err| Error::Storage(err.description().to_string()))
     }
 
-    fn store_bytes(&mut self, bytes: &[u8]) -> Result<H256> {
+    fn store_bytes(&self, bytes: &[u8]) -> Result<H256> {
         let result = self.backend.insert(bytes.to_vec(), <u64>::max_value()).wait();
         match result {
             Ok(_) => Ok(H256::from_slice(&hash_storage_key(bytes).0)),

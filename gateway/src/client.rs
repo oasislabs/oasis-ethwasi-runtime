@@ -1,7 +1,6 @@
-use std::cell::RefCell;
 use std::marker::{Send, Sync};
 use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::RwLock;
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
@@ -55,7 +54,7 @@ pub struct Client {
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
-    storage: Arc<Mutex<Web3GlobalStorage>>,
+    storage: Arc<RwLock<Web3GlobalStorage>>,
 }
 
 impl Client {
@@ -71,7 +70,7 @@ impl Client {
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
-            storage: Arc::new(Mutex::new(storage)),
+            storage: Arc::new(RwLock::new(storage)),
         }
     }
 
@@ -494,7 +493,7 @@ impl Client {
             .dont_check_nonce()
             .save_output_from_contract();
         let ret =
-            Executive::new(&mut state, &env_info, machine, &mut *self.storage.lock().unwrap()).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &mut *self.storage.write().unwrap()).transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -537,7 +536,7 @@ impl Client {
             .dont_check_nonce()
             .save_output_from_contract();
         let ret =
-            Executive::new(&mut state, &env_info, machine, &mut *self.storage.lock().unwrap()).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &mut *self.storage.write().unwrap()).transact_virtual(transaction, options)?;
         Ok(ret.gas_used)
     }
 
