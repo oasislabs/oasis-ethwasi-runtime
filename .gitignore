@@ -19,7 +19,3 @@ Enclave_t.h
 
 # Temporary files.
 *.swp
-
-# Helper/test scripts
-dev
-*.sh

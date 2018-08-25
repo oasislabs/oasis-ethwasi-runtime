@@ -21,7 +21,10 @@ mod evm;
 #[macro_use]
 mod logger;
 mod state;
-pub mod storage;
+#[cfg(debug_assertions)]
+pub mod storage; // allow access from tests/run_contract
+#[cfg(not(debug_assertions))]
+mod storage;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};

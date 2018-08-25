@@ -75,6 +75,7 @@ run_test() {
     echo "Installing deploy_contract dependencies."
     pushd ${WORKDIR}/tests/deploy_contract > /dev/null
     npm install > /dev/null
+    npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
     OUTPUT="$(./deploy_contract.js ${WORKDIR}/tests/contracts/storage_contract/target/storage_contract.wasm | tail -1)"
     echo "Fetched: $OUTPUT"
