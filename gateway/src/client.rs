@@ -472,7 +472,6 @@ impl Client {
         transaction: &SignedTransaction,
         id: BlockId,
     ) -> Result<Executed, CallError> {
-        info!("client call");
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
@@ -493,11 +492,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        info!("creating Executive");
         let ret =
             Executive::new(&mut state, &env_info, machine, &*self.storage.read().unwrap()).transact_virtual(transaction, options)?;
-        info!("ran transact_virtual");
-        info!("{:?}", ret);
         Ok(ret)
     }
 
