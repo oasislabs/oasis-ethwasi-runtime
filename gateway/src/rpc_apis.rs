@@ -20,13 +20,14 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use client::Client;
+use ekiden_storage_base::StorageBackend;
 use futures_cpupool::CpuPool;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
-use impls::{EthClient, EthFilterClient, NetClient, TracesClient, Web3Client};
+use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -40,6 +41,8 @@ pub enum Api {
     EthPubSub,
     /// Traces (Safe)
     Traces,
+    /// Oasis (Safe)
+    Oasis,
 }
 
 impl FromStr for Api {
@@ -54,6 +57,7 @@ impl FromStr for Api {
             "eth" => Ok(Eth),
             "pubsub" => Ok(EthPubSub),
             "traces" => Ok(Traces),
+            "oasis" => Ok(Oasis),
             api => Err(format!("Unknown api: {}", api)),
         }
     }
@@ -150,6 +154,7 @@ pub struct FullDependencies {
     pub ws_address: Option<Host>,
     pub pool: CpuPool,
     pub remote: parity_reactor::Remote,
+    pub storage: Arc<StorageBackend>,
 }
 
 impl FullDependencies {
@@ -162,6 +167,7 @@ impl FullDependencies {
         S: core::Middleware<Metadata>,
     {
         use parity_rpc::v1::{Eth, EthFilter, Net, Traces, Web3};
+        use traits::Oasis;
 
         for api in apis {
             match *api {
@@ -184,6 +190,9 @@ impl FullDependencies {
                     // TODO: pub/sub
                 }
                 Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
+                Api::Oasis => {
+                    handler.extend_with(OasisClient::new(&self.storage).to_delegate());
+                }
             }
         }
     }
@@ -208,10 +217,11 @@ impl Dependencies for FullDependencies {
 
 impl ApiSet {
     pub fn list_apis(&self) -> HashSet<Api> {
-        let mut public_list: HashSet<Api> = [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub]
-            .into_iter()
-            .cloned()
-            .collect();
+        let mut public_list: HashSet<Api> =
+            [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis]
+                .into_iter()
+                .cloned()
+                .collect();
 
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
@@ -247,6 +257,7 @@ mod test {
         assert_eq!(Api::Eth, "eth".parse().unwrap());
         assert_eq!(Api::EthPubSub, "pubsub".parse().unwrap());
         assert_eq!(Api::Traces, "traces".parse().unwrap());
+        assert_eq!(Api::Oasis, "oasis".parse().unwrap());
         assert!("rp".parse::<Api>().is_err());
     }
 
@@ -272,6 +283,7 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Traces,
+            Api::Oasis,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::UnsafeContext.list_apis(), expected);
@@ -286,6 +298,7 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Traces,
+            Api::Oasis,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::IpcContext.list_apis(), expected);
@@ -300,6 +313,7 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Traces,
+            Api::Oasis,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::SafeContext.list_apis(), expected);
@@ -310,8 +324,14 @@ mod test {
         assert_eq!(
             "all".parse::<ApiSet>().unwrap(),
             ApiSet::List(
-                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Traces]
-                    .into_iter()
+                vec![
+                    Api::Web3,
+                    Api::Net,
+                    Api::Eth,
+                    Api::EthPubSub,
+                    Api::Traces,
+                    Api::Oasis,
+                ].into_iter()
                     .collect()
             )
         );
@@ -322,8 +342,14 @@ mod test {
         assert_eq!(
             "safe".parse::<ApiSet>().unwrap(),
             ApiSet::List(
-                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Traces]
-                    .into_iter()
+                vec![
+                    Api::Web3,
+                    Api::Net,
+                    Api::Eth,
+                    Api::EthPubSub,
+                    Api::Traces,
+                    Api::Oasis,
+                ].into_iter()
                     .collect()
             )
         );

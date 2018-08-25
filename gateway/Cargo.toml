@@ -26,37 +26,39 @@ jsonrpc-ipc-server = { git = "https://github.com/paritytech/jsonrpc.git", branch
 jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
-wasmi = "=0.2.0"
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
+wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-parity-machine = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-parity-rpc-client = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-path = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-kvdb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-journaldb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-mem = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-evm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-registrar = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-vm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
-util-error = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-1" }
+rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+parity-machine = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+parity-rpc-client = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+path = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+kvdb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+journaldb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+mem = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+evm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+registrar = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+vm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
+util-error = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
 
 ## Ekiden client dependencies
 clap = "2.29.1"
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-api = { path = "../api" }
 rand = "0.4"
 

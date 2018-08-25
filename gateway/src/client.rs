@@ -1,5 +1,6 @@
 use std::marker::{Send, Sync};
 use std::sync::Arc;
+use std::sync::RwLock;
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
@@ -24,11 +25,13 @@ use client_utils::db::Snapshot;
 use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
+use ekiden_storage_base::StorageBackend;
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
+use storage::Web3GlobalStorage;
 use util::from_block_id;
 
 // record contract call outcome
@@ -51,6 +54,7 @@ pub struct Client {
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
+    storage: Arc<RwLock<Web3GlobalStorage>>,
 }
 
 impl Client {
@@ -58,12 +62,15 @@ impl Client {
         spec: &Spec,
         snapshot_manager: Option<client_utils::db::Manager>,
         client: runtime_ethereum::Client,
+        backend: Arc<StorageBackend>,
     ) -> Self {
+        let storage = Web3GlobalStorage::new(backend);
         Self {
             client: client,
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
+            storage: Arc::new(RwLock::new(storage)),
         }
     }
 
@@ -486,7 +493,7 @@ impl Client {
             .dont_check_nonce()
             .save_output_from_contract();
         let ret =
-            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &*self.storage.read().unwrap()).transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -529,7 +536,7 @@ impl Client {
             .dont_check_nonce()
             .save_output_from_contract();
         let ret =
-            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+            Executive::new(&mut state, &env_info, machine, &*self.storage.read().unwrap()).transact_virtual(transaction, options)?;
         Ok(ret.gas_used)
     }
 

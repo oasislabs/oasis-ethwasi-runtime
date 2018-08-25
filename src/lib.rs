@@ -2,7 +2,10 @@
 #![feature(use_extern_macros)]
 
 extern crate common_types as ethcore_types;
+extern crate ekiden_common;
 extern crate ekiden_core;
+extern crate ekiden_storage_base;
+extern crate ekiden_storage_dummy;
 extern crate ekiden_trusted;
 extern crate ethcore;
 extern crate ethereum_api;
@@ -18,6 +21,10 @@ mod evm;
 #[macro_use]
 mod logger;
 mod state;
+#[cfg(debug_assertions)]
+pub mod storage; // allow access from tests/run_contract
+#[cfg(not(debug_assertions))]
+mod storage;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
@@ -30,6 +37,7 @@ use ethereum_types::{Address, H256, U256};
 
 use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
             new_block};
+use storage::GlobalStorage;
 
 enclave_init!();
 
@@ -222,7 +230,8 @@ pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionRe
 fn transact(transaction: SignedTransaction) -> Result<H256> {
     let mut block = new_block()?;
     let tx_hash = transaction.hash();
-    block.push_transaction(transaction, None)?;
+    let mut storage = GlobalStorage::new();
+    block.push_transaction(transaction, None, &mut storage)?;
     // set timestamp to 0, as blocks must be deterministic
     block.set_timestamp(0);
     add_block(block.close_and_lock())?;

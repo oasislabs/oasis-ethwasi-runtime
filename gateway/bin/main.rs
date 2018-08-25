@@ -56,10 +56,12 @@ fn main() {
                 .default_value("1")
                 .takes_value(true),
         )
-        .arg(Arg::with_name("v")
-             .short("v")
-             .multiple(true)
-             .help("Sets the level of verbosity"))
+        .arg(
+            Arg::with_name("v")
+                .short("v")
+                .multiple(true)
+                .help("Sets the level of verbosity"),
+        )
         .get_matches();
 
     // reset max log level to Info after default_app macro sets it to Trace

@@ -11,11 +11,12 @@ use std::str::FromStr;
 
 use either::Either;
 use ethcore::{rlp,
-              transaction::{Action, SignedTransaction, Transaction}};
+              transaction::{Action, SignedTransaction, Transaction},
+              storage::Storage};
 use ethereum_api::{ExecuteTransactionResponse, Receipt};
-use ethereum_types::{Address, U256};
+use ethereum_types::{Address, H256, U256};
 use ethkey::Secret;
-use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt};
+use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt, storage::GlobalStorage};
 
 lazy_static! {
     static ref DEFAULT_ACCOUNT: Address = Address::from("1cca28600d7491365520b31b466f88647b9839ec");
@@ -52,4 +53,12 @@ pub fn run_tx(tx: SignedTransaction) -> Result<Receipt, ExecuteTransactionRespon
     } else {
         Ok(receipt)
     }
+}
+
+pub fn store_bytes(bytes: &[u8]) -> H256 {
+    GlobalStorage::new().store_bytes(bytes).expect("Could not store bytes.")
+}
+
+pub fn fetch_bytes(key: &H256) -> Vec<u8> {
+    GlobalStorage::new().fetch_bytes(key).expect("Could not fetch bytes.")
 }
