@@ -26,7 +26,7 @@ jsonrpc-ipc-server = { git = "https://github.com/paritytech/jsonrpc.git", branch
 jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
-wasmi = "=0.2.0"
+wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
 ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
 ethcore-bytes = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
 ethcore-transaction = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-2" }
