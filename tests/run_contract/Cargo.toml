@@ -7,10 +7,10 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 [dependencies]
 clap = "2.32.0"
 either = "1.5.0"
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden4" }
 ethereum-api = { path = "../../api" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden4" }
 lazy_static = "1.0.1"
 rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
 runtime-ethereum = { path = "../../" }
