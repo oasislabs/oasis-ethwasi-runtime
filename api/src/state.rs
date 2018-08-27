@@ -102,4 +102,5 @@ pub struct ExecuteTransactionResponse {
 pub struct SimulateTransactionResponse {
     pub result: Result<Vec<u8>, String>,
     pub used_gas: U256,
+    pub refunded_gas: U256,
 }
