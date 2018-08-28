@@ -3,21 +3,19 @@ use ekiden_common::futures::FutureExt;
 use ekiden_core::futures::Future;
 use ekiden_storage_base::{hash_storage_key, StorageBackend};
 use ethcore::storage::Storage;
-use vm::{Error, Result};
 use ethereum_types::H256;
+use vm::{Error, Result};
 
 use std::str::FromStr;
 use std::sync::Arc;
 
-pub struct Web3GlobalStorage{
+pub struct Web3GlobalStorage {
     backend: Arc<StorageBackend>,
 }
 
 impl Web3GlobalStorage {
     pub fn new(backend: Arc<StorageBackend>) -> Self {
-        Web3GlobalStorage {
-            backend: backend,
-        }
+        Web3GlobalStorage { backend: backend }
     }
 }
 
@@ -30,7 +28,9 @@ impl Storage for Web3GlobalStorage {
     }
 
     fn store_bytes(&self, bytes: &[u8]) -> Result<H256> {
-        let result = self.backend.insert(bytes.to_vec(), <u64>::max_value()).wait();
+        let result = self.backend
+            .insert(bytes.to_vec(), <u64>::max_value())
+            .wait();
         match result {
             Ok(_) => Ok(H256::from_slice(&hash_storage_key(bytes).0)),
             Err(err) => Err(Error::Storage(err.description().to_string())),

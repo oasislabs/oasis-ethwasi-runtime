@@ -271,6 +271,7 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
         Err(e) => {
             return Ok(SimulateTransactionResponse {
                 used_gas: U256::from(0),
+                refunded_gas: U256::from(0),
                 result: Err(e.to_string()),
             })
         }
@@ -280,12 +281,14 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
         Err(e) => {
             return Ok(SimulateTransactionResponse {
                 used_gas: U256::from(0),
+                refunded_gas: U256::from(0),
                 result: Err(e.to_string()),
             })
         }
     };
     Ok(SimulateTransactionResponse {
         used_gas: exec.gas_used,
+        refunded_gas: exec.refunded,
         result: Ok(exec.output),
     })
 }

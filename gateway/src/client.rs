@@ -492,8 +492,12 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret =
-            Executive::new(&mut state, &env_info, machine, &*self.storage.read().unwrap()).transact_virtual(transaction, options)?;
+        let ret = Executive::new(
+            &mut state,
+            &env_info,
+            machine,
+            &*self.storage.read().unwrap(),
+        ).transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -535,9 +539,13 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret =
-            Executive::new(&mut state, &env_info, machine, &*self.storage.read().unwrap()).transact_virtual(transaction, options)?;
-        Ok(ret.gas_used)
+        let ret = Executive::new(
+            &mut state,
+            &env_info,
+            machine,
+            &*self.storage.read().unwrap(),
+        ).transact_virtual(transaction, options)?;
+        Ok(ret.gas_used + ret.refunded)
     }
 
     #[cfg(not(feature = "read_state"))]
@@ -547,7 +555,7 @@ impl Client {
             self.client
                 .simulate_transaction(request)
                 .wait()
-                .map(|r| Ok(r.used_gas)),
+                .map(|r| Ok(r.used_gas + r.refunded_gas)),
             Err("no response from runtime".to_string()),
         )
     }
