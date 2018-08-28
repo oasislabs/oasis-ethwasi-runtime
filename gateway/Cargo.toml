@@ -71,6 +71,15 @@ hex = "0.3"
 [patch.crates-io]
 ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
 
+# temporary fix for incompatibility between jsonrpc-ipc-server parity-1.11 branch and parity-tokio-ipc 
+[patch."https://github.com/paritytech/jsonrpc.git"]
+jsonrpc-core = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
+jsonrpc-http-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
+jsonrpc-ws-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
+jsonrpc-ipc-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
+jsonrpc-macros = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
+jsonrpc-pubsub = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
+
 [features]
 default = ["read_state"]
 read_state = []
