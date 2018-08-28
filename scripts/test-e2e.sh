@@ -13,7 +13,6 @@ run_dummy_node_default() {
     echo "Starting dummy node."
 
     ekiden-node-dummy \
-        --random-beacon-backend dummy \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --time-source-notifier mockrpc \
         --storage-backend dummy \
@@ -54,7 +53,6 @@ run_compute_node() {
         --storage-multilayer-sled-storage-base /tmp/ekiden-storage-persistent_${id} \
         --storage-multilayer-bottom-backend remote \
         --max-batch-timeout 100 \
-        --time-source-notifier system \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
