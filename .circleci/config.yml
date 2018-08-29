@@ -222,7 +222,7 @@ jobs:
     steps:
       # Set this as a variable so it can be changed quickly if necessary
       - run: echo 'export PRODUCTION_TAG=latest' >> $BASH_ENV
-
+      - setup_remote_docker
       - attach_workspace:
           at: /workspace
 
