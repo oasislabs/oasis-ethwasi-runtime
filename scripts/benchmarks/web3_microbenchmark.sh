@@ -27,7 +27,7 @@ run_compute_node() {
         --no-persist-identity \
 	--max-batch-timeout 100 \
 	--max-batch-size 50 \
-        --batch-storage immediate_remote \
+        --storage-backend remote \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
@@ -60,6 +60,7 @@ run_test() {
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
     gateway/target/release/gateway \
+        --storage-backend remote \
         --mr-enclave $(cat $WORKDIR/target_benchmark/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> gateway.log &
     sleep 2

@@ -49,8 +49,8 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-        --batch-storage multilayer \
-        --storage-multilayer-sled-storage-base /tmp/ekiden-storage-persistent_${id} \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
         --storage-multilayer-bottom-backend remote \
         --max-batch-timeout 100 \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
@@ -71,6 +71,7 @@ run_test() {
     # elected and connects to the leader.
     echo "Starting web3 gateway."
     target/debug/gateway \
+        --storage-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --threads 100 \
         --prometheus-metrics-addr 0.0.0.0:3001 \

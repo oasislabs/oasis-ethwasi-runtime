@@ -24,7 +24,7 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-        --batch-storage immediate_remote \
+        --storage-backend remote \
         --max-batch-timeout 100 \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
@@ -55,6 +55,7 @@ run_test() {
 
     echo "Starting web3 gateway."
     target/debug/gateway \
+        --storage-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> gateway.log &
     sleep 3

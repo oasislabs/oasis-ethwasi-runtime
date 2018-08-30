@@ -27,8 +27,8 @@ run_compute_node() {
         --no-persist-identity \
 	--max-batch-timeout 100 \
 	--max-batch-size 50 \
-        --batch-storage multilayer \
-        --storage-multilayer-sled-storage-base /tmp/ekiden-storage-persistent_${id} \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
         --storage-multilayer-bottom-backend remote \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
@@ -61,6 +61,7 @@ run_test() {
     # Start genesis state injector.
     echo "Starting genesis state injector."
     ${WORKDIR}/genesis/target/release/genesis \
+        --storage-backend remote \
         --mr-enclave $(cat target_benchmark/enclave/runtime-ethereum.mrenclave) \
 	${WORKDIR}/genesis/state-9999.json &> genesis.log &
     genesis_pid=$!
@@ -71,6 +72,7 @@ run_test() {
     # Run the client.
     echo "Starting web3 gateway."
     gateway/target/release/gateway \
+        --storage-backend remote \
         --mr-enclave $(cat ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> ${WORKDIR}/gateway.log &
     sleep 5

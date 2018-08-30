@@ -146,9 +146,9 @@ spec:
             - $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
             - --scheduler-client-port
             - $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
-            - --batch-storage
+            - --storage-backend
             - multilayer
-            - --storage-multilayer-sled-storage-base
+            - --storage-multilayer-local-storage-base
             - /tmp/ekiden-storage-persistent
             - --storage-multilayer-bottom-backend
             - remote
@@ -203,6 +203,7 @@ spec:
               --scheduler-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --roothash-client-host $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
               --roothash-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
+              --storage-backend remote
               --storage-client-host $(RUNTIME_NODE_DUMMY_SERVICE_HOST)
               --storage-client-port $(RUNTIME_NODE_DUMMY_SERVICE_PORT_DUMMY_GRPC)
               --mr-enclave $$(cat ekiden/res/runtime-ethereum.mrenclave)

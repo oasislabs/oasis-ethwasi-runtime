@@ -25,8 +25,8 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-        --batch-storage multilayer \
-        --storage-multilayer-sled-storage-base /tmp/ekiden-storage-persistent_${id} \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
         --storage-multilayer-bottom-backend remote \
 	--max-batch-timeout 100 \
 	--time-source-notifier system \
@@ -61,6 +61,7 @@ run_test() {
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
     gateway/target/debug/gateway \
+        --storage-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> gateway.log &
     gateway_pid=$!
