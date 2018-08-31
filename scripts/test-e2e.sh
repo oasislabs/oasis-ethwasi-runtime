@@ -68,9 +68,11 @@ run_gateway() {
 
     echo "Starting web3 gateway ${id} on port ${web3_port}."
     target/debug/gateway \
-        --storage-backend remote \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway_${id} \
+        --storage-multilayer-bottom-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
-	--http-port ${web3_port} \
+        --http-port ${web3_port} \
         --threads 100 \
         --prometheus-metrics-addr 0.0.0.0:${prometheus_port} \
         --prometheus-mode pull &> gateway${id}.log &

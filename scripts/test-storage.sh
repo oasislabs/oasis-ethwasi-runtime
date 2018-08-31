@@ -2,14 +2,22 @@
 
 WORKDIR=${1:-$(pwd)}
 
-run_dummy_node_default() {
-    echo "Starting dummy node."
+run_dummy_node_go_default() {
+    local datadir=/tmp/ekiden-dummy-data
+    rm -rf ${datadir}
 
-    ekiden-node-dummy \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --time-source-notifier mockrpc \
-        --storage-backend dummy \
-        &> dummy.log &
+    echo "Starting Go dummy node."
+
+    ${WORKDIR}/ekiden-node \
+        --log.level debug \
+        --grpc.port 42261 \
+        --epochtime.backend mock \
+        --beacon.backend insecure \
+        --storage.backend memory \
+        --scheduler.backend trivial \
+        --registry.backend memory \
+        --datadir ${datadir} \
+        &> dummy-go.log &
 }
 
 run_compute_node() {
@@ -55,7 +63,9 @@ run_test() {
 
     echo "Starting web3 gateway."
     target/debug/gateway \
-        --storage-backend remote \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway \
+        --storage-multilayer-bottom-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> gateway.log &
     sleep 3
@@ -91,4 +101,4 @@ run_test() {
     pkill -P $$
 }
 
-run_test run_dummy_node_default
+run_test run_dummy_node_go_default
