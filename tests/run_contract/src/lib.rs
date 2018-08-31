@@ -25,11 +25,11 @@ use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt,
 
 lazy_static! {
     static ref CTX: ContractCallContext = ContractCallContext {
-            header: Header {
-                timestamp: 0xcafedeadbeefc0de,
-                ..Default::default()
-            },
-        };
+        header: Header {
+            timestamp: 0xcafedeadbeefc0de,
+            ..Default::default()
+        },
+    };
     static ref DEFAULT_ACCOUNT: Address = Address::from("1cca28600d7491365520b31b466f88647b9839ec");
     static ref SECRET_KEY: Secret = Secret::from_str(
         // private key corresponding to DEFAULT_ACCOUNT. generated from mnemonic:
