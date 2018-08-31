@@ -457,7 +457,7 @@ impl Client {
             // next block
             number: parent.number() + 1,
             author: Address::default(),
-            timestamp: 0,
+            timestamp: parent.timestamp(),
             difficulty: U256::zero(),
             last_hashes: Self::last_hashes(db, &parent.hash()),
             gas_used: U256::default(),

@@ -25,6 +25,7 @@ ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 [dev-dependencies]
+ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden4" }
 
 [features]

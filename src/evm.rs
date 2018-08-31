@@ -26,6 +26,7 @@ fn get_env_info() -> vm::EnvInfo {
     env_info.last_hashes = last_hashes(&parent.hash());
     env_info.number = parent.number() + 1;
     env_info.gas_limit = U256::max_value();
+    env_info.timestamp = parent.timestamp();
     env_info
 }
 

@@ -1,4 +1,6 @@
 extern crate either;
+extern crate ekiden_roothash_base;
+extern crate ekiden_trusted;
 extern crate ethcore;
 extern crate ethereum_api;
 extern crate ethereum_types;
@@ -10,15 +12,24 @@ extern crate runtime_ethereum;
 use std::str::FromStr;
 
 use either::Either;
+use ekiden_roothash_base::Header;
+use ekiden_trusted::contract::dispatcher::ContractCallContext;
 use ethcore::{rlp,
-              transaction::{Action, SignedTransaction, Transaction},
-              storage::Storage};
+              storage::Storage,
+              transaction::{Action, SignedTransaction, Transaction}};
 use ethereum_api::{ExecuteTransactionResponse, Receipt};
 use ethereum_types::{Address, H256, U256};
 use ethkey::Secret;
-use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt, storage::GlobalStorage};
+use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt,
+                       storage::GlobalStorage};
 
 lazy_static! {
+    static ref CTX: ContractCallContext = ContractCallContext {
+            header: Header {
+                timestamp: 0xcafedeadbeefc0de,
+                ..Default::default()
+            },
+        };
     static ref DEFAULT_ACCOUNT: Address = Address::from("1cca28600d7491365520b31b466f88647b9839ec");
     static ref SECRET_KEY: Secret = Secret::from_str(
         // private key corresponding to DEFAULT_ACCOUNT. generated from mnemonic:
@@ -32,7 +43,7 @@ lazy_static! {
 pub fn make_tx(spec: Either<Vec<u8>, (Address, Vec<u8>)>) -> SignedTransaction {
     let mut tx = Transaction::default();
     tx.gas = U256::from("10000000000000");
-    tx.nonce = U256::from(get_account_nonce(&DEFAULT_ACCOUNT).unwrap());
+    tx.nonce = U256::from(get_account_nonce(&DEFAULT_ACCOUNT, &CTX).unwrap());
     match spec {
         Either::Left(data) => tx.data = data,
         Either::Right((addr, data)) => {
@@ -45,8 +56,10 @@ pub fn make_tx(spec: Either<Vec<u8>, (Address, Vec<u8>)>) -> SignedTransaction {
 
 /// Runs a signed transaction using the runtime.
 pub fn run_tx(tx: SignedTransaction) -> Result<Receipt, ExecuteTransactionResponse> {
-    let res = execute_raw_transaction(&rlp::encode(&tx).to_vec()).unwrap();
-    let receipt = get_receipt(res.hash.as_ref().unwrap()).unwrap().unwrap();
+    let res = execute_raw_transaction(&rlp::encode(&tx).to_vec(), &CTX).unwrap();
+    let receipt = get_receipt(res.hash.as_ref().unwrap(), &CTX)
+        .unwrap()
+        .unwrap();
     if !receipt.status_code.is_some() || receipt.status_code.unwrap() == 0 {
         println!("ERROR:\n{:?}\n{:?}", res, receipt);
         Err(res)
@@ -56,9 +69,13 @@ pub fn run_tx(tx: SignedTransaction) -> Result<Receipt, ExecuteTransactionRespon
 }
 
 pub fn store_bytes(bytes: &[u8]) -> H256 {
-    GlobalStorage::new().store_bytes(bytes).expect("Could not store bytes.")
+    GlobalStorage::new()
+        .store_bytes(bytes)
+        .expect("Could not store bytes.")
 }
 
 pub fn fetch_bytes(key: &H256) -> Vec<u8> {
-    GlobalStorage::new().fetch_bytes(key).expect("Could not fetch bytes.")
+    GlobalStorage::new()
+        .fetch_bytes(key)
+        .expect("Could not fetch bytes.")
 }
