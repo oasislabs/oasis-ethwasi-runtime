@@ -64,11 +64,10 @@ To start the compute node (you need to start at least two, on different ports):
 ```bash
 $ ekiden-compute \
     --no-persist-identity \
-    --batch-storage immediate_remote \
+    --storage-backend remote \
     --max-batch-timeout 10 \
     --time-source-notifier system \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
-    --batch-storage immediate_remote \
     --port <port number> \
     target/enclave/runtime-ethereum.so
 ```
@@ -94,7 +93,7 @@ $ cargo build
 
 To run (in the same directory):
 ```bash
-$ cargo run -- --mr-enclave <mr-enclave> --threads <number of threads for http server>
+$ cargo run -- --storage-backend remote --mr-enclave <mr-enclave> --threads <number of threads for http server>
 ```
 
 For `<mr-enclave>` you can use the value reported when starting the compute node.

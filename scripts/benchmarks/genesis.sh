@@ -41,7 +41,7 @@ run_compute_node_default() {
 	--max-batch-timeout 10 \
 	--time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --batch-storage immediate_remote \
+        --storage-backend remote \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
@@ -52,7 +52,7 @@ run_compute_node_storage_multilayer() {
     shift
     local extra_args=$*
 
-    local db_dir=/tmp/ekiden-test-storage-multilayer-sled-$id
+    local db_dir=/tmp/ekiden-test-storage-multilayer-local-$id
     # Generate port number.
     let "port=id + 10000"
 
@@ -64,8 +64,8 @@ run_compute_node_storage_multilayer() {
 	--max-batch-timeout 10 \
         --time-source-notifier system \
 	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --batch-storage multilayer \
-        --storage-multilayer-sled-storage-base "$db_dir" \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base "$db_dir" \
         --storage-multilayer-aws-region us-east-1 \
         --storage-multilayer-aws-table-name test \
         --port ${port} \
@@ -98,6 +98,7 @@ run_test() {
     # Start genesis state injector.
     echo "Starting genesis state injector."
     ${WORKDIR}/genesis/target/release/genesis \
+        --storage-backend remote \
         --mr-enclave $(cat ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.mrenclave) \
 	${WORKDIR}/genesis/state-999999.json &
     genesis_pid=$!
