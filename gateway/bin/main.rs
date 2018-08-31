@@ -50,6 +50,13 @@ fn main() {
     let args = default_app!()
         .args(&known_components.get_arguments())
         .arg(
+            Arg::with_name("http-port")
+                .long("http-port")
+                .help("Port to use for JSON-RPC HTTP server.")
+                .default_value("8545")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("threads")
                 .long("threads")
                 .help("Number of threads to use for HTTP server.")
@@ -79,7 +86,8 @@ fn main() {
         .expect("failed to initialize component container");
 
     let num_threads = value_t!(args, "threads", usize).unwrap();
-    let client = web3_gateway::start(args, container, num_threads).unwrap();
+    let http_port = value_t!(args, "http-port", u16).unwrap();
+    let client = web3_gateway::start(args, container, http_port, num_threads).unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
     CtrlC::set_handler({

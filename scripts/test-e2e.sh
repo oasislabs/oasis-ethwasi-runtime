@@ -59,6 +59,25 @@ run_compute_node() {
         ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
 }
 
+run_gateway() {
+    local id=$1
+
+    # Generate port numbers.
+    let "web3_port=id + 8544"
+    let "prometheus_port=id + 3000"
+
+    echo "Starting web3 gateway ${id} on port ${web3_port}."
+    target/debug/gateway \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway_${id} \
+        --storage-multilayer-bottom-backend remote \
+        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
+        --http-port ${web3_port} \
+        --threads 100 \
+        --prometheus-metrics-addr 0.0.0.0:${prometheus_port} \
+        --prometheus-mode pull &> gateway${id}.log &
+}
+
 run_test() {
     local dummy_node_runner=$1
 
@@ -69,13 +88,8 @@ run_test() {
     # snapshot manager can recover after initially failing to connect to the
     # root hash stream, and 2) whether the gateway waits for the committee to be
     # elected and connects to the leader.
-    echo "Starting web3 gateway."
-    target/debug/gateway \
-        --storage-backend remote \
-        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
-        --threads 100 \
-        --prometheus-metrics-addr 0.0.0.0:3001 \
-        --prometheus-mode pull &> gateway.log &
+    run_gateway 1
+    run_gateway 2
     sleep 3
 
     # Start dummy node.
@@ -96,11 +110,13 @@ run_test() {
     # Run truffle tests
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
-    truffle test
+    truffle test --network development
+    truffle test --network development2
     popd > /dev/null
 
     # Dump the metrics.
     curl -v http://localhost:3001/metrics
+    curl -v http://localhost:3002/metrics
 
     # Cleanup.
     echo "Cleaning up."
