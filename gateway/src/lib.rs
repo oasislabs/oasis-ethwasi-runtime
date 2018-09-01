@@ -127,7 +127,13 @@ pub fn start(
         let snapshot_manager =
             client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
 
-        run::execute(client, Some(snapshot_manager), storage, http_port, num_threads)
+        run::execute(
+            client,
+            Some(snapshot_manager),
+            storage,
+            http_port,
+            num_threads,
+        )
     }
 
     #[cfg(not(feature = "read_state"))]

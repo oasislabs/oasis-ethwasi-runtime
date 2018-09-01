@@ -28,10 +28,12 @@ fn main() {
                 .help("dump RLP-encoded transaction to file")
                 .takes_value(true),
         )
-        .arg(Arg::with_name("v")
-             .short("v")
-             .multiple(true)
-             .help("Sets the level of verbosity"))
+        .arg(
+            Arg::with_name("v")
+                .short("v")
+                .multiple(true)
+                .help("Sets the level of verbosity"),
+        )
         .get_matches();
 
     if args.occurrences_of("v") > 0 {

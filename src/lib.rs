@@ -27,7 +27,8 @@ pub mod storage; // allow access from tests/run_contract
 mod storage;
 
 use ekiden_core::error::{Error, Result};
-use ekiden_trusted::{contract::create_contract, enclave::enclave_init};
+use ekiden_trusted::{contract::{create_contract, dispatcher::ContractCallContext},
+                     enclave::enclave_init};
 use ethcore::{rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
@@ -47,7 +48,7 @@ with_api! {
 }
 
 // used for performance debugging
-fn debug_null_call(_request: &bool) -> Result<()> {
+fn debug_null_call(_request: &bool, _ctx: &ContractCallContext) -> Result<()> {
     Ok(())
 }
 
@@ -64,7 +65,7 @@ fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
 }
 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
-fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
+fn inject_accounts(accounts: &Vec<AccountState>, ctx: &ContractCallContext) -> Result<()> {
     let mut block = new_block()?;
     accounts.iter().try_for_each(|ref account| {
         block.block_mut().state_mut().new_contract(
@@ -91,22 +92,24 @@ fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
     // commit state changes
     block.block_mut().state_mut().commit()?;
 
-    // set timestamp to 0, as blocks must be deterministic
-    block.set_timestamp(0);
+    block.set_timestamp(ctx.header.timestamp);
 
     add_block(block.close_and_lock())?;
     Ok(())
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
-fn inject_accounts(accounts: &Vec<AccountState>) -> Result<()> {
+fn inject_accounts(accounts: &Vec<AccountState>, _ctx: &ContractCallContext) -> Result<()> {
     Err(Error::new(
         "API available only in debug and benchmarking builds",
     ))
 }
 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
-pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<()> {
+pub fn inject_account_storage(
+    storages: &Vec<(Address, H256, H256)>,
+    ctx: &ContractCallContext,
+) -> Result<()> {
     let mut block = new_block()?;
     storages.iter().try_for_each(|&(addr, key, value)| {
         block
@@ -119,26 +122,28 @@ pub fn inject_account_storage(storages: &Vec<(Address, H256, H256)>) -> Result<(
     // commit state changes
     block.block_mut().state_mut().commit()?;
 
-    // set timestamp to 0, as blocks must be deterministic
-    block.set_timestamp(0);
+    block.set_timestamp(ctx.header.timestamp);
 
     add_block(block.close_and_lock())?;
     Ok(())
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
-fn inject_account_storage(storage: &Vec<(Address, H256, H256)>) -> Result<()> {
+fn inject_account_storage(
+    storage: &Vec<(Address, H256, H256)>,
+    _ctx: &ContractCallContext,
+) -> Result<()> {
     Err(Error::new(
         "API available only in debug and benchmarking builds",
     ))
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-pub fn get_block_height(_request: &bool) -> Result<U256> {
+pub fn get_block_height(_request: &bool, _ctx: &ContractCallContext) -> Result<U256> {
     Ok(get_latest_block_number().into())
 }
 
-fn get_block_hash(id: &BlockId) -> Result<Option<H256>> {
+fn get_block_hash(id: &BlockId, _ctx: &ContractCallContext) -> Result<Option<H256>> {
     let hash = match *id {
         BlockId::Hash(hash) => Some(hash),
         BlockId::Number(number) => block_hash(number.into()),
@@ -148,7 +153,7 @@ fn get_block_hash(id: &BlockId) -> Result<Option<H256>> {
     Ok(hash)
 }
 
-fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
+fn get_block(id: &BlockId, _ctx: &ContractCallContext) -> Result<Option<Vec<u8>>> {
     debug!("get_block, id: {:?}", id);
 
     let block = match *id {
@@ -164,42 +169,45 @@ fn get_block(id: &BlockId) -> Result<Option<Vec<u8>>> {
     }
 }
 
-fn get_logs(filter: &Filter) -> Result<Vec<Log>> {
+fn get_logs(filter: &Filter, _ctx: &ContractCallContext) -> Result<Vec<Log>> {
     debug!("get_logs, filter: {:?}", filter);
     Ok(state::get_logs(filter))
 }
 
-pub fn get_transaction(hash: &H256) -> Result<Option<Transaction>> {
+pub fn get_transaction(hash: &H256, _ctx: &ContractCallContext) -> Result<Option<Transaction>> {
     debug!("get_transaction, hash: {:?}", hash);
     Ok(state::get_transaction(hash))
 }
 
-pub fn get_receipt(hash: &H256) -> Result<Option<Receipt>> {
+pub fn get_receipt(hash: &H256, _ctx: &ContractCallContext) -> Result<Option<Receipt>> {
     debug!("get_receipt, hash: {:?}", hash);
     Ok(state::get_receipt(hash))
 }
 
-pub fn get_account_balance(address: &Address) -> Result<U256> {
+pub fn get_account_balance(address: &Address, _ctx: &ContractCallContext) -> Result<U256> {
     debug!("get_account_balance, address: {:?}", address);
     state::get_account_balance(address)
 }
 
-pub fn get_account_nonce(address: &Address) -> Result<U256> {
+pub fn get_account_nonce(address: &Address, _ctx: &ContractCallContext) -> Result<U256> {
     debug!("get_account_nonce, address: {:?}", address);
     state::get_account_nonce(address)
 }
 
-pub fn get_account_code(address: &Address) -> Result<Option<Vec<u8>>> {
+pub fn get_account_code(address: &Address, _ctx: &ContractCallContext) -> Result<Option<Vec<u8>>> {
     debug!("get_account_code, address: {:?}", address);
     state::get_account_code(address)
 }
 
-pub fn get_storage_at(pair: &(Address, H256)) -> Result<H256> {
+pub fn get_storage_at(pair: &(Address, H256), _ctx: &ContractCallContext) -> Result<H256> {
     debug!("get_storage_at, address: {:?}", pair);
     state::get_account_storage(pair.0, pair.1)
 }
 
-pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionResponse> {
+pub fn execute_raw_transaction(
+    request: &Vec<u8>,
+    ctx: &ContractCallContext,
+) -> Result<ExecuteTransactionResponse> {
     debug!("execute_raw_transaction");
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
@@ -220,20 +228,19 @@ pub fn execute_raw_transaction(request: &Vec<u8>) -> Result<ExecuteTransactionRe
             })
         }
     };
-    let result = transact(signed).map_err(|e| e.to_string());
+    let result = transact(signed, ctx.header.timestamp).map_err(|e| e.to_string());
     Ok(ExecuteTransactionResponse {
         created_contract: if result.is_err() { false } else { is_create },
         hash: result,
     })
 }
 
-fn transact(transaction: SignedTransaction) -> Result<H256> {
+fn transact(transaction: SignedTransaction, timestamp: u64) -> Result<H256> {
     let mut block = new_block()?;
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     block.push_transaction(transaction, None, &mut storage)?;
-    // set timestamp to 0, as blocks must be deterministic
-    block.set_timestamp(0);
+    block.set_timestamp(timestamp);
     add_block(block.close_and_lock())?;
     Ok(tx_hash)
 }
@@ -264,7 +271,10 @@ fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTrans
     })
 }
 
-pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTransactionResponse> {
+pub fn simulate_transaction(
+    request: &TransactionRequest,
+    _ctx: &ContractCallContext,
+) -> Result<SimulateTransactionResponse> {
     debug!("simulate_transaction");
     let tx = match make_unsigned_transaction(request) {
         Ok(t) => t,
@@ -295,17 +305,27 @@ pub fn simulate_transaction(request: &TransactionRequest) -> Result<SimulateTran
 
 #[cfg(test)]
 mod tests {
-    use ethcore::blockchain::BlockChain;
+    extern crate ekiden_roothash_base;
     extern crate ethkey;
 
     use std::str::FromStr;
     use std::sync::Arc;
     use std::sync::Mutex;
 
+    use self::ekiden_roothash_base::header::Header;
     use self::ethkey::{KeyPair, Secret};
     use super::*;
-    use ethcore::{self, vm};
+    use ethcore::{self, blockchain::BlockChain, vm};
     use hex;
+
+    lazy_static! {
+        static ref CTX: ContractCallContext = ContractCallContext {
+            header: Header {
+                timestamp: 0xcafedeadbeefc0de,
+                ..Default::default()
+            },
+        };
+    }
 
     struct Client {
         keypair: KeyPair,
@@ -326,7 +346,7 @@ mod tests {
         fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
             let tx = EthcoreTransaction {
                 action: Action::Create,
-                nonce: get_account_nonce(&self.keypair.address()).unwrap(),
+                nonce: get_account_nonce(&self.keypair.address(), &CTX).unwrap(),
                 gas_price: U256::from(0),
                 gas: U256::from(1000000),
                 value: *balance,
@@ -334,11 +354,11 @@ mod tests {
             }.sign(&self.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let hash = execute_raw_transaction(&raw.into_vec())
+            let hash = execute_raw_transaction(&raw.into_vec(), &CTX)
                 .unwrap()
                 .hash
                 .unwrap();
-            let receipt = get_receipt(&hash).unwrap().unwrap();
+            let receipt = get_receipt(&hash, &CTX).unwrap().unwrap();
             (hash, receipt.contract_address.unwrap())
         }
 
@@ -352,7 +372,7 @@ mod tests {
                 nonce: None,
             };
 
-            simulate_transaction(&tx).unwrap().result.unwrap()
+            simulate_transaction(&tx, &CTX).unwrap().result.unwrap()
         }
     }
 
@@ -364,26 +384,26 @@ mod tests {
     fn test_create_balance() {
         let mut client = CLIENT.lock().unwrap();
 
-        let init_bal = get_account_balance(&client.keypair.address()).unwrap();
+        let init_bal = get_account_balance(&client.keypair.address(), &CTX).unwrap();
         let contract_bal = U256::from(10);
         let remaining_bal = init_bal - contract_bal;
 
-        let init_nonce = get_account_nonce(&client.keypair.address()).unwrap();
+        let init_nonce = get_account_nonce(&client.keypair.address(), &CTX).unwrap();
 
         let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
         let (_, contract) = client.create_contract(code, &contract_bal);
 
         assert_eq!(
-            get_account_balance(&client.keypair.address()).unwrap(),
+            get_account_balance(&client.keypair.address(), &CTX).unwrap(),
             remaining_bal
         );
         assert_eq!(
-            get_account_nonce(&client.keypair.address()).unwrap(),
+            get_account_nonce(&client.keypair.address(), &CTX).unwrap(),
             init_nonce + U256::one()
         );
-        assert_eq!(get_account_balance(&contract).unwrap(), contract_bal);
+        assert_eq!(get_account_balance(&contract, &CTX).unwrap(), contract_bal);
         assert_eq!(
-            get_storage_at(&(contract, H256::zero())).unwrap(),
+            get_storage_at(&(contract, H256::zero()), &CTX).unwrap(),
             H256::from(&remaining_bal)
         );
     }
@@ -466,13 +486,13 @@ mod tests {
 
         // deploy once
         let (hash, contract) = client.create_contract(contract_code.clone(), &U256::zero());
-        let receipt = get_receipt(&hash).unwrap().unwrap();
+        let receipt = get_receipt(&hash, &CTX).unwrap().unwrap();
         let status = receipt.status_code.unwrap();
         assert_eq!(status, 1 as u64);
 
         // deploy again
         let (hash, contract) = client.create_contract(contract_code.clone(), &U256::zero());
-        let receipt = get_receipt(&hash).unwrap().unwrap();
+        let receipt = get_receipt(&hash, &CTX).unwrap().unwrap();
         let status = receipt.status_code.unwrap();
         assert_eq!(status, 1 as u64);
     }
@@ -483,25 +503,25 @@ mod tests {
 
         let bad_sig = EthcoreTransaction {
             action: Action::Create,
-            nonce: get_account_nonce(&client.keypair.address()).unwrap(),
+            nonce: get_account_nonce(&client.keypair.address(), &CTX).unwrap(),
             gas_price: U256::from(0),
             gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.fake_sign(client.keypair.address());
-        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec())
+        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &CTX)
             .unwrap()
             .hash;
 
         let good_sig = EthcoreTransaction {
             action: Action::Create,
-            nonce: get_account_nonce(&client.keypair.address()).unwrap(),
+            nonce: get_account_nonce(&client.keypair.address(), &CTX).unwrap(),
             gas_price: U256::from(0),
             gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
-        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec())
+        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &CTX)
             .unwrap()
             .hash;
 
@@ -528,7 +548,7 @@ mod tests {
         let client_address = client.keypair.address();
 
         // Initialize the DB.
-        let reference_nonce_before = get_account_nonce(&client_address).unwrap();
+        let reference_nonce_before = get_account_nonce(&client_address, &CTX).unwrap();
 
         // Create a chain representing node A, which is initially the leader.
         let chain_a = BlockChain::new(
@@ -546,7 +566,7 @@ mod tests {
         client.create_contract(code_empty, &U256::zero());
 
         // Save the new nonce from the default node, which is currently leader.
-        let reference_nonce = get_account_nonce(&client_address).unwrap();
+        let reference_nonce = get_account_nonce(&client_address, &CTX).unwrap();
 
         // When node A is leader again, getting the nonce should give an up to date value.
         let nonce_a = get_account_nonce_chain(&chain_a, &client_address);
