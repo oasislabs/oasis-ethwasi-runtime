@@ -19,7 +19,7 @@ run_dummy_node_default() {
         &> dummy.log &
 }
 
-run_dummy_node_go_default() {
+run_dummy_node_go_tm() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
 
@@ -28,11 +28,13 @@ run_dummy_node_go_default() {
     ${WORKDIR}/ekiden-node \
         --log.level debug \
         --grpc.port 42261 \
-        --epochtime.backend mock \
-        --beacon.backend insecure \
+        --epochtime.backend tendermint \
+        --epochtime.tendermint.interval 30 \
+        --beacon.backend tendermint \
         --storage.backend memory \
         --scheduler.backend trivial \
-        --registry.backend memory \
+        --registry.backend tendermint \
+        --roothash.backend tendermint \
         --datadir ${datadir} \
         &> dummy-go.log &
 }
@@ -104,7 +106,7 @@ run_test() {
     # Advance epoch to elect a new committee.
     echo "Advancing epoch."
     sleep 2
-    ekiden-node-dummy-controller set-epoch --epoch 1
+    ekiden-node-dummy-controller set-epoch --epoch 1 || true
     sleep 2
 
     # Run truffle tests
@@ -128,4 +130,4 @@ run_test() {
 
 setup_truffle
 run_test run_dummy_node_default
-run_test run_dummy_node_go_default
+run_test run_dummy_node_go_tm
