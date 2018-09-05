@@ -2,6 +2,7 @@
 extern crate clap;
 extern crate either;
 extern crate ethcore;
+extern crate log;
 extern crate run_contract;
 extern crate simple_logger;
 
@@ -36,9 +37,14 @@ fn main() {
         )
         .get_matches();
 
-    if args.occurrences_of("v") > 0 {
-        simple_logger::init().unwrap();
-    }
+    match args.occurrences_of("v") {
+        1 => simple_logger::init_with_level(log::Level::Trace),
+        2 => simple_logger::init_with_level(log::Level::Debug),
+        3 => simple_logger::init_with_level(log::Level::Info),
+        4 => simple_logger::init_with_level(log::Level::Warn),
+        5 => simple_logger::init_with_level(log::Level::Error),
+        _ => Ok(()),
+    };
 
     println!("{:?}", store_bytes(&[1, 2, 3, 4, 5]));
     let contract = fs::read(args.value_of("contract").unwrap()).unwrap();
