@@ -2,7 +2,7 @@
 
 WORKDIR=${1:-$(pwd)}
 
-run_dummy_node_go_default() {
+run_dummy_node_go_tm() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
 
@@ -11,11 +11,13 @@ run_dummy_node_go_default() {
     ${WORKDIR}/ekiden-node \
         --log.level debug \
         --grpc.port 42261 \
-        --epochtime.backend mock \
-        --beacon.backend insecure \
+        --epochtime.backend tendermint \
+        --epochtime.tendermint.interval 90 \
+        --beacon.backend tendermint \
         --storage.backend memory \
         --scheduler.backend trivial \
-        --registry.backend memory \
+        --registry.backend tendermint \
+        --roothash.backend tendermint \
         --datadir ${datadir} \
         &> dummy-go.log &
 }
@@ -54,12 +56,6 @@ run_test() {
     run_compute_node 1
     sleep 1
     run_compute_node 2
-
-    # Advance epoch to elect a new committee.
-    echo "Advancing epoch."
-    sleep 2
-    ekiden-node-dummy-controller set-epoch --epoch 1
-    sleep 2
 
     echo "Starting web3 gateway."
     target/debug/gateway \
@@ -101,4 +97,4 @@ run_test() {
     pkill -P $$
 }
 
-run_test run_dummy_node_go_default
+run_test run_dummy_node_go_tm

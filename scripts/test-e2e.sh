@@ -9,16 +9,6 @@ setup_truffle() {
     npm install truffle-hdwallet-provider
 }
 
-run_dummy_node_default() {
-    echo "Starting dummy node."
-
-    ekiden-node-dummy \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --time-source-notifier mockrpc \
-        --storage-backend dummy \
-        &> dummy.log &
-}
-
 run_dummy_node_go_tm() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
@@ -103,12 +93,6 @@ run_test() {
     sleep 1
     run_compute_node 2
 
-    # Advance epoch to elect a new committee.
-    echo "Advancing epoch."
-    sleep 2
-    ekiden-node-dummy-controller set-epoch --epoch 1 || true
-    sleep 2
-
     # Run truffle tests
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
@@ -129,5 +113,4 @@ run_test() {
 }
 
 setup_truffle
-run_test run_dummy_node_default
 run_test run_dummy_node_go_tm
