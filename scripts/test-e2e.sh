@@ -29,7 +29,7 @@ run_dummy_node_go_tm() {
         --log.level debug \
         --grpc.port 42261 \
         --epochtime.backend tendermint \
-        --epochtime.tendermint.interval 30 \
+        --epochtime.tendermint.interval 90 \
         --beacon.backend tendermint \
         --storage.backend memory \
         --scheduler.backend trivial \
