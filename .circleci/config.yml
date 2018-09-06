@@ -31,15 +31,6 @@ jobs:
             --branch master
             --debug
             ekiden-compute
-      - run:
-          environment:
-            CARGO_TARGET_DIR: target
-          command: >-
-            cargo install
-            --git https://github.com/oasislabs/ekiden
-            --branch master
-            --debug
-            ekiden-node-dummy
       # Build the runtime.
       - run: cargo ekiden build-enclave --output-identity
       # Build the benchmarking version of the runtime (in release mode)
