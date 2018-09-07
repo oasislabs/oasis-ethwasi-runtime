@@ -32,10 +32,22 @@ of the Ekiden compute node:
 ```bash
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
-$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-node-dummy
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
+
+You also need the Go dummy node:
+```bash
+$ mkdir -p /go/src/github.com/oasislabs
+$ cd /go/src/github.com/oasislabs
+$ git clone https://github.com/oasislabs/ekiden
+$ cd ekiden/go
+$ dep ensure
+$ go generate ./...
+$ go build -v -o ./ekiden/ekiden ./ekiden
+$ cd ekiden
+$ go install
+```
 
 ## Building the runtime
 
@@ -53,28 +65,30 @@ separate container shell, attached to the same container.
 
 To start the shared dummy node:
 ```
-$ ekiden-node-dummy \
-    --random-beacon-backend dummy \
-    --entity-ethereum-address 0000000000000000000000000000000000000000 \
-    --time-source-notifier mockrpc \
-    --storage-backend dummy
+$ ekiden \
+    --log.level debug \
+    --grpc.port 42261 \
+    --epochtime.backend tendermint \
+    --epochtime.tendermint.interval 30 \
+    --beacon.backend tendermint \
+    --storage.backend memory \
+    --scheduler.backend trivial \
+    --registry.backend tendermint \
+    --roothash.backend tendermint \
+    --datadir /tmp/ekiden-dummy-data
 ```
 
 To start the compute node (you need to start at least two, on different ports):
 ```bash
 $ ekiden-compute \
     --no-persist-identity \
-    --storage-backend remote \
-    --max-batch-timeout 10 \
-    --time-source-notifier system \
+    --storage-backend multilayer \
+    --storage-multilayer-local-storage-base <storage directory, e.g., /tmp/ekiden-storage-id> \
+    --storage-multilayer-bottom-backend remote \
+    --max-batch-timeout 100 \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --port <port number> \
     target/enclave/runtime-ethereum.so
-```
-
-After starting the nodes, to manually advance the epoch in the shared dummy node:
-```
-$ ekiden-node-dummy-controller set-epoch --epoch 1
 ```
 
 The compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
@@ -91,9 +105,14 @@ $ cd gateway
 $ cargo build
 ```
 
-To run (in the same directory):
+To run:
 ```bash
-$ cargo run -- --storage-backend remote --mr-enclave <mr-enclave> --threads <number of threads for http server>
+$ gateway/target/debug/gateway \
+    --storage-backend multilayer \
+    --storage-multilayer-local-storage-base /tmp/ekiden-storage-gateway \
+    --storage-multilayer-bottom-backend remote \
+    --mr-enclave <mr-enclave> \
+    --threads <number of threads for http server>
 ```
 
 For `<mr-enclave>` you can use the value reported when starting the compute node.
