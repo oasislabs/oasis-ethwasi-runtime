@@ -30,7 +30,7 @@ pub struct Log {
     pub transaction_log_index: Option<U256>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccountState {
     pub nonce: U256,
     pub address: Address,
@@ -38,7 +38,7 @@ pub struct AccountState {
     pub code: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Receipt {
     pub hash: Option<H256>,
     pub index: Option<U256>,
@@ -53,7 +53,7 @@ pub struct Receipt {
     pub status_code: Option<u64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
     pub hash: H256,
     pub nonce: U256,
@@ -77,7 +77,7 @@ pub struct Transaction {
 }
 
 // An unsigned transaction request.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TransactionRequest {
     // The nonce from web3. It's a monotonic counter per account.
     pub nonce: Option<U256>, // optional
@@ -92,13 +92,13 @@ pub struct TransactionRequest {
     pub value: Option<U256>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ExecuteTransactionResponse {
     pub hash: Result<H256, String>,
     pub created_contract: bool,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SimulateTransactionResponse {
     pub result: Result<Vec<u8>, String>,
     pub used_gas: U256,
