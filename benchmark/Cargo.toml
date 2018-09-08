@@ -5,6 +5,8 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 clap = "2.29.1"
+ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-instrumentation-prometheus = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
@@ -17,6 +19,7 @@ pretty_env_logger = "0.2"
 # (pinning transitive dependency) in 0.4.18,
 # error[E0658]: use of unstable library feature 'proc_macro' (see issue #38356)
 proc-macro2 = "=0.4.17"
+prometheus = { version = "~0.4.2", features = ["push"] }
 rand = "0.4"
 rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
 serde = "1.0"

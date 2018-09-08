@@ -3,11 +3,16 @@
 #[macro_use]
 extern crate clap;
 use clap::{App, Arg};
+extern crate ekiden_instrumentation;
+use ekiden_instrumentation::{measure, measure_gauge};
+extern crate ekiden_instrumentation_prometheus;
 #[macro_use]
 extern crate lazy_static;
 extern crate log;
-use log::{debug, info, error, LevelFilter};
+use log::{debug, error, info, LevelFilter};
 extern crate pretty_env_logger;
+extern crate prometheus;
+use prometheus::Encoder;
 extern crate rand;
 use rand::Rng;
 
@@ -218,24 +223,20 @@ fn run_scenario<C: Send + 'static>(
     let mid_dur_ms = to_ms(mid_dur);
     let throughput_inv = mid_dur_ms / mid_count as f64;
     let throughput = mid_count as f64 / mid_dur_ms * 1000.;
-    println!("# TYPE {}_mid_count gauge", name);
-    println!("# HELP {}_mid_count {} call count", name, name);
-    println!("{}_mid_count {}", name, mid_count);
-    println!("# TYPE {}_mid_dur_ms gauge", name);
-    println!("# HELP {}_mid_dur_ms Total time (ms)", name);
-    println!("{}_dur_ms {}", name, mid_dur_ms);
-    println!("# TYPE {}_throughput_inv gauge", name);
-    println!("# HELP {}_throughput_inv Inverse throughput (ms/tx)", name);
-    println!("{}_throughput_inv {}", name, throughput_inv);
-    println!("# TYPE {}_throughput gauge", name);
-    println!("# HELP {}_throughput Throughput (tx/sec)", name);
-    println!("{}_throughput {}", name, throughput);
+    info!(
+        "Middle 80% {}: {} calls over {:.3} ms ({:.3} calls/sec)",
+        name, mid_count, mid_dur_ms, throughput,
+    );
+    measure_gauge!(&format!("{}_mid_count", name), mid_count);
+    measure_gauge!(&format!("{}_mid_dur_ms", name), mid_dur_ms);
+    measure_gauge!(&format!("{}_throughput_inv", name), throughput_inv);
+    measure_gauge!(&format!("{}_throughput", name), throughput);
 
     let total_count = count_end - count_start;
     let total_dur = time_end - time_start;
     let total_dur_ms = to_ms(total_dur);
     info!(
-        "Overall {}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        "Overall {}: {} calls over {:.3} ms ({:.3} calls/sec)",
         name,
         total_count,
         total_dur_ms,
@@ -246,7 +247,7 @@ fn run_scenario<C: Send + 'static>(
     let before_dur = time_start - time_before;
     let before_dur_ms = to_ms(before_dur);
     info!(
-        "Ramp up {}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        "Ramp up {}: {} calls over {:.3} ms ({:.3} calls/sec)",
         name,
         before_count,
         before_dur_ms,
@@ -257,7 +258,7 @@ fn run_scenario<C: Send + 'static>(
     let after_dur = time_after - time_end;
     let after_dur_ms = to_ms(after_dur);
     info!(
-        "Ramp down {}: {:?} calls over {:.3} ms ({:.3} calls/sec)",
+        "Ramp down {}: {} calls over {:.3} ms ({:.3} calls/sec)",
         name,
         after_count,
         after_dur_ms,
@@ -285,10 +286,32 @@ fn main() {
                 .takes_value(true)
                 .default_value("1"),
         )
-        .arg(Arg::with_name("v")
-             .short("v")
-             .multiple(true)
-             .help("Sets the level of verbosity"))
+        .arg(
+            Arg::with_name("v")
+                .short("v")
+                .multiple(true)
+                .help("Sets the level of verbosity"),
+        )
+        .arg(
+            Arg::with_name("prometheus-push-addr")
+                .long("prometheus-push-addr")
+                .help("Send results to the Prometheus push gateway at the given address.")
+                .requires("prometheus-push-job-name")
+                .requires("prometheus-push-instance-label")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("prometheus-push-job-name")
+                .long("prometheus-push-job-name")
+                .help("Prometheus `job` name used if sending results.")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("prometheus-push-instance-label")
+                .long("prometheus-push-instance-label")
+                .help("Prometheus `instance` label used if using push mode.")
+                .takes_value(true),
+        )
         .arg(
             Arg::with_name("benchmark")
                 .required(true)
@@ -306,11 +329,18 @@ fn main() {
     // Initialize logger.
     pretty_env_logger::formatted_builder()
         .unwrap()
-        .filter( None, match args.occurrences_of("v") {
-            0 => LevelFilter::Info,
-            1 => LevelFilter::Debug,
-            _ => LevelFilter::max(),
-        }).init();
+        .filter(
+            None,
+            match args.occurrences_of("v") {
+                0 => LevelFilter::Info,
+                1 => LevelFilter::Debug,
+                _ => LevelFilter::max(),
+            },
+        )
+        .init();
+
+    // Initialize metrics.
+    ekiden_instrumentation_prometheus::init().unwrap();
 
     let host = value_t!(args, "host", String).unwrap();
     let port = value_t!(args, "port", String).unwrap();
@@ -344,5 +374,16 @@ fn main() {
             "transfer" => run_scenario("transfer", transfer_prep, transfer, &url, threads, 30000),
             _ => unreachable!(),
         }
+    }
+
+    let encoder = prometheus::TextEncoder::new();
+    encoder
+        .encode(&prometheus::gather(), &mut std::io::stdout())
+        .unwrap();
+    if let Some(addr) = args.value_of("prometheus-push-addr") {
+        let job_name = args.value_of("prometheus-push-job-name").unwrap();
+        let instance_label = args.value_of("prometheus-push-instance-label").unwrap();
+        ekiden_instrumentation_prometheus::push::push_metrics(addr, job_name, instance_label)
+            .unwrap();
     }
 }
