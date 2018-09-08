@@ -6,6 +6,9 @@ extern crate clap;
 use clap::{App, Arg};
 extern crate crossbeam_deque;
 use crossbeam_deque::{Deque, Steal};
+extern crate ekiden_instrumentation;
+use ekiden_instrumentation::{measure, measure_gauge};
+extern crate ekiden_instrumentation_prometheus;
 extern crate filebuffer;
 extern crate hex;
 #[macro_use]
@@ -13,10 +16,11 @@ extern crate jsonrpc_client_core;
 extern crate jsonrpc_client_http;
 use jsonrpc_client_http::HttpTransport;
 extern crate log;
-use log::{info, log, LevelFilter};
+use log::{info, LevelFilter};
 extern crate pretty_env_logger;
+extern crate prometheus;
+use prometheus::Encoder;
 extern crate rlp;
-#[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 extern crate threadpool;
@@ -98,6 +102,26 @@ fn main() {
                 .takes_value(true)
                 .default_value("1"),
         )
+        .arg(
+            Arg::with_name("prometheus-push-addr")
+                .long("prometheus-push-addr")
+                .help("Send results to the Prometheus push gateway at the given address.")
+                .requires("prometheus-push-job-name")
+                .requires("prometheus-push-instance-label")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("prometheus-push-job-name")
+                .long("prometheus-push-job-name")
+                .help("Prometheus `job` name used if sending results.")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("prometheus-push-instance-label")
+                .long("prometheus-push-instance-label")
+                .help("Prometheus `instance` label used if using push mode.")
+                .takes_value(true),
+        )
         .get_matches();
 
     // Initialize logger.
@@ -105,6 +129,9 @@ fn main() {
         .unwrap()
         .filter(None, LevelFilter::Info)
         .init();
+
+    // Initialize metrics.
+    ekiden_instrumentation_prometheus::init().unwrap();
 
     // parity exported block file
     let blocks_path = value_t!(args, "exported_blocks", String).unwrap();
@@ -160,40 +187,36 @@ fn main() {
     let playback_dur = playback_end - playback_start;
     let mut transaction_durs: Vec<Duration> = rx.try_iter().flat_map(|v| v).collect();
     let playback_dur_ms = to_ms(playback_dur);
-    println!("# TYPE num_transactions gauge");
-    println!("# HELP num_transactions Total transactions");
-    println!("num_transactions {}", num_transactions);
-    println!("# TYPE playback_dur_ms gauge");
-    println!("# HELP playback_dur_ms Total time (ms)");
-    println!("playback_dur_ms {}", playback_dur_ms);
+    measure_gauge!("num_transactions", num_transactions);
+    measure_gauge!("playback_dur_ms", playback_dur_ms);
     if num_transactions > 0 {
         let throughput_inv = playback_dur_ms / num_transactions as f64;
-        println!("# TYPE throughput_inv gauge");
-        println!("# HELP throughput_inv Inverse throughput (ms/tx)");
-        println!("throughput_inv {}", throughput_inv);
+        measure_gauge!("throughput_inv", throughput_inv);
         let throughput = num_transactions as f64 / playback_dur_ms * 1000.;
-        println!("# TYPE throughput gauge");
-        println!("# HELP throughput Throughput (tx/sec)");
-        println!("throughput {}", throughput);
+        measure_gauge!("throughput", throughput);
 
         transaction_durs.sort();
         let latency_min = to_ms(*transaction_durs.first().unwrap());
-        println!("# TYPE latency_min gauge");
-        println!("# HELP latency_min Minimum latency (ms)");
-        println!("latency_min {}", latency_min);
+        measure_gauge!("latency_min", latency_min);
         for pct in [1, 10, 50, 90, 99].iter() {
             let index = std::cmp::min(
                 num_transactions - 1,
                 (*pct as f64 / 100. * transaction_durs.len() as f64).ceil() as usize,
             );
             let latency_pct = to_ms(transaction_durs[index]);
-            println!("# TYPE latency_{} gauge", pct);
-            println!("# HELP latency_{} {} percentile latency (ms)", pct, pct);
-            println!("latency_{} {}", pct, latency_pct);
+            measure_gauge!(&format!("latency_{}", pct), latency_pct);
         }
         let latency_max = to_ms(*transaction_durs.last().unwrap());
-        println!("# TYPE latency_max gauge");
-        println!("# HELP latency_max Maximum latency (ms)");
-        println!("latency_max {}", latency_max);
+        measure_gauge!("latency_max", latency_max);
+    }
+    let encoder = prometheus::TextEncoder::new();
+    encoder
+        .encode(&prometheus::gather(), &mut std::io::stdout())
+        .unwrap();
+    if let Some(addr) = args.value_of("prometheus-push-addr") {
+        let job_name = args.value_of("prometheus-push-job-name").unwrap();
+        let instance_label = args.value_of("prometheus-push-instance-label").unwrap();
+        ekiden_instrumentation_prometheus::push::push_metrics(addr, job_name, instance_label)
+            .unwrap();
     }
 }
