@@ -7,6 +7,8 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 clap = "2.29.1"
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-instrumentation-prometheus = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 crossbeam-deque = "0.4"
@@ -17,6 +19,7 @@ jsonrpc-client-core = "0.3.0"
 jsonrpc-client-http = "0.3.0"
 log = "0.4"
 pretty_env_logger = "0.2"
+prometheus = { version = "~0.4.2", features = ["push"] }
 etcommon-rlp = { git = "https://github.com/oasislabs/etcommon-rs", branch = "ekiden" }
 serde = "1.0"
 serde_derive = "1.0"
