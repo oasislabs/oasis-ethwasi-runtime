@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
-use ekiden_db_trusted::Database;
+use ekiden_common::bytes::H256;
+use ekiden_db_trusted::{Database, DatabaseHandle};
 use hex;
 
 use state::get_key;
@@ -188,5 +189,12 @@ impl Database for MockDb {
 
     fn clear(&mut self) {
         self.map.clear()
+    }
+
+    fn with_encryption<F>(&mut self, _contract_id: H256, _f: F)
+    where
+        F: FnOnce(&mut DatabaseHandle) -> (),
+    {
+        unimplemented!();
     }
 }
