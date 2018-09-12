@@ -115,6 +115,7 @@ pub fn start(
     mut container: Container,
     http_port: u16,
     num_threads: usize,
+    ws_port: u16,
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
     let storage: Arc<StorageBackend> = container
@@ -133,9 +134,10 @@ pub fn start(
             storage,
             http_port,
             num_threads,
+            ws_port,
         )
     }
 
     #[cfg(not(feature = "read_state"))]
-    run::execute(client, None, storage, http_port, num_threads)
+    run::execute(client, None, storage, http_port, num_threads, ws_port)
 }

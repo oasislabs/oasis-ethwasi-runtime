@@ -2,11 +2,17 @@
 
 WORKDIR=${1:-$(pwd)}
 
-setup_truffle() {
+setup_utils() {
     echo "Installing truffle-hdwallet-provider."
     # Temporary fix for ethereumjs-wallet@0.6.1 incompatibility
     npm install ethereumjs-wallet@=0.6.0
     npm install truffle-hdwallet-provider
+
+    echo "Installing wscat."
+    npm install -g wscat
+
+    echo "Installing jq."
+    apt-get install -y jq
 }
 
 run_dummy_node_go_tm() {
@@ -55,17 +61,19 @@ run_gateway() {
     local id=$1
 
     # Generate port numbers.
-    let "web3_port=id + 8544"
+    let "http_port=id + 8544"
+    let "ws_port=id + 8554"
     let "prometheus_port=id + 3000"
 
-    echo "Starting web3 gateway ${id} on port ${web3_port}."
+    echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
     target/debug/gateway \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway_${id} \
         --storage-multilayer-bottom-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
-        --http-port ${web3_port} \
+        --http-port ${http_port} \
         --threads 100 \
+        --ws-port ${ws_port} \
         --prometheus-metrics-addr 0.0.0.0:${prometheus_port} \
         --prometheus-mode pull &> gateway${id}.log &
 }
@@ -100,6 +108,10 @@ run_test() {
     truffle test --network development2
     popd > /dev/null
 
+    # Run WebSocket test
+    echo "Running WebSocket test."
+    RESULT=`wscat --connect localhost:8555 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_getBlockByNumber\", \"params\": [\"latest\", true]}" | jq -e .result.number` || exit 1
+
     # Dump the metrics.
     curl -v http://localhost:3001/metrics
     curl -v http://localhost:3002/metrics
@@ -107,10 +119,7 @@ run_test() {
     # Cleanup.
     echo "Cleaning up."
     pkill -P $$
-
-    # Sleep to allow gateway's ports to be freed
-    sleep 5
 }
 
-setup_truffle
+setup_utils
 run_test run_dummy_node_go_tm

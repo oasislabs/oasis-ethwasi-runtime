@@ -39,6 +39,7 @@ pub fn execute(
     storage: Arc<StorageBackend>,
     http_port: u16,
     num_threads: usize,
+    ws_port: u16,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
         &util::load_spec(),
@@ -53,10 +54,14 @@ pub fn execute(
 
     let cpu_pool = CpuPool::new(4);
 
-    let ws_conf = WsConfiguration::default();
-
-    // expose the http server to the world
+    // expose the http and ws servers to the world
     // conf corresponds to parity command-line options "--unsafe-expose" + "--jsonrpc-cors=all"
+    let mut ws_conf = WsConfiguration::default();
+    ws_conf.origins = None;
+    ws_conf.hosts = None;
+    ws_conf.interface = "0.0.0.0".into();
+    ws_conf.port = ws_port;
+
     let mut http_conf = HttpConfiguration::default();
     http_conf.cors = None;
     http_conf.hosts = None;
@@ -82,15 +87,14 @@ pub fn execute(
 
     // start rpc servers
     let rpc_direct = rpc::setup_apis(rpc_apis::ApiSet::All, &dependencies);
-    // WebSocket endpoint is disabled
-    //let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
+    let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
     let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)?;
 
     Ok(RunningClient {
         inner: RunningClientInner::Full {
             rpc: rpc_direct,
             client,
-            keep_alive: Box::new((event_loop, http_server)),
+            keep_alive: Box::new((event_loop, http_server, ws_server)),
         },
     })
 }

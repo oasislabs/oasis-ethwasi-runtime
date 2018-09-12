@@ -64,6 +64,13 @@ fn main() {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("ws-port")
+                .long("ws-port")
+                .help("Port to use for WebSocket server.")
+                .default_value("8546")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("v")
                 .short("v")
                 .multiple(true)
@@ -87,7 +94,8 @@ fn main() {
 
     let num_threads = value_t!(args, "threads", usize).unwrap();
     let http_port = value_t!(args, "http-port", u16).unwrap();
-    let client = web3_gateway::start(args, container, http_port, num_threads).unwrap();
+    let ws_port = value_t!(args, "ws-port", u16).unwrap();
+    let client = web3_gateway::start(args, container, http_port, num_threads, ws_port).unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
     CtrlC::set_handler({
