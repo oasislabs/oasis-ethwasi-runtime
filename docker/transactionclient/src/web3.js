@@ -17,12 +17,12 @@ var makeTxn = function (client) {
             gas: 100000,
             gasPrice: 0,
             to: "1cca28600d7491365520b31b466f88647b9839ec"
-        }, function(err, txn) {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(txn);
-          }
+        }, function (err, txn) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(txn);
+            }
         });
     });
 };
@@ -40,11 +40,11 @@ if (require.main === module) {
         name: 'txnerrors',
         help: 'Number of errored web3 transactions'
     });
-    const txnlatency = new client.Histogram({
-        name: 'txnlatency',
-        help: 'Latency of web3 transactions',
-        buckets: client.exponentialBuckets(0.01, 2, 15)
+    const txnlatency = new client.Summary({
+        name: 'txnlatencysummary',
+        help: 'Latency summary of web3 transactions',
     });
+
     let mnemonic = 'patient oppose cotton portion chair gentle jelly dice supply salmon blast priority';
 
     if (process.argv.length < 4) {
@@ -77,15 +77,15 @@ if (require.main === module) {
             await pause(process.argv[3]);
             const end = txnlatency.startTimer();
             try {
-              await makeTxn(client);
-            } catch(e) {
-              console.warn("Transaction failed.", e);
-              txnerrors.inc();
+                await makeTxn(client);
+            } catch (e) {
+                console.warn("Transaction failed.", e);
+                txnerrors.inc();
             }
             end();
             txncount.inc();
             if (gateway != null) {
-                gateway.pushAdd({ jobName: `${pushJobPrefix}-web3-txn`, groupings: pushGroupings }, () => {});
+                gateway.pushAdd({ jobName: `${pushJobPrefix}-web3-txn`, groupings: pushGroupings }, () => { });
             }
         }
     };
