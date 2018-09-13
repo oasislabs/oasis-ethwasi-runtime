@@ -1,6 +1,5 @@
 use std::marker::{Send, Sync};
-use std::sync::Arc;
-use std::sync::RwLock;
+use std::sync::{Arc, RwLock, Weak};
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
@@ -49,12 +48,19 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
     }
 }
 
+/// An actor listening to chain events.
+pub trait ChainNotify: Send + Sync {
+    /// Notifies about imported headers.
+    fn new_headers(&self, good: &[H256]);
+}
+
 pub struct Client {
     client: runtime_ethereum::Client,
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
     storage: Arc<RwLock<Web3GlobalStorage>>,
+    listeners: RwLock<Vec<Weak<ChainNotify>>>,
 }
 
 impl Client {
@@ -71,6 +77,20 @@ impl Client {
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
             storage: Arc::new(RwLock::new(storage)),
+            listeners: RwLock::new(vec![]),
+        }
+    }
+
+    /// Adds a new `ChainNotify` listener.
+    pub fn add_listener(&self, listener: Weak<ChainNotify>) {
+        self.listeners.write().unwrap().push(listener);
+    }
+
+    fn notify<F: Fn(&ChainNotify)>(&self, f: F) {
+        for listener in &*self.listeners.read().unwrap() {
+            if let Some(listener) = listener.upgrade() {
+                f(&*listener)
+            }
         }
     }
 

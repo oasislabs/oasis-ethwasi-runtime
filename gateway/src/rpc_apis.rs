@@ -17,7 +17,7 @@
 use std::cmp::PartialEq;
 use std::collections::HashSet;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use client::Client;
 use ekiden_storage_base::StorageBackend;
@@ -27,7 +27,8 @@ use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
-use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
+use impls::{EthClient, EthFilterClient, EthPubSubClient, NetClient, OasisClient, TracesClient,
+            Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -166,7 +167,7 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthFilter, Net, Traces, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, EthPubSub, Net, Traces, Web3};
         use traits::Oasis;
 
         for api in apis {
@@ -187,7 +188,11 @@ impl FullDependencies {
                     }
                 }
                 Api::EthPubSub => {
-                    // TODO: pub/sub
+                    if !for_generic_pubsub {
+                        let client = EthPubSubClient::new(self.client.clone(), self.remote.clone());
+                        self.client.add_listener(client.handler() as Weak<_>);
+                        handler.extend_with(client.to_delegate());
+                    }
                 }
                 Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
                 Api::Oasis => {
