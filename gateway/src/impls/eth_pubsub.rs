@@ -100,69 +100,61 @@ impl ChainNotificationHandler {
         );
     }
 
-    fn notify_heads(&self, headers: &[(encoded::Header, BTreeMap<String, String>)]) {
+    fn notify_heads(&self, headers: &[encoded::Header]) {
         for subscriber in self.heads_subscribers.read().values() {
-            for &(ref header, ref extra_info) in headers {
+            for &ref header in headers {
                 Self::notify(
                     &self.remote,
                     subscriber,
                     pubsub::Result::Header(RichHeader {
                         inner: header.into(),
-                        extra_info: extra_info.clone(),
+                        extra_info: Default::default(),
                     }),
                 );
             }
         }
     }
 
-    fn notify_logs<F, T, Ex>(&self, enacted: &[(H256, Ex)], logs: F)
+    fn notify_logs<F>(&self, enacted: &[H256], logs: F)
     where
-        F: Fn(EthFilter, &Ex) -> T,
-        Ex: Send,
-        T: IntoFuture<Item = Vec<Log>, Error = Error>,
-        T::Future: Send + 'static,
+        F: Fn(EthFilter) -> Vec<Log>,
     {
         for &(ref subscriber, ref filter) in self.logs_subscribers.read().values() {
-            let logs = futures::future::join_all(
-                enacted
-                    .iter()
-                    .map(|&(hash, ref ex)| {
-                        let mut filter = filter.clone();
-                        filter.from_block = BlockId::Hash(hash);
-                        filter.to_block = filter.from_block.clone();
-                        logs(filter, ex).into_future()
-                    })
-                    .collect::<Vec<_>>(),
-            );
+            let logs = enacted
+                .iter()
+                .map(|&hash| {
+                    let mut filter = filter.clone();
+                    filter.from_block = BlockId::Hash(hash);
+                    filter.to_block = filter.from_block.clone();
+                    logs(filter)
+                })
+                .collect::<Vec<_>>();
             let limit = filter.limit;
             let remote = self.remote.clone();
             let subscriber = subscriber.clone();
-            self.remote.spawn(
-                logs.map(move |logs| {
-                    let logs = logs.into_iter().flat_map(|log| log).collect();
-
-                    for log in limit_logs(logs, limit) {
-                        Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
-                    }
-                }).map_err(|e| warn!("Unable to fetch latest logs: {:?}", e)),
-            );
+            let logs = logs.into_iter().flat_map(|log| log).collect();
+            for log in limit_logs(logs, limit) {
+                Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
+            }
         }
     }
 }
 
 impl ChainNotify for ChainNotificationHandler {
     fn new_headers(&self, enacted: &[H256]) {
-        // TODO: fix this implementation
-        /*
         let headers = enacted
-			.iter()
-			.filter_map(|hash| self.client.block_header(BlockId::Hash(*hash)))
-			.map(|header| (header, Default::default()))
-			.collect::<Vec<_>>();
+            .iter()
+            .filter_map(|hash| self.client.block_header(*hash))
+            .collect::<Vec<_>>();
 
-		self.notify_heads(&headers);
-		self.notify_logs(&enacted.iter().map(|h| (*h, ())).collect::<Vec<_>>(), |filter, _| self.client.logs(filter))
-        */
+        self.notify_heads(&headers);
+        self.notify_logs(enacted, |filter| {
+            self.client
+                .logs(filter)
+                .into_iter()
+                .map(From::from)
+                .collect::<Vec<Log>>()
+        })
     }
 }
 

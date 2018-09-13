@@ -179,6 +179,14 @@ impl Client {
         }
     }
 
+    pub fn block_header(&self, hash: H256) -> Option<encoded::Header> {
+        if let Some(db) = self.get_db_snapshot() {
+            db.block_header_data(&hash)
+        } else {
+            None
+        }
+    }
+
     // transaction-related
     #[cfg(feature = "read_state")]
     pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
