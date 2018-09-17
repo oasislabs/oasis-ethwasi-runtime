@@ -92,7 +92,7 @@ impl Client {
 
     /// Notify listeners of new blocks.
     pub fn new_blocks(&self) {
-        const MAX_HEADERS: usize = 256;
+        const MAX_HEADERS: u64 = 256;
 
         let mut last_block = self.notified_block_number.lock().unwrap();
 
@@ -505,17 +505,24 @@ impl Client {
     }
 
     /// returns a vector of block headers from block numbers start...end (inclusive)
+    /// limited to the `max` most recent headers
     #[cfg(feature = "read_state")]
     fn headers_since<T>(
         db: &StateDb<T>,
         start: BlockNumber,
         end: BlockNumber,
-        max: usize,
+        max: u64,
     ) -> Vec<encoded::Header>
     where
         T: 'static + Database + Send + Sync,
     {
-        // TODO: limit to max headers
+        // limit to `max` headers
+        let start = if end - start + 1 >= max {
+            end - max + 1
+        } else {
+            start
+        };
+
         let mut head = db.block_hash(end)
             .and_then(|hash| db.block_header_data(&hash))
             .expect("Chain is corrupt");
