@@ -1,5 +1,5 @@
 use std::marker::{Send, Sync};
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
@@ -50,8 +50,13 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
 
 /// An actor listening to chain events.
 pub trait ChainNotify: Send + Sync {
-    /// Notifies about imported headers.
-    fn new_headers(&self, good: &[H256]);
+    fn has_heads_subscribers(&self) -> bool;
+
+    /// Notifies about new headers.
+    fn notify_heads(&self, headers: &[encoded::Header]);
+
+    /// Notifies about new log filter matches.
+    fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
 }
 
 pub struct Client {
@@ -60,6 +65,8 @@ pub struct Client {
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
     storage: Arc<RwLock<Web3GlobalStorage>>,
+    /// The most recent block for which we have sent notifications.
+    notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
 }
 
@@ -77,7 +84,38 @@ impl Client {
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
             storage: Arc::new(RwLock::new(storage)),
+            // TODO: initialize to current block number
+            notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
+        }
+    }
+
+    /// Notify listeners of new blocks.
+    pub fn new_blocks(&self) {
+        const MAX_HEADERS: usize = 256;
+
+        let mut last_block = self.notified_block_number.lock().unwrap();
+
+        if let Some(db) = self.get_db_snapshot() {
+            let current_block = db.best_block_number();
+            if current_block > *last_block {
+                self.notify(|listener| {
+                    if listener.has_heads_subscribers() {
+                        // notify listeners of up to 256 most recent headers since last notification
+                        let headers =
+                            Self::headers_since(&db, *last_block + 1, current_block, MAX_HEADERS);
+                        listener.notify_heads(&headers);
+                    }
+
+                    // notify log listeners of blocks last+1...current
+                    listener.notify_logs(
+                        BlockId::Number(*last_block + 1),
+                        BlockId::Number(current_block),
+                    );
+                });
+
+                *last_block = current_block;
+            }
         }
     }
 
@@ -86,6 +124,7 @@ impl Client {
         self.listeners.write().unwrap().push(listener);
     }
 
+    /// Notify `ChainNotify` listeners.
     fn notify<F: Fn(&ChainNotify)>(&self, f: F) {
         for listener in &*self.listeners.read().unwrap() {
             if let Some(listener) = listener.upgrade() {
@@ -176,14 +215,6 @@ impl Client {
                 self.client.get_block_hash(from_block_id(id)).wait(),
                 None,
             )
-        }
-    }
-
-    pub fn block_header(&self, hash: H256) -> Option<encoded::Header> {
-        if let Some(db) = self.get_db_snapshot() {
-            db.block_header_data(&hash)
-        } else {
-            None
         }
     }
 
@@ -471,6 +502,36 @@ impl Client {
             }
         }
         Arc::new(last_hashes)
+    }
+
+    /// returns a vector of block headers from block numbers start...end (inclusive)
+    #[cfg(feature = "read_state")]
+    fn headers_since<T>(
+        db: &StateDb<T>,
+        start: BlockNumber,
+        end: BlockNumber,
+        max: usize,
+    ) -> Vec<encoded::Header>
+    where
+        T: 'static + Database + Send + Sync,
+    {
+        // TODO: limit to max headers
+        let mut head = db.block_hash(end)
+            .and_then(|hash| db.block_header_data(&hash))
+            .expect("Chain is corrupt");
+
+        let mut headers = Vec::with_capacity((end - start + 1) as usize);
+
+        loop {
+            headers.push(head.clone());
+            if head.number() <= start {
+                break;
+            }
+            head = db.block_header_data(&head.parent_hash())
+                .expect("Chain is corrupt");
+        }
+        headers.reverse();
+        headers
     }
 
     #[cfg(feature = "read_state")]

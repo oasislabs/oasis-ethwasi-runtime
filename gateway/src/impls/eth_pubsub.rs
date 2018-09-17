@@ -90,6 +90,12 @@ impl ChainNotificationHandler {
                 .map_err(|e| warn!(target: "rpc", "Unable to send notification: {}", e)),
         );
     }
+}
+
+impl ChainNotify for ChainNotificationHandler {
+    fn has_heads_subscribers(&self) -> bool {
+        self.heads_subscribers.read().len() > 0
+    }
 
     fn notify_heads(&self, headers: &[encoded::Header]) {
         for subscriber in self.heads_subscribers.read().values() {
@@ -106,46 +112,24 @@ impl ChainNotificationHandler {
         }
     }
 
-    fn notify_logs<F>(&self, enacted: &[H256], logs: F)
-    where
-        F: Fn(EthFilter) -> Vec<Log>,
-    {
+    fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
         for &(ref subscriber, ref filter) in self.logs_subscribers.read().values() {
-            let logs = enacted
-                .iter()
-                .map(|&hash| {
-                    let mut filter = filter.clone();
-                    filter.from_block = BlockId::Hash(hash);
-                    filter.to_block = filter.from_block.clone();
-                    logs(filter)
-                })
-                .collect::<Vec<_>>();
-            let limit = filter.limit;
-            let remote = self.remote.clone();
-            let subscriber = subscriber.clone();
-            let logs = logs.into_iter().flat_map(|log| log).collect();
-            for log in limit_logs(logs, limit) {
-                Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
-            }
-        }
-    }
-}
-
-impl ChainNotify for ChainNotificationHandler {
-    fn new_headers(&self, enacted: &[H256]) {
-        let headers = enacted
-            .iter()
-            .filter_map(|hash| self.client.block_header(*hash))
-            .collect::<Vec<_>>();
-
-        self.notify_heads(&headers);
-        self.notify_logs(enacted, |filter| {
-            self.client
+            // TODO: from_block should be max_block_number(filter.from_block, from)?
+            //       to_block should be min_block_number(filter.to_block, to)?
+            let mut filter = filter.clone();
+            filter.from_block = from_block;
+            filter.to_block = to_block;
+            let logs = self.client
                 .logs(filter)
                 .into_iter()
                 .map(From::from)
-                .collect::<Vec<Log>>()
-        })
+                .collect::<Vec<Log>>();
+            let remote = self.remote.clone();
+            let subscriber = subscriber.clone();
+            for log in logs {
+                Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
+            }
+        }
     }
 }
 
