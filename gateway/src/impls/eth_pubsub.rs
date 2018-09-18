@@ -94,7 +94,7 @@ impl ChainNotificationHandler {
 
 impl ChainNotify for ChainNotificationHandler {
     fn has_heads_subscribers(&self) -> bool {
-        self.heads_subscribers.read().len() > 0
+        !self.heads_subscribers.read().is_empty()
     }
 
     fn notify_heads(&self, headers: &[encoded::Header]) {
