@@ -53,7 +53,7 @@ $ go install
 
 To build the runtime simply run:
 ```bash
-$ cargo ekiden build-enclave
+$ cargo ekiden build-enclave --output-identity
 ```
 
 The built enclave will be stored under `target/enclave/runtime-ethereum.so`.
