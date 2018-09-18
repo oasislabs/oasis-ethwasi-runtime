@@ -114,11 +114,10 @@ impl ChainNotify for ChainNotificationHandler {
 
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
         for &(ref subscriber, ref filter) in self.logs_subscribers.read().values() {
-            // TODO: from_block should be max_block_number(filter.from_block, from)?
-            //       to_block should be min_block_number(filter.to_block, to)?
             let mut filter = filter.clone();
-            filter.from_block = from_block;
-            filter.to_block = to_block;
+            // (from, to) <- (max(filter.from_block, from_block), min(filter.to_block, to_block))
+            filter.from_block = self.client.max_block_number(filter.from_block, from_block);
+            filter.to_block = self.client.min_block_number(filter.to_block, to_block);
             let logs = self.client
                 .logs(filter)
                 .into_iter()

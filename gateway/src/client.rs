@@ -100,6 +100,7 @@ impl Client {
             let current_block = db.best_block_number();
             if current_block > *last_block {
                 self.notify(|listener| {
+                    // optimization: only generate the list of headers if we have subscribers
                     if listener.has_heads_subscribers() {
                         // notify listeners of up to 256 most recent headers since last notification
                         let headers =
@@ -114,6 +115,7 @@ impl Client {
                     );
                 });
 
+                // update last notified block
                 *last_block = current_block;
             }
         }
@@ -130,6 +132,72 @@ impl Client {
             if let Some(listener) = listener.upgrade() {
                 f(&*listener)
             }
+        }
+    }
+
+    /// Returns the BlockId corresponding to the larger block number.
+    pub fn max_block_number(&self, id_a: BlockId, id_b: BlockId) -> BlockId {
+        // first check if either is Latest
+        if id_a == BlockId::Latest || id_b == BlockId::Latest {
+            return BlockId::Latest;
+        }
+
+        // if either is Earliest, return the other
+        if id_a == BlockId::Earliest {
+            return id_b;
+        }
+        if id_b == BlockId::Earliest {
+            return id_a;
+        }
+
+        // at this point, we need block numbers
+        let to_block_number = |id| match id {
+            BlockId::Latest => unreachable!(),
+            BlockId::Earliest => unreachable!(),
+            BlockId::Number(num) => num,
+            BlockId::Hash(hash) => match self.block_number(hash) {
+                Some(num) => num,
+                None => 0,
+            },
+        };
+
+        if to_block_number(id_a) > to_block_number(id_b) {
+            id_a
+        } else {
+            id_b
+        }
+    }
+
+    /// Returns the BlockId corresponding to the smaller block number.
+    pub fn min_block_number(&self, id_a: BlockId, id_b: BlockId) -> BlockId {
+        // first check if either is Earliest
+        if id_a == BlockId::Earliest || id_b == BlockId::Earliest {
+            return BlockId::Earliest;
+        }
+
+        // if either is Latest, return the other
+        if id_a == BlockId::Latest {
+            return id_b;
+        }
+        if id_b == BlockId::Latest {
+            return id_a;
+        }
+
+        // at this point, we need block numbers
+        let to_block_number = |id| match id {
+            BlockId::Latest => unreachable!(),
+            BlockId::Earliest => unreachable!(),
+            BlockId::Number(num) => num,
+            BlockId::Hash(hash) => match self.block_number(hash) {
+                Some(num) => num,
+                None => 0,
+            },
+        };
+
+        if to_block_number(id_a) < to_block_number(id_b) {
+            id_a
+        } else {
+            id_b
         }
     }
 
@@ -215,6 +283,15 @@ impl Client {
                 self.client.get_block_hash(from_block_id(id)).wait(),
                 None,
             )
+        }
+    }
+
+    #[cfg(feature = "read_state")]
+    fn block_number(&self, hash: H256) -> Option<BlockNumber> {
+        if let Some(db) = self.get_db_snapshot() {
+            db.block_number(&hash)
+        } else {
+            None
         }
     }
 
