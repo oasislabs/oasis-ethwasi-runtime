@@ -58,13 +58,30 @@ $ cargo ekiden build-enclave
 
 The built enclave will be stored under `target/enclave/runtime-ethereum.so`.
 
-## Running the runtime
+## Building the web3 gateway
+
+The web3 gateway is located under `gateway` and it may be built using:
+```bash
+$ cd gateway
+$ cargo build
+```
+
+## Running
+
+*Easy mode*:
+
+To start the shared dummy node, two compute nodes, and a single gateway running on port 8545:
+```bash
+$ ./scripts/gateway.sh
+```
+
+*Hard mode*:
 
 You need to run multiple Ekiden services, so it is recommended to run each of these in a
 separate container shell, attached to the same container.
 
 To start the shared dummy node:
-```
+```bash
 $ ekiden \
     --log.level debug \
     --grpc.port 42261 \
@@ -93,19 +110,7 @@ $ ekiden-compute \
 
 The compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
 
-Development notes:
-
-* If you are changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-ethereum.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
-
-## Building the web3 gateway
-
-The web3 gateway is located under `gateway` and it may be built using:
-```bash
-$ cd gateway
-$ cargo build
-```
-
-To run:
+To start the gateway:
 ```bash
 $ gateway/target/debug/gateway \
     --storage-backend multilayer \
@@ -116,6 +121,10 @@ $ gateway/target/debug/gateway \
 ```
 
 For `<mr-enclave>` you can use the value reported when starting the compute node.
+
+Development notes:
+
+* If you are changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-ethereum.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Benchmarking
 
