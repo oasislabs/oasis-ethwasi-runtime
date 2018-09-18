@@ -87,7 +87,6 @@ jobs:
           at: /workspace
       - run: cp /workspace/go/bin/ekiden ekiden-node
       - run: ./scripts/test-e2e.sh
-      - run: ./scripts/test-storage.sh
 
   build-go:
     working_directory: /go/src/github.com/oasislabs/
