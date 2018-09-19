@@ -602,7 +602,7 @@ impl Client {
 
         let mut head = db.block_hash(end)
             .and_then(|hash| db.block_header_data(&hash))
-            .expect("Chain is corrupt");
+            .expect("Invalid block number");
 
         let mut headers = Vec::with_capacity((end - start + 1) as usize);
 
@@ -811,6 +811,25 @@ mod tests {
         assert_eq!(
             envinfo.last_hashes[0],
             H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "read_state")]
+    fn test_headers_since() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // blocks 1...4
+        let headers = Client::headers_since(&state, 1, 4, 256);
+        assert_eq!(headers.len(), 4);
+        assert_eq!(
+            &headers[3].hash(),
+            &H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
         );
     }
 }
