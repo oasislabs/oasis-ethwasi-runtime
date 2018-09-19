@@ -781,7 +781,7 @@ mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
     #[cfg(feature = "read_state")]
-    use test_helpers::MockDb;
+    use test_helpers::{MockDb, MockNotificationHandler};
 
     #[test]
     #[cfg(feature = "read_state")]
@@ -896,5 +896,33 @@ mod tests {
             "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
         ));
         assert_eq!(client.min_block_number(id_3, id_2), id_2);
+    }
+
+    #[test]
+    #[cfg(feature = "read_state")]
+    fn test_pubsub_notify() {
+        let client = Client::get_test_client();
+
+        let handler = Arc::new(MockNotificationHandler::new());
+        client.add_listener(Arc::downgrade(&handler) as Weak<_>);
+
+        let headers = handler.get_headers();
+        let log_filters = handler.get_log_filters();
+        assert_eq!(headers.len(), 0);
+        assert_eq!(log_filters.len(), 0);
+
+        client.new_blocks();
+
+        let headers = handler.get_headers();
+        assert_eq!(headers.len(), 4);
+        assert_eq!(
+            headers[3].hash(),
+            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+        );
+
+        let log_filters = handler.get_log_filters();
+        assert_eq!(log_filters.len(), 1);
+        assert_eq!(log_filters[0].0, BlockId::Number(1));
+        assert_eq!(log_filters[0].1, BlockId::Number(4));
     }
 }

@@ -1,13 +1,59 @@
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use ekiden_common::bytes::H256;
 use ekiden_db_trusted::{Database, DatabaseHandle};
+use ethcore::client::BlockId;
+use ethcore::encoded;
 use hex;
 
+use client::ChainNotify;
 use state::get_key;
 
 fn from_hex<S: AsRef<str>>(hex: S) -> Vec<u8> {
     hex::decode(hex.as_ref()).unwrap()
+}
+
+pub struct MockNotificationHandler {
+    headers: Mutex<Vec<encoded::Header>>,
+    log_filters: Mutex<Vec<(BlockId, BlockId)>>,
+}
+
+impl MockNotificationHandler {
+    pub fn new() -> Self {
+        Self {
+            headers: Mutex::new(vec![]),
+            log_filters: Mutex::new(vec![]),
+        }
+    }
+
+    pub fn get_headers(&self) -> Vec<encoded::Header> {
+        let guard = self.headers.lock().unwrap();
+        guard.clone()
+    }
+
+    pub fn get_log_filters(&self) -> Vec<(BlockId, BlockId)> {
+        let guard = self.log_filters.lock().unwrap();
+        guard.clone()
+    }
+}
+
+impl ChainNotify for MockNotificationHandler {
+    fn has_heads_subscribers(&self) -> bool {
+        true
+    }
+
+    fn notify_heads(&self, headers: &[encoded::Header]) {
+        let mut guard = self.headers.lock().unwrap();
+        for &ref header in headers {
+            guard.push(header.clone());
+        }
+    }
+
+    fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
+        let mut guard = self.log_filters.lock().unwrap();
+        guard.push((from_block, to_block));
+    }
 }
 
 pub struct MockDb {
