@@ -77,8 +77,18 @@ extern crate ekiden_db_trusted;
 extern crate ekiden_di;
 #[macro_use]
 extern crate ekiden_instrumentation;
+#[cfg(test)]
+extern crate ekiden_registry_client;
+#[cfg(test)]
+extern crate ekiden_roothash_client;
 extern crate ekiden_rpc_client;
+#[cfg(test)]
+extern crate ekiden_scheduler_client;
 extern crate ekiden_storage_base;
+#[cfg(test)]
+extern crate ekiden_storage_dummy;
+#[cfg(test)]
+extern crate ekiden_storage_frontend;
 extern crate ethereum_api;
 
 mod client;
@@ -98,9 +108,13 @@ mod util;
 use std::sync::Arc;
 
 use clap::ArgMatches;
+#[cfg(test)]
+use clap::{App, Arg};
 
 use ekiden_contract_client::create_contract_client;
 use ekiden_di::Container;
+#[cfg(test)]
+use ekiden_di::{Component, KnownComponents};
 use ekiden_storage_base::StorageBackend;
 use ethereum_api::with_api;
 
@@ -140,4 +154,83 @@ pub fn start(
 
     #[cfg(not(feature = "read_state"))]
     run::execute(client, None, storage, http_port, num_threads, ws_port)
+}
+
+#[cfg(test)]
+pub fn get_test_runtime_client() -> runtime_ethereum::Client {
+    let mut known_components = KnownComponents::new();
+    ekiden_core::environment::GrpcEnvironment::register(&mut known_components);
+    ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
+    ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
+    ekiden_roothash_client::RootHashClient::register(&mut known_components);
+    ekiden_storage_frontend::StorageClient::register(&mut known_components);
+
+    let args = App::new("testing")
+        .arg(
+            Arg::with_name("entity-registry-client-host")
+                .long("entity-registry-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("entity-registry-client-port")
+                .long("entity-registry-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .arg(
+            Arg::with_name("grpc-threads")
+                .long("grpc-threads")
+                .takes_value(true)
+                .default_value("4"),
+        )
+        .arg(
+            Arg::with_name("mr-enclave")
+                .long("mr-enclave")
+                .takes_value(true)
+                .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
+        )
+        .arg(
+            Arg::with_name("roothash-client-host")
+                .long("roothash-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("roothash-client-port")
+                .long("roothash-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .arg(
+            Arg::with_name("scheduler-client-host")
+                .long("scheduler-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("scheduler-client-port")
+                .long("scheduler-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .arg(
+            Arg::with_name("storage-client-host")
+                .long("storage-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("storage-client-port")
+                .long("storage-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .get_matches();
+
+    let mut container = known_components
+        .build_with_arguments(&args)
+        .expect("failed to initialize component container");
+
+    contract_client!(runtime_ethereum, args, container)
 }

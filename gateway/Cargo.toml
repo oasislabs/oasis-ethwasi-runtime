@@ -67,6 +67,11 @@ rand = "0.4"
 rustc_version = "0.2"
 
 [dev-dependencies]
+ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 hex = "0.3"
 
 [patch.crates-io]

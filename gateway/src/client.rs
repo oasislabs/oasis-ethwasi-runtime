@@ -25,12 +25,18 @@ use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
+#[cfg(test)]
+use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
 use storage::Web3GlobalStorage;
+#[cfg(test)]
+use test_helpers::MockDb;
+#[cfg(test)]
+use util;
 use util::from_block_id;
 
 // record contract call outcome
@@ -85,6 +91,21 @@ impl Client {
             eip86_transition: spec.params().eip86_transition,
             storage: Arc::new(RwLock::new(storage)),
             // TODO: initialize to current block number
+            notified_block_number: Mutex::new(0),
+            listeners: RwLock::new(vec![]),
+        }
+    }
+
+    #[cfg(test)]
+    pub fn get_test_client() -> Self {
+        let spec = &util::load_spec();
+        let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
+        Self {
+            client: ::get_test_runtime_client(),
+            engine: spec.engine.clone(),
+            snapshot_manager: None,
+            eip86_transition: spec.params().eip86_transition,
+            storage: Arc::new(RwLock::new(storage)),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
         }
@@ -209,7 +230,7 @@ impl Client {
 
     /// Returns a StateDb backed by an Ekiden db snapshot, or None when the
     /// blockchain database has not yet been initialized by the runtime.
-    #[cfg(feature = "read_state")]
+    #[cfg(all(not(test), feature = "read_state"))]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         match self.snapshot_manager {
             Some(ref manager) => {
@@ -222,6 +243,14 @@ impl Client {
             }
             None => None,
         }
+    }
+
+    /// Returns a MockDb-backed StateDb for unit tests.
+    #[cfg(all(test, feature = "read_state"))]
+    fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
+        let mut db = MockDb::new();
+        db.populate();
+        Some(StateDb::new(db).unwrap())
     }
 
     // block-related
@@ -831,5 +860,41 @@ mod tests {
             &headers[3].hash(),
             &H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
         );
+    }
+
+    #[test]
+    #[cfg(feature = "read_state")]
+    fn test_max_block_number() {
+        let client = Client::get_test_client();
+
+        let id_1 = BlockId::Number(1);
+        let id_2 = BlockId::Number(2);
+        assert_eq!(client.max_block_number(id_1, id_2), id_2);
+
+        let id_latest = BlockId::Latest;
+        assert_eq!(client.max_block_number(id_latest, id_2), id_latest);
+
+        let id_3 = BlockId::Hash(H256::from(
+            "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
+        ));
+        assert_eq!(client.max_block_number(id_3, id_2), id_3);
+    }
+
+    #[test]
+    #[cfg(feature = "read_state")]
+    fn test_min_block_number() {
+        let client = Client::get_test_client();
+
+        let id_1 = BlockId::Number(1);
+        let id_2 = BlockId::Number(2);
+        assert_eq!(client.min_block_number(id_1, id_2), id_1);
+
+        let id_earliest = BlockId::Earliest;
+        assert_eq!(client.min_block_number(id_earliest, id_2), id_earliest);
+
+        let id_3 = BlockId::Hash(H256::from(
+            "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
+        ));
+        assert_eq!(client.min_block_number(id_3, id_2), id_2);
     }
 }
