@@ -34,7 +34,7 @@ use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 use state::{self, EthState, StateDb};
 use storage::Web3GlobalStorage;
 #[cfg(test)]
-use test_helpers::MockDb;
+use test_helpers::{self, MockDb};
 #[cfg(test)]
 use util;
 use util::from_block_id;
@@ -96,12 +96,13 @@ impl Client {
         }
     }
 
+    /// A blockchain client for unit tests.
     #[cfg(test)]
     pub fn get_test_client() -> Self {
         let spec = &util::load_spec();
         let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
         Self {
-            client: ::get_test_runtime_client(),
+            client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
             snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
