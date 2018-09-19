@@ -25,6 +25,7 @@ extern crate ekiden_contract_client;
 use ekiden_contract_client::create_contract_client;
 extern crate ekiden_core;
 extern crate ekiden_rpc_client;
+extern crate ekiden_tracing;
 
 extern crate ethereum_api;
 use ethereum_api::{with_api, AccountState};
@@ -161,6 +162,9 @@ fn main() {
     let mut container = known_components
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
+
+    // Initialize tracing.
+    ekiden_tracing::report_forever("genesis", &args);
 
     let client = contract_client!(ethereum, args, container);
 
