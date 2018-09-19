@@ -32,6 +32,7 @@ extern crate rand;
 
 #[macro_use]
 extern crate client_utils;
+extern crate ekiden_tracing;
 
 use clap::{App, Arg};
 use ctrlc::CtrlC;
@@ -91,6 +92,9 @@ fn main() {
     let container = known_components
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
+
+    // Initialize tracing.
+    ekiden_tracing::report_forever("web3-gateway", &args);
 
     let num_threads = value_t!(args, "threads", usize).unwrap();
     let http_port = value_t!(args, "http-port", u16).unwrap();

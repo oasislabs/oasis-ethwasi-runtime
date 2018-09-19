@@ -20,5 +20,6 @@ client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" 
 ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 ethereum-api = { path = "../api" }
