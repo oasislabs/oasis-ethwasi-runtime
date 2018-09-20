@@ -94,6 +94,7 @@ extern crate ethereum_api;
 
 mod client;
 mod impls;
+mod notifier;
 mod rpc;
 mod rpc_apis;
 mod run;
@@ -111,6 +112,7 @@ use std::sync::Arc;
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
+use ekiden_core::environment::Environment;
 use ekiden_di::Container;
 use ekiden_storage_base::StorageBackend;
 use ethereum_api::with_api;
@@ -132,6 +134,9 @@ pub fn start(
     let storage: Arc<StorageBackend> = container
         .inject()
         .map_err(|err| err.description().to_string())?;
+    let environment: Arc<Environment> = container
+        .inject()
+        .map_err(|err| err.description().to_string())?;
 
     #[cfg(feature = "read_state")]
     {
@@ -143,6 +148,7 @@ pub fn start(
             client,
             Some(snapshot_manager),
             storage,
+            environment,
             http_port,
             num_threads,
             ws_port,

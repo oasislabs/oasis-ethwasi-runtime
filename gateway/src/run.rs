@@ -22,6 +22,7 @@ use std::time::{Duration, Instant};
 use client::Client;
 
 use client_utils;
+use ekiden_core::environment::Environment;
 use ekiden_storage_base::StorageBackend;
 use futures_cpupool::CpuPool;
 use jsonrpc_core;
@@ -30,6 +31,7 @@ use parity_rpc::{informant, Metadata, Origin};
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 
+use notifier::PubSubNotifier;
 use runtime_ethereum;
 use util;
 
@@ -37,6 +39,7 @@ pub fn execute(
     ekiden_client: runtime_ethereum::Client,
     snapshot_manager: Option<client_utils::db::Manager>,
     storage: Arc<StorageBackend>,
+    environment: Arc<Environment>,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -47,6 +50,9 @@ pub fn execute(
         ekiden_client,
         storage.clone(),
     ));
+
+    let notifier = PubSubNotifier::new(client.clone(), environment.clone());
+
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
     // spin up event loop
@@ -94,7 +100,7 @@ pub fn execute(
         inner: RunningClientInner::Full {
             rpc: rpc_direct,
             client,
-            keep_alive: Box::new((event_loop, http_server, ws_server)),
+            keep_alive: Box::new((event_loop, http_server, ws_server, notifier)),
         },
     })
 }
