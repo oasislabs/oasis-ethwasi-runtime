@@ -1,4 +1,4 @@
-//! Periodically calls the Client notifier routine.
+//! Periodically calls the Client pub/sub notifier routine.
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -29,15 +29,14 @@ impl PubSubNotifier {
 
     fn start(&self) {
         let interval = Interval::new_interval(Duration::new(self.interval_secs, 0));
-
         self.environment.spawn({
             let client = self.client.clone();
             interval
-                .for_each(move |_instant| {
+                .for_each(move |_| {
                     client.new_blocks();
                     Ok(())
                 })
-                .map_err(|e| error!("Notifier error: {:?}", e))
+                .map_err(|e| error!("Notifier error: {}", e))
                 .into_box()
         });
     }

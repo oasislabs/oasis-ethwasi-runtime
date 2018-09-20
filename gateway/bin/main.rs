@@ -73,7 +73,7 @@ fn main() {
             Arg::with_name("pubsub-interval")
                 .long("pubsub-interval")
                 .help("Time interval used for pub/sub notifications (in sec).")
-                .default_value("5")
+                .default_value("3")
                 .takes_value(true),
         )
         .arg(
@@ -104,11 +104,11 @@ fn main() {
     let num_threads = value_t!(args, "threads", usize).unwrap();
     let http_port = value_t!(args, "http-port", u16).unwrap();
     let ws_port = value_t!(args, "ws-port", u16).unwrap();
-    let pubsub_secs = value_t!(args, "pubsub-interval", u64).unwrap();
+    let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64).unwrap();
     let client = web3_gateway::start(
         args,
         container,
-        pubsub_secs,
+        pubsub_interval_secs,
         http_port,
         num_threads,
         ws_port,

@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
+// Based on parity/rpc/src/v1/impls/eth_pubsub.rs [v1.12.0]
+
 //! Eth PUB-SUB rpc implementation.
 
 use std::sync::{Arc, Weak};
