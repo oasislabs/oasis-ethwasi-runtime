@@ -7,7 +7,7 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
               vm};
 use ethereum_types::{Address, U256};
 
-use super::state::{best_block_header, get_state, last_hashes};
+use super::state::Cache;
 use super::storage::GlobalStorage;
 
 lazy_static! {
@@ -20,18 +20,18 @@ lazy_static! {
     };
 }
 
-fn get_env_info() -> vm::EnvInfo {
-    let parent = best_block_header();
+fn get_env_info(cache: &Cache) -> vm::EnvInfo {
+    let parent = cache.best_block_header();
     let mut env_info = vm::EnvInfo::default();
-    env_info.last_hashes = last_hashes(&parent.hash());
+    env_info.last_hashes = cache.last_hashes(&parent.hash());
     env_info.number = parent.number() + 1;
     env_info.gas_limit = U256::max_value();
     env_info.timestamp = parent.timestamp();
     env_info
 }
 
-pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed> {
-    let mut state = get_state()?;
+pub fn simulate_transaction(cache: &Cache, transaction: &SignedTransaction) -> Result<Executed> {
+    let mut state = cache.get_state()?;
     #[cfg(not(feature = "benchmark"))]
     let options = TransactOptions::with_no_tracing();
     #[cfg(feature = "benchmark")]
@@ -39,7 +39,7 @@ pub fn simulate_transaction(transaction: &SignedTransaction) -> Result<Executed>
     let mut storage = GlobalStorage::new();
     let exec = Executive::new(
         &mut state,
-        &get_env_info(),
+        &get_env_info(cache),
         SPEC.engine.machine(),
         &mut storage,
     ).transact_virtual(&transaction, options)?;

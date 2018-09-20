@@ -36,8 +36,7 @@ use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, 
                    Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 
-use state::{add_block, block_by_hash, block_by_number, block_hash, get_latest_block_number,
-            new_block};
+use state::Cache;
 use storage::GlobalStorage;
 
 enclave_init!();
@@ -66,36 +65,38 @@ fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 fn inject_accounts(accounts: &Vec<AccountState>, ctx: &ContractCallContext) -> Result<()> {
-    let mut block = new_block()?;
-    accounts.iter().try_for_each(|ref account| {
-        block.block_mut().state_mut().new_contract(
-            &account.address,
-            account.balance.clone(),
-            account.nonce.clone(),
-        );
-        if account.code.len() > 0 {
-            block
-                .block_mut()
-                .state_mut()
-                .init_code(&account.address, from_hex(&account.code)?)
-                .map_err(|_| {
-                    Error::new(format!(
-                        "Could not init code for address {:?}.",
-                        &account.address
-                    ))
-                })
-        } else {
-            Ok(())
-        }
-    })?;
+    Cache::for_current_state_root(|cache| {
+        let mut block = cache.new_block()?;
+        accounts.iter().try_for_each(|ref account| {
+            block.block_mut().state_mut().new_contract(
+                &account.address,
+                account.balance.clone(),
+                account.nonce.clone(),
+            );
+            if account.code.len() > 0 {
+                block
+                    .block_mut()
+                    .state_mut()
+                    .init_code(&account.address, from_hex(&account.code)?)
+                    .map_err(|_| {
+                        Error::new(format!(
+                            "Could not init code for address {:?}.",
+                            &account.address
+                        ))
+                    })
+            } else {
+                Ok(())
+            }
+        })?;
 
-    // commit state changes
-    block.block_mut().state_mut().commit()?;
+        // commit state changes
+        block.block_mut().state_mut().commit()?;
 
-    block.set_timestamp(ctx.header.timestamp);
+        block.set_timestamp(ctx.header.timestamp);
 
-    add_block(block.close_and_lock())?;
-    Ok(())
+        cache.add_block(block.close_and_lock())?;
+        Ok(())
+    })
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
@@ -110,22 +111,25 @@ pub fn inject_account_storage(
     storages: &Vec<(Address, H256, H256)>,
     ctx: &ContractCallContext,
 ) -> Result<()> {
-    let mut block = new_block()?;
-    storages.iter().try_for_each(|&(addr, key, value)| {
-        block
-            .block_mut()
-            .state_mut()
-            .set_storage(&addr, key.clone(), value.clone())
-            .map_err(|_| Error::new("Could not set storage."))
-    })?;
+    Cache::for_current_state_root(|cache| {
+        let mut block = cache.new_block()?;
+        storages.iter().try_for_each(|&(addr, key, value)| {
+            block
+                .block_mut()
+                .state_mut()
+                .set_storage(&addr, key.clone(), value.clone())
+                .map_err(|_| Error::new("Could not set storage."))
+        })?;
 
-    // commit state changes
-    block.block_mut().state_mut().commit()?;
+        // commit state changes
+        block.block_mut().state_mut().commit()?;
 
-    block.set_timestamp(ctx.header.timestamp);
+        block.set_timestamp(ctx.header.timestamp);
 
-    add_block(block.close_and_lock())?;
-    Ok(())
+        cache.add_block(block.close_and_lock())?;
+
+        Ok(())
+    })
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
@@ -140,68 +144,72 @@ fn inject_account_storage(
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 pub fn get_block_height(_request: &bool, _ctx: &ContractCallContext) -> Result<U256> {
-    Ok(get_latest_block_number().into())
+    Cache::for_current_state_root(|cache| Ok(cache.get_latest_block_number().into()))
 }
 
 fn get_block_hash(id: &BlockId, _ctx: &ContractCallContext) -> Result<Option<H256>> {
-    let hash = match *id {
-        BlockId::Hash(hash) => Some(hash),
-        BlockId::Number(number) => block_hash(number.into()),
-        BlockId::Earliest => block_hash(0),
-        BlockId::Latest => block_hash(get_latest_block_number()),
-    };
-    Ok(hash)
+    Cache::for_current_state_root(|cache| {
+        let hash = match *id {
+            BlockId::Hash(hash) => Some(hash),
+            BlockId::Number(number) => cache.block_hash(number.into()),
+            BlockId::Earliest => cache.block_hash(0),
+            BlockId::Latest => cache.block_hash(cache.get_latest_block_number()),
+        };
+        Ok(hash)
+    })
 }
 
 fn get_block(id: &BlockId, _ctx: &ContractCallContext) -> Result<Option<Vec<u8>>> {
-    debug!("get_block, id: {:?}", id);
+    Cache::for_current_state_root(|cache| {
+        debug!("get_block, id: {:?}", id);
 
-    let block = match *id {
-        BlockId::Hash(hash) => block_by_hash(hash),
-        BlockId::Number(number) => block_by_number(number.into()),
-        BlockId::Earliest => block_by_number(0),
-        BlockId::Latest => block_by_number(get_latest_block_number()),
-    };
+        let block = match *id {
+            BlockId::Hash(hash) => cache.block_by_hash(hash),
+            BlockId::Number(number) => cache.block_by_number(number.into()),
+            BlockId::Earliest => cache.block_by_number(0),
+            BlockId::Latest => cache.block_by_number(cache.get_latest_block_number()),
+        };
 
-    match block {
-        Some(block) => Ok(Some(block.into_inner())),
-        None => Ok(None),
-    }
+        match block {
+            Some(block) => Ok(Some(block.into_inner())),
+            None => Ok(None),
+        }
+    })
 }
 
 fn get_logs(filter: &Filter, _ctx: &ContractCallContext) -> Result<Vec<Log>> {
     debug!("get_logs, filter: {:?}", filter);
-    Ok(state::get_logs(filter))
+    Cache::for_current_state_root(|cache| Ok(cache.get_logs(filter)))
 }
 
 pub fn get_transaction(hash: &H256, _ctx: &ContractCallContext) -> Result<Option<Transaction>> {
     debug!("get_transaction, hash: {:?}", hash);
-    Ok(state::get_transaction(hash))
+    Cache::for_current_state_root(|cache| Ok(cache.get_transaction(hash)))
 }
 
 pub fn get_receipt(hash: &H256, _ctx: &ContractCallContext) -> Result<Option<Receipt>> {
     debug!("get_receipt, hash: {:?}", hash);
-    Ok(state::get_receipt(hash))
+    Cache::for_current_state_root(|cache| Ok(cache.get_receipt(hash)))
 }
 
 pub fn get_account_balance(address: &Address, _ctx: &ContractCallContext) -> Result<U256> {
     debug!("get_account_balance, address: {:?}", address);
-    state::get_account_balance(address)
+    Cache::for_current_state_root(|cache| cache.get_account_balance(address))
 }
 
 pub fn get_account_nonce(address: &Address, _ctx: &ContractCallContext) -> Result<U256> {
     debug!("get_account_nonce, address: {:?}", address);
-    state::get_account_nonce(address)
+    Cache::for_current_state_root(|cache| cache.get_account_nonce(address))
 }
 
 pub fn get_account_code(address: &Address, _ctx: &ContractCallContext) -> Result<Option<Vec<u8>>> {
     debug!("get_account_code, address: {:?}", address);
-    state::get_account_code(address)
+    Cache::for_current_state_root(|cache| cache.get_account_code(address))
 }
 
 pub fn get_storage_at(pair: &(Address, H256), _ctx: &ContractCallContext) -> Result<H256> {
     debug!("get_storage_at, address: {:?}", pair);
-    state::get_account_storage(pair.0, pair.1)
+    Cache::for_current_state_root(|cache| cache.get_account_storage(pair.0, pair.1))
 }
 
 pub fn execute_raw_transaction(
@@ -228,24 +236,29 @@ pub fn execute_raw_transaction(
             })
         }
     };
-    let result = transact(signed, ctx.header.timestamp).map_err(|e| e.to_string());
+    let result = Cache::for_current_state_root(|cache| {
+        transact(cache, signed, ctx.header.timestamp).map_err(|e| e.to_string())
+    });
     Ok(ExecuteTransactionResponse {
         created_contract: if result.is_err() { false } else { is_create },
         hash: result,
     })
 }
 
-fn transact(transaction: SignedTransaction, timestamp: u64) -> Result<H256> {
-    let mut block = new_block()?;
+fn transact(cache: &Cache, transaction: SignedTransaction, timestamp: u64) -> Result<H256> {
+    let mut block = cache.new_block()?;
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     block.push_transaction(transaction, None, &mut storage)?;
     block.set_timestamp(timestamp);
-    add_block(block.close_and_lock())?;
+    cache.add_block(block.close_and_lock())?;
     Ok(tx_hash)
 }
 
-fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTransaction> {
+fn make_unsigned_transaction(
+    cache: &Cache,
+    request: &TransactionRequest,
+) -> Result<SignedTransaction> {
     let tx = EthcoreTransaction {
         action: if request.is_call {
             Action::Call(request
@@ -261,7 +274,7 @@ fn make_unsigned_transaction(request: &TransactionRequest) -> Result<SignedTrans
         nonce: request.nonce.unwrap_or_else(|| {
             request
                 .caller
-                .map(|addr| state::get_account_nonce(&addr).unwrap_or(U256::zero()))
+                .map(|addr| cache.get_account_nonce(&addr).unwrap_or(U256::zero()))
                 .unwrap_or(U256::zero())
         }),
     };
@@ -276,30 +289,33 @@ pub fn simulate_transaction(
     _ctx: &ContractCallContext,
 ) -> Result<SimulateTransactionResponse> {
     debug!("simulate_transaction");
-    let tx = match make_unsigned_transaction(request) {
-        Ok(t) => t,
-        Err(e) => {
-            return Ok(SimulateTransactionResponse {
-                used_gas: U256::from(0),
-                refunded_gas: U256::from(0),
-                result: Err(e.to_string()),
-            })
-        }
-    };
-    let exec = match evm::simulate_transaction(&tx) {
-        Ok(exec) => exec,
-        Err(e) => {
-            return Ok(SimulateTransactionResponse {
-                used_gas: U256::from(0),
-                refunded_gas: U256::from(0),
-                result: Err(e.to_string()),
-            })
-        }
-    };
-    Ok(SimulateTransactionResponse {
-        used_gas: exec.gas_used,
-        refunded_gas: exec.refunded,
-        result: Ok(exec.output),
+    Cache::for_current_state_root(|cache| {
+        let tx = match make_unsigned_transaction(cache, request) {
+            Ok(t) => t,
+            Err(e) => {
+                return Ok(SimulateTransactionResponse {
+                    used_gas: U256::from(0),
+                    refunded_gas: U256::from(0),
+                    result: Err(e.to_string()),
+                })
+            }
+        };
+        let exec = match evm::simulate_transaction(cache, &tx) {
+            Ok(exec) => exec,
+            Err(e) => {
+                return Ok(SimulateTransactionResponse {
+                    used_gas: U256::from(0),
+                    refunded_gas: U256::from(0),
+                    result: Err(e.to_string()),
+                })
+            }
+        };
+
+        Ok(SimulateTransactionResponse {
+            used_gas: exec.gas_used,
+            refunded_gas: exec.refunded,
+            result: Ok(exec.output),
+        })
     })
 }
 
@@ -435,10 +451,19 @@ mod tests {
             client.call(&contract, data, &U256::zero())
         };
 
-        assert_eq!(
-            blockhash(get_latest_block_number()),
-            block_hash(get_latest_block_number()).unwrap().to_vec()
-        );
+        let block_number = Cache::for_current_state_root(|cache| cache.get_latest_block_number());
+        // This must be called outside the Cache accessor as it also acquires the Cache lock.
+        let client_blockhash = blockhash(block_number);
+
+        Cache::for_current_state_root(|cache| {
+            assert_eq!(
+                client_blockhash,
+                cache
+                    .block_hash(cache.get_latest_block_number())
+                    .unwrap()
+                    .to_vec()
+            );
+        });
     }
 
     #[test]
@@ -575,7 +600,7 @@ mod tests {
 
     #[test]
     fn test_last_hashes() {
-        use state::{best_block_header, block_hash, last_hashes};
+        use state::Cache;
 
         let mut client = CLIENT.lock().unwrap();
 
@@ -584,13 +609,17 @@ mod tests {
             client.create_contract(vec![], &U256::zero());
         }
 
-        // get last_hashes from latest block
-        let last_hashes = last_hashes(&best_block_header().hash());
+        Cache::for_current_state_root(|cache| {
+            // get last_hashes from latest block
+            let last_hashes = cache.last_hashes(&cache.best_block_header().hash());
 
-        assert_eq!(last_hashes.len(), 256);
-        assert_eq!(
-            last_hashes[1],
-            block_hash(get_latest_block_number() - 1).unwrap()
-        );
+            assert_eq!(last_hashes.len(), 256);
+            assert_eq!(
+                last_hashes[1],
+                cache
+                    .block_hash(cache.get_latest_block_number() - 1)
+                    .unwrap()
+            );
+        });
     }
 }
