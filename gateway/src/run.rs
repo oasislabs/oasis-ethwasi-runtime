@@ -40,6 +40,7 @@ pub fn execute(
     snapshot_manager: Option<client_utils::db::Manager>,
     storage: Arc<StorageBackend>,
     environment: Arc<Environment>,
+    pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -51,7 +52,7 @@ pub fn execute(
         storage.clone(),
     ));
 
-    let notifier = PubSubNotifier::new(client.clone(), environment.clone());
+    let notifier = PubSubNotifier::new(client.clone(), environment.clone(), pubsub_interval_secs);
 
     let rpc_stats = Arc::new(informant::RpcStats::default());
 

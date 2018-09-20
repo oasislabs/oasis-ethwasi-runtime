@@ -13,22 +13,22 @@ use client::Client;
 pub struct PubSubNotifier {
     client: Arc<Client>,
     environment: Arc<Environment>,
+    interval_secs: u64,
 }
 
 impl PubSubNotifier {
-    pub fn new(client: Arc<Client>, environment: Arc<Environment>) -> Self {
+    pub fn new(client: Arc<Client>, environment: Arc<Environment>, interval_secs: u64) -> Self {
         let instance = Self {
             client: client.clone(),
             environment: environment.clone(),
+            interval_secs,
         };
         instance.start();
         instance
     }
 
     fn start(&self) {
-        const INTERVAL_SECS: u64 = 5;
-
-        let interval = Interval::new_interval(Duration::new(INTERVAL_SECS, 0));
+        let interval = Interval::new_interval(Duration::new(self.interval_secs, 0));
 
         self.environment.spawn({
             let client = self.client.clone();

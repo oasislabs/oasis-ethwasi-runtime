@@ -126,6 +126,7 @@ with_api! {
 pub fn start(
     args: ArgMatches,
     mut container: Container,
+    pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -149,6 +150,7 @@ pub fn start(
             Some(snapshot_manager),
             storage,
             environment,
+            pubsub_interval_secs,
             http_port,
             num_threads,
             ws_port,
