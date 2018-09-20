@@ -113,6 +113,7 @@ impl Client {
     }
 
     /// Notify listeners of new blocks.
+    #[cfg(feature = "pubsub")]
     pub fn new_blocks(&self) {
         const MAX_HEADERS: u64 = 256;
 
@@ -160,6 +161,7 @@ impl Client {
     }
 
     /// Returns the BlockId corresponding to the larger block number.
+    #[cfg(feature = "pubsub")]
     pub fn max_block_number(&self, id_a: BlockId, id_b: BlockId) -> BlockId {
         // first check if either is Latest
         if id_a == BlockId::Latest || id_b == BlockId::Latest {
@@ -193,6 +195,7 @@ impl Client {
     }
 
     /// Returns the BlockId corresponding to the smaller block number.
+    #[cfg(feature = "pubsub")]
     pub fn min_block_number(&self, id_a: BlockId, id_b: BlockId) -> BlockId {
         // first check if either is Earliest
         if id_a == BlockId::Earliest || id_b == BlockId::Earliest {
@@ -847,7 +850,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "read_state")]
+    #[cfg(feature = "pubsub")]
     fn test_headers_since() {
         let mut db = MockDb::new();
         // populate the db with test data
@@ -866,7 +869,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "read_state")]
+    #[cfg(feature = "pubsub")]
     fn test_max_block_number() {
         let client = Client::get_test_client();
 
@@ -884,7 +887,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "read_state")]
+    #[cfg(feature = "pubsub")]
     fn test_min_block_number() {
         let client = Client::get_test_client();
 
@@ -902,7 +905,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "read_state")]
+    #[cfg(feature = "pubsub")]
     fn test_pubsub_notify() {
         let client = Client::get_test_client();
 

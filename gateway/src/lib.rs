@@ -94,6 +94,7 @@ extern crate ethereum_api;
 
 mod client;
 mod impls;
+#[cfg(feature = "pubsub")]
 mod notifier;
 mod rpc;
 mod rpc_apis;
@@ -158,5 +159,14 @@ pub fn start(
     }
 
     #[cfg(not(feature = "read_state"))]
-    run::execute(client, None, storage, http_port, num_threads, ws_port)
+    run::execute(
+        client,
+        None,
+        storage,
+        environment,
+        pubsub_interval_secs,
+        http_port,
+        num_threads,
+        ws_port,
+    )
 }

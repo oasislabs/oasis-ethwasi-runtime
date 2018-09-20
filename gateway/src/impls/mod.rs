@@ -21,6 +21,7 @@
 
 pub mod eth;
 pub mod eth_filter;
+#[cfg(feature = "pubsub")]
 pub mod eth_pubsub;
 pub mod net;
 pub mod oasis;
@@ -29,6 +30,7 @@ pub mod web3;
 
 pub use self::eth::EthClient;
 pub use self::eth_filter::EthFilterClient;
+#[cfg(feature = "pubsub")]
 pub use self::eth_pubsub::EthPubSubClient;
 pub use self::net::NetClient;
 pub use self::oasis::OasisClient;

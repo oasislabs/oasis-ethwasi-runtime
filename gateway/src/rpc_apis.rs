@@ -27,8 +27,9 @@ use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
-use impls::{EthClient, EthFilterClient, EthPubSubClient, NetClient, OasisClient, TracesClient,
-            Web3Client};
+#[cfg(feature = "pubsub")]
+use impls::EthPubSubClient;
+use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -185,9 +186,13 @@ impl FullDependencies {
                 }
                 Api::EthPubSub => {
                     if !for_generic_pubsub {
-                        let client = EthPubSubClient::new(self.client.clone(), self.remote.clone());
-                        self.client.add_listener(client.handler() as Weak<_>);
-                        handler.extend_with(client.to_delegate());
+                        #[cfg(feature = "pubsub")]
+                        {
+                            let client =
+                                EthPubSubClient::new(self.client.clone(), self.remote.clone());
+                            self.client.add_listener(client.handler() as Weak<_>);
+                            handler.extend_with(client.to_delegate());
+                        }
                     }
                 }
                 Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
