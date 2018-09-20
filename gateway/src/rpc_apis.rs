@@ -72,10 +72,6 @@ pub enum ApiSet {
     UnsafeContext,
     // All possible APIs
     All,
-    // Local "unsafe" context and accounts access
-    IpcContext,
-    // APIs for Parity Generic Pub-Sub
-    PubSub,
     // Fixed list of APis
     List(HashSet<Api>),
 }
@@ -234,10 +230,6 @@ impl ApiSet {
                 public_list.insert(Api::Traces);
                 public_list
             }
-            ApiSet::IpcContext => {
-                public_list.insert(Api::Traces);
-                public_list
-            }
             ApiSet::SafeContext => {
                 public_list.insert(Api::Traces);
                 public_list
@@ -246,7 +238,6 @@ impl ApiSet {
                 public_list.insert(Api::Traces);
                 public_list
             }
-            ApiSet::PubSub => [Api::Eth, Api::Traces].into_iter().cloned().collect(),
         }
     }
 }
@@ -292,21 +283,6 @@ mod test {
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::UnsafeContext.list_apis(), expected);
-    }
-
-    #[test]
-    fn test_api_set_ipc_context() {
-        let expected = vec![
-            // safe
-            Api::Web3,
-            Api::Net,
-            Api::Eth,
-            Api::EthPubSub,
-            Api::Traces,
-            Api::Oasis,
-        ].into_iter()
-            .collect();
-        assert_eq!(ApiSet::IpcContext.list_apis(), expected);
     }
 
     #[test]

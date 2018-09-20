@@ -16,27 +16,24 @@
 
 //! Eth PUB-SUB rpc implementation.
 
-use std::collections::BTreeMap;
 use std::sync::{Arc, Weak};
 
-use jsonrpc_core::futures::{self, Future, IntoFuture};
-use jsonrpc_core::{BoxFuture, Error, Result};
+use jsonrpc_core::futures::Future;
+use jsonrpc_core::Result;
 use jsonrpc_macros::pubsub::{Sink, Subscriber};
 use jsonrpc_macros::Trailing;
 use jsonrpc_pubsub::SubscriptionId;
 
-use parity_rpc::v1::helpers::{errors, limit_logs, Subscribers};
+use parity_rpc::v1::helpers::{errors, Subscribers};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::EthPubSub;
 use parity_rpc::v1::types::{pubsub, Log, RichHeader};
 
-use bytes::Bytes;
 use ethcore::client::BlockId;
 use ethcore::encoded;
 use ethcore::filter::Filter as EthFilter;
-use ethereum_types::H256;
 use parity_reactor::Remote;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::RwLock;
 
 use client::{ChainNotify, Client};
 

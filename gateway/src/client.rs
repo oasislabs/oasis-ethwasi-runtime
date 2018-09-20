@@ -118,6 +118,8 @@ impl Client {
 
         let mut last_block = self.notified_block_number.lock().unwrap();
 
+        measure_histogram_timer!("pubsub_notify_time");
+
         if let Some(db) = self.get_db_snapshot() {
             let current_block = db.best_block_number();
             if current_block > *last_block {

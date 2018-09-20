@@ -36,13 +36,13 @@ impl MockNotificationHandler {
     }
 
     pub fn get_headers(&self) -> Vec<encoded::Header> {
-        let guard = self.headers.lock().unwrap();
-        guard.clone()
+        let headers = self.headers.lock().unwrap();
+        headers.clone()
     }
 
     pub fn get_log_filters(&self) -> Vec<(BlockId, BlockId)> {
-        let guard = self.log_filters.lock().unwrap();
-        guard.clone()
+        let filters = self.log_filters.lock().unwrap();
+        filters.clone()
     }
 }
 
@@ -52,15 +52,15 @@ impl ChainNotify for MockNotificationHandler {
     }
 
     fn notify_heads(&self, headers: &[encoded::Header]) {
-        let mut guard = self.headers.lock().unwrap();
+        let mut existing = self.headers.lock().unwrap();
         for &ref header in headers {
-            guard.push(header.clone());
+            existing.push(header.clone());
         }
     }
 
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
-        let mut guard = self.log_filters.lock().unwrap();
-        guard.push((from_block, to_block));
+        let mut filters = self.log_filters.lock().unwrap();
+        filters.push((from_block, to_block));
     }
 }
 
