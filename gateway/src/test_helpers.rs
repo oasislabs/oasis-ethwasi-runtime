@@ -24,25 +24,25 @@ fn from_hex<S: AsRef<str>>(hex: S) -> Vec<u8> {
 
 pub struct MockNotificationHandler {
     headers: Mutex<Vec<encoded::Header>>,
-    log_filters: Mutex<Vec<(BlockId, BlockId)>>,
+    log_notifications: Mutex<Vec<(BlockId, BlockId)>>,
 }
 
 impl MockNotificationHandler {
     pub fn new() -> Self {
         Self {
             headers: Mutex::new(vec![]),
-            log_filters: Mutex::new(vec![]),
+            log_notifications: Mutex::new(vec![]),
         }
     }
 
-    pub fn get_headers(&self) -> Vec<encoded::Header> {
+    pub fn get_notified_headers(&self) -> Vec<encoded::Header> {
         let headers = self.headers.lock().unwrap();
         headers.clone()
     }
 
-    pub fn get_log_filters(&self) -> Vec<(BlockId, BlockId)> {
-        let filters = self.log_filters.lock().unwrap();
-        filters.clone()
+    pub fn get_log_notifications(&self) -> Vec<(BlockId, BlockId)> {
+        let notifications = self.log_notifications.lock().unwrap();
+        notifications.clone()
     }
 }
 
@@ -59,8 +59,8 @@ impl ChainNotify for MockNotificationHandler {
     }
 
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
-        let mut filters = self.log_filters.lock().unwrap();
-        filters.push((from_block, to_block));
+        let mut notifications = self.log_notifications.lock().unwrap();
+        notifications.push((from_block, to_block));
     }
 }
 
