@@ -186,18 +186,16 @@ impl Client {
             return id_a;
         }
 
-        // at this point, we need block numbers
-        let to_block_number = |id| match id {
-            BlockId::Latest => unreachable!(),
-            BlockId::Earliest => unreachable!(),
-            BlockId::Number(num) => num,
-            BlockId::Hash(hash) => match self.block_number(hash) {
-                Some(num) => num,
-                None => 0,
-            },
+        // compare block numbers
+        let num_a = match self.id_to_block_number(id_a) {
+            Some(num) => num,
+            None => return id_b,
         };
-
-        if to_block_number(id_a) > to_block_number(id_b) {
+        let num_b = match self.id_to_block_number(id_b) {
+            Some(num) => num,
+            None => return id_a,
+        };
+        if num_a > num_b {
             id_a
         } else {
             id_b
@@ -220,18 +218,16 @@ impl Client {
             return id_a;
         }
 
-        // at this point, we need block numbers
-        let to_block_number = |id| match id {
-            BlockId::Latest => unreachable!(),
-            BlockId::Earliest => unreachable!(),
-            BlockId::Number(num) => num,
-            BlockId::Hash(hash) => match self.block_number(hash) {
-                Some(num) => num,
-                None => 0,
-            },
+        // compare block numbers
+        let num_a = match self.id_to_block_number(id_a) {
+            Some(num) => num,
+            None => return id_b,
         };
-
-        if to_block_number(id_a) < to_block_number(id_b) {
+        let num_b = match self.id_to_block_number(id_b) {
+            Some(num) => num,
+            None => return id_a,
+        };
+        if num_a < num_b {
             id_a
         } else {
             id_b
@@ -332,11 +328,15 @@ impl Client {
     }
 
     #[cfg(feature = "read_state")]
-    fn block_number(&self, hash: H256) -> Option<BlockNumber> {
-        if let Some(db) = self.get_db_snapshot() {
-            db.block_number(&hash)
-        } else {
-            None
+    fn id_to_block_number(&self, id: BlockId) -> Option<BlockNumber> {
+        match id {
+            BlockId::Latest => Some(self.best_block_number()),
+            BlockId::Earliest => Some(0),
+            BlockId::Number(num) => Some(num),
+            BlockId::Hash(hash) => match self.get_db_snapshot() {
+                Some(db) => db.block_number(&hash),
+                None => None,
+            },
         }
     }
 
