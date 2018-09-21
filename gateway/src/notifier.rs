@@ -1,5 +1,6 @@
 //! Periodically calls the Client pub/sub notifier routine.
 
+use std::process::abort;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -36,7 +37,10 @@ impl PubSubNotifier {
                     client.new_blocks();
                     Ok(())
                 })
-                .map_err(|e| error!("Notifier error: {}", e))
+                .map_err(|e| {
+                    error!("Pub/sub notifier error: {}", e);
+                    abort();
+                })
                 .into_box()
         });
     }
