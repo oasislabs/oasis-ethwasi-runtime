@@ -188,10 +188,10 @@ impl FullDependencies {
                     if !for_generic_pubsub {
                         #[cfg(feature = "pubsub")]
                         {
-                            let client =
+                            let pubsub_client =
                                 EthPubSubClient::new(self.client.clone(), self.remote.clone());
-                            self.client.add_listener(client.handler() as Weak<_>);
-                            handler.extend_with(client.to_delegate());
+                            self.client.add_listener(pubsub_client.handler());
+                            handler.extend_with(pubsub_client.to_delegate());
                         }
                     }
                 }

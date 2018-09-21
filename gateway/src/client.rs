@@ -891,7 +891,7 @@ mod tests {
         assert_eq!(client.max_block_number(id_latest, id_2), id_latest);
 
         let id_3 = BlockId::Hash(H256::from(
-            "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
+            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
         ));
         assert_eq!(client.max_block_number(id_3, id_2), id_3);
     }
@@ -909,7 +909,7 @@ mod tests {
         assert_eq!(client.min_block_number(id_earliest, id_2), id_earliest);
 
         let id_3 = BlockId::Hash(H256::from(
-            "339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199",
+            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
         ));
         assert_eq!(client.min_block_number(id_3, id_2), id_2);
     }
