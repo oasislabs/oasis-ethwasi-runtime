@@ -84,14 +84,24 @@ impl Client {
         backend: Arc<StorageBackend>,
     ) -> Self {
         let storage = Web3GlobalStorage::new(backend);
+
+        // get current block number
+        let current_block_number = match snapshot_manager {
+            Some(ref manager) => match state::StateDb::new(manager.get_snapshot()) {
+                Some(db) => db.best_block_number(),
+                None => 0,
+            },
+            None => 0,
+        };
+
         Self {
             client: client,
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
             storage: Arc::new(RwLock::new(storage)),
-            // TODO: initialize to current block number
-            notified_block_number: Mutex::new(0),
+            // start at current block
+            notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
         }
     }
