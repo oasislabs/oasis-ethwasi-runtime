@@ -262,7 +262,7 @@ where
 // to the actual key. Columns None and 0 should be distinct, so we use prefix 0
 // for None and col+1 for Some(col).
 pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| (id + 1).to_le().to_bytes())
+    let col_bytes = col.map(|id| (id + 1).to_le_bytes())
         .unwrap_or([0, 0, 0, 0]);
     col_bytes
         .into_iter()

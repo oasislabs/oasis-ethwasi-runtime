@@ -1,5 +1,4 @@
-#![feature(iterator_try_fold)]
-#![feature(use_extern_macros)]
+#![feature(int_to_from_bytes)]
 
 extern crate common_types as ethcore_types;
 extern crate ekiden_common;
