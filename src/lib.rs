@@ -1,6 +1,3 @@
-#![feature(iterator_try_fold)]
-#![feature(use_extern_macros)]
-
 extern crate common_types as ethcore_types;
 extern crate ekiden_common;
 extern crate ekiden_core;
