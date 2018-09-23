@@ -1,6 +1,7 @@
 //! Read-only interface to blockchain and account state, backed by an Ekiden Database.
 
 use std::marker::{Send, Sync};
+use std::mem;
 use std::sync::Arc;
 
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
@@ -257,12 +258,16 @@ where
     }
 }
 
+pub fn to_bytes(num: u32) -> [u8; mem::size_of::<u32>()] {
+    unsafe { mem::transmute(num) }
+}
+
 // Parity expects the database to namespace keys by column. The Ekiden db
 // doesn't [yet?] have this feature, so we emulate by prepending the column id
 // to the actual key. Columns None and 0 should be distinct, so we use prefix 0
 // for None and col+1 for Some(col).
 pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| (id + 1).to_le().to_bytes())
+    let col_bytes = col.map(|id| to_bytes((id + 1).to_le()))
         .unwrap_or([0, 0, 0, 0]);
     col_bytes
         .into_iter()
