@@ -16,7 +16,7 @@
 
 //! Ethcore client application.
 
-#![feature(use_extern_macros)]
+#![feature(int_to_from_bytes)]
 
 #[macro_use]
 extern crate clap;
