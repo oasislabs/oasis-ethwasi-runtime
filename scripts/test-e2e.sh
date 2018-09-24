@@ -25,7 +25,7 @@ run_dummy_node_go_tm() {
         --log.level debug \
         --grpc.port 42261 \
         --epochtime.backend tendermint \
-        --epochtime.tendermint.interval 90 \
+        --epochtime.tendermint.interval 60 \
         --beacon.backend tendermint \
         --storage.backend memory \
         --scheduler.backend trivial \
@@ -101,16 +101,23 @@ run_test() {
     sleep 1
     run_compute_node 2
 
-    # Run truffle tests
+    # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
-    truffle test --network development
-    truffle test --network development2
+    truffle test --network development > ${WORKDIR}/truffle.txt & truffle_pid=$!
     popd > /dev/null
 
-    # Run WebSocket test
-    echo "Running WebSocket test."
-    RESULT=`wscat --connect localhost:8555 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_getBlockByNumber\", \"params\": [\"latest\", true]}" | jq -e .result.number` || exit 1
+    # Subscribe to logs from gateway 2, and check that we get a log result
+    echo "Subscribing to log notifications."
+    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+
+    # Check truffle test exit code
+    wait $truffle_pid
+    truffle_ret=$?
+    if [ $truffle_ret -ne 0 ]; then
+        echo "truffle test failed"
+	exit $truffle_ret
+    fi
 
     # Dump the metrics.
     curl -v http://localhost:3001/metrics
