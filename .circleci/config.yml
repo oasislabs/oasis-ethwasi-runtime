@@ -12,6 +12,8 @@ jobs:
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
       - checkout
 
+      # Check style.
+      - run: cargo fmt -- --write-mode=check
       # Install Ekiden binaries.
       - run:
           environment:
@@ -79,8 +81,6 @@ jobs:
             CARGO_TARGET_DIR: ../target
           working_directory: playback
           command: cargo build
-      # Check style. This needs to be after everything is built.
-      - run: cargo fmt -- --write-mode=check
 
       # End-to-end tests.
       - attach_workspace:
