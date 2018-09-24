@@ -16,6 +16,7 @@
 
 //! Ethcore client application.
 
+#![feature(extern_prelude)]
 #![feature(int_to_from_bytes)]
 
 #[macro_use]
@@ -77,12 +78,24 @@ extern crate ekiden_db_trusted;
 extern crate ekiden_di;
 #[macro_use]
 extern crate ekiden_instrumentation;
+#[cfg(test)]
+extern crate ekiden_registry_client;
+#[cfg(test)]
+extern crate ekiden_roothash_client;
 extern crate ekiden_rpc_client;
+#[cfg(test)]
+extern crate ekiden_scheduler_client;
 extern crate ekiden_storage_base;
+#[cfg(test)]
+extern crate ekiden_storage_dummy;
+#[cfg(test)]
+extern crate ekiden_storage_frontend;
 extern crate ethereum_api;
 
 mod client;
 mod impls;
+#[cfg(feature = "pubsub")]
+mod notifier;
 mod rpc;
 mod rpc_apis;
 mod run;
@@ -100,6 +113,7 @@ use std::sync::Arc;
 use clap::ArgMatches;
 
 use ekiden_contract_client::create_contract_client;
+use ekiden_core::environment::Environment;
 use ekiden_di::Container;
 use ekiden_storage_base::StorageBackend;
 use ethereum_api::with_api;
@@ -113,12 +127,16 @@ with_api! {
 pub fn start(
     args: ArgMatches,
     mut container: Container,
+    pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
     let storage: Arc<StorageBackend> = container
+        .inject()
+        .map_err(|err| err.description().to_string())?;
+    let environment: Arc<Environment> = container
         .inject()
         .map_err(|err| err.description().to_string())?;
 
@@ -132,6 +150,8 @@ pub fn start(
             client,
             Some(snapshot_manager),
             storage,
+            environment,
+            pubsub_interval_secs,
             http_port,
             num_threads,
             ws_port,
@@ -139,5 +159,14 @@ pub fn start(
     }
 
     #[cfg(not(feature = "read_state"))]
-    run::execute(client, None, storage, http_port, num_threads, ws_port)
+    run::execute(
+        client,
+        None,
+        storage,
+        environment,
+        pubsub_interval_secs,
+        http_port,
+        num_threads,
+        ws_port,
+    )
 }

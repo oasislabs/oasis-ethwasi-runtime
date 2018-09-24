@@ -17,7 +17,7 @@
 use std::cmp::PartialEq;
 use std::collections::HashSet;
 use std::str::FromStr;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use client::Client;
 use ekiden_storage_base::StorageBackend;
@@ -27,6 +27,8 @@ use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
+#[cfg(feature = "pubsub")]
+use impls::EthPubSubClient;
 use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
@@ -71,10 +73,6 @@ pub enum ApiSet {
     UnsafeContext,
     // All possible APIs
     All,
-    // Local "unsafe" context and accounts access
-    IpcContext,
-    // APIs for Parity Generic Pub-Sub
-    PubSub,
     // Fixed list of APis
     List(HashSet<Api>),
 }
@@ -166,7 +164,7 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthFilter, Net, Traces, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, EthPubSub, Net, Traces, Web3};
         use traits::Oasis;
 
         for api in apis {
@@ -187,7 +185,15 @@ impl FullDependencies {
                     }
                 }
                 Api::EthPubSub => {
-                    // TODO: pub/sub
+                    if !for_generic_pubsub {
+                        #[cfg(feature = "pubsub")]
+                        {
+                            let pubsub_client =
+                                EthPubSubClient::new(self.client.clone(), self.remote.clone());
+                            self.client.add_listener(pubsub_client.handler());
+                            handler.extend_with(pubsub_client.to_delegate());
+                        }
+                    }
                 }
                 Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
                 Api::Oasis => {
@@ -229,10 +235,6 @@ impl ApiSet {
                 public_list.insert(Api::Traces);
                 public_list
             }
-            ApiSet::IpcContext => {
-                public_list.insert(Api::Traces);
-                public_list
-            }
             ApiSet::SafeContext => {
                 public_list.insert(Api::Traces);
                 public_list
@@ -241,7 +243,6 @@ impl ApiSet {
                 public_list.insert(Api::Traces);
                 public_list
             }
-            ApiSet::PubSub => [Api::Eth, Api::Traces].into_iter().cloned().collect(),
         }
     }
 }
@@ -287,21 +288,6 @@ mod test {
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::UnsafeContext.list_apis(), expected);
-    }
-
-    #[test]
-    fn test_api_set_ipc_context() {
-        let expected = vec![
-            // safe
-            Api::Web3,
-            Api::Net,
-            Api::Eth,
-            Api::EthPubSub,
-            Api::Traces,
-            Api::Oasis,
-        ].into_iter()
-            .collect();
-        assert_eq!(ApiSet::IpcContext.list_apis(), expected);
     }
 
     #[test]

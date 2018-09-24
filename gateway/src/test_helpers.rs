@@ -1,13 +1,145 @@
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
+use clap::{App, Arg};
 use ekiden_common::bytes::H256;
+use ekiden_core;
 use ekiden_db_trusted::{Database, DatabaseHandle};
+use ekiden_di::{Component, KnownComponents};
+use ekiden_registry_client;
+use ekiden_roothash_client;
+use ekiden_scheduler_client;
+use ekiden_storage_frontend;
+use ethcore::client::BlockId;
+use ethcore::encoded;
 use hex;
 
+use client::ChainNotify;
+use runtime_ethereum;
 use state::get_key;
 
 fn from_hex<S: AsRef<str>>(hex: S) -> Vec<u8> {
     hex::decode(hex.as_ref()).unwrap()
+}
+
+pub struct MockNotificationHandler {
+    headers: Mutex<Vec<encoded::Header>>,
+    log_notifications: Mutex<Vec<(BlockId, BlockId)>>,
+}
+
+impl MockNotificationHandler {
+    pub fn new() -> Self {
+        Self {
+            headers: Mutex::new(vec![]),
+            log_notifications: Mutex::new(vec![]),
+        }
+    }
+
+    pub fn get_notified_headers(&self) -> Vec<encoded::Header> {
+        let headers = self.headers.lock().unwrap();
+        headers.clone()
+    }
+
+    pub fn get_log_notifications(&self) -> Vec<(BlockId, BlockId)> {
+        let notifications = self.log_notifications.lock().unwrap();
+        notifications.clone()
+    }
+}
+
+impl ChainNotify for MockNotificationHandler {
+    fn has_heads_subscribers(&self) -> bool {
+        true
+    }
+
+    fn notify_heads(&self, headers: &[encoded::Header]) {
+        let mut existing = self.headers.lock().unwrap();
+        for &ref header in headers {
+            existing.push(header.clone());
+        }
+    }
+
+    fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
+        let mut notifications = self.log_notifications.lock().unwrap();
+        notifications.push((from_block, to_block));
+    }
+}
+
+pub fn get_test_runtime_client() -> runtime_ethereum::Client {
+    let mut known_components = KnownComponents::new();
+    ekiden_core::environment::GrpcEnvironment::register(&mut known_components);
+    ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
+    ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
+    ekiden_roothash_client::RootHashClient::register(&mut known_components);
+    ekiden_storage_frontend::StorageClient::register(&mut known_components);
+
+    let args = App::new("testing")
+        .arg(
+            Arg::with_name("entity-registry-client-host")
+                .long("entity-registry-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("entity-registry-client-port")
+                .long("entity-registry-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .arg(
+            Arg::with_name("grpc-threads")
+                .long("grpc-threads")
+                .takes_value(true)
+                .default_value("4"),
+        )
+        .arg(
+            Arg::with_name("mr-enclave")
+                .long("mr-enclave")
+                .takes_value(true)
+                .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
+        )
+        .arg(
+            Arg::with_name("roothash-client-host")
+                .long("roothash-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("roothash-client-port")
+                .long("roothash-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .arg(
+            Arg::with_name("scheduler-client-host")
+                .long("scheduler-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("scheduler-client-port")
+                .long("scheduler-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .arg(
+            Arg::with_name("storage-client-host")
+                .long("storage-client-host")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("storage-client-port")
+                .long("storage-client-port")
+                .takes_value(true)
+                .default_value("42261"),
+        )
+        .get_matches();
+
+    let mut container = known_components
+        .build_with_arguments(&args)
+        .expect("failed to initialize component container");
+
+    contract_client!(runtime_ethereum, args, container)
 }
 
 pub struct MockDb {

@@ -22,6 +22,7 @@ use std::time::{Duration, Instant};
 use client::Client;
 
 use client_utils;
+use ekiden_core::environment::Environment;
 use ekiden_storage_base::StorageBackend;
 use futures_cpupool::CpuPool;
 use jsonrpc_core;
@@ -30,6 +31,8 @@ use parity_rpc::{informant, Metadata, Origin};
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 
+#[cfg(feature = "pubsub")]
+use notifier::PubSubNotifier;
 use runtime_ethereum;
 use util;
 
@@ -37,6 +40,8 @@ pub fn execute(
     ekiden_client: runtime_ethereum::Client,
     snapshot_manager: Option<client_utils::db::Manager>,
     storage: Arc<StorageBackend>,
+    environment: Arc<Environment>,
+    pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -47,6 +52,10 @@ pub fn execute(
         ekiden_client,
         storage.clone(),
     ));
+
+    #[cfg(feature = "pubsub")]
+    let notifier = PubSubNotifier::new(client.clone(), environment.clone(), pubsub_interval_secs);
+
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
     // spin up event loop
@@ -90,13 +99,19 @@ pub fn execute(
     let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
     let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)?;
 
-    Ok(RunningClient {
+    #[cfg(feature = "pubsub")]
+    let keep_alive_set = (event_loop, http_server, notifier, ws_server);
+    #[cfg(not(feature = "pubsub"))]
+    let keep_alive_set = (event_loop, http_server, ws_server);
+
+    let running_client = RunningClient {
         inner: RunningClientInner::Full {
             rpc: rpc_direct,
             client,
-            keep_alive: Box::new((event_loop, http_server, ws_server)),
+            keep_alive: Box::new(keep_alive_set),
         },
-    })
+    };
+    Ok(running_client)
 }
 
 /// Parity client currently executing in background threads.

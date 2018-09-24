@@ -1,6 +1,5 @@
 use std::marker::{Send, Sync};
-use std::sync::Arc;
-use std::sync::RwLock;
+use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
@@ -26,12 +25,18 @@ use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
+#[cfg(test)]
+use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
 
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
 use storage::Web3GlobalStorage;
+#[cfg(test)]
+use test_helpers::{self, MockDb};
+#[cfg(test)]
+use util;
 use util::from_block_id;
 
 // record contract call outcome
@@ -49,12 +54,26 @@ fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> 
     }
 }
 
+/// An actor listening to chain events.
+pub trait ChainNotify: Send + Sync {
+    fn has_heads_subscribers(&self) -> bool;
+
+    /// Notifies about new headers.
+    fn notify_heads(&self, headers: &[encoded::Header]);
+
+    /// Notifies about new log filter matches.
+    fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
+}
+
 pub struct Client {
     client: runtime_ethereum::Client,
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
     storage: Arc<RwLock<Web3GlobalStorage>>,
+    /// The most recent block for which we have sent notifications.
+    notified_block_number: Mutex<BlockNumber>,
+    listeners: RwLock<Vec<Weak<ChainNotify>>>,
 }
 
 impl Client {
@@ -65,24 +84,165 @@ impl Client {
         backend: Arc<StorageBackend>,
     ) -> Self {
         let storage = Web3GlobalStorage::new(backend);
+
+        // get current block number
+        let current_block_number = match snapshot_manager {
+            Some(ref manager) => match state::StateDb::new(manager.get_snapshot()) {
+                Some(db) => db.best_block_number(),
+                None => 0,
+            },
+            None => 0,
+        };
+
         Self {
             client: client,
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
             storage: Arc::new(RwLock::new(storage)),
+            // start at current block
+            notified_block_number: Mutex::new(current_block_number),
+            listeners: RwLock::new(vec![]),
         }
     }
 
-    /// block number at which EIP-86 transition occurs
+    /// A blockchain client for unit tests.
+    #[cfg(test)]
+    pub fn get_test_client() -> Self {
+        let spec = &util::load_spec();
+        let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
+        Self {
+            client: test_helpers::get_test_runtime_client(),
+            engine: spec.engine.clone(),
+            snapshot_manager: None,
+            eip86_transition: spec.params().eip86_transition,
+            storage: Arc::new(RwLock::new(storage)),
+            notified_block_number: Mutex::new(0),
+            listeners: RwLock::new(vec![]),
+        }
+    }
+
+    /// Notify listeners of new blocks.
+    #[cfg(feature = "pubsub")]
+    pub fn new_blocks(&self) {
+        const MAX_HEADERS: u64 = 256;
+
+        let mut last_block = self.notified_block_number.lock().unwrap();
+
+        measure_histogram_timer!("pubsub_notify_time");
+
+        if let Some(db) = self.get_db_snapshot() {
+            let current_block = db.best_block_number();
+            if current_block > *last_block {
+                self.notify(|listener| {
+                    // optimization: only generate the list of headers if we have subscribers
+                    if listener.has_heads_subscribers() {
+                        // notify listeners of up to 256 most recent headers since last notification
+                        let headers =
+                            Self::headers_since(&db, *last_block + 1, current_block, MAX_HEADERS);
+                        listener.notify_heads(&headers);
+                    }
+
+                    // notify log listeners of blocks last+1...current
+                    listener.notify_logs(
+                        BlockId::Number(*last_block + 1),
+                        BlockId::Number(current_block),
+                    );
+                });
+
+                // update last notified block
+                *last_block = current_block;
+            }
+        }
+    }
+
+    /// Adds a new `ChainNotify` listener.
+    pub fn add_listener(&self, listener: Weak<ChainNotify>) {
+        self.listeners.write().unwrap().push(listener);
+    }
+
+    /// Notify `ChainNotify` listeners.
+    fn notify<F: Fn(&ChainNotify)>(&self, f: F) {
+        for listener in &*self.listeners.read().unwrap() {
+            if let Some(listener) = listener.upgrade() {
+                f(&*listener)
+            }
+        }
+    }
+
+    /// Returns the BlockId corresponding to the larger block number.
+    #[cfg(feature = "pubsub")]
+    pub fn max_block_number(&self, id_a: BlockId, id_b: BlockId) -> BlockId {
+        // first check if either is Latest
+        if id_a == BlockId::Latest || id_b == BlockId::Latest {
+            return BlockId::Latest;
+        }
+
+        // if either is Earliest, return the other
+        if id_a == BlockId::Earliest {
+            return id_b;
+        }
+        if id_b == BlockId::Earliest {
+            return id_a;
+        }
+
+        // compare block numbers
+        let num_a = match self.id_to_block_number(id_a) {
+            Some(num) => num,
+            None => return id_b,
+        };
+        let num_b = match self.id_to_block_number(id_b) {
+            Some(num) => num,
+            None => return id_a,
+        };
+        if num_a > num_b {
+            id_a
+        } else {
+            id_b
+        }
+    }
+
+    /// Returns the BlockId corresponding to the smaller block number.
+    #[cfg(feature = "pubsub")]
+    pub fn min_block_number(&self, id_a: BlockId, id_b: BlockId) -> BlockId {
+        // first check if either is Earliest
+        if id_a == BlockId::Earliest || id_b == BlockId::Earliest {
+            return BlockId::Earliest;
+        }
+
+        // if either is Latest, return the other
+        if id_a == BlockId::Latest {
+            return id_b;
+        }
+        if id_b == BlockId::Latest {
+            return id_a;
+        }
+
+        // compare block numbers
+        let num_a = match self.id_to_block_number(id_a) {
+            Some(num) => num,
+            None => return id_b,
+        };
+        let num_b = match self.id_to_block_number(id_b) {
+            Some(num) => num,
+            None => return id_a,
+        };
+        if num_a < num_b {
+            id_a
+        } else {
+            id_b
+        }
+    }
+
+    /// Block number at which EIP-86 transition occurs.
     /// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-86.md
     pub fn eip86_transition(&self) -> u64 {
         self.eip86_transition
     }
 
-    /// returns a StateDb backed by an Ekiden db snapshot, or None when the
-    /// blockchain database has not yet been initialized by the runtime
-    #[cfg(feature = "read_state")]
+    /// Returns a StateDb backed by an Ekiden db snapshot, or None when the
+    /// blockchain database has not yet been initialized by the runtime.
+    #[cfg(all(not(test), feature = "read_state"))]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         match self.snapshot_manager {
             Some(ref manager) => {
@@ -95,6 +255,14 @@ impl Client {
             }
             None => None,
         }
+    }
+
+    /// Returns a MockDb-backed StateDb for unit tests.
+    #[cfg(all(test, feature = "read_state"))]
+    fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
+        let mut db = MockDb::new();
+        db.populate();
+        Some(StateDb::new(db).unwrap())
     }
 
     // block-related
@@ -156,6 +324,19 @@ impl Client {
                 self.client.get_block_hash(from_block_id(id)).wait(),
                 None,
             )
+        }
+    }
+
+    #[cfg(feature = "read_state")]
+    fn id_to_block_number(&self, id: BlockId) -> Option<BlockNumber> {
+        match id {
+            BlockId::Latest => Some(self.best_block_number()),
+            BlockId::Earliest => Some(0),
+            BlockId::Number(num) => Some(num),
+            BlockId::Hash(hash) => match self.get_db_snapshot() {
+                Some(db) => db.block_number(&hash),
+                None => None,
+            },
         }
     }
 
@@ -326,9 +507,9 @@ impl Client {
 
     // account state-related
 
-    /// returns an EthState at the specified BlockId, backed by an Ekiden db
+    /// Returns an EthState at the specified BlockId, backed by an Ekiden db
     /// snapshot, or None when the blockchain database has not yet been
-    /// initialized by the runtime
+    /// initialized by the runtime.
     #[cfg(feature = "read_state")]
     fn get_ethstate_snapshot_at(&self, id: BlockId) -> Option<EthState> {
         self.get_db_snapshot()?.get_ethstate_at(id)
@@ -443,6 +624,43 @@ impl Client {
             }
         }
         Arc::new(last_hashes)
+    }
+
+    /// Returns a vector of block headers from block numbers start...end (inclusive).
+    /// Limited to the `max` most recent headers.
+    #[cfg(feature = "read_state")]
+    fn headers_since<T>(
+        db: &StateDb<T>,
+        start: BlockNumber,
+        end: BlockNumber,
+        max: u64,
+    ) -> Vec<encoded::Header>
+    where
+        T: 'static + Database + Send + Sync,
+    {
+        // limit to `max` headers
+        let start = if end - start + 1 >= max {
+            end - max + 1
+        } else {
+            start
+        };
+
+        let mut head = db.block_hash(end)
+            .and_then(|hash| db.block_header_data(&hash))
+            .expect("Invalid block number");
+
+        let mut headers = Vec::with_capacity((end - start + 1) as usize);
+
+        loop {
+            headers.push(head.clone());
+            if head.number() <= start {
+                break;
+            }
+            head = db.block_header_data(&head.parent_hash())
+                .expect("Chain is corrupt");
+        }
+        headers.reverse();
+        headers
     }
 
     #[cfg(feature = "read_state")]
@@ -579,7 +797,7 @@ mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
     #[cfg(feature = "read_state")]
-    use test_helpers::MockDb;
+    use test_helpers::{MockDb, MockNotificationHandler};
 
     #[test]
     #[cfg(feature = "read_state")]
@@ -639,5 +857,88 @@ mod tests {
             envinfo.last_hashes[0],
             H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
         );
+    }
+
+    #[test]
+    #[cfg(feature = "pubsub")]
+    fn test_headers_since() {
+        let mut db = MockDb::new();
+        // populate the db with test data
+        db.populate();
+
+        // get state
+        let state = StateDb::new(db).unwrap();
+
+        // blocks 1...4
+        let headers = Client::headers_since(&state, 1, 4, 256);
+        assert_eq!(headers.len(), 4);
+        assert_eq!(
+            &headers[3].hash(),
+            &H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "pubsub")]
+    fn test_max_block_number() {
+        let client = Client::get_test_client();
+
+        let id_1 = BlockId::Number(1);
+        let id_2 = BlockId::Number(2);
+        assert_eq!(client.max_block_number(id_1, id_2), id_2);
+
+        let id_latest = BlockId::Latest;
+        assert_eq!(client.max_block_number(id_latest, id_2), id_latest);
+
+        let id_3 = BlockId::Hash(H256::from(
+            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
+        ));
+        assert_eq!(client.max_block_number(id_3, id_2), id_3);
+    }
+
+    #[test]
+    #[cfg(feature = "pubsub")]
+    fn test_min_block_number() {
+        let client = Client::get_test_client();
+
+        let id_1 = BlockId::Number(1);
+        let id_2 = BlockId::Number(2);
+        assert_eq!(client.min_block_number(id_1, id_2), id_1);
+
+        let id_earliest = BlockId::Earliest;
+        assert_eq!(client.min_block_number(id_earliest, id_2), id_earliest);
+
+        let id_3 = BlockId::Hash(H256::from(
+            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
+        ));
+        assert_eq!(client.min_block_number(id_3, id_2), id_2);
+    }
+
+    #[test]
+    #[cfg(feature = "pubsub")]
+    fn test_pubsub_notify() {
+        let client = Client::get_test_client();
+
+        let handler = Arc::new(MockNotificationHandler::new());
+        client.add_listener(Arc::downgrade(&handler) as Weak<_>);
+
+        let headers = handler.get_notified_headers();
+        let log_notifications = handler.get_log_notifications();
+        assert_eq!(headers.len(), 0);
+        assert_eq!(log_notifications.len(), 0);
+
+        client.new_blocks();
+
+        let headers = handler.get_notified_headers();
+        assert_eq!(headers.len(), 4);
+        assert_eq!(
+            headers[3].hash(),
+            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+        );
+
+        let log_notifications = handler.get_log_notifications();
+        assert_eq!(log_notifications.len(), 1);
+        assert_eq!(log_notifications[0].0, BlockId::Number(1));
+        assert_eq!(log_notifications[0].1, BlockId::Number(4));
     }
 }
