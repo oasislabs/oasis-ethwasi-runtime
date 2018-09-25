@@ -231,7 +231,7 @@ jobs:
 
       - run:
           name: Tag the ekiden build on this workflow for production
-          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/runtime-ethereum:$PRODUCTION_TAG
+          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
 
       - run:
           name: Push the new production tag of ekiden to dockerhub
