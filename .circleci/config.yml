@@ -254,6 +254,7 @@ jobs:
     docker:
       - image: ekiden/testing:0.2.0
     steps:
+      - checkout
       - attach_workspace:
           at: /workspace
 
