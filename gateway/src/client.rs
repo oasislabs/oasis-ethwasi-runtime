@@ -249,13 +249,7 @@ impl Client {
                 let ret = state::StateDb::new(manager.get_snapshot());
                 if ret.is_none() {
                     measure_counter_inc!("read_state_failed");
-                    error!("Could not get db snapshot, invoking contract to initialize the db");
-                    contract_call_result(
-                        "get_block_height",
-                        self.client.get_block_height(false).wait(),
-                        U256::from(0),
-                    );
-                    return state::StateDb::new(manager.get_snapshot());
+                    error!("Could not get db snapshot");
                 }
                 ret
             }
