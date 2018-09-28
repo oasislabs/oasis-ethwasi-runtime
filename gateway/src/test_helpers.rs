@@ -319,7 +319,7 @@ impl Database for MockDb {
         self.map.remove(key)
     }
 
-    fn clear(&mut self) {
+    fn rollback(&mut self) {
         self.map.clear()
     }
 
