@@ -333,13 +333,14 @@ mod tests {
     use ethcore::{self, blockchain::BlockChain, vm};
     use hex;
 
-    lazy_static! {
-        static ref CTX: ContractCallContext = ContractCallContext {
+    fn dummy_ctx() -> ContractCallContext {
+        ContractCallContext {
             header: Header {
                 timestamp: 0xcafedeadbeefc0de,
                 ..Default::default()
             },
-        };
+            runtime: Box::new(()),
+        }
     }
 
     struct Client {
@@ -361,7 +362,7 @@ mod tests {
         fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
             let tx = EthcoreTransaction {
                 action: Action::Create,
-                nonce: get_account_nonce(&self.keypair.address(), &CTX).unwrap(),
+                nonce: get_account_nonce(&self.keypair.address(), &dummy_ctx()).unwrap(),
                 gas_price: U256::from(0),
                 gas: U256::from(1000000),
                 value: *balance,
@@ -369,11 +370,11 @@ mod tests {
             }.sign(&self.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let hash = execute_raw_transaction(&raw.into_vec(), &CTX)
+            let hash = execute_raw_transaction(&raw.into_vec(), &dummy_ctx())
                 .unwrap()
                 .hash
                 .unwrap();
-            let receipt = get_receipt(&hash, &CTX).unwrap().unwrap();
+            let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
             (hash, receipt.contract_address.unwrap())
         }
 
@@ -387,7 +388,10 @@ mod tests {
                 nonce: None,
             };
 
-            simulate_transaction(&tx, &CTX).unwrap().result.unwrap()
+            simulate_transaction(&tx, &dummy_ctx())
+                .unwrap()
+                .result
+                .unwrap()
         }
     }
 
@@ -399,26 +403,29 @@ mod tests {
     fn test_create_balance() {
         let mut client = CLIENT.lock().unwrap();
 
-        let init_bal = get_account_balance(&client.keypair.address(), &CTX).unwrap();
+        let init_bal = get_account_balance(&client.keypair.address(), &dummy_ctx()).unwrap();
         let contract_bal = U256::from(10);
         let remaining_bal = init_bal - contract_bal;
 
-        let init_nonce = get_account_nonce(&client.keypair.address(), &CTX).unwrap();
+        let init_nonce = get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap();
 
         let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
         let (_, contract) = client.create_contract(code, &contract_bal);
 
         assert_eq!(
-            get_account_balance(&client.keypair.address(), &CTX).unwrap(),
+            get_account_balance(&client.keypair.address(), &dummy_ctx()).unwrap(),
             remaining_bal
         );
         assert_eq!(
-            get_account_nonce(&client.keypair.address(), &CTX).unwrap(),
+            get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap(),
             init_nonce + U256::one()
         );
-        assert_eq!(get_account_balance(&contract, &CTX).unwrap(), contract_bal);
         assert_eq!(
-            get_storage_at(&(contract, H256::zero()), &CTX).unwrap(),
+            get_account_balance(&contract, &dummy_ctx()).unwrap(),
+            contract_bal
+        );
+        assert_eq!(
+            get_storage_at(&(contract, H256::zero()), &dummy_ctx()).unwrap(),
             H256::from(&remaining_bal)
         );
     }
@@ -510,13 +517,13 @@ mod tests {
 
         // deploy once
         let (hash, contract) = client.create_contract(contract_code.clone(), &U256::zero());
-        let receipt = get_receipt(&hash, &CTX).unwrap().unwrap();
+        let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
         let status = receipt.status_code.unwrap();
         assert_eq!(status, 1 as u64);
 
         // deploy again
         let (hash, contract) = client.create_contract(contract_code.clone(), &U256::zero());
-        let receipt = get_receipt(&hash, &CTX).unwrap().unwrap();
+        let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
         let status = receipt.status_code.unwrap();
         assert_eq!(status, 1 as u64);
     }
@@ -527,25 +534,25 @@ mod tests {
 
         let bad_sig = EthcoreTransaction {
             action: Action::Create,
-            nonce: get_account_nonce(&client.keypair.address(), &CTX).unwrap(),
+            nonce: get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap(),
             gas_price: U256::from(0),
             gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.fake_sign(client.keypair.address());
-        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &CTX)
+        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &dummy_ctx())
             .unwrap()
             .hash;
 
         let good_sig = EthcoreTransaction {
             action: Action::Create,
-            nonce: get_account_nonce(&client.keypair.address(), &CTX).unwrap(),
+            nonce: get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap(),
             gas_price: U256::from(0),
             gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
-        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &CTX)
+        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &dummy_ctx())
             .unwrap()
             .hash;
 
@@ -572,7 +579,7 @@ mod tests {
         let client_address = client.keypair.address();
 
         // Initialize the DB.
-        let reference_nonce_before = get_account_nonce(&client_address, &CTX).unwrap();
+        let reference_nonce_before = get_account_nonce(&client_address, &dummy_ctx()).unwrap();
 
         // Create a chain representing node A, which is initially the leader.
         let chain_a = BlockChain::new(
@@ -590,7 +597,7 @@ mod tests {
         client.create_contract(code_empty, &U256::zero());
 
         // Save the new nonce from the default node, which is currently leader.
-        let reference_nonce = get_account_nonce(&client_address, &CTX).unwrap();
+        let reference_nonce = get_account_nonce(&client_address, &dummy_ctx()).unwrap();
 
         // When node A is leader again, getting the nonce should give an up to date value.
         let nonce_a = get_account_nonce_chain(&chain_a, &client_address);
