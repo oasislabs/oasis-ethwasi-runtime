@@ -60,7 +60,7 @@ impl Cache {
         }
 
         let mut cache = GLOBAL_CACHE.lock().unwrap();
-        let root_hash = Some(DatabaseHandle::instance().get_root_hash().unwrap());
+        let root_hash = Some(DatabaseHandle::instance().get_root_hash());
         if cache.root_hash != root_hash {
             // Root hash differs, re-create the block chain cache from scratch.
             cache.chain = Self::new_chain(cache.state_db.clone());
@@ -70,7 +70,7 @@ impl Cache {
         let result = f(cache.deref());
 
         // Update the root hash.
-        cache.root_hash = Some(DatabaseHandle::instance().get_root_hash().unwrap());
+        cache.root_hash = Some(DatabaseHandle::instance().get_root_hash());
 
         result
     }

@@ -26,9 +26,11 @@ pub mod storage; // allow access from tests/run_contract
 mod storage;
 
 use ekiden_core::error::{Error, Result};
-use ekiden_trusted::{contract::{create_contract, dispatcher::ContractCallContext},
+use ekiden_trusted::contract::dispatcher::{BatchHandler, ContractCallContext};
+use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler, create_contract},
                      enclave::enclave_init};
-use ethcore::{rlp,
+use ethcore::{block::OpenBlock,
+              rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
@@ -141,6 +143,30 @@ fn inject_account_storage(
     ))
 }
 
+struct BlockContext<'a> {
+    block: OpenBlock<'a>,
+}
+
+struct EthereumBatchHandler;
+impl BatchHandler for EthereumBatchHandler {
+    fn start_batch(&self, ctx: &mut ContractCallContext) {
+        Cache::for_current_state_root(|cache| {
+            let block = cache.new_block().unwrap();
+            ctx.runtime = Box::new(BlockContext { block: block });
+        });
+    }
+
+    fn end_batch(&self, ctx: ContractCallContext) {
+        let mut my_ctx = *ctx.runtime.downcast::<BlockContext>().unwrap();
+        let timestamp = ctx.header.timestamp;
+        Cache::for_current_state_root(|cache| {
+            my_ctx.block.set_timestamp(timestamp);
+            cache.add_block(my_ctx.block.close_and_lock()).unwrap()
+        });
+    }
+}
+configure_runtime_dispatch_batch_handler!(EthereumBatchHandler);
+
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 pub fn get_block_height(_request: &bool, _ctx: &ContractCallContext) -> Result<U256> {
     Cache::for_current_state_root(|cache| Ok(cache.get_latest_block_number().into()))
@@ -213,7 +239,7 @@ pub fn get_storage_at(pair: &(Address, H256), _ctx: &ContractCallContext) -> Res
 
 pub fn execute_raw_transaction(
     request: &Vec<u8>,
-    ctx: &ContractCallContext,
+    ctx: &mut ContractCallContext,
 ) -> Result<ExecuteTransactionResponse> {
     debug!("execute_raw_transaction");
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
@@ -235,22 +261,20 @@ pub fn execute_raw_transaction(
             })
         }
     };
-    let result = Cache::for_current_state_root(|cache| {
-        transact(cache, signed, ctx.header.timestamp).map_err(|e| e.to_string())
-    });
+
+    let my_ctx = ctx.runtime.downcast_mut::<BlockContext>().unwrap();
+    let result = transact(&mut my_ctx.block, signed).map_err(|e| e.to_string());
+
     Ok(ExecuteTransactionResponse {
         created_contract: if result.is_err() { false } else { is_create },
         hash: result,
     })
 }
 
-fn transact(cache: &Cache, transaction: SignedTransaction, timestamp: u64) -> Result<H256> {
-    let mut block = cache.new_block()?;
+fn transact(block: &mut OpenBlock, transaction: SignedTransaction) -> Result<H256> {
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     block.push_transaction(transaction, None, &mut storage)?;
-    block.set_timestamp(timestamp);
-    cache.add_block(block.close_and_lock())?;
     Ok(tx_hash)
 }
 
@@ -370,10 +394,20 @@ mod tests {
             }.sign(&self.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let hash = execute_raw_transaction(&raw.into_vec(), &dummy_ctx())
+            let mut ctx = dummy_ctx();
+            Cache::for_current_state_root(|cache| {
+                let block = cache.new_block().unwrap();
+                ctx.runtime = Box::new(BlockContext { block: block });
+            });
+            let hash = execute_raw_transaction(&raw.into_vec(), &mut ctx)
                 .unwrap()
                 .hash
                 .unwrap();
+            let my_ctx = *ctx.runtime.downcast::<BlockContext>().unwrap();
+            Cache::for_current_state_root(|cache| {
+                cache.add_block(my_ctx.block.close_and_lock()).unwrap()
+            });
+
             let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
             (hash, receipt.contract_address.unwrap())
         }
@@ -540,9 +574,10 @@ mod tests {
             value: U256::from(0),
             data: vec![],
         }.fake_sign(client.keypair.address());
-        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &dummy_ctx())
-            .unwrap()
-            .hash;
+        let bad_result =
+            execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &mut dummy_ctx())
+                .unwrap()
+                .hash;
 
         let good_sig = EthcoreTransaction {
             action: Action::Create,
@@ -552,9 +587,10 @@ mod tests {
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
-        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &dummy_ctx())
-            .unwrap()
-            .hash;
+        let good_result =
+            execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &mut dummy_ctx())
+                .unwrap()
+                .hash;
 
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());

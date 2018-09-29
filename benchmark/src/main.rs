@@ -367,7 +367,7 @@ fn main() {
                 30000,
             ),
             "debug_nullCall" => {
-                run_scenario("null call", no_prep, debug_nullCall, &url, threads, 30000)
+                run_scenario("null_call", no_prep, debug_nullCall, &url, threads, 30000)
             }
             "transfer" => run_scenario("transfer", transfer_prep, transfer, &url, threads, 30000),
             _ => unreachable!(),
