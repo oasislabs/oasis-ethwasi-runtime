@@ -808,14 +808,22 @@ impl Client {
             Err(e) => return Err(e.to_string()),
         }
 
+    pub fn send_raw_transaction(&self, raw: Bytes, encrypted: bool) -> Result<H256, String> {
         contract_call_result(
             "execute_raw_transaction",
-            self.client.execute_raw_transaction(raw).wait().map(|r| {
-                if r.created_contract {
-                    measure_counter_inc!("contract_created")
-                }
-                r.hash
-            }),
+            self.client
+                .execute_raw_transaction((raw, encrypted))
+                .wait()
+                .map(|r| {
+                    if r.created_contract {
+                        if encrypted {
+                            measure_counter_inc!("confidential_contract_created")
+                        } else {
+                            measure_counter_inc!("contract_created")
+                        }
+                    }
+                    r.hash
+                }),
             Err("no response from runtime".to_string()),
         )
     }

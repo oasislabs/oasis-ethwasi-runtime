@@ -19,6 +19,8 @@
 //! This doesn't re-implement all of the RPC APIs, just those which aren't
 //! significantly generic to be reused.
 
+#[cfg(feature = "confidential")]
+pub mod confidential;
 pub mod eth;
 pub mod eth_filter;
 #[cfg(feature = "pubsub")]
@@ -28,6 +30,8 @@ pub mod oasis;
 pub mod trace;
 pub mod web3;
 
+#[cfg(feature = "confidential")]
+pub use self::confidential::ConfidentialClient;
 pub use self::eth::EthClient;
 pub use self::eth_filter::EthFilterClient;
 #[cfg(feature = "pubsub")]
