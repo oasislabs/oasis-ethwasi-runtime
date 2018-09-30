@@ -1,0 +1,10 @@
+[package]
+name = "runtime-ethereum-common"
+version = "0.1.0"
+authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
+
+[dependencies]
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+sodalite = "0.3.0"
