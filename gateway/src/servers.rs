@@ -19,7 +19,7 @@
 #![warn(missing_docs)]
 
 use jsonrpc_core;
-use jsonrpc_http_server::{self as http, tokio_core};
+use jsonrpc_http_server::{self as http, hyper, tokio_core};
 use jsonrpc_ws_server as ws;
 
 use parity_rpc::http_common::{self, HttpMetaExtractor};
@@ -49,6 +49,15 @@ where
     let builder = http::ServerBuilder::with_meta_extractor(handler, extractor)
         .threads(threads)
         .event_loop_remote(remote)
+        .request_middleware(|request: hyper::Request<hyper::Body>| {
+            // If the requested url is /status, terminate with 200 OK response.
+            // Otherwise, proceed with normal request handling.
+            if request.uri() == "/status" {
+                http::Response::ok("").into()
+            } else {
+                request.into()
+            }
+        })
         .cors(cors_domains.into())
         .allowed_hosts(allowed_hosts.into());
 
