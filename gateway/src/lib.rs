@@ -78,6 +78,7 @@ extern crate ekiden_db_trusted;
 extern crate ekiden_di;
 #[macro_use]
 extern crate ekiden_instrumentation;
+extern crate ekiden_keymanager_common;
 #[cfg(test)]
 extern crate ekiden_registry_client;
 #[cfg(test)]
