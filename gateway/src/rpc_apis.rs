@@ -27,6 +27,8 @@ use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
+#[cfg(feature = "confidential")]
+use impls::ConfidentialClient;
 #[cfg(feature = "pubsub")]
 use impls::EthPubSubClient;
 use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
@@ -45,6 +47,8 @@ pub enum Api {
     Traces,
     /// Oasis (Safe)
     Oasis,
+    /// Confidential (Safe)
+    Confidential,
 }
 
 impl FromStr for Api {
@@ -60,6 +64,7 @@ impl FromStr for Api {
             "pubsub" => Ok(EthPubSub),
             "traces" => Ok(Traces),
             "oasis" => Ok(Oasis),
+            "confidential" => Ok(Confidential),
             api => Err(format!("Unknown api: {}", api)),
         }
     }
@@ -165,6 +170,8 @@ impl FullDependencies {
         S: core::Middleware<Metadata>,
     {
         use parity_rpc::v1::{Eth, EthFilter, EthPubSub, Net, Traces, Web3};
+        #[cfg(feature = "confidential")]
+        use traits::Confidential;
         use traits::Oasis;
 
         for api in apis {
@@ -199,6 +206,12 @@ impl FullDependencies {
                 Api::Oasis => {
                     handler.extend_with(OasisClient::new(&self.storage).to_delegate());
                 }
+                Api::Confidential => {
+                    if cfg!(feature = "confidential") {
+                        let con_client = ConfidentialClient::new(self.client.clone());
+                        handler.extend_with(con_client.to_delegate());
+                    }
+                }
             }
         }
     }
@@ -223,11 +236,16 @@ impl Dependencies for FullDependencies {
 
 impl ApiSet {
     pub fn list_apis(&self) -> HashSet<Api> {
-        let mut public_list: HashSet<Api> =
-            [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis]
-                .into_iter()
-                .cloned()
-                .collect();
+        let mut public_list: HashSet<Api> = [
+            Api::Web3,
+            Api::Net,
+            Api::Eth,
+            Api::EthPubSub,
+            Api::Oasis,
+            Api::Confidential,
+        ].into_iter()
+            .cloned()
+            .collect();
 
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
@@ -259,6 +277,7 @@ mod test {
         assert_eq!(Api::EthPubSub, "pubsub".parse().unwrap());
         assert_eq!(Api::Traces, "traces".parse().unwrap());
         assert_eq!(Api::Oasis, "oasis".parse().unwrap());
+        assert_eq!(Api::Confidential, "confidential".parse().unwrap());
         assert!("rp".parse::<Api>().is_err());
     }
 
@@ -285,6 +304,7 @@ mod test {
             Api::EthPubSub,
             Api::Traces,
             Api::Oasis,
+            Api::Confidential,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::UnsafeContext.list_apis(), expected);
@@ -300,6 +320,7 @@ mod test {
             Api::EthPubSub,
             Api::Traces,
             Api::Oasis,
+            Api::Confidential,
         ].into_iter()
             .collect();
         assert_eq!(ApiSet::SafeContext.list_apis(), expected);
@@ -317,6 +338,7 @@ mod test {
                     Api::EthPubSub,
                     Api::Traces,
                     Api::Oasis,
+                    Api::Confidential,
                 ].into_iter()
                     .collect()
             )
@@ -335,6 +357,7 @@ mod test {
                     Api::EthPubSub,
                     Api::Traces,
                     Api::Oasis,
+                    Api::Confidential,
                 ].into_iter()
                     .collect()
             )

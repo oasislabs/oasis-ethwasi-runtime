@@ -583,7 +583,7 @@ impl Eth for EthClient {
             info!("eth_sendRawTransaction(data: ...)");
         }
         self.client
-            .send_raw_transaction(raw.into())
+            .send_raw_transaction(raw.into(), false)
             .map(Into::into)
             .map_err(errors::execution)
     }

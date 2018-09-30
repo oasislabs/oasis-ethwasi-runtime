@@ -60,6 +60,8 @@ ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch =
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-api = { path = "../api" }
 rand = "0.4"
 
@@ -77,7 +79,7 @@ hex = "0.3"
 [patch.crates-io]
 ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
 
-# temporary fix for incompatibility between jsonrpc-ipc-server parity-1.11 branch and parity-tokio-ipc 
+# temporary fix for incompatibility between jsonrpc-ipc-server parity-1.11 branch and parity-tokio-ipc
 [patch."https://github.com/paritytech/jsonrpc.git"]
 jsonrpc-core = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
 jsonrpc-http-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
@@ -87,8 +89,9 @@ jsonrpc-macros = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "p
 jsonrpc-pubsub = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
 
 [features]
-default = ["pubsub", "read_state"]
+default = ["confidential", "pubsub", "read_state"]
 pubsub = ["read_state"]
+confidential = []
 read_state = []
 
 [[bin]]
