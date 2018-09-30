@@ -24,6 +24,7 @@ use client::Client;
 use client_utils;
 use ekiden_core::environment::Environment;
 use ekiden_storage_base::StorageBackend;
+use ethereum_types::U256;
 use futures_cpupool::CpuPool;
 use jsonrpc_core;
 use parity_reactor::EventLoop;
@@ -45,12 +46,14 @@ pub fn execute(
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
+    gas_price: U256,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
         &util::load_spec(),
         snapshot_manager,
         ekiden_client,
         storage.clone(),
+        gas_price,
     ));
 
     #[cfg(feature = "pubsub")]

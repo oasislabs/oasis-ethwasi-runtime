@@ -17,6 +17,7 @@
 //! web3 gateway for Oasis Ethereum runtime.
 
 extern crate ctrlc;
+extern crate ethereum_types;
 extern crate fdlimit;
 extern crate log;
 extern crate parking_lot;
@@ -34,10 +35,12 @@ extern crate ekiden_tracing;
 
 use clap::{App, Arg};
 use ctrlc::CtrlC;
+use ethereum_types::U256;
 use fdlimit::raise_fd_limit;
 use log::LevelFilter;
 use parking_lot::{Condvar, Mutex};
 use std::sync::Arc;
+use web3_gateway::util;
 
 // Run our version of parity.
 fn main() {
@@ -77,6 +80,13 @@ fn main() {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("gas-price")
+                .long("gas-price")
+                .help("Gas price (in Gwei).")
+                .default_value("20")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("v")
                 .short("v")
                 .multiple(true)
@@ -105,6 +115,7 @@ fn main() {
     let http_port = value_t!(args, "http-port", u16).unwrap();
     let ws_port = value_t!(args, "ws-port", u16).unwrap();
     let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64).unwrap();
+    let gas_price = util::gwei_to_wei(value_t!(args, "gas-price", u64).unwrap());
     let client = web3_gateway::start(
         args,
         container,
@@ -112,6 +123,7 @@ fn main() {
         http_port,
         num_threads,
         ws_port,
+        gas_price,
     ).unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
