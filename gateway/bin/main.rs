@@ -17,7 +17,6 @@
 //! web3 gateway for Oasis Ethereum runtime.
 
 extern crate ctrlc;
-extern crate ethereum_types;
 extern crate fdlimit;
 extern crate log;
 extern crate parking_lot;
@@ -35,7 +34,6 @@ extern crate ekiden_tracing;
 
 use clap::{App, Arg};
 use ctrlc::CtrlC;
-use ethereum_types::U256;
 use fdlimit::raise_fd_limit;
 use log::LevelFilter;
 use parking_lot::{Condvar, Mutex};
