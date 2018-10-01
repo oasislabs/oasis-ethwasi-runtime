@@ -81,7 +81,7 @@ fn main() {
             Arg::with_name("gas-price")
                 .long("gas-price")
                 .help("Gas price (in Gwei).")
-                .default_value("20")
+                .default_value("1")
                 .takes_value(true),
         )
         .arg(
