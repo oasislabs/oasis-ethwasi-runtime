@@ -12,7 +12,9 @@ use ethcore::executive::{contract_address, Executed, Executive, TransactOptions}
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::LocalizedReceipt;
+use ethcore::rlp;
 use ethcore::spec::Spec;
+use ethcore::transaction::UnverifiedTransaction;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
@@ -787,7 +789,25 @@ impl Client {
         )
     }
 
+    /// Checks whether transaction is well formed and meets min gas price.
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<(), String> {
+        let decoded: UnverifiedTransaction = match rlp::decode(raw) {
+            Ok(t) => t,
+            Err(e) => return Err(e.to_string()),
+        };
+        let unsigned = decoded.as_unsigned();
+        if unsigned.gas_price < self.gas_price() {
+            return Err("Insufficient gas price".to_string());
+        }
+        Ok(())
+    }
+
     pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, String> {
+        match self.precheck_transaction(&raw) {
+            Ok(_) => (),
+            Err(e) => return Err(e.to_string()),
+        }
+
         contract_call_result(
             "execute_raw_transaction",
             self.client.execute_raw_transaction(raw).wait().map(|r| {

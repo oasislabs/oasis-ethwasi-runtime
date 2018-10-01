@@ -17,7 +17,7 @@
 use std::cmp::PartialEq;
 use std::collections::HashSet;
 use std::str::FromStr;
-use std::sync::{Arc, Weak};
+use std::sync::Arc;
 
 use client::Client;
 use ekiden_storage_base::StorageBackend;
