@@ -1,5 +1,4 @@
 use std::{collections::HashSet,
-          ops::Deref,
           sync::{Arc, Mutex}};
 
 use ekiden_core::{self, error::Result};
@@ -24,11 +23,15 @@ use ethereum_types::{Address, H256, U256};
 
 use super::evm::{get_contract_address, SPEC};
 
+lazy_static! {
+    static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
+}
+
 /// Cache is the in-memory blockchain cache backed by the database.
 pub struct Cache {
     /// Root hash where the last invocation finished at. If the root hash
     /// differs on next invocation, the cache will be cleared first.
-    root_hash: Option<ekiden_core::bytes::H256>,
+    root_hash: ekiden_core::bytes::H256,
     /// State database instance.
     state_db: Arc<StateDb>,
     /// Actual blockchain cache.
@@ -36,7 +39,8 @@ pub struct Cache {
 }
 
 impl Cache {
-    fn new() -> Self {
+    /// Create a new in-memory cache for the given state root.
+    pub fn new(root_hash: ekiden_core::bytes::H256) -> Self {
         let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */)
             .unwrap();
         db.0.commit().unwrap();
@@ -44,35 +48,38 @@ impl Cache {
         let state_db = Arc::new(StateDb::instance());
 
         Self {
-            root_hash: None,
+            root_hash,
             state_db: state_db.clone(),
             chain: Self::new_chain(state_db),
         }
     }
 
-    /// Invokes a closure with a Cache instance valid for the current state root.
-    pub fn for_current_state_root<F, R>(f: F) -> R
-    where
-        F: FnOnce(&Cache) -> R,
-    {
-        lazy_static! {
-            static ref GLOBAL_CACHE: Mutex<Cache> = Mutex::new(Cache::new());
-        }
+    /// Fetches a global `Cache` instance for the given state root.
+    ///
+    /// In case the current global instance is not valid for the given state root,
+    /// it will be replaced.
+    pub fn from_global(root_hash: ekiden_core::bytes::H256) -> Cache {
+        let mut maybe_cache = GLOBAL_CACHE.lock().unwrap();
+        let mut cache = maybe_cache.take().unwrap_or_else(|| Cache::new(root_hash));
 
-        let mut cache = GLOBAL_CACHE.lock().unwrap();
-        let root_hash = Some(DatabaseHandle::instance().get_root_hash().unwrap());
         if cache.root_hash != root_hash {
             // Root hash differs, re-create the block chain cache from scratch.
             cache.chain = Self::new_chain(cache.state_db.clone());
             cache.root_hash = root_hash;
         }
 
-        let result = f(cache.deref());
+        cache
+    }
 
-        // Update the root hash.
-        cache.root_hash = Some(DatabaseHandle::instance().get_root_hash().unwrap());
+    /// Commit changes to global `Cache` instance.
+    pub fn commit_global(mut self, root_hash: ekiden_core::bytes::H256) {
+        let mut maybe_cache = GLOBAL_CACHE.lock().unwrap();
+        if maybe_cache.is_some() {
+            panic!("Multiple concurrent cache commits");
+        }
 
-        result
+        self.root_hash = root_hash;
+        *maybe_cache = Some(self)
     }
 
     fn new_chain(state_db: Arc<StateDb>) -> BlockChain {
@@ -439,6 +446,6 @@ mod tests {
 
     #[test]
     fn test_create_chain() {
-        Cache::for_current_state_root(|_| {});
+        Cache::new(ekiden_core::bytes::H256::zero());
     }
 }

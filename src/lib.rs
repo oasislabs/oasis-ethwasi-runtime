@@ -26,9 +26,13 @@ pub mod storage; // allow access from tests/run_contract
 mod storage;
 
 use ekiden_core::error::{Error, Result};
-use ekiden_trusted::{contract::{create_contract, dispatcher::ContractCallContext},
+use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
+                                create_contract,
+                                dispatcher::{BatchHandler, ContractCallContext}},
+                     db::DatabaseHandle,
                      enclave::enclave_init};
-use ethcore::{rlp,
+use ethcore::{block::{IsBlock, OpenBlock},
+              rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
@@ -44,6 +48,57 @@ enclave_init!();
 with_api! {
     create_contract!(api);
 }
+
+/// Ethereum-specific batch context.
+struct EthereumContext<'a> {
+    /// Blockchain cache.
+    cache: Cache,
+    /// Currently open block.
+    block: OpenBlock<'a>,
+    /// Force emitting a block.
+    force_emit_block: bool,
+}
+
+impl<'a> EthereumContext<'a> {
+    /// Create new Ethereum-specific batch context.
+    fn new(root_hash: ekiden_core::bytes::H256) -> Box<Self> {
+        let cache = Cache::from_global(root_hash);
+
+        Box::new(EthereumContext {
+            block: cache.new_block().unwrap(),
+            cache,
+            force_emit_block: false,
+        })
+    }
+}
+
+struct EthereumBatchHandler;
+impl BatchHandler for EthereumBatchHandler {
+    fn start_batch(&self, ctx: &mut ContractCallContext) {
+        let root_hash = DatabaseHandle::instance().get_root_hash();
+        ctx.runtime = EthereumContext::new(root_hash);
+    }
+
+    fn end_batch(&self, ctx: ContractCallContext) {
+        let timestamp = ctx.header.timestamp;
+        let mut ectx = *ctx.runtime.downcast::<EthereumContext>().unwrap();
+
+        // Finalize the block if it contains any transactions.
+        if !ectx.block.transactions().is_empty() || ectx.force_emit_block {
+            ectx.block.set_timestamp(timestamp);
+            ectx.cache.add_block(ectx.block.close_and_lock()).unwrap();
+        }
+
+        // Commit any pending database changes.
+        let mut db = DatabaseHandle::instance();
+        db.commit().unwrap();
+
+        // Update cached value.
+        ectx.cache.commit_global(db.get_root_hash());
+    }
+}
+
+configure_runtime_dispatch_batch_handler!(EthereumBatchHandler);
 
 // used for performance debugging
 fn debug_null_call(_request: &bool, _ctx: &ContractCallContext) -> Result<()> {
@@ -63,39 +118,35 @@ fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
 }
 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
-fn inject_accounts(accounts: &Vec<AccountState>, ctx: &ContractCallContext) -> Result<()> {
-    Cache::for_current_state_root(|cache| {
-        let mut block = cache.new_block()?;
-        accounts.iter().try_for_each(|ref account| {
-            block.block_mut().state_mut().new_contract(
-                &account.address,
-                account.balance.clone(),
-                account.nonce.clone(),
-            );
-            if account.code.len() > 0 {
-                block
-                    .block_mut()
-                    .state_mut()
-                    .init_code(&account.address, from_hex(&account.code)?)
-                    .map_err(|_| {
-                        Error::new(format!(
-                            "Could not init code for address {:?}.",
-                            &account.address
-                        ))
-                    })
-            } else {
-                Ok(())
-            }
-        })?;
+fn inject_accounts(accounts: &Vec<AccountState>, ctx: &mut ContractCallContext) -> Result<()> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-        // commit state changes
-        block.block_mut().state_mut().commit()?;
+    accounts.iter().try_for_each(|ref account| {
+        ectx.block.block_mut().state_mut().new_contract(
+            &account.address,
+            account.balance.clone(),
+            account.nonce.clone(),
+        );
+        if account.code.len() > 0 {
+            ectx.block
+                .block_mut()
+                .state_mut()
+                .init_code(&account.address, from_hex(&account.code)?)
+                .map_err(|_| {
+                    Error::new(format!(
+                        "Could not init code for address {:?}.",
+                        &account.address
+                    ))
+                })
+        } else {
+            Ok(())
+        }
+    })?;
 
-        block.set_timestamp(ctx.header.timestamp);
+    // Force finalization as this block doesn't include transactions.
+    ectx.force_emit_block = true;
 
-        cache.add_block(block.close_and_lock())?;
-        Ok(())
-    })
+    Ok(())
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
@@ -108,27 +159,22 @@ fn inject_accounts(accounts: &Vec<AccountState>, _ctx: &ContractCallContext) -> 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 pub fn inject_account_storage(
     storages: &Vec<(Address, H256, H256)>,
-    ctx: &ContractCallContext,
+    ctx: &mut ContractCallContext,
 ) -> Result<()> {
-    Cache::for_current_state_root(|cache| {
-        let mut block = cache.new_block()?;
-        storages.iter().try_for_each(|&(addr, key, value)| {
-            block
-                .block_mut()
-                .state_mut()
-                .set_storage(&addr, key.clone(), value.clone())
-                .map_err(|_| Error::new("Could not set storage."))
-        })?;
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-        // commit state changes
-        block.block_mut().state_mut().commit()?;
+    storages.iter().try_for_each(|&(addr, key, value)| {
+        ectx.block
+            .block_mut()
+            .state_mut()
+            .set_storage(&addr, key.clone(), value.clone())
+            .map_err(|_| Error::new("Could not set storage."))
+    })?;
 
-        block.set_timestamp(ctx.header.timestamp);
+    // Force finalization as this block doesn't include transactions.
+    ectx.force_emit_block = true;
 
-        cache.add_block(block.close_and_lock())?;
-
-        Ok(())
-    })
+    Ok(())
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
@@ -142,79 +188,101 @@ fn inject_account_storage(
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-pub fn get_block_height(_request: &bool, _ctx: &ContractCallContext) -> Result<U256> {
-    Cache::for_current_state_root(|cache| Ok(cache.get_latest_block_number().into()))
+pub fn get_block_height(_request: &bool, ctx: &mut ContractCallContext) -> Result<U256> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
+    Ok(ectx.cache.get_latest_block_number().into())
 }
 
-fn get_block_hash(id: &BlockId, _ctx: &ContractCallContext) -> Result<Option<H256>> {
-    Cache::for_current_state_root(|cache| {
-        let hash = match *id {
-            BlockId::Hash(hash) => Some(hash),
-            BlockId::Number(number) => cache.block_hash(number.into()),
-            BlockId::Earliest => cache.block_hash(0),
-            BlockId::Latest => cache.block_hash(cache.get_latest_block_number()),
-        };
-        Ok(hash)
-    })
+fn get_block_hash(id: &BlockId, ctx: &mut ContractCallContext) -> Result<Option<H256>> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
+    let hash = match *id {
+        BlockId::Hash(hash) => Some(hash),
+        BlockId::Number(number) => ectx.cache.block_hash(number.into()),
+        BlockId::Earliest => ectx.cache.block_hash(0),
+        BlockId::Latest => ectx.cache.block_hash(ectx.cache.get_latest_block_number()),
+    };
+    Ok(hash)
 }
 
-fn get_block(id: &BlockId, _ctx: &ContractCallContext) -> Result<Option<Vec<u8>>> {
-    Cache::for_current_state_root(|cache| {
-        debug!("get_block, id: {:?}", id);
+fn get_block(id: &BlockId, ctx: &mut ContractCallContext) -> Result<Option<Vec<u8>>> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-        let block = match *id {
-            BlockId::Hash(hash) => cache.block_by_hash(hash),
-            BlockId::Number(number) => cache.block_by_number(number.into()),
-            BlockId::Earliest => cache.block_by_number(0),
-            BlockId::Latest => cache.block_by_number(cache.get_latest_block_number()),
-        };
+    debug!("get_block, id: {:?}", id);
 
-        match block {
-            Some(block) => Ok(Some(block.into_inner())),
-            None => Ok(None),
-        }
-    })
+    let block = match *id {
+        BlockId::Hash(hash) => ectx.cache.block_by_hash(hash),
+        BlockId::Number(number) => ectx.cache.block_by_number(number.into()),
+        BlockId::Earliest => ectx.cache.block_by_number(0),
+        BlockId::Latest => ectx.cache
+            .block_by_number(ectx.cache.get_latest_block_number()),
+    };
+
+    match block {
+        Some(block) => Ok(Some(block.into_inner())),
+        None => Ok(None),
+    }
 }
 
-fn get_logs(filter: &Filter, _ctx: &ContractCallContext) -> Result<Vec<Log>> {
+fn get_logs(filter: &Filter, ctx: &mut ContractCallContext) -> Result<Vec<Log>> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_logs, filter: {:?}", filter);
-    Cache::for_current_state_root(|cache| Ok(cache.get_logs(filter)))
+    Ok(ectx.cache.get_logs(filter))
 }
 
-pub fn get_transaction(hash: &H256, _ctx: &ContractCallContext) -> Result<Option<Transaction>> {
+pub fn get_transaction(hash: &H256, ctx: &mut ContractCallContext) -> Result<Option<Transaction>> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_transaction, hash: {:?}", hash);
-    Cache::for_current_state_root(|cache| Ok(cache.get_transaction(hash)))
+    Ok(ectx.cache.get_transaction(hash))
 }
 
-pub fn get_receipt(hash: &H256, _ctx: &ContractCallContext) -> Result<Option<Receipt>> {
+pub fn get_receipt(hash: &H256, ctx: &mut ContractCallContext) -> Result<Option<Receipt>> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_receipt, hash: {:?}", hash);
-    Cache::for_current_state_root(|cache| Ok(cache.get_receipt(hash)))
+    Ok(ectx.cache.get_receipt(hash))
 }
 
-pub fn get_account_balance(address: &Address, _ctx: &ContractCallContext) -> Result<U256> {
+pub fn get_account_balance(address: &Address, ctx: &mut ContractCallContext) -> Result<U256> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_account_balance, address: {:?}", address);
-    Cache::for_current_state_root(|cache| cache.get_account_balance(address))
+    ectx.cache.get_account_balance(address)
 }
 
-pub fn get_account_nonce(address: &Address, _ctx: &ContractCallContext) -> Result<U256> {
+pub fn get_account_nonce(address: &Address, ctx: &mut ContractCallContext) -> Result<U256> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_account_nonce, address: {:?}", address);
-    Cache::for_current_state_root(|cache| cache.get_account_nonce(address))
+    ectx.cache.get_account_nonce(address)
 }
 
-pub fn get_account_code(address: &Address, _ctx: &ContractCallContext) -> Result<Option<Vec<u8>>> {
+pub fn get_account_code(
+    address: &Address,
+    ctx: &mut ContractCallContext,
+) -> Result<Option<Vec<u8>>> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_account_code, address: {:?}", address);
-    Cache::for_current_state_root(|cache| cache.get_account_code(address))
+    ectx.cache.get_account_code(address)
 }
 
-pub fn get_storage_at(pair: &(Address, H256), _ctx: &ContractCallContext) -> Result<H256> {
+pub fn get_storage_at(pair: &(Address, H256), ctx: &mut ContractCallContext) -> Result<H256> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("get_storage_at, address: {:?}", pair);
-    Cache::for_current_state_root(|cache| cache.get_account_storage(pair.0, pair.1))
+    ectx.cache.get_account_storage(pair.0, pair.1)
 }
 
 pub fn execute_raw_transaction(
     request: &Vec<u8>,
-    ctx: &ContractCallContext,
+    ctx: &mut ContractCallContext,
 ) -> Result<ExecuteTransactionResponse> {
+    let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
     debug!("execute_raw_transaction");
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
@@ -235,22 +303,18 @@ pub fn execute_raw_transaction(
             })
         }
     };
-    let result = Cache::for_current_state_root(|cache| {
-        transact(cache, signed, ctx.header.timestamp).map_err(|e| e.to_string())
-    });
+    let result = transact(&mut ectx, signed).map_err(|e| e.to_string());
     Ok(ExecuteTransactionResponse {
         created_contract: if result.is_err() { false } else { is_create },
         hash: result,
     })
 }
 
-fn transact(cache: &Cache, transaction: SignedTransaction, timestamp: u64) -> Result<H256> {
-    let mut block = cache.new_block()?;
+fn transact(ectx: &mut EthereumContext, transaction: SignedTransaction) -> Result<H256> {
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
-    block.push_transaction(transaction, None, &mut storage)?;
-    block.set_timestamp(timestamp);
-    cache.add_block(block.close_and_lock())?;
+    ectx.block
+        .push_transaction(transaction, None, &mut storage)?;
     Ok(tx_hash)
 }
 
@@ -285,36 +349,36 @@ fn make_unsigned_transaction(
 
 pub fn simulate_transaction(
     request: &TransactionRequest,
-    _ctx: &ContractCallContext,
+    ctx: &mut ContractCallContext,
 ) -> Result<SimulateTransactionResponse> {
-    debug!("simulate_transaction");
-    Cache::for_current_state_root(|cache| {
-        let tx = match make_unsigned_transaction(cache, request) {
-            Ok(t) => t,
-            Err(e) => {
-                return Ok(SimulateTransactionResponse {
-                    used_gas: U256::from(0),
-                    refunded_gas: U256::from(0),
-                    result: Err(e.to_string()),
-                })
-            }
-        };
-        let exec = match evm::simulate_transaction(cache, &tx) {
-            Ok(exec) => exec,
-            Err(e) => {
-                return Ok(SimulateTransactionResponse {
-                    used_gas: U256::from(0),
-                    refunded_gas: U256::from(0),
-                    result: Err(e.to_string()),
-                })
-            }
-        };
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-        Ok(SimulateTransactionResponse {
-            used_gas: exec.gas_used,
-            refunded_gas: exec.refunded,
-            result: Ok(exec.output),
-        })
+    debug!("simulate_transaction");
+    let tx = match make_unsigned_transaction(&ectx.cache, request) {
+        Ok(t) => t,
+        Err(e) => {
+            return Ok(SimulateTransactionResponse {
+                used_gas: U256::from(0),
+                refunded_gas: U256::from(0),
+                result: Err(e.to_string()),
+            })
+        }
+    };
+    let exec = match evm::simulate_transaction(&ectx.cache, &tx) {
+        Ok(exec) => exec,
+        Err(e) => {
+            return Ok(SimulateTransactionResponse {
+                used_gas: U256::from(0),
+                refunded_gas: U256::from(0),
+                result: Err(e.to_string()),
+            })
+        }
+    };
+
+    Ok(SimulateTransactionResponse {
+        used_gas: exec.gas_used,
+        refunded_gas: exec.refunded,
+        result: Ok(exec.output),
     })
 }
 
@@ -334,13 +398,30 @@ mod tests {
     use hex;
 
     fn dummy_ctx() -> ContractCallContext {
+        let root_hash = DatabaseHandle::instance().get_root_hash();
+
         ContractCallContext {
             header: Header {
                 timestamp: 0xcafedeadbeefc0de,
                 ..Default::default()
             },
-            runtime: Box::new(()),
+            runtime: EthereumContext::new(root_hash),
         }
+    }
+
+    fn with_batch_handler<F, R>(f: F) -> R
+    where
+        F: FnOnce(&mut ContractCallContext) -> R,
+    {
+        let mut ctx = dummy_ctx();
+        let batch_handler = EthereumBatchHandler;
+        batch_handler.start_batch(&mut ctx);
+
+        let result = f(&mut ctx);
+
+        batch_handler.end_batch(ctx);
+
+        result
     }
 
     struct Client {
@@ -360,21 +441,25 @@ mod tests {
         }
 
         fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
-            let tx = EthcoreTransaction {
-                action: Action::Create,
-                nonce: get_account_nonce(&self.keypair.address(), &dummy_ctx()).unwrap(),
-                gas_price: U256::from(0),
-                gas: U256::from(1000000),
-                value: *balance,
-                data: code,
-            }.sign(&self.keypair.secret(), None);
+            let hash = with_batch_handler(|ctx| {
+                let tx = EthcoreTransaction {
+                    action: Action::Create,
+                    nonce: get_account_nonce(&self.keypair.address(), ctx).unwrap(),
+                    gas_price: U256::from(0),
+                    gas: U256::from(1000000),
+                    value: *balance,
+                    data: code,
+                }.sign(&self.keypair.secret(), None);
 
-            let raw = rlp::encode(&tx);
-            let hash = execute_raw_transaction(&raw.into_vec(), &dummy_ctx())
-                .unwrap()
-                .hash
-                .unwrap();
-            let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
+                let raw = rlp::encode(&tx);
+                execute_raw_transaction(&raw.into_vec(), ctx)
+                    .unwrap()
+                    .hash
+                    .unwrap()
+            });
+
+            let receipt = with_batch_handler(|ctx| get_receipt(&hash, ctx).unwrap().unwrap());
+
             (hash, receipt.contract_address.unwrap())
         }
 
@@ -388,10 +473,7 @@ mod tests {
                 nonce: None,
             };
 
-            simulate_transaction(&tx, &dummy_ctx())
-                .unwrap()
-                .result
-                .unwrap()
+            with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())
         }
     }
 
@@ -403,29 +485,29 @@ mod tests {
     fn test_create_balance() {
         let mut client = CLIENT.lock().unwrap();
 
-        let init_bal = get_account_balance(&client.keypair.address(), &dummy_ctx()).unwrap();
+        let init_bal = get_account_balance(&client.keypair.address(), &mut dummy_ctx()).unwrap();
         let contract_bal = U256::from(10);
         let remaining_bal = init_bal - contract_bal;
 
-        let init_nonce = get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap();
+        let init_nonce = get_account_nonce(&client.keypair.address(), &mut dummy_ctx()).unwrap();
 
         let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
         let (_, contract) = client.create_contract(code, &contract_bal);
 
         assert_eq!(
-            get_account_balance(&client.keypair.address(), &dummy_ctx()).unwrap(),
+            get_account_balance(&client.keypair.address(), &mut dummy_ctx()).unwrap(),
             remaining_bal
         );
         assert_eq!(
-            get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap(),
+            get_account_nonce(&client.keypair.address(), &mut dummy_ctx()).unwrap(),
             init_nonce + U256::one()
         );
         assert_eq!(
-            get_account_balance(&contract, &dummy_ctx()).unwrap(),
+            get_account_balance(&contract, &mut dummy_ctx()).unwrap(),
             contract_bal
         );
         assert_eq!(
-            get_storage_at(&(contract, H256::zero()), &dummy_ctx()).unwrap(),
+            get_storage_at(&(contract, H256::zero()), &mut dummy_ctx()).unwrap(),
             H256::from(&remaining_bal)
         );
     }
@@ -457,15 +539,18 @@ mod tests {
             client.call(&contract, data, &U256::zero())
         };
 
-        let block_number = Cache::for_current_state_root(|cache| cache.get_latest_block_number());
-        // This must be called outside the Cache accessor as it also acquires the Cache lock.
+        let block_number = with_batch_handler(|ctx| {
+            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+            ectx.cache.get_latest_block_number()
+        });
         let client_blockhash = blockhash(block_number);
 
-        Cache::for_current_state_root(|cache| {
+        with_batch_handler(|ctx| {
+            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
             assert_eq!(
                 client_blockhash,
-                cache
-                    .block_hash(cache.get_latest_block_number())
+                ectx.cache
+                    .block_hash(ectx.cache.get_latest_block_number())
                     .unwrap()
                     .to_vec()
             );
@@ -517,13 +602,13 @@ mod tests {
 
         // deploy once
         let (hash, contract) = client.create_contract(contract_code.clone(), &U256::zero());
-        let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
+        let receipt = get_receipt(&hash, &mut dummy_ctx()).unwrap().unwrap();
         let status = receipt.status_code.unwrap();
         assert_eq!(status, 1 as u64);
 
         // deploy again
         let (hash, contract) = client.create_contract(contract_code.clone(), &U256::zero());
-        let receipt = get_receipt(&hash, &dummy_ctx()).unwrap().unwrap();
+        let receipt = get_receipt(&hash, &mut dummy_ctx()).unwrap().unwrap();
         let status = receipt.status_code.unwrap();
         assert_eq!(status, 1 as u64);
     }
@@ -534,27 +619,29 @@ mod tests {
 
         let bad_sig = EthcoreTransaction {
             action: Action::Create,
-            nonce: get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap(),
+            nonce: get_account_nonce(&client.keypair.address(), &mut dummy_ctx()).unwrap(),
             gas_price: U256::from(0),
             gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.fake_sign(client.keypair.address());
-        let bad_result = execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &dummy_ctx())
-            .unwrap()
-            .hash;
+        let bad_result =
+            execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &mut dummy_ctx())
+                .unwrap()
+                .hash;
 
         let good_sig = EthcoreTransaction {
             action: Action::Create,
-            nonce: get_account_nonce(&client.keypair.address(), &dummy_ctx()).unwrap(),
+            nonce: get_account_nonce(&client.keypair.address(), &mut dummy_ctx()).unwrap(),
             gas_price: U256::from(0),
             gas: U256::from(1000000),
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
-        let good_result = execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &dummy_ctx())
-            .unwrap()
-            .hash;
+        let good_result =
+            execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &mut dummy_ctx())
+                .unwrap()
+                .hash;
 
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());
@@ -579,7 +666,7 @@ mod tests {
         let client_address = client.keypair.address();
 
         // Initialize the DB.
-        let reference_nonce_before = get_account_nonce(&client_address, &dummy_ctx()).unwrap();
+        let reference_nonce_before = get_account_nonce(&client_address, &mut dummy_ctx()).unwrap();
 
         // Create a chain representing node A, which is initially the leader.
         let chain_a = BlockChain::new(
@@ -597,7 +684,7 @@ mod tests {
         client.create_contract(code_empty, &U256::zero());
 
         // Save the new nonce from the default node, which is currently leader.
-        let reference_nonce = get_account_nonce(&client_address, &dummy_ctx()).unwrap();
+        let reference_nonce = get_account_nonce(&client_address, &mut dummy_ctx()).unwrap();
 
         // When node A is leader again, getting the nonce should give an up to date value.
         let nonce_a = get_account_nonce_chain(&chain_a, &client_address);
@@ -615,15 +702,18 @@ mod tests {
             client.create_contract(vec![], &U256::zero());
         }
 
-        Cache::for_current_state_root(|cache| {
-            // get last_hashes from latest block
-            let last_hashes = cache.last_hashes(&cache.best_block_header().hash());
+        // get last_hashes from latest block
+        with_batch_handler(|ctx| {
+            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
+            let last_hashes = ectx.cache
+                .last_hashes(&ectx.cache.best_block_header().hash());
 
             assert_eq!(last_hashes.len(), 256);
             assert_eq!(
                 last_hashes[1],
-                cache
-                    .block_hash(cache.get_latest_block_number() - 1)
+                ectx.cache
+                    .block_hash(ectx.cache.get_latest_block_number() - 1)
                     .unwrap()
             );
         });
