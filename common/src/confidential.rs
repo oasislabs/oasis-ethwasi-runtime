@@ -2,9 +2,7 @@
 
 use ekiden_common::mrae::sivaessha2;
 use ekiden_core::error::{Error, Result};
-use ekiden_keymanager_common::{
-    PrivateKeyType, PublicKeyType, EMPTY_PRIVATE_KEY, EMPTY_PUBLIC_KEY,
-};
+use ekiden_keymanager_common::{PrivateKeyType, PublicKeyType, EMPTY_PRIVATE_KEY, EMPTY_PUBLIC_KEY};
 use sodalite;
 
 pub fn encrypt(
@@ -31,7 +29,7 @@ pub fn decrypt(data: Option<Vec<u8>>) -> Result<Decryption> {
             nonce: Default::default(),
         });
     }
-    let (nonce, peer_public_key, cipher) = decode_encryption(data.unwrap())?;
+    let (nonce, peer_public_key, cipher) = split_encrypted_payload(data.unwrap())?;
     let (_, private_key) = default_contract_keys();
     let plaintext = sivaessha2::box_open(
         nonce.clone(),
@@ -69,7 +67,7 @@ fn encode_encryption(
 
 /// Assumes data is of the form  IV || PK || CIPHER.
 /// Returns a tuple of each component.
-fn decode_encryption(data: Vec<u8>) -> Result<(Vec<u8>, PublicKeyType, Vec<u8>)> {
+fn split_encrypted_payload(data: Vec<u8>) -> Result<(Vec<u8>, PublicKeyType, Vec<u8>)> {
     let nonce_size = sivaessha2::NONCE_SIZE;
     if data.len() < nonce_size + 32 {
         return Err(Error::new("Invalid nonce or public key"));
@@ -82,6 +80,8 @@ fn decode_encryption(data: Vec<u8>) -> Result<(Vec<u8>, PublicKeyType, Vec<u8>)>
 }
 
 /// Hard coded key manager retrieved contract keys for Web3(c) V0.5.
+/// Public key = 0x9385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54.
+/// Private key = 0xd5af0c986e6a9cce52d05803e962d4b19f915905debcb41f35b68eebc954fa49.
 pub fn default_contract_keys() -> (PublicKeyType, PrivateKeyType) {
     let seed = [
         213, 175, 12, 152, 110, 106, 156, 206, 82, 208, 88, 3, 233, 98, 212, 177, 159, 145, 89, 5,
