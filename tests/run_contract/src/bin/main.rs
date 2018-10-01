@@ -35,6 +35,12 @@ fn main() {
                 .multiple(true)
                 .help("Sets the level of verbosity"),
         )
+        .arg(
+            Arg::with_name("call-args")
+                .long("call-args")
+                .help("Arguments to be passed to contract call")
+                .takes_value(true)
+        )
         .get_matches();
 
     match args.occurrences_of("v") {
@@ -55,6 +61,16 @@ fn main() {
     let contract_address = run_tx(create_tx).unwrap().contract_address.unwrap();
     println!(
         "{:?}",
-        run_tx(make_tx(Either::Right((contract_address, Vec::new())))).unwrap()
+        run_tx(
+            make_tx(
+                Either::Right(
+                    (contract_address,
+                     args.value_of("call-args").map_or(
+                         Vec::new(), |args| args.to_string().into_bytes())
+                        )
+                    )
+                )
+            )
+        .unwrap()
     )
 }
