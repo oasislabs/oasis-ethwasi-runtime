@@ -15,7 +15,7 @@ var makeTxn = function (client) {
         client.eth.sendTransaction({
             from: "1cca28600d7491365520b31b466f88647b9839ec",
             gas: 100000,
-            gasPrice: 0,
+            gasPrice: 20000000000,
             to: "1cca28600d7491365520b31b466f88647b9839ec"
         }, function (err, txn) {
             if (err) {
