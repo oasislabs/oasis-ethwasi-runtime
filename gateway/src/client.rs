@@ -76,7 +76,7 @@ pub struct Client {
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
-    gas_price: RwLock<U256>,
+    gas_price: U256,
 }
 
 impl Client {
@@ -107,7 +107,7 @@ impl Client {
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
-            gas_price: RwLock::new(gas_price),
+            gas_price: gas_price,
         }
     }
 
@@ -124,7 +124,7 @@ impl Client {
             storage: Arc::new(RwLock::new(storage)),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
-            gas_price: RwLock::new(U256::from(1_000_000_000)),
+            gas_price: U256::from(1_000_000_000),
         }
     }
 
@@ -242,7 +242,7 @@ impl Client {
 
     /// Gas price
     pub fn gas_price(&self) -> U256 {
-        self.gas_price.read().unwrap().clone()
+        self.gas_price.clone()
     }
 
     /// Block number at which EIP-86 transition occurs.
