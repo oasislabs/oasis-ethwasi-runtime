@@ -46,6 +46,11 @@ jobs:
       - run:
           name: Run the runtime tests
           command: cargo test
+      # Build run-contract.
+      - run:
+          name: Build run-contract
+          working_directory: tests/run_contract
+          command: cargo build
       # Build the web3 gateway.
       - run:
           name: Build the web3 gateway
