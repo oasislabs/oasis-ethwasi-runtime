@@ -280,8 +280,7 @@ impl Eth for EthClient {
 
     fn gas_price(&self) -> Result<RpcU256> {
         measure_counter_inc!("gasPrice");
-        // TODO: gas model
-        Ok(RpcU256::from(0))
+        Ok(RpcU256::from(self.client.gas_price()))
     }
 
     fn accounts(&self, _meta: Metadata) -> Result<Vec<RpcH160>> {

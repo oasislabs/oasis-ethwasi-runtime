@@ -5,8 +5,13 @@ use ethereum_api::{BlockId as EkidenBlockId, Log};
 
 use ethcore::client::BlockId;
 use ethcore::spec::{Spec, SpecParams};
+use ethereum_types::U256;
 #[cfg(not(feature = "read_state"))]
 use parity_rpc::v1::types::Log as RpcLog;
+
+pub fn gwei_to_wei(gwei: u64) -> U256 {
+    U256::from(gwei).saturating_mul(U256::from(1_000_000_000))
+}
 
 pub fn load_spec() -> Spec {
     #[cfg(not(feature = "benchmark"))]
