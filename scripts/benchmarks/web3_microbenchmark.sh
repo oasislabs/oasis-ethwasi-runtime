@@ -2,14 +2,24 @@
 
 WORKDIR=${1:-$(pwd)}
 
-run_dummy_node_default() {
-    echo "Starting dummy node."
+run_dummy_node() {
+    local datadir=/tmp/ekiden-dummy-data
+    rm -rf ${datadir}
 
-    ekiden-node-dummy \
-	--random-beacon-backend dummy \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-	--time-source-notifier mockrpc \
-        --storage-backend dummy \
+    echo "Starting Go dummy node."
+
+    ekiden \
+        --log.level error \
+        --grpc.port 42261 \
+        --epochtime.backend tendermint \
+        --tendermint.consensus.timeout_commit 250ms \
+        --epochtime.tendermint.interval 240 \
+        --beacon.backend tendermint \
+        --storage.backend leveldb \
+        --scheduler.backend trivial \
+        --registry.backend tendermint \
+        --roothash.backend tendermint \
+        --datadir ${datadir} \
         &> dummy.log &
 }
 
@@ -25,11 +35,12 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-	--max-batch-timeout 100 \
-	--max-batch-size 50 \
-        --storage-backend remote \
-	--time-source-notifier system \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
+        --storage-multilayer-bottom-backend remote \
+        --max-batch-size 50 \
+        --max-batch-timeout 100 \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
@@ -49,18 +60,15 @@ run_test() {
     run_compute_node 1
     sleep 1
     run_compute_node 2
-
-    # Advance epoch to elect a new committee.
-    echo "Advancing epoch."
-    sleep 2
-    ekiden-node-dummy-controller set-epoch --epoch 1
     sleep 2
 
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
     gateway/target/release/gateway \
-        --storage-backend remote \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway \
+        --storage-multilayer-bottom-backend remote \
         --mr-enclave $(cat $WORKDIR/target_benchmark/enclave/runtime-ethereum.mrenclave) \
         --threads 100 &> gateway.log &
     sleep 2
@@ -69,7 +77,7 @@ run_test() {
     echo "Starting benchmark."
     ${WORKDIR}/benchmark/target/release/web3_benchmark \
         --threads 100 \
-        eth_blockNumber net_version eth_getBlockByNumber debug_nullCall &
+        transfer eth_blockNumber net_version eth_getBlockByNumber debug_nullCall &
     benchmark_pid=$!
 
     # Wait on the benchmark and check its exit status.
@@ -81,4 +89,4 @@ run_test() {
     wait || true
 }
 
-run_test run_dummy_node_default
+run_test run_dummy_node
