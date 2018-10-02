@@ -61,16 +61,6 @@ fn main() {
     let contract_address = run_tx(create_tx).unwrap().contract_address.unwrap();
     println!(
         "{:?}",
-        run_tx(
-            make_tx(
-                Either::Right(
-                    (contract_address,
-                     args.value_of("call-args").map_or(
-                         Vec::new(), |args| args.to_string().into_bytes())
-                        )
-                    )
-                )
-            )
-        .unwrap()
+        run_tx(make_tx(Either::Right((contract_address, args.value_of("call-args").map_or(Vec::new(), |args| args.to_string().into_bytes()))))).unwrap()
     )
 }
