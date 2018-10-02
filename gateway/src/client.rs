@@ -12,7 +12,9 @@ use ethcore::executive::{contract_address, Executed, Executive, TransactOptions}
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
 use ethcore::receipt::LocalizedReceipt;
+use ethcore::rlp;
 use ethcore::spec::Spec;
+use ethcore::transaction::UnverifiedTransaction;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 use runtime_ethereum;
@@ -74,6 +76,7 @@ pub struct Client {
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
+    gas_price: U256,
 }
 
 impl Client {
@@ -82,6 +85,7 @@ impl Client {
         snapshot_manager: Option<client_utils::db::Manager>,
         client: runtime_ethereum::Client,
         backend: Arc<StorageBackend>,
+        gas_price: U256,
     ) -> Self {
         let storage = Web3GlobalStorage::new(backend);
 
@@ -103,6 +107,7 @@ impl Client {
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
+            gas_price: gas_price,
         }
     }
 
@@ -119,6 +124,7 @@ impl Client {
             storage: Arc::new(RwLock::new(storage)),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
+            gas_price: U256::from(1_000_000_000),
         }
     }
 
@@ -232,6 +238,11 @@ impl Client {
         } else {
             id_b
         }
+    }
+
+    /// Gas price
+    pub fn gas_price(&self) -> U256 {
+        self.gas_price.clone()
     }
 
     /// Block number at which EIP-86 transition occurs.
@@ -778,7 +789,25 @@ impl Client {
         )
     }
 
+    /// Checks whether transaction is well formed and meets min gas price.
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<(), String> {
+        let decoded: UnverifiedTransaction = match rlp::decode(raw) {
+            Ok(t) => t,
+            Err(e) => return Err(e.to_string()),
+        };
+        let unsigned = decoded.as_unsigned();
+        if unsigned.gas_price < self.gas_price() {
+            return Err("Insufficient gas price".to_string());
+        }
+        Ok(())
+    }
+
     pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, String> {
+        match self.precheck_transaction(&raw) {
+            Ok(_) => (),
+            Err(e) => return Err(e.to_string()),
+        }
+
         contract_call_result(
             "execute_raw_transaction",
             self.client.execute_raw_transaction(raw).wait().map(|r| {

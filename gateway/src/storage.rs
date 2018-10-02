@@ -1,7 +1,6 @@
 use ekiden_common::bytes::H256 as EkidenH256;
-use ekiden_common::futures::FutureExt;
 use ekiden_core::futures::Future;
-use ekiden_storage_base::{hash_storage_key, StorageBackend};
+use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 use ethcore::storage::Storage;
 use ethereum_types::H256;
 use vm::{Error, Result};
@@ -29,7 +28,7 @@ impl Storage for Web3GlobalStorage {
 
     fn store_bytes(&self, bytes: &[u8]) -> Result<H256> {
         let result = self.backend
-            .insert(bytes.to_vec(), <u64>::max_value())
+            .insert(bytes.to_vec(), <u64>::max_value(), InsertOptions::default())
             .wait();
         match result {
             Ok(_) => Ok(H256::from_slice(&hash_storage_key(bytes).0)),

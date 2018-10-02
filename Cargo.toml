@@ -5,13 +5,13 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden4" }
+common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden6" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden4" }
+ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden6" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 ethereum-api = { path = "./api" }
 hex = "0.3"
@@ -26,7 +26,7 @@ ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" 
 
 [dev-dependencies]
 ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden4" }
+ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden6" }
 
 [features]
 benchmark = []

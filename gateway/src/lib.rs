@@ -106,11 +106,12 @@ mod storage;
 #[cfg(all(feature = "read_state", test))]
 mod test_helpers;
 mod traits;
-mod util;
+pub mod util;
 
 use std::sync::Arc;
 
 use clap::ArgMatches;
+use ethereum_types::U256;
 
 use ekiden_contract_client::create_contract_client;
 use ekiden_core::environment::Environment;
@@ -131,6 +132,7 @@ pub fn start(
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
+    gas_price: U256,
 ) -> Result<RunningClient, String> {
     let client = contract_client!(runtime_ethereum, args, container);
     let storage: Arc<StorageBackend> = container
@@ -155,6 +157,7 @@ pub fn start(
             http_port,
             num_threads,
             ws_port,
+            gas_price,
         )
     }
 
@@ -168,5 +171,6 @@ pub fn start(
         http_port,
         num_threads,
         ws_port,
+        gas_price,
     )
 }

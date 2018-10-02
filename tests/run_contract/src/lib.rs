@@ -1,4 +1,5 @@
 extern crate either;
+extern crate ekiden_core;
 extern crate ekiden_roothash_base;
 extern crate ekiden_trusted;
 extern crate ethcore;
@@ -13,7 +14,8 @@ use std::str::FromStr;
 
 use either::Either;
 use ekiden_roothash_base::Header;
-use ekiden_trusted::contract::dispatcher::ContractCallContext;
+use ekiden_trusted::{contract::dispatcher::{ContractCallContext, BatchHandler},
+                    db::DatabaseHandle};
 use ethcore::{rlp,
               storage::Storage,
               transaction::{Action, SignedTransaction, Transaction}};
@@ -21,16 +23,33 @@ use ethereum_api::{ExecuteTransactionResponse, Receipt};
 use ethereum_types::{Address, H256, U256};
 use ethkey::Secret;
 use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt,
+                       EthereumContext, EthereumBatchHandler,
                        storage::GlobalStorage};
 
 fn dummy_ctx() -> ContractCallContext {
+    let root_hash = DatabaseHandle::instance().get_root_hash();
     ContractCallContext {
         header: Header {
             timestamp: 0xcafedeadbeefc0de,
             ..Default::default()
         },
-        runtime: Box::new(()),
+        runtime: EthereumContext::new(root_hash),
     }
+}
+
+fn with_batch_handler<F, R>(f: F) -> R
+where
+    F: FnOnce(&mut ContractCallContext) -> R,
+{
+    let mut ctx = dummy_ctx();
+    let batch_handler = EthereumBatchHandler;
+    batch_handler.start_batch(&mut ctx);
+
+    let result = f(&mut ctx);
+
+    batch_handler.end_batch(ctx);
+
+    result
 }
 
 lazy_static! {
@@ -47,7 +66,7 @@ lazy_static! {
 pub fn make_tx(spec: Either<Vec<u8>, (Address, Vec<u8>)>) -> SignedTransaction {
     let mut tx = Transaction::default();
     tx.gas = U256::from("10000000000000");
-    tx.nonce = U256::from(get_account_nonce(&DEFAULT_ACCOUNT, &dummy_ctx()).unwrap());
+    tx.nonce = U256::from(get_account_nonce(&DEFAULT_ACCOUNT, &mut dummy_ctx()).unwrap());
     match spec {
         Either::Left(data) => tx.data = data,
         Either::Right((addr, data)) => {
@@ -60,10 +79,8 @@ pub fn make_tx(spec: Either<Vec<u8>, (Address, Vec<u8>)>) -> SignedTransaction {
 
 /// Runs a signed transaction using the runtime.
 pub fn run_tx(tx: SignedTransaction) -> Result<Receipt, ExecuteTransactionResponse> {
-    let res = execute_raw_transaction(&rlp::encode(&tx).to_vec(), &dummy_ctx()).unwrap();
-    let receipt = get_receipt(res.hash.as_ref().unwrap(), &dummy_ctx())
-        .unwrap()
-        .unwrap();
+    let res = with_batch_handler(|ctx| execute_raw_transaction(&rlp::encode(&tx).to_vec(), ctx).unwrap());
+    let receipt = with_batch_handler(|ctx| get_receipt(res.hash.as_ref().unwrap(), ctx).unwrap().unwrap());
     if !receipt.status_code.is_some() || receipt.status_code.unwrap() == 0 {
         println!("ERROR:\n{:?}\n{:?}", res, receipt);
         Err(res)
