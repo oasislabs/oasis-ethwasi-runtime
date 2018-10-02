@@ -802,13 +802,11 @@ impl Client {
         Ok(())
     }
 
-    pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, String> {
+    pub fn send_raw_transaction(&self, raw: Bytes, encrypted: bool) -> Result<H256, String> {
         match self.precheck_transaction(&raw) {
             Ok(_) => (),
             Err(e) => return Err(e.to_string()),
         }
-
-    pub fn send_raw_transaction(&self, raw: Bytes, encrypted: bool) -> Result<H256, String> {
         contract_call_result(
             "execute_raw_transaction",
             self.client
