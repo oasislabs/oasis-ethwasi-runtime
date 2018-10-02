@@ -1,0 +1,11 @@
+{
+  "name": "web3js",
+  "version": "1.0.0",
+  "description": "A collection of tests for web3.js against a local gateway",
+  "main": "eth.sendSignedTransaction.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC"
+}
