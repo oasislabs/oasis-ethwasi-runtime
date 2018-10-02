@@ -8,11 +8,20 @@ setup_utils() {
     npm install ethereumjs-wallet@=0.6.0
     npm install truffle-hdwallet-provider
 
-    echo "Installing wscat."
-    npm install -g wscat
+    echo "Installing wasm32-unknown-unknown target."
+    rustup target add wasm32-unknown-unknown
+}
 
-    echo "Installing jq."
-    apt-get install -y jq
+build_contracts() {
+    echo "Building storage contract."
+    pushd ${WORKDIR}/tests/contracts/storage_contract
+    ./build.sh
+    popd
+
+    echo "Building solidity contracts."
+    pushd ${WORKDIR}/tests
+    truffle compile
+    popd
 }
 
 run_dummy_node_go_tm() {
@@ -101,24 +110,6 @@ run_test() {
     sleep 1
     run_compute_node 2
 
-    # Run truffle tests against gateway 1 (in background)
-    echo "Running truffle tests."
-    pushd ${WORKDIR}/tests/ > /dev/null
-    truffle test --network development > ${WORKDIR}/truffle.txt & truffle_pid=$!
-    popd > /dev/null
-
-    # Subscribe to logs from gateway 2, and check that we get a log result
-    echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
-
-    # Check truffle test exit code
-    wait $truffle_pid
-    truffle_ret=$?
-    if [ $truffle_ret -ne 0 ]; then
-        echo "truffle test failed"
-	exit $truffle_ret
-    fi
-
     # Dump the metrics.
     curl -v http://localhost:3001/metrics
     curl -v http://localhost:3002/metrics
@@ -129,4 +120,5 @@ run_test() {
 }
 
 setup_utils
-run_test run_dummy_node_go_tm
+build_contracts
+#run_test run_dummy_node_go_tm
