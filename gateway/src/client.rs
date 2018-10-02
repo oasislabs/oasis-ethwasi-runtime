@@ -786,7 +786,11 @@ impl Client {
                 .wait()
                 .map(|r| {
                     if r.created_contract {
-                        measure_counter_inc!("contract_created")
+                        if encrypted {
+                            measure_counter_inc!("confidential_contract_created")
+                        } else {
+                            measure_counter_inc!("contract_created")
+                        }
                     }
                     r.hash
                 }),
