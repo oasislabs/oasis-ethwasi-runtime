@@ -69,21 +69,33 @@ if (require.main === module) {
         process.exit(0);
     }
 
+    let next_txn = async function (client) {
+        try {
+            await makeTxn(client);
+        } catch (e) {
+            console.warn("Transaction failed.", e);
+            txnerrors.inc();
+        }
+    }
+
     let run = async function () {
-        let provider = new HDWalletProvider(mnemonic, process.argv[2]);
         let client = new web3();
+        let hprovider = new client.providers.HttpProvider(process.argv[2], 1000 * 60);
+        let provider = new HDWalletProvider(mnemonic, hprovider);
         await client.setProvider(provider);
+        let in_progress = new Map();
         while (true) {
             await pause(process.argv[3]);
-            const end = txnlatency.startTimer();
-            try {
-                await makeTxn(client);
-            } catch (e) {
-                console.warn("Transaction failed.", e);
-                txnerrors.inc();
-            }
-            end();
-            txncount.inc();
+
+            let end = txnlatency.startTimer();
+            let next_txn = nextTxn(client);
+            in_progress.set(next_txn, end);
+            next_txn.then(() => {
+                in_progress.get(next_txn)();
+                in_progress.delete(next_txn);
+                txncount.inc();
+            });
+
             if (gateway != null) {
                 gateway.pushAdd({ jobName: `${pushJobPrefix}-web3-txn`, groupings: pushGroupings }, () => { });
             }
