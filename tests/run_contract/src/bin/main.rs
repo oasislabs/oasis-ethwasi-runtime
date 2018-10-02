@@ -35,6 +35,13 @@ fn main() {
                 .multiple(true)
                 .help("Sets the level of verbosity"),
         )
+        .arg(
+            Arg::with_name("call-args")
+                .long("call-args")
+                .help("Arguments to be passed to contract call")
+                .takes_value(true)
+                .default_value("")
+        )
         .get_matches();
 
     match args.occurrences_of("v") {
@@ -53,8 +60,9 @@ fn main() {
         fs::write(tx_file, rlp::encode(&create_tx)).unwrap();
     }
     let contract_address = run_tx(create_tx).unwrap().contract_address.unwrap();
+    let call_args = args.value_of("call-args").unwrap().as_bytes().to_owned();
     println!(
         "{:?}",
-        run_tx(make_tx(Either::Right((contract_address, Vec::new())))).unwrap()
+        run_tx(make_tx(Either::Right((contract_address, call_args)))).unwrap()
     )
 }

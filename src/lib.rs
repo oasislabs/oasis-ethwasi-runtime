@@ -50,7 +50,7 @@ with_api! {
 }
 
 /// Ethereum-specific batch context.
-struct EthereumContext<'a> {
+pub struct EthereumContext<'a> {
     /// Blockchain cache.
     cache: Cache,
     /// Currently open block.
@@ -61,7 +61,7 @@ struct EthereumContext<'a> {
 
 impl<'a> EthereumContext<'a> {
     /// Create new Ethereum-specific batch context.
-    fn new(root_hash: ekiden_core::bytes::H256) -> Box<Self> {
+    pub fn new(root_hash: ekiden_core::bytes::H256) -> Box<Self> {
         let cache = Cache::from_global(root_hash);
 
         Box::new(EthereumContext {
@@ -72,7 +72,7 @@ impl<'a> EthereumContext<'a> {
     }
 }
 
-struct EthereumBatchHandler;
+pub struct EthereumBatchHandler;
 impl BatchHandler for EthereumBatchHandler {
     fn start_batch(&self, ctx: &mut ContractCallContext) {
         let root_hash = DatabaseHandle::instance().get_root_hash();

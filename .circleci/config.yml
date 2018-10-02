@@ -60,6 +60,13 @@ jobs:
             CARGO_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo test
+      # Build run-contract.
+      - run:
+          name: Build run-contract
+          working_directory: tests/run_contract
+          environment:
+            CARGO_TARGET_DIR: ../target
+          command: cargo build
       # Build the web3 microbenchmark.
       - run:
           name: Build the web3 microbenchmark
