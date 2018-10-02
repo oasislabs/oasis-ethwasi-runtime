@@ -1,7 +1,7 @@
 use ekiden_common::bytes::H256 as EkidenH256;
 use ekiden_common::futures::FutureExt;
 use ekiden_core::futures::Future;
-use ekiden_storage_base::{hash_storage_key, StorageBackend};
+use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 #[cfg(not(target_env = "sgx"))]
 use ekiden_storage_dummy::DummyStorageBackend as StorageBackendImpl;
 #[cfg(target_env = "sgx")]
@@ -34,7 +34,9 @@ impl Storage for GlobalStorage {
     }
 
     fn store_bytes(&mut self, bytes: &[u8]) -> Result<H256> {
-        let result = BACKEND.insert(bytes.to_vec(), <u64>::max_value()).wait();
+        let result = BACKEND
+            .insert(bytes.to_vec(), <u64>::max_value(), InsertOptions::default())
+            .wait();
         match result {
             Ok(_) => Ok(H256::from_slice(&hash_storage_key(bytes).0)),
             Err(err) => Err(Error::Storage(err.description().to_string())),
