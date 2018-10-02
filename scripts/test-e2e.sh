@@ -3,10 +3,10 @@
 WORKDIR=${1:-$(pwd)}
 
 setup_utils() {
-    echo "Installing truffle-hdwallet-provider."
-    # Temporary fix for ethereumjs-wallet@0.6.1 incompatibility
-    npm install ethereumjs-wallet@=0.6.0
-    npm install truffle-hdwallet-provider
+    echo "Installing test dependencies"
+    pushd ${WORKDIR}/tests/ > /dev/null
+    npm install
+    popd > /dev/null
 
     echo "Installing wscat."
     npm install -g wscat
@@ -104,7 +104,7 @@ run_test() {
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
-    truffle test --network development > ${WORKDIR}/truffle.txt & truffle_pid=$!
+    npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
     popd > /dev/null
 
     # Subscribe to logs from gateway 2, and check that we get a log result
