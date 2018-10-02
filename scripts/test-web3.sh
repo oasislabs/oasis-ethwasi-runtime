@@ -2,16 +2,6 @@
 
 WORKDIR=${1:-$(pwd)}
 
-setup_utils() {
-    echo "Installing truffle-hdwallet-provider."
-    # Temporary fix for ethereumjs-wallet@0.6.1 incompatibility
-    npm install ethereumjs-wallet@=0.6.0
-    npm install truffle-hdwallet-provider
-
-    echo "Installing wasm32-unknown-unknown target."
-    rustup target add wasm32-unknown-unknown
-}
-
 build_contracts() {
     echo "Building storage contract."
     pushd ${WORKDIR}/tests/contracts/storage_contract

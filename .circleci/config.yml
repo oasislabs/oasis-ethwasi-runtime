@@ -192,6 +192,9 @@ jobs:
           name: Build the transaction playback tool
           working_directory: playback
           command: cargo build
+      - run:
+          name: Install e2e test dependencies
+          command: ./scripts/setup-e2e.sh
 
   build-run-contract:
     # The purpose of this job is to ensure

@@ -2,19 +2,6 @@
 
 WORKDIR=${1:-$(pwd)}
 
-setup_utils() {
-    echo "Installing test dependencies"
-    pushd ${WORKDIR}/tests/ > /dev/null
-    npm install
-    popd > /dev/null
-
-    echo "Installing wscat."
-    npm install -g wscat
-
-    echo "Installing jq."
-    apt-get install -y jq
-}
-
 run_dummy_node_go_tm() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
