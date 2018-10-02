@@ -1,8 +1,7 @@
 //! Eth rpc interface.
 use jsonrpc_core::Result;
-use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::types::{Bytes, H256, U256};
+use parity_rpc::v1::types::H256;
 
 build_rpc_trait! {
     pub trait Oasis {
