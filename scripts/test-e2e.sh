@@ -24,13 +24,13 @@ run_dummy_node_go_tm() {
     ${WORKDIR}/ekiden-node \
         --log.level debug \
         --grpc.port 42261 \
-        --epochtime.backend tendermint \
-        --epochtime.tendermint.interval 60 \
-        --beacon.backend tendermint \
+        --epochtime.backend tendermint_mock \
+        --beacon.backend insecure \
         --storage.backend memory \
         --scheduler.backend trivial \
         --registry.backend tendermint \
         --roothash.backend tendermint \
+        --tendermint.consensus.timeout_commit 250ms \
         --datadir ${datadir} \
         &> dummy-go.log &
 }
@@ -100,6 +100,10 @@ run_test() {
     run_compute_node 1
     sleep 1
     run_compute_node 2
+
+    # Advance epoch to elect a new committee.
+    sleep 3
+    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
 
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
