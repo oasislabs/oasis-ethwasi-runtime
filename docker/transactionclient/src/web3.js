@@ -69,7 +69,11 @@ if (require.main === module) {
       process.exit(0);
     }
 
-    async function nextTxn (client) {
+    async function nextTxn () {
+      let client = new web3();
+      let hprovider = new client.providers.HttpProvider(process.argv[2], 1000 * 60);
+      let provider = new HDWalletProvider(mnemonic, hprovider);
+      await client.setProvider(provider);
       try {
         await makeTxn(client);
       } catch (e) {
@@ -79,21 +83,25 @@ if (require.main === module) {
     }
 
     async function run () {
-      let client = new web3();
-      let hprovider = new client.providers.HttpProvider(process.argv[2], 1000 * 60);
-      let provider = new HDWalletProvider(mnemonic, hprovider);
-      await client.setProvider(provider);
       let in_progress = new Map();
       while (true) {
         await pause(process.argv[3]);
 
+
+        if (in_progress.size() > 100) {
+          console.warn('more than 100 outstanding requests. restarting to clean potentially stuck state.');
+          process.exit(2);
+        }
         let end = txnlatency.startTimer();
-        let next_txn = nextTxn(client);
+        let next_txn = nextTxn();
         in_progress.set(next_txn, end);
         next_txn.then(() => {
           in_progress.get(next_txn)();
           in_progress.delete(next_txn);
           txncount.inc();
+        }).catch((e) => {
+          console.warn(e);
+          txnerrors.inc();
         });
 
         if (gateway != null) {
