@@ -88,7 +88,7 @@ if (require.main === module) {
         await pause(process.argv[3]);
 
 
-        if (in_progress.size() > 100) {
+        if (in_progress.size > 100) {
           console.warn('more than 100 outstanding requests. restarting to clean potentially stuck state.');
           process.exit(2);
         }
