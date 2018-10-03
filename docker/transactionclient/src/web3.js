@@ -69,7 +69,7 @@ if (require.main === module) {
       process.exit(0);
     }
 
-    async function nextTxn (client) {
+    async function nextTxn () {
       let client = new web3();
       let hprovider = new client.providers.HttpProvider(process.argv[2], 1000 * 60);
       let provider = new HDWalletProvider(mnemonic, hprovider);
