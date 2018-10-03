@@ -107,10 +107,10 @@ fn transfer_prep(client: &mut Web3Client<HttpHandle>) -> TransferAccount {
     let recipient = account.keypair.address();
     let tx = ethcore_transaction::Transaction {
         nonce: U256::from(fund_account.nonce),
-        gas_price: U256::zero(),
+        gas_price: U256::from(1_000_000_000),
         gas: U256::from(1000000),
         action: ethcore_transaction::Action::Call(recipient),
-        value: U256::from(1000000),
+        value: U256::from(100_000_000_000_000_000u64),
         data: vec![],
     }.sign(fund_account.keypair.secret(), None);
     let tx_raw = rlp::encode(&tx);
@@ -126,7 +126,7 @@ fn transfer(client: &mut Web3Client<HttpHandle>, account: &mut TransferAccount) 
     rand::thread_rng().fill_bytes(&mut recipient.0);
     let tx = ethcore_transaction::Transaction {
         nonce: U256::from(account.nonce),
-        gas_price: U256::zero(),
+        gas_price: U256::from(1_000_000_000),
         gas: U256::from(1000000),
         action: ethcore_transaction::Action::Call(recipient),
         value: U256::one(),
