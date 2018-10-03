@@ -120,5 +120,4 @@ run_test() {
     pkill -P $$
 }
 
-setup_utils
 run_test run_dummy_node_go_tm

@@ -17,11 +17,13 @@ program
   .option('--dump-json', 'dump cURLable json')
   .parse(process.argv);
 
+console.log('reading contract');
 const contractFilename = program.args[0] || fs.readdirSync('target').reduce((f, d) => {
   return f || (d.endsWith('.wasm') && 'target/' + d);
 }, undefined);
 
 const contract = fs.readFileSync(contractFilename).toString('hex');
+console.log('contract read');
 
 web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
   const tx = new Tx({
@@ -32,6 +34,7 @@ web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
     value: 0,
   });
   tx.sign(PRIVATE_KEY);
+  console.log('signed transaction');
 
   let serializedTx = '0x' + tx.serialize().toString('hex');
 
