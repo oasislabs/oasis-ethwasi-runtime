@@ -25,10 +25,13 @@ use transaction::{Action, LocalizedTransaction, SignedTransaction};
 use client_utils;
 #[cfg(feature = "read_state")]
 use client_utils::db::Snapshot;
+use ekiden_common::bytes::B512;
 use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
+use ekiden_keymanager_client::KeyManager;
+use ekiden_keymanager_common::ContractId;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
@@ -43,6 +46,8 @@ use test_helpers::{self, MockDb};
 #[cfg(test)]
 use util;
 use util::from_block_id;
+
+use traits::confidential::PublicKeyResult;
 
 // record contract call outcome
 fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
@@ -81,6 +86,7 @@ pub struct Client {
     notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
     gas_price: U256,
+    key_manager: Mutex<KeyManager>,
 }
 
 impl Client {
@@ -91,6 +97,7 @@ impl Client {
         environment: Arc<Environment>,
         backend: Arc<StorageBackend>,
         gas_price: U256,
+        key_manager: KeyManager,
     ) -> Self {
         let storage = Web3GlobalStorage::new(backend);
 
@@ -114,7 +121,23 @@ impl Client {
             notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
             gas_price: gas_price,
+            key_manager: Mutex::new(key_manager),
         }
+    }
+
+    #[cfg(feature = "confidential")]
+    pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
+        let cid = ContractId::from(0);
+        let public_key = self.key_manager
+            .lock()
+            .expect("Should always have an key manager")
+            .get_public_key(cid)
+            .map_err(|_| "error".to_string())?;
+        Ok(PublicKeyResult {
+            public_key,
+            timestamp: 1,             // temp
+            signature: B512::from(2), // temp
+        })
     }
 
     /// A blockchain client for unit tests.
@@ -122,7 +145,9 @@ impl Client {
     pub fn get_test_client() -> Self {
         let spec = &util::load_spec();
         let grpc_environment = grpcio::EnvBuilder::new().build();
-        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(grpc_environment));
+        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(
+            grpc_environment,
+        ));
         let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
         Self {
             client: test_helpers::get_test_runtime_client(),

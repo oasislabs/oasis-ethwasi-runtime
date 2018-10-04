@@ -32,6 +32,10 @@ impl Confidential for ConfidentialClient {
     type Metadata = Metadata;
 
     fn public_key(&self, contract: Address) -> Result<PublicKeyResult> {
+        self.client
+            .public_key(contract)
+            .map_err(|_| Error::new(ErrorCode::InternalError))
+        /*
         measure_counter_inc!("confidential_getPublicKey");
         let (public_key, _) = confidential::default_contract_keys();
         // TODO: V1 should be issued by the key manager
@@ -45,6 +49,7 @@ impl Confidential for ConfidentialClient {
             timestamp,
             signature: B512::from(0), // TODO: V1
         })
+         */
     }
 
     fn call_enc(
@@ -77,10 +82,9 @@ impl Confidential for ConfidentialClient {
                                 decryption.nonce,
                                 decryption.peer_public_key,
                             ).map(Bytes::from)
-                                .map_err(|_| Error::new(ErrorCode::InternalError)),
+                            .map_err(|_| Error::new(ErrorCode::InternalError)),
                         )
-                    })
-                    .boxed()
+                    }).boxed()
             }
         }
     }
