@@ -91,6 +91,8 @@ extern crate ekiden_storage_dummy;
 #[cfg(test)]
 extern crate ekiden_storage_frontend;
 extern crate ethereum_api;
+#[cfg(test)]
+extern crate grpcio;
 
 mod client;
 mod impls;

@@ -17,6 +17,8 @@ use ethcore::spec::Spec;
 use ethcore::transaction::UnverifiedTransaction;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
+#[cfg(test)]
+use grpcio;
 use runtime_ethereum;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
@@ -119,12 +121,15 @@ impl Client {
     #[cfg(test)]
     pub fn get_test_client() -> Self {
         let spec = &util::load_spec();
+        let grpc_environment = grpcio::EnvBuilder::new().build();
+        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(grpc_environment));
         let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
         Self {
             client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
             snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
+            environment: environment,
             storage: Arc::new(RwLock::new(storage)),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
