@@ -33,7 +33,9 @@ use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 dispatcher::{BatchHandler, ContractCallContext}},
                      db::DatabaseHandle,
                      enclave::enclave_init};
-use ethcore::{block::{IsBlock, OpenBlock},
+use ethcore::{block::{IsBlock, OpenBlock, ReceiptEncrypter},
+              log_entry::LogEntry as EthLogEntry,
+              receipt::Receipt as EthReceipt,
               rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
@@ -313,6 +315,38 @@ pub fn execute_raw_transaction(
     })
 }
 
+struct Encrypter {
+    decryption: confidential::Decryption,
+}
+impl Encrypter {
+    fn encrypt_log(&self, log: EthLogEntry) -> Result<EthLogEntry> {
+        let encrypted_data = confidential::encrypt(
+            log.data,
+            self.decryption.nonce.clone(),
+            self.decryption.peer_public_key.clone(),
+        )?;
+        Ok(EthLogEntry {
+            address: log.address,
+            topics: log.topics,
+            data: encrypted_data,
+        })
+    }
+}
+impl ReceiptEncrypter for Encrypter {
+    fn encrypt(&self, receipt: EthReceipt) -> std::result::Result<EthReceipt, String> {
+        let mut encrypted_logs = vec![];
+        for log in receipt.logs {
+            let enc_log = self.encrypt_log(log).map_err(|e| "err".to_string())?;
+            encrypted_logs.push(enc_log);
+        }
+        Ok(EthReceipt::new(
+            receipt.outcome,
+            receipt.gas_used,
+            encrypted_logs,
+        ))
+    }
+}
+
 fn transact(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
@@ -321,9 +355,15 @@ fn transact(
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     if encrypted {
-        let transaction_decrypted = decrypt_transaction(&transaction)?;
-        ectx.block
-            .push_transaction_enc(transaction_decrypted, transaction, None, &mut storage)?;
+        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+        let encrypter = Box::new(Encrypter { decryption });
+        ectx.block.push_transaction_enc(
+            transaction_decrypted,
+            transaction,
+            encrypter,
+            None,
+            &mut storage,
+        )?;
     } else {
         ectx.block
             .push_transaction(transaction, None, &mut storage)?;
@@ -331,7 +371,9 @@ fn transact(
     Ok(tx_hash)
 }
 
-fn decrypt_transaction(transaction: &SignedTransaction) -> Result<SignedTransaction> {
+fn decrypt_transaction(
+    transaction: &SignedTransaction,
+) -> Result<(SignedTransaction, confidential::Decryption)> {
     let decryption = confidential::decrypt(Some(transaction.data.clone()))?;
     let unsigned = EthcoreTransaction {
         nonce: transaction.nonce,
@@ -339,7 +381,7 @@ fn decrypt_transaction(transaction: &SignedTransaction) -> Result<SignedTransact
         gas: transaction.gas,
         action: transaction.action.clone(),
         value: transaction.value,
-        data: decryption.plaintext,
+        data: decryption.clone().plaintext,
     };
     // the signature is invalid now that we've decrypted the data
     let unverified =
@@ -348,7 +390,7 @@ fn decrypt_transaction(transaction: &SignedTransaction) -> Result<SignedTransact
         .map_err(|_| Error::new("Unable to create a signed transaction"))?;
     tx.set_sender(transaction.sender().clone());
     tx.set_public_key(transaction.public_key().clone());
-    Ok(tx)
+    Ok((tx, decryption))
 }
 
 fn make_unsigned_transaction(
