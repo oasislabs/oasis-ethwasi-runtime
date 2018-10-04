@@ -332,7 +332,7 @@ fn transact(
             |tx| Ok(transaction_decrypted),
             |receipt| {
                 encrypt_receipt(
-                    receipt.clone(),
+                    receipt,
                     decryption.nonce,
                     decryption.peer_public_key,
                 ).map_err(|_| BlockError::InvalidSeal.into())
