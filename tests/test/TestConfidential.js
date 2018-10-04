@@ -11,7 +11,7 @@ contract("Confidential Counter", async (accounts) => {
 
   /**
    * Transactions encrypted with the following ephemeral keypair.
-   * private key: c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179
+   * private key: 0xc61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179
    * address: 0x7110316b618d20d0c44728ac2a3d683536ea682b
    */
   it("deploys, updates, and retrieves the storage of a confidential contract", async () => {
@@ -24,8 +24,7 @@ contract("Confidential Counter", async (accounts) => {
 	assert.equal(firstCounter.result, "0x000000000000000000000000000000029385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54f6b305ea6e17bfd4db6277ec340e26256a3406c5d38c45f97dd19a66b4a0c25d045d68a4d56f158046b2bd30512798e6");
 	// encryption: NONCE = 2 || PK || ENC(1)
 	assert.equal(secondCounter.result, "0x000000000000000000000000000000029385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54f6c1360bc673fb58cb0c603eee3b42f11ff4180b604240c3210ad01dbcc3c05c5a3385c1222c119d3069d3ba2edba4f2");
-
-  })
+  });
 
   /**
    * Fails because the state is saved from the previous test and so we expect the next
@@ -38,7 +37,8 @@ contract("Confidential Counter", async (accounts) => {
 	assert.equal(deployTxHash.hasOwnProperty("error"), true);
 	const enc_deployTxHash = await counter.confidential_deploy(nonce);
 	assert.equal(enc_deployTxHash.hasOwnProperty("error"), true);
-  })
+  });
+
   /**
    * Sanity check on successfully sending the above transactions without
    * encryption and with a different account (i.e. a reset nonce).
@@ -52,7 +52,51 @@ contract("Confidential Counter", async (accounts) => {
 
 	assert.equal(firstCount.result, "0x0000000000000000000000000000000000000000000000000000000000000000");
 	assert.equal(secondCount.result, "0x0000000000000000000000000000000000000000000000000000000000000001");
-  })
+  });
+
+  /**
+   * Expected encrypted logs.
+   */
+  // encryption: NONCE = 3 || PK_EPHEMERAL || ENC(1)
+  const EXPECTED_LOG_1 = "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a548e842fe406af4e0ff75149b60b95a8d3ec09de32f228425c8f237a383122654c46e41ac72b0dd35fc66cf38e3bfe937b";
+  // encryption: NONCE = 3 || PK_EPHEMERAL || ENC(2)
+  const EXPECTED_LOG_2 = "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54fd0e2f257de5f2c99e05a36dc56900ce205c636e542dfbc0a3a6a288dc7fef673843a84e45fc23e5fefaa0eb73764a6e";
+
+  it("encrypts increment count logs in the transaction receipt", async () => {
+	// given
+	let counter = new Counter();
+	await counter.confidential_deploy();
+	// when
+	let txHash = await counter.confidential_incrementCounter();
+	let firstReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	txHash = await counter.confidential_incrementCounter();
+	secondReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	// then
+	let firstLogCounter = firstReceipt.result.logs[0].data;
+	let secondLogCounter = secondReceipt.result.logs[0].data;
+
+	assert.equal(firstLogCounter, EXPECTED_LOG_1);
+	assert.equal(secondLogCounter, EXPECTED_LOG_2);
+  });
+
+  it("encrypts increment count logs returned by eth_getLogs", async () => {
+	// given
+	let counter = new Counter();
+	await counter.confidential_deploy();
+	// when
+	let txHash = await counter.confidential_incrementCounter();
+	let firstReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	txHash = await counter.confidential_incrementCounter();
+	secondReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	// then
+	let logs = (await makeRpc("eth_getLogs", [{
+	  "fromBlock": "earliest",
+	  "toBlock": "latest",
+	  "address": counter.contractAddress,
+	}])).result;
+	assert.equal(logs[0].data, EXPECTED_LOG_1);
+	assert.equal(logs[1].data, EXPECTED_LOG_2);
+  });
 })
 
 async function fetchNonce(address) {
@@ -103,7 +147,7 @@ class Counter {
   }
 
   async confidential_deploy(nonce) {
-	const encryptedDeployData = "0x000000000000000000000000000000015ea9673a039960bd668120a8269933d74433d6e1e6df14a765f866503eb9d521a533fd24fdf40679044ca2fd758a58011c0b93784fea3741c8a9c772e67f5b83b484f50ff87744dfad83d5e7266c983325c718ef822901c7a43d734af0c6924813dd1acc64a4b32c93afb1efdc6f710dd5f5635d37befc3b2e112a518b1b115d7e5dafa492c936bd0fc64dbd307b76c25e1531b23a78bc1c05ba6b5a22f0c35b6c83f3eb5aaee62016362be90059a9d0dcc788d13b8eaecdaadd30bac4e5cc71232190de9145d87228fef77367e1bc0c676829d7895af66bf3e030715247603f8f912f877c8c44b3051695bde7559ab036db3f73fe4cabd08c0b988291a45a83300af8f8f433eea9443cd5eb034bea8e9efae766e17133059acfb75544ca060e";
+	const encryptedDeployData = "0x000000000000000000000000000000015ea9673a039960bd668120a8269933d74433d6e1e6df14a765f866503eb9d5215713b1a9e39c17118166523bd5b32ad3e323cf7a6f6fd824fcae3cd1b4ce07d41b668e4e87563c7ca46936999b1ac3f666dd04f2babd234a3530747d0cfaccbaa1644554f1590aedea54c9dc7506813d76510dd372220c0048fccbcb67a113f242188c45a1a08882613fab0be12de016a13920ef362c8e8f041707a1493dad3a8bcd4ba313daca528c456a9bb3521459a26f3a4e78f1bfe1bee04bb7da5e1c80ff7e047ff0185d95833efec817122db2a4274ab994bacb10fdb3d48b579fd7af1dd26cdfc10824281d241890daf3287b97cdee8edfdfa8ea5e2cd3376a36622e696c8ef7d766ab93c3fc6b1b3e1dd509dabe8567e6d4ec79c96ed89cfe9e9f50f3f2d80f957fc89898d5f207312df4b262adef852de5c81e739e164b42ca7a9fdd39fe239888622df1f6308f89d2f4de5ce973d14dad5c9cf8fb";
 	return this._deploy(nonce, encryptedDeployData, "confidential_sendRawTransaction");
   }
 

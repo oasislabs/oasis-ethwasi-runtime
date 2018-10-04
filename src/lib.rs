@@ -34,6 +34,9 @@ use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                      db::DatabaseHandle,
                      enclave::enclave_init};
 use ethcore::{block::{IsBlock, OpenBlock},
+              error::{BlockError, Error as EthcoreError},
+              log_entry::LogEntry as EthLogEntry,
+              receipt::Receipt as EthReceipt,
               rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
@@ -321,9 +324,17 @@ fn transact(
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     if encrypted {
-        let transaction_decrypted = decrypt_transaction(&transaction)?;
-        ectx.block
-            .push_transaction_enc(transaction_decrypted, transaction, None, &mut storage)?;
+        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+        ectx.block.push_transaction_with_processing(
+            transaction,
+            None,
+            &mut storage,
+            |tx| Ok(transaction_decrypted),
+            |receipt| {
+                encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
+                    .map_err(|_| BlockError::InvalidSeal.into())
+            },
+        )?;
     } else {
         ectx.block
             .push_transaction(transaction, None, &mut storage)?;
@@ -331,7 +342,9 @@ fn transact(
     Ok(tx_hash)
 }
 
-fn decrypt_transaction(transaction: &SignedTransaction) -> Result<SignedTransaction> {
+fn decrypt_transaction(
+    transaction: &SignedTransaction,
+) -> Result<(SignedTransaction, confidential::Decryption)> {
     let decryption = confidential::decrypt(Some(transaction.data.clone()))?;
     let unsigned = EthcoreTransaction {
         nonce: transaction.nonce,
@@ -339,7 +352,7 @@ fn decrypt_transaction(transaction: &SignedTransaction) -> Result<SignedTransact
         gas: transaction.gas,
         action: transaction.action.clone(),
         value: transaction.value,
-        data: decryption.plaintext,
+        data: decryption.clone().plaintext,
     };
     // the signature is invalid now that we've decrypted the data
     let unverified =
@@ -348,7 +361,27 @@ fn decrypt_transaction(transaction: &SignedTransaction) -> Result<SignedTransact
         .map_err(|_| Error::new("Unable to create a signed transaction"))?;
     tx.set_sender(transaction.sender().clone());
     tx.set_public_key(transaction.public_key().clone());
-    Ok(tx)
+    Ok((tx, decryption))
+}
+
+fn encrypt_receipt(
+    receipt: EthReceipt,
+    nonce: Vec<u8>,
+    peer_public_key: [u8; 32],
+) -> Result<EthReceipt> {
+    let mut encrypted_logs = vec![];
+    for log in receipt.logs {
+        encrypted_logs.push(EthLogEntry {
+            address: log.address,
+            topics: log.topics,
+            data: confidential::encrypt(log.data, nonce.clone(), peer_public_key.clone())?,
+        });
+    }
+    Ok(EthReceipt::new(
+        receipt.outcome,
+        receipt.gas_used,
+        encrypted_logs,
+    ))
 }
 
 fn make_unsigned_transaction(
