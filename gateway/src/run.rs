@@ -25,7 +25,6 @@ use client_utils;
 use ekiden_core::environment::Environment;
 use ekiden_storage_base::StorageBackend;
 use ethereum_types::U256;
-use futures_cpupool::CpuPool;
 use jsonrpc_core;
 use parity_reactor::EventLoop;
 use parity_rpc::{informant, Metadata, Origin};
@@ -64,8 +63,6 @@ pub fn execute(
     // spin up event loop
     let event_loop = EventLoop::spawn();
 
-    let cpu_pool = CpuPool::new(4);
-
     // expose the http and ws servers to the world
     // conf corresponds to parity command-line options "--unsafe-expose" + "--jsonrpc-cors=all"
     let mut ws_conf = WsConfiguration::default();
@@ -85,7 +82,6 @@ pub fn execute(
     let deps_for_rpc_apis = Arc::new(rpc_apis::FullDependencies {
         client: client.clone(),
         ws_address: ws_conf.address(),
-        pool: cpu_pool.clone(),
         remote: event_loop.remote(),
         storage: storage.clone(),
     });
