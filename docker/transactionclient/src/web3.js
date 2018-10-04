@@ -93,16 +93,14 @@ if (require.main === module) {
           process.exit(2);
         }
         let end = txnlatency.startTimer();
-        let next_txn = nextTxn();
-        in_progress.set(next_txn, end);
-        next_txn.then(() => {
-          in_progress.get(next_txn)();
-          in_progress.delete(next_txn);
-          txncount.inc();
-        }).catch((e) => {
+        try {
+          await nextTxn();
+        } catch (e) {
           console.warn(e);
           txnerrors.inc();
-        });
+        }
+        end();
+        txncount.inc();
 
         if (gateway != null) {
           gateway.pushAdd({ jobName: `${pushJobPrefix}-web3-txn`, groupings: pushGroupings }, () => { });
