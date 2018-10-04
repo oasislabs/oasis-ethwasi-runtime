@@ -308,7 +308,7 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_block_height",
-            self.client.get_block_height(false).wait(),
+            self.block_on(self.client.get_block_height(false)),
             U256::from(0),
         ).into()
     }
@@ -323,7 +323,7 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result::<Option<Vec<u8>>>(
             "get_block",
-            self.client.get_block(from_block_id(id)).wait(),
+            self.block_on(self.client.get_block(from_block_id(id))),
             None,
         ).map(|block| encoded::Block::new(block))
     }
@@ -353,7 +353,7 @@ impl Client {
         } else {
             contract_call_result(
                 "get_block_hash",
-                self.client.get_block_hash(from_block_id(id)).wait(),
+                self.block_on(self.client.get_block_hash(from_block_id(id))),
                 None,
             )
         }
@@ -395,7 +395,7 @@ impl Client {
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
         contract_call_result(
             "get_transaction",
-            self.client.get_transaction(hash).wait(),
+            self.block_on(self.client.get_transaction(hash)),
             None,
         )
     }
@@ -454,7 +454,11 @@ impl Client {
 
     #[cfg(not(feature = "read_state"))]
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
-        contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
+        contract_call_result(
+            "get_receipt",
+            self.block_on(self.client.get_receipt(hash)),
+            None,
+        )
     }
 
     #[cfg(feature = "read_state")]
@@ -534,7 +538,11 @@ impl Client {
             topics: filter.topics.into_iter().map(Into::into).collect(),
             limit: filter.limit.map(Into::into),
         };
-        contract_call_result("get_logs", self.client.get_logs(filter).wait(), vec![])
+        contract_call_result(
+            "get_logs",
+            self.block_on(self.client.get_logs(filter)),
+            vec![],
+        )
     }
 
     // account state-related
@@ -564,7 +572,8 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_balance",
-            self.client.get_account_balance(*address).wait().map(Some),
+            self.block_on(self.client.get_account_balance(*address))
+                .map(Some),
             None,
         )
     }
@@ -587,7 +596,8 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_code",
-            self.client.get_account_code(*address).wait().map(Some),
+            self.block_on(self.client.get_account_code(*address))
+                .map(Some),
             None,
         )
     }
@@ -609,7 +619,8 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_nonce",
-            self.client.get_account_nonce(*address).wait().map(Some),
+            self.block_on(self.client.get_account_nonce(*address))
+                .map(Some),
             None,
         )
     }
@@ -631,9 +642,7 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_storage_at",
-            self.client
-                .get_storage_at((*address, *position))
-                .wait()
+            self.block_on(self.client.get_storage_at((*address, *position)))
                 .map(Some),
             None,
         )
@@ -755,9 +764,7 @@ impl Client {
     pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
-            self.client
-                .simulate_transaction(request)
-                .wait()
+            self.block_on(self.client.simulate_transaction(request))
                 .map(|r| r.result),
             Err("no response from runtime".to_string()),
         )
@@ -802,9 +809,7 @@ impl Client {
     pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",
-            self.client
-                .simulate_transaction(request)
-                .wait()
+            self.block_on(self.client.simulate_transaction(request))
                 .map(|r| Ok(r.used_gas + r.refunded_gas)),
             Err("no response from runtime".to_string()),
         )
@@ -830,9 +835,7 @@ impl Client {
         }
         contract_call_result(
             "execute_raw_transaction",
-            self.client
-                .execute_raw_transaction((raw, encrypted))
-                .wait()
+            self.block_on(self.client.execute_raw_transaction((raw, encrypted)))
                 .map(|r| {
                     if r.created_contract {
                         if encrypted {
