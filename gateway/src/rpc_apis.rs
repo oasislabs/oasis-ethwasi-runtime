@@ -21,7 +21,6 @@ use std::sync::Arc;
 
 use client::Client;
 use ekiden_storage_base::StorageBackend;
-use futures_cpupool::CpuPool;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
@@ -155,7 +154,6 @@ pub trait Dependencies {
 pub struct FullDependencies {
     pub client: Arc<Client>,
     pub ws_address: Option<Host>,
-    pub pool: CpuPool,
     pub remote: parity_reactor::Remote,
     pub storage: Arc<StorageBackend>,
 }

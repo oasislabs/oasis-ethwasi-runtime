@@ -17,12 +17,15 @@ use ethcore::spec::Spec;
 use ethcore::transaction::UnverifiedTransaction;
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
+#[cfg(test)]
+use grpcio;
 use runtime_ethereum;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils;
 #[cfg(feature = "read_state")]
 use client_utils::db::Snapshot;
+use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
@@ -72,6 +75,7 @@ pub struct Client {
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
+    environment: Arc<Environment>,
     storage: Arc<RwLock<Web3GlobalStorage>>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
@@ -84,6 +88,7 @@ impl Client {
         spec: &Spec,
         snapshot_manager: Option<client_utils::db::Manager>,
         client: runtime_ethereum::Client,
+        environment: Arc<Environment>,
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
@@ -103,6 +108,7 @@ impl Client {
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
+            environment,
             storage: Arc::new(RwLock::new(storage)),
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
@@ -115,17 +121,37 @@ impl Client {
     #[cfg(test)]
     pub fn get_test_client() -> Self {
         let spec = &util::load_spec();
+        let grpc_environment = grpcio::EnvBuilder::new().build();
+        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(grpc_environment));
         let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
         Self {
             client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
             snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
+            environment: environment,
             storage: Arc::new(RwLock::new(storage)),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
             gas_price: U256::from(1_000_000_000),
         }
+    }
+
+    /// Spawn a future in our environment and wait for its result.
+    pub fn block_on<F, R, E>(&self, future: F) -> Result<R, E>
+    where
+        F: Send + 'static + Future<Item = R, Error = E>,
+        R: Send + 'static,
+        E: Send + 'static,
+    {
+        let (result_tx, result_rx) = std::sync::mpsc::channel();
+        self.environment.spawn(Box::new(future.then(move |result| {
+            drop(result_tx.send(result));
+            Ok(())
+        })));
+        result_rx
+            .recv()
+            .expect("block_on: Environment dropped our result sender")
     }
 
     /// Notify listeners of new blocks.
@@ -287,7 +313,7 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_block_height",
-            self.client.get_block_height(false).wait(),
+            self.block_on(self.client.get_block_height(false)),
             U256::from(0),
         ).into()
     }
@@ -302,7 +328,7 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result::<Option<Vec<u8>>>(
             "get_block",
-            self.client.get_block(from_block_id(id)).wait(),
+            self.block_on(self.client.get_block(from_block_id(id))),
             None,
         ).map(|block| encoded::Block::new(block))
     }
@@ -332,7 +358,7 @@ impl Client {
         } else {
             contract_call_result(
                 "get_block_hash",
-                self.client.get_block_hash(from_block_id(id)).wait(),
+                self.block_on(self.client.get_block_hash(from_block_id(id))),
                 None,
             )
         }
@@ -374,7 +400,7 @@ impl Client {
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
         contract_call_result(
             "get_transaction",
-            self.client.get_transaction(hash).wait(),
+            self.block_on(self.client.get_transaction(hash)),
             None,
         )
     }
@@ -433,7 +459,11 @@ impl Client {
 
     #[cfg(not(feature = "read_state"))]
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
-        contract_call_result("get_receipt", self.client.get_receipt(hash).wait(), None)
+        contract_call_result(
+            "get_receipt",
+            self.block_on(self.client.get_receipt(hash)),
+            None,
+        )
     }
 
     #[cfg(feature = "read_state")]
@@ -513,7 +543,11 @@ impl Client {
             topics: filter.topics.into_iter().map(Into::into).collect(),
             limit: filter.limit.map(Into::into),
         };
-        contract_call_result("get_logs", self.client.get_logs(filter).wait(), vec![])
+        contract_call_result(
+            "get_logs",
+            self.block_on(self.client.get_logs(filter)),
+            vec![],
+        )
     }
 
     // account state-related
@@ -543,7 +577,8 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_balance",
-            self.client.get_account_balance(*address).wait().map(Some),
+            self.block_on(self.client.get_account_balance(*address))
+                .map(Some),
             None,
         )
     }
@@ -566,7 +601,8 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_code",
-            self.client.get_account_code(*address).wait().map(Some),
+            self.block_on(self.client.get_account_code(*address))
+                .map(Some),
             None,
         )
     }
@@ -588,7 +624,8 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_account_nonce",
-            self.client.get_account_nonce(*address).wait().map(Some),
+            self.block_on(self.client.get_account_nonce(*address))
+                .map(Some),
             None,
         )
     }
@@ -610,9 +647,7 @@ impl Client {
         // fall back to contract call if database has not been initialized
         contract_call_result(
             "get_storage_at",
-            self.client
-                .get_storage_at((*address, *position))
-                .wait()
+            self.block_on(self.client.get_storage_at((*address, *position)))
                 .map(Some),
             None,
         )
@@ -734,9 +769,7 @@ impl Client {
     pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
-            self.client
-                .simulate_transaction(request)
-                .wait()
+            self.block_on(self.client.simulate_transaction(request))
                 .map(|r| r.result),
             Err("no response from runtime".to_string()),
         )
@@ -781,9 +814,7 @@ impl Client {
     pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",
-            self.client
-                .simulate_transaction(request)
-                .wait()
+            self.block_on(self.client.simulate_transaction(request))
                 .map(|r| Ok(r.used_gas + r.refunded_gas)),
             Err("no response from runtime".to_string()),
         )
@@ -809,9 +840,7 @@ impl Client {
         }
         contract_call_result(
             "execute_raw_transaction",
-            self.client
-                .execute_raw_transaction((raw, encrypted))
-                .wait()
+            self.block_on(self.client.execute_raw_transaction((raw, encrypted)))
                 .map(|r| {
                     if r.created_contract {
                         if encrypted {
