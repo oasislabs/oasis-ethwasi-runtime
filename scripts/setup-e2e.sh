@@ -1,3 +1,6 @@
+WORKDIR=${1:-$(pwd)}
+echo ${WORKDIR}
+
 echo "Installing test dependencies"
 pushd ${WORKDIR}/tests/ > /dev/null
 npm install
