@@ -59,7 +59,7 @@ contract("Confidential Counter", async (accounts) => {
    */
   // encryption: NONCE = 3 || PK_EPHEMERAL || ENC(1)
   const EXPECTED_LOG_1 = "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a548e842fe406af4e0ff75149b60b95a8d3ec09de32f228425c8f237a383122654c46e41ac72b0dd35fc66cf38e3bfe937b";
-  // encryption: NONCE = 3 || PK_EPHEMRAL || ENC(2)
+  // encryption: NONCE = 3 || PK_EPHEMERAL || ENC(2)
   const EXPECTED_LOG_2 = "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54fd0e2f257de5f2c99e05a36dc56900ce205c636e542dfbc0a3a6a288dc7fef673843a84e45fc23e5fefaa0eb73764a6e";
 
   it("encrypts increment count logs in the transaction receipt", async () => {

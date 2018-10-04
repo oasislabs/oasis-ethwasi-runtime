@@ -33,7 +33,8 @@ use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 dispatcher::{BatchHandler, ContractCallContext}},
                      db::DatabaseHandle,
                      enclave::enclave_init};
-use ethcore::{block::{IsBlock, OpenBlock, ReceiptEncrypter},
+use ethcore::{block::{IsBlock, OpenBlock},
+              error::{BlockError, Error as EthcoreError},
               log_entry::LogEntry as EthLogEntry,
               receipt::Receipt as EthReceipt,
               rlp,
@@ -315,38 +316,6 @@ pub fn execute_raw_transaction(
     })
 }
 
-struct Encrypter {
-    decryption: confidential::Decryption,
-}
-impl Encrypter {
-    fn encrypt_log(&self, log: EthLogEntry) -> Result<EthLogEntry> {
-        let encrypted_data = confidential::encrypt(
-            log.data,
-            self.decryption.nonce.clone(),
-            self.decryption.peer_public_key.clone(),
-        )?;
-        Ok(EthLogEntry {
-            address: log.address,
-            topics: log.topics,
-            data: encrypted_data,
-        })
-    }
-}
-impl ReceiptEncrypter for Encrypter {
-    fn encrypt(&self, receipt: EthReceipt) -> std::result::Result<EthReceipt, String> {
-        let mut encrypted_logs = vec![];
-        for log in receipt.logs {
-            let enc_log = self.encrypt_log(log).map_err(|e| "err".to_string())?;
-            encrypted_logs.push(enc_log);
-        }
-        Ok(EthReceipt::new(
-            receipt.outcome,
-            receipt.gas_used,
-            encrypted_logs,
-        ))
-    }
-}
-
 fn transact(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
@@ -356,13 +325,18 @@ fn transact(
     let mut storage = GlobalStorage::new();
     if encrypted {
         let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
-        let encrypter = Box::new(Encrypter { decryption });
-        ectx.block.push_transaction_enc(
-            transaction_decrypted,
+        ectx.block.push_transaction_with_processing(
             transaction,
-            encrypter,
             None,
             &mut storage,
+            |tx| Ok(transaction_decrypted),
+            |receipt| {
+                encrypt_receipt(
+                    receipt.clone(),
+                    decryption.nonce,
+                    decryption.peer_public_key,
+                ).map_err(|_| BlockError::InvalidSeal.into())
+            },
         )?;
     } else {
         ectx.block
@@ -391,6 +365,26 @@ fn decrypt_transaction(
     tx.set_sender(transaction.sender().clone());
     tx.set_public_key(transaction.public_key().clone());
     Ok((tx, decryption))
+}
+
+fn encrypt_receipt(
+    receipt: EthReceipt,
+    nonce: Vec<u8>,
+    peer_public_key: [u8; 32],
+) -> Result<EthReceipt> {
+    let mut encrypted_logs = vec![];
+    for log in receipt.logs {
+        encrypted_logs.push(EthLogEntry {
+            address: log.address,
+            topics: log.topics,
+            data: confidential::encrypt(log.data, nonce.clone(), peer_public_key.clone())?,
+        });
+    }
+    Ok(EthReceipt::new(
+        receipt.outcome,
+        receipt.gas_used,
+        encrypted_logs,
+    ))
 }
 
 fn make_unsigned_transaction(
