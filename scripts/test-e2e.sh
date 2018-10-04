@@ -3,10 +3,10 @@
 WORKDIR=${1:-$(pwd)}
 
 setup_utils() {
-    echo "Installing truffle-hdwallet-provider."
-    # Temporary fix for ethereumjs-wallet@0.6.1 incompatibility
-    npm install ethereumjs-wallet@=0.6.0
-    npm install truffle-hdwallet-provider
+    echo "Installing test dependencies"
+    pushd ${WORKDIR}/tests/ > /dev/null
+    npm install
+    popd > /dev/null
 
     echo "Installing wscat."
     npm install -g wscat
@@ -24,13 +24,13 @@ run_dummy_node_go_tm() {
     ${WORKDIR}/ekiden-node \
         --log.level debug \
         --grpc.port 42261 \
-        --epochtime.backend tendermint \
-        --epochtime.tendermint.interval 60 \
-        --beacon.backend tendermint \
+        --epochtime.backend tendermint_mock \
+        --beacon.backend insecure \
         --storage.backend memory \
         --scheduler.backend trivial \
         --registry.backend tendermint \
         --roothash.backend tendermint \
+        --tendermint.consensus.timeout_commit 250ms \
         --datadir ${datadir} \
         &> dummy-go.log &
 }
@@ -101,10 +101,14 @@ run_test() {
     sleep 1
     run_compute_node 2
 
+    # Advance epoch to elect a new committee.
+    sleep 3
+    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
-    truffle test --network development > ${WORKDIR}/truffle.txt & truffle_pid=$!
+    npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
     popd > /dev/null
 
     # Subscribe to logs from gateway 2, and check that we get a log result

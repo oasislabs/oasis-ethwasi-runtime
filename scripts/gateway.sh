@@ -11,13 +11,13 @@ run_dummy_node() {
     ekiden \
         --log.level debug \
         --grpc.port 42261 \
-        --epochtime.backend tendermint \
-        --epochtime.tendermint.interval 30 \
-        --beacon.backend tendermint \
+        --epochtime.backend tendermint_mock \
+        --beacon.backend insecure \
         --storage.backend memory \
         --scheduler.backend trivial \
         --registry.backend tendermint \
         --roothash.backend tendermint \
+        --tendermint.consensus.timeout_commit 250ms \
         --datadir ${datadir} \
         &> dummy.log &
 }
@@ -59,6 +59,9 @@ run_test() {
     sleep 1
     run_compute_node 2
     sleep 2
+
+    # Advance epoch to elect a new committee.
+    ekiden dummy set-epoch --epoch 1
 
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.

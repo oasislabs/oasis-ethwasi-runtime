@@ -14,8 +14,8 @@ use std::str::FromStr;
 
 use either::Either;
 use ekiden_roothash_base::Header;
-use ekiden_trusted::{contract::dispatcher::{ContractCallContext, BatchHandler},
-                    db::DatabaseHandle};
+use ekiden_trusted::{contract::dispatcher::{BatchHandler, ContractCallContext},
+                     db::DatabaseHandle};
 use ethcore::{rlp,
               storage::Storage,
               transaction::{Action, SignedTransaction, Transaction}};
@@ -23,8 +23,7 @@ use ethereum_api::{ExecuteTransactionResponse, Receipt};
 use ethereum_types::{Address, H256, U256};
 use ethkey::Secret;
 use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt,
-                       EthereumContext, EthereumBatchHandler,
-                       storage::GlobalStorage};
+                       storage::GlobalStorage, EthereumBatchHandler, EthereumContext};
 
 fn dummy_ctx() -> ContractCallContext {
     let root_hash = DatabaseHandle::instance().get_root_hash();
@@ -79,8 +78,14 @@ pub fn make_tx(spec: Either<Vec<u8>, (Address, Vec<u8>)>) -> SignedTransaction {
 
 /// Runs a signed transaction using the runtime.
 pub fn run_tx(tx: SignedTransaction) -> Result<Receipt, ExecuteTransactionResponse> {
-    let res = with_batch_handler(|ctx| execute_raw_transaction(&rlp::encode(&tx).to_vec(), ctx).unwrap());
-    let receipt = with_batch_handler(|ctx| get_receipt(res.hash.as_ref().unwrap(), ctx).unwrap().unwrap());
+    let res = with_batch_handler(|ctx| {
+        execute_raw_transaction(&(rlp::encode(&tx).to_vec(), false), ctx).unwrap()
+    });
+    let receipt = with_batch_handler(|ctx| {
+        get_receipt(res.hash.as_ref().unwrap(), ctx)
+            .unwrap()
+            .unwrap()
+    });
     if !receipt.status_code.is_some() || receipt.status_code.unwrap() == 0 {
         println!("ERROR:\n{:?}\n{:?}", res, receipt);
         Err(res)

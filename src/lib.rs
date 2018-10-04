@@ -3,6 +3,7 @@
 extern crate common_types as ethcore_types;
 extern crate ekiden_common;
 extern crate ekiden_core;
+extern crate ekiden_keymanager_common;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
 extern crate ekiden_trusted;
@@ -26,19 +27,22 @@ pub mod storage; // allow access from tests/run_contract
 mod storage;
 
 use ekiden_core::error::{Error, Result};
+use ekiden_keymanager_common::confidential;
 use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 create_contract,
                                 dispatcher::{BatchHandler, ContractCallContext}},
                      db::DatabaseHandle,
                      enclave::enclave_init};
 use ethcore::{block::{IsBlock, OpenBlock},
+              error::{BlockError, Error as EthcoreError},
+              log_entry::LogEntry as EthLogEntry,
+              receipt::Receipt as EthReceipt,
               rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
                    Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
-
 use state::Cache;
 use storage::GlobalStorage;
 
@@ -278,12 +282,14 @@ pub fn get_storage_at(pair: &(Address, H256), ctx: &mut ContractCallContext) -> 
 }
 
 pub fn execute_raw_transaction(
-    request: &Vec<u8>,
+    pair: &(Vec<u8>, bool),
     ctx: &mut ContractCallContext,
 ) -> Result<ExecuteTransactionResponse> {
     let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("execute_raw_transaction");
+    let request = &pair.0;
+    let encrypted = pair.1;
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
@@ -303,19 +309,79 @@ pub fn execute_raw_transaction(
             })
         }
     };
-    let result = transact(&mut ectx, signed).map_err(|e| e.to_string());
+    let result = transact(&mut ectx, signed, encrypted).map_err(|e| e.to_string());
     Ok(ExecuteTransactionResponse {
         created_contract: if result.is_err() { false } else { is_create },
         hash: result,
     })
 }
 
-fn transact(ectx: &mut EthereumContext, transaction: SignedTransaction) -> Result<H256> {
+fn transact(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    encrypted: bool,
+) -> Result<H256> {
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
-    ectx.block
-        .push_transaction(transaction, None, &mut storage)?;
+    if encrypted {
+        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+        ectx.block.push_transaction_with_processing(
+            transaction,
+            None,
+            &mut storage,
+            |tx| Ok(transaction_decrypted),
+            |receipt| {
+                encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
+                    .map_err(|_| BlockError::InvalidSeal.into())
+            },
+        )?;
+    } else {
+        ectx.block
+            .push_transaction(transaction, None, &mut storage)?;
+    }
     Ok(tx_hash)
+}
+
+fn decrypt_transaction(
+    transaction: &SignedTransaction,
+) -> Result<(SignedTransaction, confidential::Decryption)> {
+    let decryption = confidential::decrypt(Some(transaction.data.clone()))?;
+    let unsigned = EthcoreTransaction {
+        nonce: transaction.nonce,
+        gas_price: transaction.gas_price,
+        gas: transaction.gas,
+        action: transaction.action.clone(),
+        value: transaction.value,
+        data: decryption.clone().plaintext,
+    };
+    // the signature is invalid now that we've decrypted the data
+    let unverified =
+        UnverifiedTransaction::new(unsigned, 0, U256::from(0), U256::from(0), H256::from(0));
+    let mut tx = SignedTransaction::new(unverified)
+        .map_err(|_| Error::new("Unable to create a signed transaction"))?;
+    tx.set_sender(transaction.sender().clone());
+    tx.set_public_key(transaction.public_key().clone());
+    Ok((tx, decryption))
+}
+
+fn encrypt_receipt(
+    receipt: EthReceipt,
+    nonce: Vec<u8>,
+    peer_public_key: [u8; 32],
+) -> Result<EthReceipt> {
+    let mut encrypted_logs = vec![];
+    for log in receipt.logs {
+        encrypted_logs.push(EthLogEntry {
+            address: log.address,
+            topics: log.topics,
+            data: confidential::encrypt(log.data, nonce.clone(), peer_public_key.clone())?,
+        });
+    }
+    Ok(EthReceipt::new(
+        receipt.outcome,
+        receipt.gas_used,
+        encrypted_logs,
+    ))
 }
 
 fn make_unsigned_transaction(
@@ -452,14 +518,13 @@ mod tests {
                 }.sign(&self.keypair.secret(), None);
 
                 let raw = rlp::encode(&tx);
-                execute_raw_transaction(&raw.into_vec(), ctx)
+                execute_raw_transaction(&(raw.into_vec(), false), ctx)
                     .unwrap()
                     .hash
                     .unwrap()
             });
 
             let receipt = with_batch_handler(|ctx| get_receipt(&hash, ctx).unwrap().unwrap());
-
             (hash, receipt.contract_address.unwrap())
         }
 
@@ -626,10 +691,9 @@ mod tests {
             data: vec![],
         }.fake_sign(client.keypair.address());
         let bad_result =
-            execute_raw_transaction(&rlp::encode(&bad_sig).into_vec(), &mut dummy_ctx())
+            execute_raw_transaction(&(rlp::encode(&bad_sig).into_vec(), false), &mut dummy_ctx())
                 .unwrap()
                 .hash;
-
         let good_sig = EthcoreTransaction {
             action: Action::Create,
             nonce: get_account_nonce(&client.keypair.address(), &mut dummy_ctx()).unwrap(),
@@ -638,11 +702,11 @@ mod tests {
             value: U256::from(0),
             data: vec![],
         }.sign(client.keypair.secret(), None);
-        let good_result =
-            execute_raw_transaction(&rlp::encode(&good_sig).into_vec(), &mut dummy_ctx())
-                .unwrap()
-                .hash;
-
+        let good_result = execute_raw_transaction(
+            &(rlp::encode(&good_sig).into_vec(), false),
+            &mut dummy_ctx(),
+        ).unwrap()
+            .hash;
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());
     }
