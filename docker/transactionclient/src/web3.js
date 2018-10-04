@@ -72,7 +72,7 @@ if (require.main === module) {
     async function nextTxn () {
       let client = new web3();
       let hprovider = new client.providers.HttpProvider(process.argv[2], 1000 * 60);
-      let provider = new HDWalletProvider(mnemonic, hprovider);
+      let provider = new HDWalletProvider(mnemonic, hprovider, 0, 1, false /* re-check nonce each time */);
       await client.setProvider(provider);
       try {
         await makeTxn(client);
