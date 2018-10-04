@@ -7,9 +7,9 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 clap = "2.29.1"
 ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-instrumentation-prometheus = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-6" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-6" }
 hex = "0.3"
 jsonrpc-client-core = "0.3.0"
 jsonrpc-client-http = "0.3.0"
@@ -21,7 +21,7 @@ pretty_env_logger = "0.2"
 proc-macro2 = "=0.4.17"
 prometheus = { version = "~0.4.2", features = ["push"] }
 rand = "0.4"
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-web3" }
+rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden-web3-6" }
 serde = "1.0"
 serde_json = "1.0"
 wasmi = "=0.2.0"
