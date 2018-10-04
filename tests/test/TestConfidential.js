@@ -9,21 +9,6 @@ const Tx = require("ethereumjs-tx");
 
 contract("Confidential Counter", async (accounts) => {
 
-  it("receives encrypted logs", async () => {
-	let counter = new Counter();
-	await counter.confidential_deploy();
-	let txHash = await counter.confidential_incrementCounter();
-	let receipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
-	let firstLogCounter = receipt.result.logs[0].data;
-	txHash = await counter.confidential_incrementCounter();
-	receipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
-	let secondLogCounter = receipt.result.logs[0].data;
-	// encryption: NONCE = 3 || PK_EPHEMEAL || ENC(1)
-	assert.equal(firstLogCounter, "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a548e842fe406af4e0ff75149b60b95a8d3ec09de32f228425c8f237a383122654c46e41ac72b0dd35fc66cf38e3bfe937b");
-	// encryption: NONCE = 3 || PK_EPHEMRAL || ENC(2)
-	assert.equal(secondLogCounter, "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54fd0e2f257de5f2c99e05a36dc56900ce205c636e542dfbc0a3a6a288dc7fef673843a84e45fc23e5fefaa0eb73764a6e");
-  });
-
   /**
    * Transactions encrypted with the following ephemeral keypair.
    * private key: 0xc61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179
@@ -39,7 +24,7 @@ contract("Confidential Counter", async (accounts) => {
 	assert.equal(firstCounter.result, "0x000000000000000000000000000000029385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54f6b305ea6e17bfd4db6277ec340e26256a3406c5d38c45f97dd19a66b4a0c25d045d68a4d56f158046b2bd30512798e6");
 	// encryption: NONCE = 2 || PK || ENC(1)
 	assert.equal(secondCounter.result, "0x000000000000000000000000000000029385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54f6c1360bc673fb58cb0c603eee3b42f11ff4180b604240c3210ad01dbcc3c05c5a3385c1222c119d3069d3ba2edba4f2");
-  })
+  });
 
   /**
    * Fails because the state is saved from the previous test and so we expect the next
@@ -52,7 +37,8 @@ contract("Confidential Counter", async (accounts) => {
 	assert.equal(deployTxHash.hasOwnProperty("error"), true);
 	const enc_deployTxHash = await counter.confidential_deploy(nonce);
 	assert.equal(enc_deployTxHash.hasOwnProperty("error"), true);
-  })
+  });
+
   /**
    * Sanity check on successfully sending the above transactions without
    * encryption and with a different account (i.e. a reset nonce).
@@ -66,7 +52,51 @@ contract("Confidential Counter", async (accounts) => {
 
 	assert.equal(firstCount.result, "0x0000000000000000000000000000000000000000000000000000000000000000");
 	assert.equal(secondCount.result, "0x0000000000000000000000000000000000000000000000000000000000000001");
-  })
+  });
+
+  /**
+   * Expected encrypted logs.
+   */
+  // encryption: NONCE = 3 || PK_EPHEMERAL || ENC(1)
+  const EXPECTED_LOG_1 = "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a548e842fe406af4e0ff75149b60b95a8d3ec09de32f228425c8f237a383122654c46e41ac72b0dd35fc66cf38e3bfe937b";
+  // encryption: NONCE = 3 || PK_EPHEMRAL || ENC(2)
+  const EXPECTED_LOG_2 = "0x000000000000000000000000000000039385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54fd0e2f257de5f2c99e05a36dc56900ce205c636e542dfbc0a3a6a288dc7fef673843a84e45fc23e5fefaa0eb73764a6e";
+
+  it("encrypts increment count logs in the transaction receipt", async () => {
+	// given
+	let counter = new Counter();
+	await counter.confidential_deploy();
+	// when
+	let txHash = await counter.confidential_incrementCounter();
+	let firstReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	txHash = await counter.confidential_incrementCounter();
+	secondReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	// then
+	let firstLogCounter = firstReceipt.result.logs[0].data;
+	let secondLogCounter = secondReceipt.result.logs[0].data;
+
+	assert.equal(firstLogCounter, EXPECTED_LOG_1);
+	assert.equal(secondLogCounter, EXPECTED_LOG_2);
+  });
+
+  it("encrypts increment count logs returned by eth_getLogs", async () => {
+	// given
+	let counter = new Counter();
+	await counter.confidential_deploy();
+	// when
+	let txHash = await counter.confidential_incrementCounter();
+	let firstReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	txHash = await counter.confidential_incrementCounter();
+	secondReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
+	// then
+	let logs = (await makeRpc("eth_getLogs", [{
+	  "fromBlock": "earliest",
+	  "toBlock": "latest",
+	  "address": counter.contractAddress,
+	}])).result;
+	assert.equal(logs[0].data, EXPECTED_LOG_1);
+	assert.equal(logs[1].data, EXPECTED_LOG_2);
+  });
 })
 
 async function fetchNonce(address) {
