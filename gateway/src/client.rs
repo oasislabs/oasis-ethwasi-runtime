@@ -23,6 +23,7 @@ use transaction::{Action, LocalizedTransaction, SignedTransaction};
 use client_utils;
 #[cfg(feature = "read_state")]
 use client_utils::db::Snapshot;
+use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
@@ -72,6 +73,7 @@ pub struct Client {
     engine: Arc<EthEngine>,
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
+    environment: Arc<Environment>,
     storage: Arc<RwLock<Web3GlobalStorage>>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
@@ -84,6 +86,7 @@ impl Client {
         spec: &Spec,
         snapshot_manager: Option<client_utils::db::Manager>,
         client: runtime_ethereum::Client,
+        environment: Arc<Environment>,
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
@@ -103,6 +106,7 @@ impl Client {
             engine: spec.engine.clone(),
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
+            environment,
             storage: Arc::new(RwLock::new(storage)),
             // start at current block
             notified_block_number: Mutex::new(current_block_number),

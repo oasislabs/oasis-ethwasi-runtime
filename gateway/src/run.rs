@@ -51,6 +51,7 @@ pub fn execute(
         &util::load_spec(),
         snapshot_manager,
         ekiden_client,
+        environment.clone(),
         storage.clone(),
         gas_price,
     ));
