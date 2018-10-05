@@ -15,3 +15,5 @@ npm install -g wscat
 echo "Installing jq."
 apt-get install -y jq
 
+echo "Installing wasm-build."
+cargo install --git https://github.com/oasislabs/wasm-utils --branch ekiden

@@ -67,8 +67,6 @@ run_gateway() {
 }
 
 run_test() {
-    local dummy_node_runner=$1
-
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
 
@@ -76,8 +74,8 @@ run_test() {
     # snapshot manager can recover after initially failing to connect to the
     # root hash stream, and 2) whether the gateway waits for the committee to be
     # elected and connects to the leader.
-    run_gateway 1
-    run_gateway 2
+    bash ${WORKDIR}/scripts/utils.sh run_gateway 1
+    bash ${WORKDIR}/scripts/utils.sh run_gateway 2
     sleep 3
 
     # Start dummy node.
@@ -85,9 +83,9 @@ run_test() {
     sleep 1
 
     # Start compute nodes.
-    run_compute_node 1
+    bash ${WORKDIR}/scripts/utils.sh run_compute_node 1
     sleep 1
-    run_compute_node 2
+    bash ${WORKDIR}/scripts/utils.sh run_compute_node 2
 
     # Advance epoch to elect a new committee.
     sleep 3
@@ -120,4 +118,4 @@ run_test() {
     pkill -P $$
 }
 
-run_test run_dummy_node_go_tm
+run_test

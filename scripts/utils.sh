@@ -34,7 +34,9 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-        --storage-backend remote \
+        --storage-backend multilayer \
+        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
+        --storage-multilayer-bottom-backend remote \
         --max-batch-timeout 100 \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
