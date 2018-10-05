@@ -122,7 +122,9 @@ impl Client {
     pub fn get_test_client() -> Self {
         let spec = &util::load_spec();
         let grpc_environment = grpcio::EnvBuilder::new().build();
-        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(grpc_environment));
+        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(
+            grpc_environment,
+        ));
         let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
         Self {
             client: test_helpers::get_test_runtime_client(),
