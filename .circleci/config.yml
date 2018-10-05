@@ -68,11 +68,10 @@ jobs:
                      --debug
                      ekiden-tools
       - run:
-          name: Build the benchmarking version of the runtime (in release mode)
+          name: Build the benchmarking version of the runtime
           command: cargo ekiden build-enclave
                      --output-identity
                      --cargo-addendum feature.benchmark.addendum
-                     --release
                      --
                      --features "benchmark"
 
