@@ -1,6 +1,9 @@
 version: 2
 jobs:
-  build:
+  build-and-test-runtime:
+    # The purpose of this job is to ensure
+    # that the runtime code compiles
+    # and tests pass.
     docker:
       - image: ekiden/testing:0.2.0
     resource_class: xlarge
@@ -10,90 +13,211 @@ jobs:
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
       - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
       - checkout
 
-      # Check style.
-      - run: cargo fmt -- --write-mode=check
-      # Install Ekiden binaries.
       - run:
-          environment:
-            CARGO_TARGET_DIR: target
-          command: >-
-            cargo install
-            --git https://github.com/oasislabs/ekiden
-            --branch master
-            --debug
-            ekiden-tools
+          name: Check source code style
+          command: cargo fmt -- --write-mode=check
       - run:
-          environment:
-            CARGO_TARGET_DIR: target
-          command: >-
-            cargo install
-            --git https://github.com/oasislabs/ekiden
-            --branch master
-            --debug
-            ekiden-compute
-      # Build the runtime.
-      - run: cargo ekiden build-enclave --output-identity
-      # Build the benchmarking version of the runtime (in release mode)
-      - run: mkdir target_benchmark
-      - run:
-          name: Build the benchmarking version of the runtime
-          environment:
-            CARGO_TARGET_DIR: target_benchmark
-          command: cargo ekiden build-enclave --output-identity --cargo-addendum feature.benchmark.addendum --target-dir target_benchmark --release -- --features "benchmark"
-      # Run the runtime tests.
+          name: Install ekiden-tools
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-tools
+      - run: 
+          name: Build the runtime
+          command: cargo ekiden build-enclave --output-identity
+      - persist_to_workspace:
+          # Save files for use in the
+          # end-to-end-tests job.
+          root: .
+          paths:
+            - target/enclave/runtime-ethereum.so
+            - target/enclave/runtime-ethereum.mrenclave
       - run:
           name: Run the runtime tests
           command: cargo test
-      # Build the web3 gateway.
+
+  build-runtime-benchmark:
+    # The purpose of this job is to ensure
+    # that the runtime-benchmark code compiles.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
+      - checkout
+
+      - run:
+          name: Check source code style
+          command: cargo fmt -- --write-mode=check
+      - run:
+          name: Install ekiden-tools
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-tools
+      - run:
+          name: Build the benchmarking version of the runtime (in release mode)
+          command: cargo ekiden build-enclave
+                     --output-identity
+                     --cargo-addendum feature.benchmark.addendum
+                     --release
+                     --
+                     --features "benchmark"
+
+  build-and-test-web3-gateway:
+    # The purpose of this job is to ensure
+    # that the web3-gateway code compiles
+    # and tests pass.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
+      - checkout
+
+      - run:
+          name: Check source code style
+          working_directory: gateway
+          command: cargo fmt -- --write-mode=check
       - run:
           name: Build the web3 gateway
-          environment:
-            CARGO_TARGET_DIR: ../target
           working_directory: gateway
           command: cargo build
-      # Run the gateway tests.
+      - persist_to_workspace:
+          # Save gateway for use in the
+          # end-to-end-tests job.
+          root: gateway
+          paths:
+            - target/debug/gateway
       - run:
-          name: Run the gateway tests
-          environment:
-            CARGO_TARGET_DIR: ../target
+          name: Run the web3 gateway tests
           working_directory: gateway
           command: cargo test
-      # Build run-contract.
+
+  build-web3-gateway-benchmark:
+    # The purpose of this job is to ensure
+    # that the web3 gateway benchmarking code
+    # compiles. We would also run tests on
+    # web3-gateway-benchmarking, but we don't
+    # have any yet.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
+      - checkout
+
       - run:
-          name: Build run-contract
-          working_directory: tests/run_contract
-          environment:
-            CARGO_TARGET_DIR: ../target
-          command: cargo build
-      # Build the web3 microbenchmark.
+          name: Check source code style
+          working_directory: benchmark
+          command: cargo fmt -- --write-mode=check
       - run:
-          name: Build the web3 microbenchmark
-          environment:
-            CARGO_TARGET_DIR: ../target
+          name: Build the web3 gateway microbenchmark
           working_directory: benchmark
           command: cargo build
-      # Build the genesis state injector program.
+
+  build-genesis:
+    # The purpose of this job is to ensure
+    # that the gensis code compiles. Currently,
+    # there are no tests to run, but they should
+    # run here once we write them.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
+      - checkout
+
+      - run:
+          name: Check source code style
+          working_directory: genesis
+          command: cargo fmt -- --write-mode=check
       - run:
           name: Build the genesis state injector tool
-          environment:
-            CARGO_TARGET_DIR: ../target
           working_directory: genesis
           command: cargo build
-      # Build the playback program.
+
+  build-playback:
+    # The purpose of this job is to ensure
+    # that the playback code compiles. Currently,
+    # there are no tests to run, but they should
+    # run here once we write them.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
+      - checkout
+
+      - run:
+          name: Check source code style
+          working_directory: playback
+          command: cargo fmt -- --write-mode=check
       - run:
           name: Build the transaction playback tool
-          environment:
-            CARGO_TARGET_DIR: ../target
           working_directory: playback
           command: cargo build
 
-      # End-to-end tests.
-      - attach_workspace:
-          at: /workspace
-      - run: cp /workspace/go/bin/ekiden ekiden-node
-      - run: ./scripts/test-e2e.sh
+  build-run-contract:
+    # The purpose of this job is to ensure
+    # that the run_contract code compiles.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      # Check out source from github
+      - checkout
+
+      - run:
+          name: Check source code style
+          working_directory: tests/run_contract
+          command: cargo fmt -- --write-mode=check
+      - run:
+          name: Build run-contract
+          working_directory: tests/run_contract
+          command: cargo build
 
   build-go:
     working_directory: /go/src/github.com/oasislabs/
@@ -135,18 +259,76 @@ jobs:
           paths:
             - go/bin
 
+  end-to-end-tests:
+    # The purpose of this job is to run
+    # the end-to-end tests.
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      # Set up
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+      
+      # Check out source from github
+      - checkout
+
+      - run:
+          name: Check source code style
+          command: cargo fmt -- --write-mode=check
+      - run:
+          name: Install ekiden-tools
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-tools
+      - run:
+          name: Install ekiden-compute
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-compute
+
+      # Attach CircleCI workspace (temp storage for this workflow run)
+      - attach_workspace:
+          at: /workspace
+
+      # Copy required resources from the workspace
+      - run: 
+          name: Copy ekiden-node from workspace
+          command: cp /workspace/go/bin/ekiden ekiden-node
+      - run:
+          name: Ensure target directory exists
+          command: mkdir -p target
+      - run:
+          name: Copy contents of workspace target dir to target dir on agent
+          command: cp -R /workspace/target/* target/
+
+      # Run the end-to-end tests
+      - run: 
+          name: Run the end-to-end tests
+          command: ./scripts/test-e2e.sh
+
   set-docker-tag:
+    # The purpose of this job is to determine
+    # the tag to use for docker image versioning
+    # and putting that value into the CircleCI
+    # workspace for use in other jobs in the
+    # workflow.
     docker:
       - image: circleci/python:3.6.6-jessie
     steps:
-      # Setup version tracking environment variables
       - checkout
       - run:
           name: Load docker tag versioning into environment
           command: ./scripts/determine-build-versioning.sh /tmp/build_image_tag
 
-      # Save docker tag
       - persist_to_workspace:
+          # Save docker tag
           root: /tmp
           paths:
             - build_image_tag
@@ -174,21 +356,33 @@ jobs:
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       # Build deployment image.
-      - run: |
-          echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
-          BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
+      
+      - run:
+          name: Login to docker
+          command: echo "$DOCKERHUB_PASSWORD" |
+                   docker login
+                     --username "$DOCKERHUB_USERNAME"
+                     --password-stdin
+                     
+      - run:
+          name: Build deployment image
+          command: BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
 
       - run:
           name: Push deployment image
-          command: docker push oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+          command: docker push
+                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
 
       - run:
           name: Tag the build image as the latest staging image
-          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
+          command: docker tag
+                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+                     oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
 
       - run:
           name: Publish as the latest staging image
-          command: docker push oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
+          command: docker push
+                     oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
 
   deploy-to-staging:
     docker:
@@ -204,7 +398,12 @@ jobs:
 
       - run:
           name: Trigger a buildhook that triggers a staging deploy
-          command: ./scripts/buildhook-notify.sh staging oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
+          command: ./scripts/buildhook-notify.sh
+                     staging
+                     oasislabs/runtime-ethereum
+                     $BUILD_IMAGE_TAG
+                     master
+                     $CIRCLE_TOKEN
 
   promote-to-production:
     docker:
@@ -222,19 +421,26 @@ jobs:
 
       - run:
           name: Login to docker
-          command: echo "$DOCKERHUB_PASSWORD" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+          command: echo "$DOCKERHUB_PASSWORD" |
+                   docker login
+                     --username "$DOCKERHUB_USERNAME"
+                     --password-stdin
 
       - run:
           name: Download the tag of ekiden for this current workflow
-          command: docker pull oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+          command: docker pull
+                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
 
       - run:
           name: Tag the ekiden build on this workflow for production
-          command: docker tag oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
+          command: docker tag
+                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+                     oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
 
       - run:
           name: Push the new production tag of ekiden to dockerhub
-          command: docker push oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
+          command: docker push
+                     oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
 
   deploy-to-production:
     docker:
@@ -250,7 +456,12 @@ jobs:
 
       - run:
           name: Trigger a buildhook that triggers a production deploy
-          command: ./scripts/buildhook-notify.sh production oasislabs/runtime-ethereum $BUILD_IMAGE_TAG master $CIRCLE_TOKEN
+          command: ./scripts/buildhook-notify.sh
+                     production
+                     oasislabs/runtime-ethereum
+                     $BUILD_IMAGE_TAG
+                     master
+                     $CIRCLE_TOKEN
 
   benchmark:
     docker:
@@ -292,37 +503,59 @@ jobs:
 
 workflows:
   version: 2
-  build:
+  build_and_test_and_release:
     jobs:
+      - set-docker-tag
       - build-go
-      - build:
+      - build-and-test-runtime
+      - build-runtime-benchmark
+      - build-and-test-web3-gateway
+      - build-web3-gateway-benchmark
+      - build-genesis
+      - build-playback
+      - end-to-end-tests:
           requires:
-           - build-go
-      - set-docker-tag:
-          filters:
-            branches:
-              only: master
+            - build-go
+            - build-and-test-runtime
+            - build-and-test-web3-gateway
       - build-and-publish-docker-image:
-          filters:
-            branches:
-              only: master
+          # This job does *not* require most other jobs
+          # so this job can run in parallel.
           requires:
-            - build
             - set-docker-tag
       - deploy-to-staging:
           filters:
             branches:
               only: master
           requires:
+            # Requires end-to-end-test job so that deploy
+            # will only happen if all tests succeed.
+            - end-to-end-tests
             - build-and-publish-docker-image
+            - build-go
+            - build-and-test-runtime
+            - build-runtime-benchmark
+            - build-and-test-web3-gateway
+            - build-web3-gateway-benchmark
+            - build-genesis
+            - build-playback
       - hold-for-production:
           type: approval
+          filters:
+            branches:
+              only: master
           requires:
             - deploy-to-staging
       - promote-to-production:
+          filters:
+            branches:
+              only: master
           requires:
             - hold-for-production
       - deploy-to-production:
+          filters:
+            branches:
+              only: master
           requires:
             - promote-to-production
   benchmarking:
