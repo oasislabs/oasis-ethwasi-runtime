@@ -6,11 +6,15 @@ extern crate ekiden_core;
 extern crate ekiden_keymanager_common;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
+extern crate ekiden_storage_lru;
 extern crate ekiden_trusted;
+extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_api;
 extern crate ethereum_types;
+extern crate hashdb;
 extern crate hex;
+extern crate keccak_hash;
 #[macro_use]
 extern crate lazy_static;
 extern crate log;
@@ -26,8 +30,15 @@ pub mod storage; // allow access from tests/run_contract
 #[cfg(not(debug_assertions))]
 mod storage;
 
+use std::sync::Arc;
+
 use ekiden_core::error::{Error, Result};
 use ekiden_keymanager_common::confidential;
+use ekiden_storage_base::StorageBackend;
+#[cfg(not(target_env = "sgx"))]
+use ekiden_storage_dummy::DummyStorageBackend;
+#[cfg(target_env = "sgx")]
+use ekiden_trusted::db::untrusted::UntrustedStorageBackend;
 use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 create_contract,
                                 dispatcher::{BatchHandler, ContractCallContext}},
@@ -43,8 +54,9 @@ use ethcore::{block::{IsBlock, OpenBlock},
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
                    Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
-use state::Cache;
-use storage::GlobalStorage;
+
+use self::state::Cache;
+use self::storage::GlobalStorage;
 
 enclave_init!();
 
@@ -65,8 +77,12 @@ pub struct EthereumContext<'a> {
 
 impl<'a> EthereumContext<'a> {
     /// Create new Ethereum-specific batch context.
-    pub fn new(root_hash: ekiden_core::bytes::H256) -> Box<Self> {
-        let cache = Cache::from_global(root_hash);
+    pub fn new(
+        storage: Arc<StorageBackend>,
+        db: DatabaseHandle,
+        root_hash: ekiden_core::bytes::H256,
+    ) -> Box<Self> {
+        let cache = Cache::from_global(storage, db, root_hash);
 
         Box::new(EthereumContext {
             block: cache.new_block().unwrap(),
@@ -76,11 +92,34 @@ impl<'a> EthereumContext<'a> {
     }
 }
 
+#[cfg(not(test))]
 pub struct EthereumBatchHandler;
+#[cfg(test)]
+pub struct EthereumBatchHandler {
+    /// Allow to configure the storage backend in tests.
+    pub storage: Arc<StorageBackend>,
+}
+
 impl BatchHandler for EthereumBatchHandler {
     fn start_batch(&self, ctx: &mut ContractCallContext) {
-        let root_hash = DatabaseHandle::instance().get_root_hash();
-        ctx.runtime = EthereumContext::new(root_hash);
+        // Obtain current root hash from the block header.
+        let root_hash = ctx.header.state_root;
+
+        // Create a new storage backend.
+        #[cfg(not(test))]
+        #[cfg(target_env = "sgx")]
+        let storage = Arc::new(UntrustedStorageBackend::new());
+        #[cfg(not(test))]
+        #[cfg(not(target_env = "sgx"))]
+        let storage = Arc::new(DummyStorageBackend::new());
+        #[cfg(test)]
+        let storage = self.storage.clone();
+
+        // Create a fresh database instance for the given root hash.
+        let mut db = DatabaseHandle::new(storage.clone());
+        db.set_root_hash(root_hash).unwrap();
+
+        ctx.runtime = EthereumContext::new(storage, db, root_hash);
     }
 
     fn end_batch(&self, ctx: ContractCallContext) {
@@ -93,12 +132,11 @@ impl BatchHandler for EthereumBatchHandler {
             ectx.cache.add_block(ectx.block.close_and_lock()).unwrap();
         }
 
-        // Commit any pending database changes.
-        let mut db = DatabaseHandle::instance();
-        db.commit().unwrap();
-
         // Update cached value.
-        ectx.cache.commit_global(db.get_root_hash());
+        let root_hash = ectx.cache.commit_global();
+
+        // TODO: Get rid of the global database handle instance.
+        DatabaseHandle::instance().set_root_hash(root_hash).unwrap();
     }
 }
 
@@ -451,6 +489,8 @@ pub fn simulate_transaction(
 #[cfg(test)]
 mod tests {
     extern crate ekiden_roothash_base;
+    extern crate ekiden_storage_base;
+    extern crate ekiden_storage_dummy;
     extern crate ethkey;
 
     use std::str::FromStr;
@@ -458,21 +498,34 @@ mod tests {
     use std::sync::Mutex;
 
     use self::ekiden_roothash_base::header::Header;
+    use self::ekiden_storage_base::StorageBackend;
+    use self::ekiden_storage_dummy::DummyStorageBackend;
     use self::ethkey::{KeyPair, Secret};
+
     use super::*;
     use ethcore::{self, blockchain::BlockChain, vm};
     use hex;
 
+    lazy_static! {
+        // Global dummy storage used in tests.
+        static ref STORAGE: Arc<StorageBackend> = Arc::new(DummyStorageBackend::new());
+    }
+
     fn dummy_ctx() -> ContractCallContext {
         let root_hash = DatabaseHandle::instance().get_root_hash();
+        let mut ctx = ContractCallContext::new(Header {
+            timestamp: 0xcafedeadbeefc0de,
+            state_root: root_hash,
+            ..Default::default()
+        });
 
-        ContractCallContext {
-            header: Header {
-                timestamp: 0xcafedeadbeefc0de,
-                ..Default::default()
-            },
-            runtime: EthereumContext::new(root_hash),
-        }
+        // Initialize the context in the same way as a batch handler does.
+        let batch_handler = EthereumBatchHandler {
+            storage: STORAGE.clone(),
+        };
+        batch_handler.start_batch(&mut ctx);
+
+        ctx
     }
 
     fn with_batch_handler<F, R>(f: F) -> R
@@ -480,7 +533,9 @@ mod tests {
         F: FnOnce(&mut ContractCallContext) -> R,
     {
         let mut ctx = dummy_ctx();
-        let batch_handler = EthereumBatchHandler;
+        let batch_handler = EthereumBatchHandler {
+            storage: STORAGE.clone(),
+        };
         batch_handler.start_batch(&mut ctx);
 
         let result = f(&mut ctx);
@@ -709,50 +764,6 @@ mod tests {
             .hash;
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());
-    }
-
-    fn get_account_nonce_chain(chain: &BlockChain, address: &Address) -> U256 {
-        let backend = state::get_backend();
-        let root = chain.best_block_header().state_root().clone();
-        ethcore::state::State::from_existing(
-            backend,
-            root,
-            U256::zero(),       /* account_start_nonce */
-            Default::default(), /* factories */
-        ).unwrap()
-            .nonce(address)
-            .unwrap()
-    }
-
-    #[test]
-    fn test_hiatus() {
-        let mut client = CLIENT.lock().unwrap();
-        let client_address = client.keypair.address();
-
-        // Initialize the DB.
-        let reference_nonce_before = get_account_nonce(&client_address, &mut dummy_ctx()).unwrap();
-
-        // Create a chain representing node A, which is initially the leader.
-        let chain_a = BlockChain::new(
-            Default::default(), /* config */
-            &*evm::SPEC.genesis_block(),
-            Arc::new(state::StateDb::instance()),
-        );
-        let nonce_a_before = get_account_nonce_chain(&chain_a, &client_address);
-
-        // The default node becomes the leader.
-        // Do some transaction. Here we deploy an empty contract.
-        // pragma solidity ^0.4.24;
-        // contract Empty { }
-        let code_empty = hex::decode("6080604052348015600f57600080fd5b50603580601d6000396000f3006080604052600080fd00a165627a7a723058209c0fbaf927d5bcdab687e32584f12a46fbcd505bcefb4fec306c065651c73a3e0029").unwrap();
-        client.create_contract(code_empty, &U256::zero());
-
-        // Save the new nonce from the default node, which is currently leader.
-        let reference_nonce = get_account_nonce(&client_address, &mut dummy_ctx()).unwrap();
-
-        // When node A is leader again, getting the nonce should give an up to date value.
-        let nonce_a = get_account_nonce_chain(&chain_a, &client_address);
-        assert_eq!(nonce_a, reference_nonce);
     }
 
     #[test]
