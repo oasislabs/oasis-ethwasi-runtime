@@ -17,6 +17,7 @@ ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ek
 ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden10" }
 ethereum-api = { path = "./api" }
 hex = "0.3"
+keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden10" }
 lazy_static = "1.0.1"
 log = "0.4"
 protobuf = "~2.0"

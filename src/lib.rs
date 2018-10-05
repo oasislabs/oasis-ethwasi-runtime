@@ -17,6 +17,8 @@ extern crate log;
 extern crate protobuf;
 extern crate sha3;
 
+extern crate keccak_hash as hash;
+
 mod evm;
 #[macro_use]
 mod logger;
@@ -324,17 +326,7 @@ fn transact(
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     if encrypted {
-        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
-        ectx.block.push_transaction_with_processing(
-            transaction,
-            None,
-            &mut storage,
-            |tx| Ok(transaction_decrypted),
-            |receipt| {
-                encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
-                    .map_err(|_| BlockError::InvalidSeal.into())
-            },
-        )?;
+        transact_encrypted(ectx, transaction, &mut storage)?;
     } else {
         ectx.block
             .push_transaction(transaction, None, &mut storage)?;
@@ -342,8 +334,34 @@ fn transact(
     Ok(tx_hash)
 }
 
+fn transact_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    &mut storage: GlobalStorage,
+) -> Result<()> {
+    match transaction.action {
+        Action::Call(to_address) => self.cache.with_encryption(to_address, || {
+            let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+            ectx.block.push_transaction_with_processing(
+                transaction,
+                None,
+                &mut storage,
+                |tx| Ok(transaction_decrypted),
+                |receipt| {
+                    encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
+                        .map_err(|_| BlockError::InvalidSeal.into())
+                },
+            )?;
+        }),
+        Action::Create() => {
+            // todo
+        }
+    };
+    Ok(())
+}
+
 fn decrypt_transaction(
-    transaction: &SignedTransaction,
+    transaction: &SignedTransaction
 ) -> Result<(SignedTransaction, confidential::Decryption)> {
     let decryption = confidential::decrypt(Some(transaction.data.clone()))?;
     let unsigned = EthcoreTransaction {
@@ -391,8 +409,8 @@ fn make_unsigned_transaction(
     let tx = EthcoreTransaction {
         action: if request.is_call {
             Action::Call(request
-                .address
-                .ok_or(Error::new("Must provide address for call transaction."))?)
+                    .address
+                    .ok_or(Error::new("Must provide address for call transaction."))?)
         } else {
             Action::Create
         },
@@ -706,7 +724,7 @@ mod tests {
             &(rlp::encode(&good_sig).into_vec(), false),
             &mut dummy_ctx(),
         ).unwrap()
-            .hash;
+        .hash;
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());
     }
@@ -720,8 +738,8 @@ mod tests {
             U256::zero(),       /* account_start_nonce */
             Default::default(), /* factories */
         ).unwrap()
-            .nonce(address)
-            .unwrap()
+        .nonce(address)
+        .unwrap()
     }
 
     #[test]
@@ -770,7 +788,8 @@ mod tests {
         with_batch_handler(|ctx| {
             let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-            let last_hashes = ectx.cache
+            let last_hashes = ectx
+                .cache
                 .last_hashes(&ectx.cache.best_block_header().hash());
 
             assert_eq!(last_hashes.len(), 256);

@@ -1,25 +1,34 @@
-use std::{collections::HashSet,
-          sync::{Arc, Mutex}};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 use ekiden_core::{self, error::Result};
 use ekiden_trusted::db::{Database, DatabaseHandle};
-use ethcore::{self,
-              block::{Drain, IsBlock, LockedBlock, OpenBlock},
-              blockchain::{BlockChain, BlockProvider, ExtrasInsert},
-              encoded::Block,
-              engines::ForkChoice,
-              filter::Filter as EthcoreFilter,
-              header::Header,
-              journaldb::overlaydb::OverlayDB,
-              kvdb::{self, KeyValueDB},
-              state::backend::Basic as BasicBackend,
-              transaction::Action,
-              types::{ids::BlockId,
-                      log_entry::{LocalizedLogEntry, LogEntry},
-                      receipt::TransactionOutcome,
-                      BlockNumber}};
+use ethcore::{
+    self,
+    block::{Drain, IsBlock, LockedBlock, OpenBlock},
+    blockchain::{BlockChain, BlockProvider, ExtrasInsert},
+    encoded::Block,
+    engines::ForkChoice,
+    filter::Filter as EthcoreFilter,
+    header::Header,
+    journaldb::overlaydb::OverlayDB,
+    kvdb::{self, KeyValueDB},
+    state::backend::Basic as BasicBackend,
+    transaction::Action,
+    types::{
+        ids::BlockId,
+        log_entry::{LocalizedLogEntry, LogEntry},
+        receipt::TransactionOutcome,
+        BlockNumber,
+    },
+};
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
+
+use ekiden_keymanager_common::ContractId;
+use hash::keccak;
 
 use super::evm::{get_contract_address, SPEC};
 
@@ -41,7 +50,8 @@ pub struct Cache {
 impl Cache {
     /// Create a new in-memory cache for the given state root.
     pub fn new(root_hash: ekiden_core::bytes::H256) -> Self {
-        let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */)
+        let mut db = SPEC
+            .ensure_db_good(get_backend(), &Default::default() /* factories */)
             .unwrap();
         db.0.commit().unwrap();
 
@@ -52,6 +62,16 @@ impl Cache {
             state_db: state_db.clone(),
             chain: Self::new_chain(state_db),
         }
+    }
+
+    pub fn with_encryption<F>(&mut self, contract: Address, f: F)
+    where
+        F: FnOnce() -> (),
+    {
+        let contract_id = keccak(contract.to_vec());
+        self.state_db.set_encryption_mode(Some(contract_id));
+        f();
+        self.state_db.set_encryption_mode(None);
     }
 
     /// Fetches a global `Cache` instance for the given state root.
@@ -170,11 +190,11 @@ impl Cache {
             None => return vec![],
         };
 
-        let blocks = filter.bloom_possibilities().iter()
-            .map(|bloom| {
-                self.chain.blocks_with_bloom(bloom, from, to)
-            })
-        .flat_map(|m| m)
+        let blocks = filter
+            .bloom_possibilities()
+            .iter()
+            .map(|bloom| self.chain.blocks_with_bloom(bloom, from, to))
+            .flat_map(|m| m)
             // remove duplicate elements
             .collect::<HashSet<u64>>()
             .into_iter()
@@ -316,7 +336,9 @@ impl Cache {
     }
 }
 
-pub struct StateDb {}
+pub struct StateDb {
+    encryption: Option<H256>,
+}
 
 type Backend = BasicBackend<OverlayDB>;
 type State = ethcore::state::State<Backend>;
@@ -330,11 +352,15 @@ pub(crate) fn get_backend() -> Backend {
 
 impl StateDb {
     fn new() -> Self {
-        Self {}
+        Self { encryption: None }
     }
 
     pub fn instance() -> Self {
         Self::new()
+    }
+
+    pub fn set_encryption_mode(&mut self, contract: Option<ContractId>) {
+        self.encryption = contract;
     }
 }
 
@@ -390,9 +416,25 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
 
 impl kvdb::KeyValueDB for StateDb {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-        Ok(DatabaseHandle::instance()
-            .get(&get_key(col, key))
-            .map(kvdb::DBValue::from_vec))
+        match self.encryption {
+            None => {
+                Ok(DatabaseHandle::instance()
+                   .get(&get_key(col, key))
+                   .map(kvdb::DBValue::from_vec)),
+            },
+            Some(contract_id) => {
+                let mut result = None;
+                DatabaseHandle::instance().with_encryption(contract_id, |db| {
+                    match db.get(&get_key(col, key)) {
+                        Some(val) => {
+                            result = Some(kvdb::DBValue::from_vec(val));
+                        }
+                        _ => {}
+                    };
+                });
+                Ok(result)
+            }
+        }
     }
 
     fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {
@@ -400,6 +442,7 @@ impl kvdb::KeyValueDB for StateDb {
     }
 
     fn write_buffered(&self, transaction: kvdb::DBTransaction) {
+        // with encryption here
         transaction.ops.iter().for_each(|op| match op {
             &kvdb::DBOp::Insert {
                 ref key,
