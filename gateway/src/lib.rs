@@ -24,7 +24,6 @@ extern crate clap;
 extern crate env_logger;
 #[macro_use]
 extern crate futures;
-extern crate futures_cpupool;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -92,6 +91,8 @@ extern crate ekiden_storage_dummy;
 #[cfg(test)]
 extern crate ekiden_storage_frontend;
 extern crate ethereum_api;
+#[cfg(test)]
+extern crate grpcio;
 
 mod client;
 mod impls;
