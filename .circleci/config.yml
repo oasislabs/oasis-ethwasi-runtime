@@ -275,9 +275,6 @@ jobs:
       - checkout
 
       - run:
-          name: Check source code style
-          command: cargo fmt -- --write-mode=check
-      - run:
           name: Install ekiden-tools
           command: cargo install
                      --git https://github.com/oasislabs/ekiden
