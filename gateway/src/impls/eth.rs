@@ -376,11 +376,13 @@ impl Eth for EthClient {
     fn block_transaction_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getBlockTransactionCountByNumber");
         info!("eth_getBlockTransactionCountByNumber(number: {:?})", num);
-        Box::new(future::ok(
-            self.client
+        Box::new(future::ok(match num {
+            // we don't have pending blocks
+            BlockNumber::Pending => Some(RpcU256::from(0)),
+            _ => self.client
                 .block(block_number_to_id(num))
                 .map(|block| block.transactions_count().into()),
-        ))
+        }))
     }
 
     fn block_uncles_count_by_hash(&self, _hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
