@@ -28,7 +28,6 @@ use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
 
 use ekiden_keymanager_common::ContractId;
-use hash::keccak;
 
 use super::evm::{get_contract_address, SPEC};
 
@@ -62,16 +61,6 @@ impl Cache {
             state_db: state_db.clone(),
             chain: Self::new_chain(state_db),
         }
-    }
-
-    pub fn with_encryption<F>(&mut self, contract: Address, f: F)
-    where
-        F: FnOnce() -> (),
-    {
-        let contract_id = keccak(contract.to_vec());
-        self.state_db.set_encryption_mode(Some(contract_id));
-        f();
-        self.state_db.set_encryption_mode(None);
     }
 
     /// Fetches a global `Cache` instance for the given state root.
@@ -337,7 +326,7 @@ impl Cache {
 }
 
 pub struct StateDb {
-    encryption: Option<H256>,
+    encryption: Option<ekiden_core::bytes::H256>,
 }
 
 type Backend = BasicBackend<OverlayDB>;
@@ -357,10 +346,6 @@ impl StateDb {
 
     pub fn instance() -> Self {
         Self::new()
-    }
-
-    pub fn set_encryption_mode(&mut self, contract: Option<ContractId>) {
-        self.encryption = contract;
     }
 }
 
@@ -417,11 +402,9 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
 impl kvdb::KeyValueDB for StateDb {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
         match self.encryption {
-            None => {
-                Ok(DatabaseHandle::instance()
-                   .get(&get_key(col, key))
-                   .map(kvdb::DBValue::from_vec)),
-            },
+            None => Ok(DatabaseHandle::instance()
+                .get(&get_key(col, key))
+                .map(kvdb::DBValue::from_vec)),
             Some(contract_id) => {
                 let mut result = None;
                 DatabaseHandle::instance().with_encryption(contract_id, |db| {

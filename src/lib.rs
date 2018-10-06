@@ -47,6 +47,8 @@ use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, 
 use ethereum_types::{Address, H256, U256};
 use state::Cache;
 use storage::GlobalStorage;
+use ekiden_keymanager_common::ContractId;
+use hash::keccak;
 
 enclave_init!();
 
@@ -76,6 +78,18 @@ impl<'a> EthereumContext<'a> {
             force_emit_block: false,
         })
     }
+
+    pub fn with_encryption<F>(&mut self, contract: Address, f: F) -> Result<()>
+    where
+        F: FnOnce(&mut EthereumContext) -> Result<()>,
+    {
+        let contract_id = ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
+        self.cache.set_encryption_mode(Some(contract_id));
+        f(self)?;
+        self.cache.set_encryption_mode(None);
+        Ok(())
+    }
+
 }
 
 pub struct EthereumBatchHandler;
@@ -318,6 +332,9 @@ pub fn execute_raw_transaction(
     })
 }
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
 fn transact(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
@@ -326,38 +343,32 @@ fn transact(
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     if encrypted {
-        transact_encrypted(ectx, transaction, &mut storage)?;
+        match transaction.action {
+            Action::Call(to_address) => {
+                ectx.with_encryption(to_address, |ectx| {
+                    let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+                    ectx.block.push_transaction_with_processing(
+                        transaction,
+                        None,
+                        &mut storage,
+                        |tx| Ok(transaction_decrypted),
+                        |receipt| {
+                            encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
+                                .map_err(|_| BlockError::InvalidSeal.into())
+                        },
+                    )?;
+                    Ok(())
+                });
+            },
+            Action::Create => {
+                // todo
+            }
+        };
     } else {
         ectx.block
             .push_transaction(transaction, None, &mut storage)?;
     }
     Ok(tx_hash)
-}
-
-fn transact_encrypted(
-    ectx: &mut EthereumContext,
-    transaction: SignedTransaction,
-    &mut storage: GlobalStorage,
-) -> Result<()> {
-    match transaction.action {
-        Action::Call(to_address) => self.cache.with_encryption(to_address, || {
-            let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
-            ectx.block.push_transaction_with_processing(
-                transaction,
-                None,
-                &mut storage,
-                |tx| Ok(transaction_decrypted),
-                |receipt| {
-                    encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
-                        .map_err(|_| BlockError::InvalidSeal.into())
-                },
-            )?;
-        }),
-        Action::Create() => {
-            // todo
-        }
-    };
-    Ok(())
 }
 
 fn decrypt_transaction(
@@ -379,7 +390,7 @@ fn decrypt_transaction(
         .map_err(|_| Error::new("Unable to create a signed transaction"))?;
     tx.set_sender(transaction.sender().clone());
     tx.set_public_key(transaction.public_key().clone());
-    Ok((tx, decryption))
+    return Ok((tx, decryption))
 }
 
 fn encrypt_receipt(

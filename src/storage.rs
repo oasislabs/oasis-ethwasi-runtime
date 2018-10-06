@@ -6,8 +6,10 @@ use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 use ekiden_storage_dummy::DummyStorageBackend as StorageBackendImpl;
 #[cfg(target_env = "sgx")]
 use ekiden_trusted::db::untrusted::UntrustedStorageBackend as StorageBackendImpl;
-use ethcore::{storage::Storage,
-              vm::{Error, Result}};
+use ethcore::{
+    storage::Storage,
+    vm::{Error, Result},
+};
 use ethereum_types::H256;
 
 use std::str::FromStr;
