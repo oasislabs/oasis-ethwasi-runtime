@@ -46,6 +46,8 @@ pub struct Cache {
     chain: BlockChain,
 }
 
+use std::sync::atomic::AtomicBool;
+
 impl Cache {
     /// Create a new in-memory cache for the given state root.
     pub fn new(root_hash: ekiden_core::bytes::H256) -> Self {
@@ -61,6 +63,12 @@ impl Cache {
             state_db: state_db.clone(),
             chain: Self::new_chain(state_db),
         }
+    }
+
+    pub fn set_encryption_mode(contract: Option<ContractId>) {
+        self.state_db.encryption_mode.swap(mode, Ordering::Relaxed);
+        let addr = self.state_db.contract.lock().unwrap();
+        *addr = contract;
     }
 
     /// Fetches a global `Cache` instance for the given state root.
@@ -326,7 +334,8 @@ impl Cache {
 }
 
 pub struct StateDb {
-    encryption: Option<ekiden_core::bytes::H256>,
+    encryption_mode: AtomicBool,
+    contract: Mutex<Option<ekiden_core::bytes::H256>>,
 }
 
 type Backend = BasicBackend<OverlayDB>;
@@ -341,7 +350,10 @@ pub(crate) fn get_backend() -> Backend {
 
 impl StateDb {
     fn new() -> Self {
-        Self { encryption: None }
+        Self {
+            encryption: None,
+            mode: false,
+        }
     }
 
     pub fn instance() -> Self {
