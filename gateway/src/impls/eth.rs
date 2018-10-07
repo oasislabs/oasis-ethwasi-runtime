@@ -37,10 +37,11 @@ use log;
 use parity_rpc::v1::helpers::{errors, fake_sign, limit_logs};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
-use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
-                            CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
-                            Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus,
-                            Transaction as RpcTransaction, U256 as RpcU256, Work};
+use parity_rpc::v1::types::{
+    block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter, Index,
+    Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus, Transaction as RpcTransaction,
+    Work, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64, U256 as RpcU256,
+};
 
 #[cfg(not(feature = "read_state"))]
 use ethereum_api::TransactionRequest;
@@ -159,8 +160,7 @@ impl EthClient {
                                     .into_iter()
                                     .map(|t| {
                                         RpcTransaction::from_localized(t, self.eip86_transition)
-                                    })
-                                    .collect(),
+                                    }).collect(),
                             ),
                             false => BlockTransactions::Hashes(
                                 block
@@ -238,7 +238,7 @@ impl EthClient {
         }
     }
 
-    fn get_block_id(&self, number: BlockNumber) -> BlockId {
+    pub fn get_block_id(number: BlockNumber) -> BlockId {
         // for "pending", just use latest block
         match number {
             BlockNumber::Num(num) => BlockId::Number(num),
@@ -300,7 +300,7 @@ impl Eth for EthClient {
 
         info!("eth_getBalance(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.balance(&address, self.get_block_id(num)) {
+        let res = match self.client.balance(&address, Self::get_block_id(num)) {
             Some(balance) => Ok(balance.into()),
             None => Err(errors::state_pruned()),
         };
@@ -325,8 +325,9 @@ impl Eth for EthClient {
         );
 
         let res =
-            match self.client
-                .storage_at(&address, &H256::from(position), self.get_block_id(num))
+            match self
+                .client
+                .storage_at(&address, &H256::from(position), Self::get_block_id(num))
             {
                 Some(s) => Ok(s.into()),
                 None => Err(errors::state_pruned()),
@@ -402,7 +403,7 @@ impl Eth for EthClient {
 
         info!("eth_getCode(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.code(&address, self.get_block_id(num)) {
+        let res = match self.client.code(&address, Self::get_block_id(num)) {
             Some(code) => Ok(code.map_or_else(Bytes::default, Bytes::new)),
             None => Err(errors::state_pruned()),
         };
@@ -416,10 +417,9 @@ impl Eth for EthClient {
             "eth_getBlockByHash(hash: {:?}, full: {:?})",
             hash, include_txs
         );
-        Box::new(future::done(self.rich_block(
-            BlockId::Hash(hash.into()).into(),
-            include_txs,
-        )))
+        Box::new(future::done(
+            self.rich_block(BlockId::Hash(hash.into()).into(), include_txs),
+        ))
     }
 
     fn block_by_number(&self, num: BlockNumber, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
@@ -543,13 +543,15 @@ impl Eth for EthClient {
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
         #[cfg(feature = "read_state")]
-        let logs = self.client
+        let logs = self
+            .client
             .logs(filter.clone())
             .into_iter()
             .map(From::from)
             .collect::<Vec<RpcLog>>();
         #[cfg(not(feature = "read_state"))]
-        let logs = self.client
+        let logs = self
+            .client
             .logs(filter.clone())
             .into_iter()
             .map(log_to_rpc_log)
@@ -608,15 +610,14 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.call(&signed, self.get_block_id(num));
+        let result = self.client.call(&signed, Self::get_block_id(num));
         Box::new(future::done(
             result
                 .map_err(errors::call)
                 .and_then(|executed| match executed.exception {
                     Some(ref exception) => Err(errors::vm(exception, &executed.output)),
                     None => Ok(executed),
-                })
-                .map(|b| b.output.into()),
+                }).map(|b| b.output.into()),
         ))
     }
 
@@ -641,7 +642,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.call(request, self.get_block_id(num));
+        let result = self.client.call(request, Self::get_block_id(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))
@@ -662,7 +663,7 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.estimate_gas(&signed, self.get_block_id(num));
+        let result = self.client.estimate_gas(&signed, Self::get_block_id(num));
         Box::new(future::done(result.map(Into::into).map_err(errors::call)))
     }
 
@@ -687,7 +688,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.estimate_gas(request, self.get_block_id(num));
+        let result = self.client.estimate_gas(request, Self::get_block_id(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))

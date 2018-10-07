@@ -36,7 +36,9 @@ use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(not(feature = "read_state"))]
-use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
+use ethereum_api::{Filter, Log, Receipt, Transaction};
+
+use ethereum_api::TransactionRequest;
 
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
@@ -128,7 +130,8 @@ impl Client {
     #[cfg(feature = "confidential")]
     pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
         let cid = ContractId::from(0);
-        let public_key = self.key_manager
+        let public_key = self
+            .key_manager
             .lock()
             .expect("Should always have an key manager")
             .get_public_key(cid)
@@ -472,8 +475,7 @@ impl Client {
                         transaction_index: transaction_index,
                         transaction_log_index: i,
                         log_index: i,
-                    })
-                    .collect(),
+                    }).collect(),
                 log_bloom: receipt.log_bloom,
                 outcome: receipt.outcome,
             })
@@ -716,7 +718,8 @@ impl Client {
             start
         };
 
-        let mut head = db.block_hash(end)
+        let mut head = db
+            .block_hash(end)
             .and_then(|hash| db.block_header_data(&hash))
             .expect("Invalid block number");
 
@@ -727,7 +730,8 @@ impl Client {
             if head.number() <= start {
                 break;
             }
-            head = db.block_header_data(&head.parent_hash())
+            head = db
+                .block_header_data(&head.parent_hash())
                 .expect("Chain is corrupt");
         }
         headers.reverse();
@@ -739,7 +743,8 @@ impl Client {
     where
         T: 'static + Database + Send + Sync,
     {
-        let parent = db.best_block_hash()
+        let parent = db
+            .best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
         EnvInfo {
@@ -794,7 +799,16 @@ impl Client {
     pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
+            self.block_on(self.client.simulate_transaction((request, false)))
+                .map(|r| r.result),
+            Err("no response from runtime".to_string()),
+        )
+    }
+
+    pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
+        contract_call_result(
+            "simulate_transaction",
+            self.block_on(self.client.simulate_transaction((request, true)))
                 .map(|r| r.result),
             Err("no response from runtime".to_string()),
         )
@@ -839,7 +853,7 @@ impl Client {
     pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
+            self.block_on(self.client.simulate_transaction((request, false)))
                 .map(|r| Ok(r.used_gas + r.refunded_gas)),
             Err("no response from runtime".to_string()),
         )

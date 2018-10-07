@@ -196,6 +196,7 @@ fn setup_key_manager(args: &ArgMatches, container: &mut Container) -> KeyManager
     key_manager
 }
 
+use ekiden_core::identity::NodeIdentity;
 use std::time::Duration;
 
 fn key_manager_config(
@@ -206,10 +207,14 @@ fn key_manager_config(
     let timeout = Some(Duration::new(5, 0));
     let host = value_t!(args.value_of("key-manager-host"), String).unwrap_or_else(|e| e.exit());
     let port = value_t!(args.value_of("key-manager-port"), u16).unwrap_or_else(|e| e.exit());
+    let keymanager_identity = container.inject::<NodeIdentity>().unwrap();
+    /*
     let key_pair: NodeKeyPair =
         generate_or_load_key_pair("node", args.value_of("key-manager-key-pair"))
             .unwrap_or_else(|| ::std::process::exit(1));
     let certificate = key_pair.tls_certificate.clone();
+     */
+    let certificate = keymanager_identity.get_tls_certificate().to_owned();
     NetworkRpcClientBackendConfig {
         environment,
         timeout,

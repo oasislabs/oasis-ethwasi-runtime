@@ -30,6 +30,7 @@ mod storage;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_keymanager_common::confidential;
+use ekiden_keymanager_common::ContractId;
 use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 create_contract,
                                 dispatcher::{BatchHandler, ContractCallContext}},
@@ -45,10 +46,9 @@ use ethcore::{block::{IsBlock, OpenBlock},
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
                    Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
+use hash::keccak;
 use state::Cache;
 use storage::GlobalStorage;
-use ekiden_keymanager_common::ContractId;
-use hash::keccak;
 
 enclave_init!();
 
@@ -83,13 +83,15 @@ impl<'a> EthereumContext<'a> {
     where
         F: FnOnce(&mut EthereumContext) -> Result<()>,
     {
-        let contract_id = ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
-        self.cache.set_encryption_mode(Some(contract_id));
+        let contract_id: ContractId =
+            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
+        let mut maybe_contract = state::ENCRYPTION_MODE.lock().unwrap();
+        assert!(maybe_contract.is_none());
+        maybe_contract.get_or_insert(contract_id);
         f(self)?;
-        self.cache.set_encryption_mode(None);
+        maybe_contract.take();
         Ok(())
     }
-
 }
 
 pub struct EthereumBatchHandler;
@@ -301,11 +303,12 @@ pub fn execute_raw_transaction(
     pair: &(Vec<u8>, bool),
     ctx: &mut ContractCallContext,
 ) -> Result<ExecuteTransactionResponse> {
-    let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
-
     debug!("execute_raw_transaction");
+
+    let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
     let request = &pair.0;
     let encrypted = pair.1;
+
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
@@ -332,9 +335,6 @@ pub fn execute_raw_transaction(
     })
 }
 
-use std::rc::Rc;
-use std::cell::RefCell;
-
 fn transact(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
@@ -343,27 +343,7 @@ fn transact(
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     if encrypted {
-        match transaction.action {
-            Action::Call(to_address) => {
-                ectx.with_encryption(to_address, |ectx| {
-                    let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
-                    ectx.block.push_transaction_with_processing(
-                        transaction,
-                        None,
-                        &mut storage,
-                        |tx| Ok(transaction_decrypted),
-                        |receipt| {
-                            encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
-                                .map_err(|_| BlockError::InvalidSeal.into())
-                        },
-                    )?;
-                    Ok(())
-                });
-            },
-            Action::Create => {
-                // todo
-            }
-        };
+        transact_encrypted(ectx, transaction, &mut storage);
     } else {
         ectx.block
             .push_transaction(transaction, None, &mut storage)?;
@@ -371,8 +351,55 @@ fn transact(
     Ok(tx_hash)
 }
 
-fn decrypt_transaction(
-    transaction: &SignedTransaction
+fn transact_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    storage: &mut GlobalStorage,
+) -> Result<()> {
+    match transaction.action {
+        Action::Call(to_address) => call_encrypted(ectx, transaction, storage, to_address),
+        Action::Create => create_encrypted(ectx, transaction, storage),
+    }
+}
+
+fn call_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    storage: &mut GlobalStorage,
+    to_address: Address,
+) -> Result<()> {
+    debug!("Executing encrypted call");
+    ectx.with_encryption(to_address, |ectx| {
+        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+        ectx.block.push_transaction_with_processing(
+            transaction,
+            None,
+            storage,
+            |tx| Ok(transaction_decrypted),
+            |receipt| {
+                encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
+                    .map_err(|_| BlockError::InvalidSeal.into())
+            },
+        )?;
+        Ok(())
+    })
+}
+
+/*
+
+ */
+fn create_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    storage: &mut GlobalStorage,
+) -> Result<()> {
+    debug!("Executing encrypted create");
+    // todo
+    Ok(())
+}
+
+pub fn decrypt_transaction(
+    transaction: &SignedTransaction,
 ) -> Result<(SignedTransaction, confidential::Decryption)> {
     let decryption = confidential::decrypt(Some(transaction.data.clone()))?;
     let unsigned = EthcoreTransaction {
@@ -390,7 +417,7 @@ fn decrypt_transaction(
         .map_err(|_| Error::new("Unable to create a signed transaction"))?;
     tx.set_sender(transaction.sender().clone());
     tx.set_public_key(transaction.public_key().clone());
-    return Ok((tx, decryption))
+    return Ok((tx, decryption));
 }
 
 fn encrypt_receipt(
@@ -420,8 +447,8 @@ fn make_unsigned_transaction(
     let tx = EthcoreTransaction {
         action: if request.is_call {
             Action::Call(request
-                    .address
-                    .ok_or(Error::new("Must provide address for call transaction."))?)
+                .address
+                .ok_or(Error::new("Must provide address for call transaction."))?)
         } else {
             Action::Create
         },
@@ -442,10 +469,13 @@ fn make_unsigned_transaction(
     })
 }
 
+// TODO: DB CONFIGURE_KEY_MANAGER
 pub fn simulate_transaction(
-    request: &TransactionRequest,
+    pair: &(TransactionRequest, bool),
     ctx: &mut ContractCallContext,
 ) -> Result<SimulateTransactionResponse> {
+    let request = &pair.0;
+    let encrypted = pair.1;
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("simulate_transaction");
@@ -459,22 +489,26 @@ pub fn simulate_transaction(
             })
         }
     };
-    let exec = match evm::simulate_transaction(&ectx.cache, &tx) {
-        Ok(exec) => exec,
-        Err(e) => {
-            return Ok(SimulateTransactionResponse {
-                used_gas: U256::from(0),
-                refunded_gas: U256::from(0),
-                result: Err(e.to_string()),
-            })
-        }
+
+    let exec = if encrypted {
+        evm::simulate_transaction_enc(ectx, tx)
+    } else {
+        evm::simulate_transaction(&ectx.cache, &tx)
     };
 
-    Ok(SimulateTransactionResponse {
-        used_gas: exec.gas_used,
-        refunded_gas: exec.refunded,
-        result: Ok(exec.output),
-    })
+    let resp = match exec {
+        Err(e) => SimulateTransactionResponse {
+            used_gas: U256::from(0),
+            refunded_gas: U256::from(0),
+            result: Err(e.to_string()),
+        },
+        Ok(exec) => SimulateTransactionResponse {
+            used_gas: exec.gas_used,
+            refunded_gas: exec.refunded,
+            result: Ok(exec.output),
+        },
+    };
+    Ok(resp)
 }
 
 #[cfg(test)]
@@ -735,7 +769,7 @@ mod tests {
             &(rlp::encode(&good_sig).into_vec(), false),
             &mut dummy_ctx(),
         ).unwrap()
-        .hash;
+            .hash;
         assert!(bad_result.is_err());
         assert!(good_result.is_ok());
     }
@@ -749,8 +783,8 @@ mod tests {
             U256::zero(),       /* account_start_nonce */
             Default::default(), /* factories */
         ).unwrap()
-        .nonce(address)
-        .unwrap()
+            .nonce(address)
+            .unwrap()
     }
 
     #[test]
@@ -799,8 +833,7 @@ mod tests {
         with_batch_handler(|ctx| {
             let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-            let last_hashes = ectx
-                .cache
+            let last_hashes = ectx.cache
                 .last_hashes(&ectx.cache.best_block_header().hash());
 
             assert_eq!(last_hashes.len(), 256);

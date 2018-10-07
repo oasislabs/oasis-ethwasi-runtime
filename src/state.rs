@@ -1,29 +1,23 @@
-use std::{
-    collections::HashSet,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashSet,
+          sync::{Arc, Mutex}};
 
 use ekiden_core::{self, error::Result};
 use ekiden_trusted::db::{Database, DatabaseHandle};
-use ethcore::{
-    self,
-    block::{Drain, IsBlock, LockedBlock, OpenBlock},
-    blockchain::{BlockChain, BlockProvider, ExtrasInsert},
-    encoded::Block,
-    engines::ForkChoice,
-    filter::Filter as EthcoreFilter,
-    header::Header,
-    journaldb::overlaydb::OverlayDB,
-    kvdb::{self, KeyValueDB},
-    state::backend::Basic as BasicBackend,
-    transaction::Action,
-    types::{
-        ids::BlockId,
-        log_entry::{LocalizedLogEntry, LogEntry},
-        receipt::TransactionOutcome,
-        BlockNumber,
-    },
-};
+use ethcore::{self,
+              block::{Drain, IsBlock, LockedBlock, OpenBlock},
+              blockchain::{BlockChain, BlockProvider, ExtrasInsert},
+              encoded::Block,
+              engines::ForkChoice,
+              filter::Filter as EthcoreFilter,
+              header::Header,
+              journaldb::overlaydb::OverlayDB,
+              kvdb::{self, KeyValueDB},
+              state::backend::Basic as BasicBackend,
+              transaction::Action,
+              types::{ids::BlockId,
+                      log_entry::{LocalizedLogEntry, LogEntry},
+                      receipt::TransactionOutcome,
+                      BlockNumber}};
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
 
@@ -33,6 +27,11 @@ use super::evm::{get_contract_address, SPEC};
 
 lazy_static! {
     static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
+    /**
+     * The contract whose key is being used to encrypt/decrypt all accesses
+     * to the the StateDb. If this is None, then encryption is turned off.
+     */
+    pub static ref ENCRYPTION_MODE: Mutex<Option<ContractId>> = Mutex::new(None);
 }
 
 /// Cache is the in-memory blockchain cache backed by the database.
@@ -51,8 +50,7 @@ use std::sync::atomic::AtomicBool;
 impl Cache {
     /// Create a new in-memory cache for the given state root.
     pub fn new(root_hash: ekiden_core::bytes::H256) -> Self {
-        let mut db = SPEC
-            .ensure_db_good(get_backend(), &Default::default() /* factories */)
+        let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */)
             .unwrap();
         db.0.commit().unwrap();
 
@@ -63,12 +61,6 @@ impl Cache {
             state_db: state_db.clone(),
             chain: Self::new_chain(state_db),
         }
-    }
-
-    pub fn set_encryption_mode(contract: Option<ContractId>) {
-        self.state_db.encryption_mode.swap(mode, Ordering::Relaxed);
-        let addr = self.state_db.contract.lock().unwrap();
-        *addr = contract;
     }
 
     /// Fetches a global `Cache` instance for the given state root.
@@ -334,8 +326,8 @@ impl Cache {
 }
 
 pub struct StateDb {
-    encryption_mode: AtomicBool,
-    contract: Mutex<Option<ekiden_core::bytes::H256>>,
+    //encryption_mode: AtomicBool,
+//contract: Mutex<Option<ekiden_core::bytes::H256>>,
 }
 
 type Backend = BasicBackend<OverlayDB>;
@@ -350,10 +342,7 @@ pub(crate) fn get_backend() -> Backend {
 
 impl StateDb {
     fn new() -> Self {
-        Self {
-            encryption: None,
-            mode: false,
-        }
+        Self {}
     }
 
     pub fn instance() -> Self {
@@ -411,25 +400,32 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
         .collect()
 }
 
+fn get(col: Option<u32>, key: &[u8]) -> Option<kvdb::DBValue> {
+    DatabaseHandle::instance()
+        .get(&get_key(col, key))
+        .map(kvdb::DBValue::from_vec)
+}
+
+fn get_enc(col: Option<u32>, key: &[u8], contract_id: ContractId) -> Option<kvdb::DBValue> {
+    let mut result = None;
+    DatabaseHandle::instance().with_encryption(contract_id, |db| {
+        match db.get(&get_key(col, key)) {
+            Some(val) => {
+                result = Some(kvdb::DBValue::from_vec(val));
+            }
+            _ => {}
+        };
+    });
+    result
+}
+
 impl kvdb::KeyValueDB for StateDb {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-        match self.encryption {
-            None => Ok(DatabaseHandle::instance()
-                .get(&get_key(col, key))
-                .map(kvdb::DBValue::from_vec)),
-            Some(contract_id) => {
-                let mut result = None;
-                DatabaseHandle::instance().with_encryption(contract_id, |db| {
-                    match db.get(&get_key(col, key)) {
-                        Some(val) => {
-                            result = Some(kvdb::DBValue::from_vec(val));
-                        }
-                        _ => {}
-                    };
-                });
-                Ok(result)
-            }
-        }
+        let val = match ENCRYPTION_MODE.lock().unwrap().take() {
+            None => get(col, key),
+            Some(contract_id) => get_enc(col, key, contract_id),
+        };
+        Ok(val)
     }
 
     fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {

@@ -99,7 +99,6 @@ fn main() {
         ).arg(
             Arg::with_name("key-manager-key-pair")
                 .long("key-manager-key-pair")
-                .help("Port for the KeyManager server.")
                 .required(true)
                 .takes_value(true),
         ).arg(
