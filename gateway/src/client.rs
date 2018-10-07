@@ -130,8 +130,7 @@ impl Client {
     #[cfg(feature = "confidential")]
     pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
         let cid = ContractId::from(0);
-        let public_key = self
-            .key_manager
+        let public_key = self.key_manager
             .lock()
             .expect("Should always have an key manager")
             .get_public_key(cid)
@@ -475,7 +474,8 @@ impl Client {
                         transaction_index: transaction_index,
                         transaction_log_index: i,
                         log_index: i,
-                    }).collect(),
+                    })
+                    .collect(),
                 log_bloom: receipt.log_bloom,
                 outcome: receipt.outcome,
             })
@@ -718,8 +718,7 @@ impl Client {
             start
         };
 
-        let mut head = db
-            .block_hash(end)
+        let mut head = db.block_hash(end)
             .and_then(|hash| db.block_header_data(&hash))
             .expect("Invalid block number");
 
@@ -730,8 +729,7 @@ impl Client {
             if head.number() <= start {
                 break;
             }
-            head = db
-                .block_header_data(&head.parent_hash())
+            head = db.block_header_data(&head.parent_hash())
                 .expect("Chain is corrupt");
         }
         headers.reverse();
@@ -743,8 +741,7 @@ impl Client {
     where
         T: 'static + Database + Send + Sync,
     {
-        let parent = db
-            .best_block_hash()
+        let parent = db.best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
         EnvInfo {

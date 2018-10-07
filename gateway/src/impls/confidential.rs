@@ -33,6 +33,8 @@ impl Confidential for ConfidentialClient {
     type Metadata = Metadata;
 
     fn public_key(&self, contract: Address) -> Result<PublicKeyResult> {
+        measure_counter_inc!("confidential_getPublicKey");
+        info!("confidential_getPublicKey(contract {:?})", contract);
         self.client
             .public_key(contract)
             .map_err(|_| Error::new(ErrorCode::InternalError))
@@ -47,7 +49,6 @@ impl Confidential for ConfidentialClient {
         measure_counter_inc!("confidential_call");
         measure_histogram_timer!("confidential_call_enc_time");
         let num = tag.unwrap_or_default();
-
         info!(
             "confidential_call_enc(request: {:?}, number: {:?})",
             request, num

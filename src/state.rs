@@ -419,6 +419,16 @@ fn get_enc(col: Option<u32>, key: &[u8], contract_id: ContractId) -> Option<kvdb
     result
 }
 
+fn insert(col: Option<u32>, key: &[u8], value: &[u8]) {
+    DatabaseHandle::instance().insert(&get_key(col, key), value);
+}
+
+fn insert_enc(col: Option<u32>, key: &[u8], value: &[u8], contract_id: ContractId) {
+    DatabaseHandle::instance().with_encryption(contract_id, |db| {
+        db.insert(&get_key(col, key), value);
+    });
+}
+
 impl kvdb::KeyValueDB for StateDb {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
         let val = match ENCRYPTION_MODE.lock().unwrap().take() {
@@ -433,14 +443,18 @@ impl kvdb::KeyValueDB for StateDb {
     }
 
     fn write_buffered(&self, transaction: kvdb::DBTransaction) {
-        // with encryption here
         transaction.ops.iter().for_each(|op| match op {
             &kvdb::DBOp::Insert {
                 ref key,
                 ref value,
                 col,
             } => {
-                DatabaseHandle::instance().insert(&get_key(col, key), value.to_vec().as_slice());
+                match ENCRYPTION_MODE.lock().unwrap().take() {
+                    None => insert(col, key, value.to_vec().as_slice()),
+                    Some(contract_id) => {
+                        insert_enc(col, key, value.to_vec().as_slice(), contract_id)
+                    }
+                };
             }
             &kvdb::DBOp::Delete { .. } => {
                 // This is a no-op for us. Parity cleans up old state (anything
