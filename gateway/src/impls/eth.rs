@@ -385,16 +385,23 @@ impl Eth for EthClient {
         }))
     }
 
-    fn block_uncles_count_by_hash(&self, _hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
+    fn block_uncles_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getUncleCountByBlockHash");
-        // we don't have uncles
-        Box::new(future::ok(Some(RpcU256::from(0))))
+        Box::new(future::ok(
+            self.client
+                .block(BlockId::Hash(hash.into()))
+                .map(|block| block.uncles_count().into()),
+        ))
     }
 
-    fn block_uncles_count_by_number(&self, _num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
+    fn block_uncles_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getUncleCountByBlockNumber");
-        // we don't have uncles
-        Box::new(future::ok(Some(RpcU256::from(0))))
+        Box::new(future::ok(match num {
+            BlockNumber::Pending => Some(0.into()),
+            _ => self.client
+                .block(block_number_to_id(num))
+                .map(|block| block.uncles_count().into()),
+        }))
     }
 
     fn code_at(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<Bytes> {
