@@ -5,6 +5,7 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
+runtime-ethereum-common = { path = "./common" }
 common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden12" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

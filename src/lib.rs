@@ -19,6 +19,7 @@ extern crate keccak_hash;
 extern crate lazy_static;
 extern crate log;
 extern crate protobuf;
+extern crate runtime_ethereum_common;
 extern crate sha3;
 
 mod evm;
