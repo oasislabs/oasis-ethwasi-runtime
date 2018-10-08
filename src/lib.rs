@@ -385,9 +385,6 @@ fn call_encrypted(
     })
 }
 
-/*
-
- */
 fn create_encrypted(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
@@ -474,11 +471,12 @@ pub fn simulate_transaction(
     pair: &(TransactionRequest, bool),
     ctx: &mut ContractCallContext,
 ) -> Result<SimulateTransactionResponse> {
+    debug!("simulate_transaction");
+
     let request = &pair.0;
     let encrypted = pair.1;
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-    debug!("simulate_transaction");
     let tx = match make_unsigned_transaction(&ectx.cache, request) {
         Ok(t) => t,
         Err(e) => {
@@ -601,7 +599,12 @@ mod tests {
                 nonce: None,
             };
 
-            with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())
+            with_batch_handler(|ctx| {
+                simulate_transaction(&(tx, false), ctx)
+                    .unwrap()
+                    .result
+                    .unwrap()
+            })
         }
     }
 

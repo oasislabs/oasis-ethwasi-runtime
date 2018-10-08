@@ -49,6 +49,7 @@ use test_helpers::{self, MockDb};
 use util;
 use util::from_block_id;
 
+use hash::keccak;
 use traits::confidential::PublicKeyResult;
 
 // record contract call outcome
@@ -127,13 +128,13 @@ impl Client {
         }
     }
 
-    #[cfg(feature = "confidential")]
     pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
-        let cid = ContractId::from(0);
+        let contract_id: ContractId =
+            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
         let public_key = self.key_manager
             .lock()
             .expect("Should always have an key manager")
-            .get_public_key(cid)
+            .get_public_key(contract_id)
             .map_err(|_| "error".to_string())?;
         Ok(PublicKeyResult {
             public_key,
@@ -161,6 +162,7 @@ impl Client {
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
             gas_price: U256::from(1_000_000_000),
+            key_manager: Mutex::new(KeyManager::new()),
         }
     }
 
@@ -803,12 +805,52 @@ impl Client {
     }
 
     pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
+        if self.is_create_key(&request) {
+            return self.create_key(request);
+        }
         contract_call_result(
             "simulate_transaction",
             self.block_on(self.client.simulate_transaction((request, true)))
                 .map(|r| r.result),
             Err("no response from runtime".to_string()),
         )
+    }
+
+    fn is_create_key(&self, request: &TransactionRequest) -> bool {
+        let system_address = Address::from("ffffffffffffffffffffffffffffffffffffffff");
+        return system_address == request.address.unwrap_or(Address::from(0));
+    }
+
+    fn create_key(&self, request: TransactionRequest) -> Result<Bytes, String> {
+        match request.caller {
+            None => Err("Cannot create a key without specifying a from address".to_string()),
+            Some(address) => {
+                let next_address = self.next_create_address(address)?;
+                let contract_id: ContractId =
+                    ekiden_core::bytes::H256::from(&keccak(next_address.to_vec())[..]);
+                self.key_manager
+                    .lock()
+                    .expect("Should always have a key maanger")
+                    .get_or_create_secret_keys(contract_id)
+                    .map_err(|_| "error creating keys".to_string())?;
+                Ok(self.public_key(next_address)?.public_key.to_vec())
+            }
+        }
+    }
+
+    fn next_create_address(&self, address: Address) -> Result<Address, String> {
+        let block_num = self.best_block_number();
+        let nonce = self.nonce(&address, BlockId::Latest);
+        if nonce.is_none() {
+            return Err("Could not get account nonce".to_string());
+        }
+        let next_address = contract_address(
+            self.engine.create_address_scheme(block_num),
+            &address,
+            &nonce.unwrap(),
+            &[],
+        ).0;
+        Ok(next_address)
     }
 
     #[cfg(feature = "read_state")]
