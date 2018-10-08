@@ -29,7 +29,7 @@ run_test() {
     npm install > /dev/null
     npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
-    OUTPUT="$(./deploy_contract.js ${WORKDIR}/tests/contracts/basic_wasm_contract/target/basic_wasm_contract.wasm | tail -1)"
+    OUTPUT="$(./deploy_contract.js ${WORKDIR}/tests/contracts/basic_wasm_contract/target/basic_contract.wasm | tail -1)"
     echo "Fetched: $OUTPUT"
 
     if [ "$OUTPUT" = "0x726573756c74" ]; then
