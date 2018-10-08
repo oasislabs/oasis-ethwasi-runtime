@@ -16,7 +16,7 @@ use std::{collections::{hash_map::Entry, HashMap}, sync::{Arc, Mutex}};
 use ekiden_core::{error::Result, futures::prelude::*};
 use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 use ekiden_storage_lru::LruCacheStorageBackend;
-use ekiden_trusted::db::{Database, DatabaseHandle};
+use ekiden_trusted::db::Database;
 use elastic_array::ElasticArray128;
 use ethcore::{account_db::Factory as AccountFactory,
               factory::Factories,
@@ -52,22 +52,24 @@ enum PendingItem {
 }
 
 /// Internal structures, shared by multiple `StorageHashDB` clones.
-struct StorageHashDBInner {
+struct StorageHashDBInner<T: Database + Send + Sync> {
     /// Storage backend.
     backend: Arc<StorageBackend>,
     /// Blockchain state database instance.
-    blockchain_db: Arc<BlockchainStateDb>,
+    blockchain_db: Arc<BlockchainStateDb<T>>,
     /// Pending inserts.
     pending_inserts: HashMap<H256, PendingItem>,
 }
 
 /// Parity's `HashDB` backed by our `StorageBackend`.
-#[derive(Clone)]
-pub struct StorageHashDB {
-    inner: Arc<Mutex<StorageHashDBInner>>,
+pub struct StorageHashDB<T: Database + Send + Sync> {
+    inner: Arc<Mutex<StorageHashDBInner<T>>>,
 }
 
-impl StorageHashDB {
+impl<T> StorageHashDB<T>
+where
+    T: Database + Send + Sync
+{
     /// Size of the in-memory storage cache (number of entries).
     const STORAGE_CACHE_SIZE: usize = 1024;
     // TODO: Handle storage expiry.
@@ -75,7 +77,7 @@ impl StorageHashDB {
     /// Column to use in the blockchain state database.
     const STATE_DB_COLUMN: Option<u32> = None;
 
-    pub fn new(storage: Arc<StorageBackend>, blockchain_db: Arc<BlockchainStateDb>) -> Self {
+    pub fn new(storage: Arc<StorageBackend>, blockchain_db: Arc<BlockchainStateDb<T>>) -> Self {
         Self {
             inner: Arc::new(Mutex::new(StorageHashDBInner {
                 backend: Arc::new(LruCacheStorageBackend::new(
@@ -132,7 +134,21 @@ impl StorageHashDB {
     }
 }
 
-impl HashDB for StorageHashDB {
+impl<T> Clone for StorageHashDB<T>
+where
+    T: Database + Send + Sync
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+impl<T> HashDB for StorageHashDB<T>
+where
+    T: Database + Send + Sync
+{
     fn keys(&self) -> HashMap<H256, i32> {
         unimplemented!();
     }
@@ -257,13 +273,16 @@ impl HashDB for StorageHashDB {
 }
 
 /// Blockchain state database.
-pub struct BlockchainStateDb {
-    db: Mutex<DatabaseHandle>,
+pub struct BlockchainStateDb<T: Database + Send + Sync> {
+    db: Mutex<T>,
 }
 
-impl BlockchainStateDb {
+impl<T> BlockchainStateDb<T>
+where
+    T: Database + Send + Sync
+{
     /// Create new blockchain state database.
-    pub fn new(db: DatabaseHandle) -> Self {
+    pub fn new(db: T) -> Self {
         Self { db: Mutex::new(db) }
     }
 
@@ -278,7 +297,7 @@ impl BlockchainStateDb {
 // doesn't [yet?] have this feature, so we emulate by prepending the column id
 // to the actual key. Columns None and 0 should be distinct, so we use prefix 0
 // for None and col+1 for Some(col).
-fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
+pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
     let col_bytes = col.map(|id| (id + 1).to_le_bytes()).unwrap_or([0, 0, 0, 0]);
     col_bytes
         .into_iter()
@@ -287,7 +306,10 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
         .collect()
 }
 
-impl kvdb::KeyValueDB for BlockchainStateDb {
+impl<T> kvdb::KeyValueDB for BlockchainStateDb<T>
+where
+    T: Database + Send + Sync
+{
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
         let db = self.db.lock().unwrap();
 
@@ -349,9 +371,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_state() {
-        let storage = Arc::new(DummyStorageBackend::new());
+    fn test_get_key() {
+        let value = b"somevalue";
+        let col_none = get_key(None, value);
+        let col_0 = get_key(Some(0), value);
+        assert_ne!(col_none, col_0);
 
-        // TODO
+        // prefix for column Some(3) is 4=3+1
+        let col_3 = get_key(Some(3), b"three");
+        assert_eq!(col_3, b"\x04\0\0\0three");
     }
 }

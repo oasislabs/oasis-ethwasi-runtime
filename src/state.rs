@@ -34,11 +34,11 @@ pub struct Cache {
     /// differs on next invocation, the cache will be cleared first.
     root_hash: ekiden_core::bytes::H256,
     /// Blockchain state database instance.
-    blockchain_db: Arc<BlockchainStateDb>,
+    blockchain_db: Arc<BlockchainStateDb<DatabaseHandle>>,
     /// Ethereum state backend.
     state_backend: Backend,
     /// Ethereum state database.
-    state_db: StorageHashDB,
+    state_db: StorageHashDB<DatabaseHandle>,
     /// Actual blockchain cache.
     chain: BlockChain,
 }
@@ -109,7 +109,7 @@ impl Cache {
         root_hash
     }
 
-    fn new_chain(blockchain_db: Arc<BlockchainStateDb>) -> BlockChain {
+    fn new_chain(blockchain_db: Arc<BlockchainStateDb<DatabaseHandle>>) -> BlockChain {
         BlockChain::new(
             Default::default(), /* config */
             &*SPEC.genesis_block(),

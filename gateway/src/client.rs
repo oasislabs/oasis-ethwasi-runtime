@@ -77,6 +77,7 @@ pub struct Client {
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
     environment: Arc<Environment>,
+    storage_backend: Arc<StorageBackend>,
     storage: Arc<RwLock<Web3GlobalStorage>>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
@@ -93,11 +94,12 @@ impl Client {
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
-        let storage = Web3GlobalStorage::new(backend);
+        let storage = Web3GlobalStorage::new(backend.clone());
 
         // get current block number
         let current_block_number = match snapshot_manager {
-            Some(ref manager) => match state::StateDb::new(manager.get_snapshot()) {
+            Some(ref manager) => match state::StateDb::new(backend.clone(), manager.get_snapshot())
+            {
                 Some(db) => db.best_block_number(),
                 None => 0,
             },
@@ -110,6 +112,7 @@ impl Client {
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
             environment,
+            storage_backend: backend,
             storage: Arc::new(RwLock::new(storage)),
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
@@ -126,13 +129,15 @@ impl Client {
         let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(
             grpc_environment,
         ));
-        let storage = Web3GlobalStorage::new(Arc::new(DummyStorageBackend::new()));
+        let storage_backend = Arc::new(DummyStorageBackend::new());
+        let storage = Web3GlobalStorage::new(storage_backend.clone());
         Self {
             client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
             snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
+            storage_backend,
             storage: Arc::new(RwLock::new(storage)),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
@@ -286,7 +291,7 @@ impl Client {
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         match self.snapshot_manager {
             Some(ref manager) => {
-                let ret = state::StateDb::new(manager.get_snapshot());
+                let ret = state::StateDb::new(self.storage_backend.clone(), manager.get_snapshot());
                 if ret.is_none() {
                     measure_counter_inc!("read_state_failed");
                     error!("Could not get db snapshot");
@@ -302,7 +307,7 @@ impl Client {
     fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
         let mut db = MockDb::new();
         db.populate();
-        Some(StateDb::new(db).unwrap())
+        Some(StateDb::new(db.storage(), db).unwrap())
     }
 
     // block-related
@@ -874,33 +879,33 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // start with best block
         let hashes = Client::last_hashes(
             &state,
-            &H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199"),
+            &H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118"),
         );
 
         assert_eq!(
             hashes[0],
-            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
         );
         assert_eq!(
             hashes[1],
-            H256::from("c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3")
+            H256::from("75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e")
         );
         assert_eq!(
             hashes[2],
-            H256::from("17a7a94ad21879641349b6e90ccd7e42e63551ad81b3fda561cd2df4860fbd3f")
+            H256::from("613afac8fd33fd7a35b8928e68f6abc031ca8e16c35caa2eaa7518c4e753cffc")
         );
         assert_eq!(
             hashes[3],
-            H256::from("d56eee931740bb35eb9bf9f97cfebb66ac51a1d88988c1255b52677b958d658b")
+            H256::from("9a4ffe2733a837c80d0b7e2fd63b838806e3b8294dab3ad86249619b28fd9526")
         );
         assert_eq!(
             hashes[4],
-            H256::from("f39c325375fa2d5381a950850abd9999abd2ff64cd0f184139f5bb5d74afb14e")
+            H256::from("3546adf1c89e32acd11093f6f78468f5db413a207843aded872397821ea685ae")
         );
         assert_eq!(hashes[5], H256::zero());
     }
@@ -913,16 +918,16 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         let envinfo = Client::get_env_info(&state);
         assert_eq!(envinfo.number, 5);
         assert_eq!(envinfo.author, Address::default());
-        assert_eq!(envinfo.timestamp, 0);
+        assert_eq!(envinfo.timestamp, 1539086487);
         assert_eq!(envinfo.difficulty, U256::zero());
         assert_eq!(
             envinfo.last_hashes[0],
-            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
         );
     }
 
@@ -934,14 +939,14 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // blocks 1...4
         let headers = Client::headers_since(&state, 1, 4, 256);
         assert_eq!(headers.len(), 4);
         assert_eq!(
             &headers[3].hash(),
-            &H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+            &H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
         );
     }
 
@@ -958,7 +963,7 @@ mod tests {
         assert_eq!(client.max_block_number(id_latest, id_2), id_latest);
 
         let id_3 = BlockId::Hash(H256::from(
-            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
+            "75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e",
         ));
         assert_eq!(client.max_block_number(id_3, id_2), id_3);
     }
@@ -976,7 +981,7 @@ mod tests {
         assert_eq!(client.min_block_number(id_earliest, id_2), id_earliest);
 
         let id_3 = BlockId::Hash(H256::from(
-            "c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3",
+            "75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e",
         ));
         assert_eq!(client.min_block_number(id_3, id_2), id_2);
     }
@@ -1000,7 +1005,7 @@ mod tests {
         assert_eq!(headers.len(), 4);
         assert_eq!(
             headers[3].hash(),
-            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199")
+            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
         );
 
         let log_notifications = handler.get_log_notifications();
