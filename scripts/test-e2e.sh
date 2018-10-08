@@ -79,7 +79,7 @@ run_test() {
     sleep 3
 
     # Start dummy node.
-    $dummy_node_runner
+    bash ${WORKDIR}/scripts/utils.sh run_dummy_node_go_tm
     sleep 1
 
     # Start compute nodes.
