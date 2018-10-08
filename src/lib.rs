@@ -34,7 +34,7 @@ use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                      db::{Database, DatabaseHandle},
                      enclave::enclave_init};
 use ethcore::{block::{IsBlock, OpenBlock},
-              error::{BlockError, Error as EthcoreError},
+              error::BlockError,
               log_entry::LogEntry as EthLogEntry,
               receipt::Receipt as EthReceipt,
               rlp,
@@ -329,7 +329,7 @@ fn transact(
             transaction,
             None,
             &mut storage,
-            |tx| Ok(transaction_decrypted),
+            |_tx| Ok(transaction_decrypted),
             |receipt| {
                 encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
                     .map_err(|_| BlockError::InvalidSeal.into())
