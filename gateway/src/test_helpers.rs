@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use clap::{App, Arg};
 use ekiden_common::bytes::H256;
-use ekiden_core;
+use ekiden_core::{self, error::Result};
 use ekiden_db_trusted::{Database, DatabaseHandle};
 use ekiden_di::{Component, KnownComponents};
 use ekiden_registry_client;
@@ -317,6 +317,18 @@ impl Database for MockDb {
 
     fn remove(&mut self, key: &[u8]) -> Option<Vec<u8>> {
         self.map.remove(key)
+    }
+
+    fn set_root_hash(&mut self, _root_hash: H256) -> Result<()> {
+        unimplemented!();
+    }
+
+    fn get_root_hash(&self) -> H256 {
+        unimplemented!();
+    }
+
+    fn commit(&mut self) -> Result<H256> {
+        unimplemented!();
     }
 
     fn rollback(&mut self) {
