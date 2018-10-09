@@ -3,8 +3,8 @@ use std::path::Path;
 
 use ethereum_api::{BlockId as EkidenBlockId, Log};
 
-use ethcore::client::BlockId;
-use ethcore::spec::{Spec, SpecParams};
+use ethcore::ids::BlockId;
+use ethcore::spec::Spec;
 use ethereum_types::U256;
 #[cfg(not(feature = "read_state"))]
 use parity_rpc::v1::types::Log as RpcLog;
@@ -18,7 +18,7 @@ pub fn load_spec() -> Spec {
     let spec_json = include_str!("../../resources/genesis/genesis.json");
     #[cfg(feature = "benchmark")]
     let spec_json = include_str!("../../resources/genesis/genesis_benchmarking.json");
-    Spec::load(SpecParams::from_path(Path::new("")), Cursor::new(spec_json)).unwrap()
+    Spec::load(Cursor::new(spec_json)).unwrap()
 }
 
 #[cfg(not(feature = "read_state"))]

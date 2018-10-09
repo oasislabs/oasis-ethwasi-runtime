@@ -62,7 +62,6 @@ extern crate kvdb;
 extern crate parity_machine;
 extern crate parity_reactor;
 extern crate parity_rpc;
-extern crate registrar;
 extern crate rlp;
 extern crate rlp_compress;
 extern crate util_error;

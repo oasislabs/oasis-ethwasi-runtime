@@ -6,10 +6,10 @@ use std::sync::Arc;
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
 use ethcore;
 use ethcore::blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress};
-use ethcore::client::BlockId;
 use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
+use ethcore::ids::BlockId;
 use ethcore::state::backend::Basic as BasicBackend;
 use ethereum_types::{Bloom, H256, U256};
 use journaldb::overlaydb::OverlayDB;
@@ -356,8 +356,8 @@ mod tests {
 
     #[test]
     fn test_logs() {
-        use ethcore::client::BlockId;
         use ethcore::filter::Filter;
+        use ethcore::ids::BlockId;
 
         let mut db = MockDb::new();
         // populate the db with test data

@@ -30,7 +30,7 @@ use parity_rpc::{Host, Metadata};
 use impls::ConfidentialClient;
 #[cfg(feature = "pubsub")]
 use impls::EthPubSubClient;
-use impls::{EthClient, EthFilterClient, NetClient, OasisClient, TracesClient, Web3Client};
+use impls::{EthClient, EthFilterClient, NetClient, OasisClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -42,8 +42,6 @@ pub enum Api {
     Eth,
     /// Eth Pub-Sub (Safe)
     EthPubSub,
-    /// Traces (Safe)
-    Traces,
     /// Oasis (Safe)
     Oasis,
     /// Confidential (Safe)
@@ -61,7 +59,6 @@ impl FromStr for Api {
             "net" => Ok(Net),
             "eth" => Ok(Eth),
             "pubsub" => Ok(EthPubSub),
-            "traces" => Ok(Traces),
             "oasis" => Ok(Oasis),
             "confidential" => Ok(Confidential),
             api => Err(format!("Unknown api: {}", api)),
@@ -167,7 +164,7 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthFilter, EthPubSub, Net, Traces, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, EthPubSub, Net, Web3};
         #[cfg(feature = "confidential")]
         use traits::Confidential;
         use traits::Oasis;
@@ -200,7 +197,6 @@ impl FullDependencies {
                         }
                     }
                 }
-                Api::Traces => handler.extend_with(TracesClient::new().to_delegate()),
                 Api::Oasis => {
                     handler.extend_with(OasisClient::new(&self.storage).to_delegate());
                 }
@@ -234,7 +230,7 @@ impl Dependencies for FullDependencies {
 
 impl ApiSet {
     pub fn list_apis(&self) -> HashSet<Api> {
-        let mut public_list: HashSet<Api> = [
+        let public_list: HashSet<Api> = [
             Api::Web3,
             Api::Net,
             Api::Eth,
@@ -247,18 +243,9 @@ impl ApiSet {
 
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
-            ApiSet::UnsafeContext => {
-                public_list.insert(Api::Traces);
-                public_list
-            }
-            ApiSet::SafeContext => {
-                public_list.insert(Api::Traces);
-                public_list
-            }
-            ApiSet::All => {
-                public_list.insert(Api::Traces);
-                public_list
-            }
+            ApiSet::UnsafeContext => public_list,
+            ApiSet::SafeContext => public_list,
+            ApiSet::All => public_list,
         }
     }
 }
@@ -273,7 +260,6 @@ mod test {
         assert_eq!(Api::Net, "net".parse().unwrap());
         assert_eq!(Api::Eth, "eth".parse().unwrap());
         assert_eq!(Api::EthPubSub, "pubsub".parse().unwrap());
-        assert_eq!(Api::Traces, "traces".parse().unwrap());
         assert_eq!(Api::Oasis, "oasis".parse().unwrap());
         assert_eq!(Api::Confidential, "confidential".parse().unwrap());
         assert!("rp".parse::<Api>().is_err());
@@ -300,7 +286,6 @@ mod test {
             Api::Net,
             Api::Eth,
             Api::EthPubSub,
-            Api::Traces,
             Api::Oasis,
             Api::Confidential,
         ].into_iter()
@@ -316,7 +301,6 @@ mod test {
             Api::Net,
             Api::Eth,
             Api::EthPubSub,
-            Api::Traces,
             Api::Oasis,
             Api::Confidential,
         ].into_iter()
@@ -334,7 +318,6 @@ mod test {
                     Api::Net,
                     Api::Eth,
                     Api::EthPubSub,
-                    Api::Traces,
                     Api::Oasis,
                     Api::Confidential,
                 ].into_iter()
@@ -353,7 +336,6 @@ mod test {
                     Api::Net,
                     Api::Eth,
                     Api::EthPubSub,
-                    Api::Traces,
                     Api::Oasis,
                     Api::Confidential,
                 ].into_iter()
