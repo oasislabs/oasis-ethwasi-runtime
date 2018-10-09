@@ -1,14 +1,15 @@
 use std::io::Cursor;
 
-use ekiden_core::error::Result;
+use ekiden_core::error::{Error, Result};
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
               spec::Spec,
-              transaction::{LocalizedTransaction, SignedTransaction},
+              transaction::{Action, LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
 
 use super::state::Cache;
 use super::storage::GlobalStorage;
+use super::{decrypt_transaction, EthereumContext};
 
 lazy_static! {
     pub(crate) static ref SPEC: Spec = {
@@ -44,6 +45,24 @@ pub fn simulate_transaction(cache: &Cache, transaction: &SignedTransaction) -> R
         &mut storage,
     ).transact_virtual(&transaction, options)?;
     Ok(exec)
+}
+
+pub fn simulate_transaction_enc(
+    ectx: &mut EthereumContext,
+    tx: SignedTransaction,
+) -> Result<Executed> {
+    match tx.action {
+        Action::Call(to_address) => {
+            let mut result = Err(Error::new("unable to simulate transaction"));
+            ectx.with_encryption(to_address, |ectx| {
+                let (transaction_decrypted, _) = decrypt_transaction(&tx)?;
+                result = simulate_transaction(&ectx.cache, &transaction_decrypted);
+                Ok(())
+            });
+            result
+        }
+        _ => Err(Error::new("unable to simulate transaction")),
+    }
 }
 
 // pre-EIP86, contract addresses are calculated using the FromSenderAndNonce scheme

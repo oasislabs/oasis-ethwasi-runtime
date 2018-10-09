@@ -26,15 +26,20 @@ use transaction::{Action, LocalizedTransaction, SignedTransaction};
 use client_utils;
 #[cfg(feature = "read_state")]
 use client_utils::db::Snapshot;
+use ekiden_common::bytes::B512;
 use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
 #[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
+use ekiden_keymanager_client::KeyManager;
+use ekiden_keymanager_common::ContractId;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(not(feature = "read_state"))]
-use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
+use ethereum_api::{Filter, Log, Receipt, Transaction};
+
+use ethereum_api::TransactionRequest;
 
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
@@ -44,6 +49,9 @@ use test_helpers::{self, MockDb};
 #[cfg(test)]
 use util;
 use util::from_block_id;
+
+use hash::keccak;
+use traits::confidential::PublicKeyResult;
 
 // record contract call outcome
 fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
@@ -82,6 +90,7 @@ pub struct Client {
     notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
     gas_price: U256,
+    key_manager: Mutex<KeyManager>,
 }
 
 impl Client {
@@ -92,6 +101,7 @@ impl Client {
         environment: Arc<Environment>,
         backend: Arc<StorageBackend>,
         gas_price: U256,
+        key_manager: KeyManager,
     ) -> Self {
         let storage = Web3GlobalStorage::new(backend);
 
@@ -115,7 +125,23 @@ impl Client {
             notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
             gas_price: gas_price,
+            key_manager: Mutex::new(key_manager),
         }
+    }
+
+    pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
+        let contract_id: ContractId =
+            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
+        let public_key = self.key_manager
+            .lock()
+            .expect("Should always have an key manager")
+            .get_public_key(contract_id)
+            .map_err(|_| "error".to_string())?;
+        Ok(PublicKeyResult {
+            public_key,
+            timestamp: 1,             // temp
+            signature: B512::from(2), // temp
+        })
     }
 
     /// A blockchain client for unit tests.
@@ -137,6 +163,7 @@ impl Client {
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
             gas_price: U256::from(1_000_000_000),
+            key_manager: Mutex::new(KeyManager::new()),
         }
     }
 
@@ -772,10 +799,59 @@ impl Client {
     pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
         contract_call_result(
             "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
+            self.block_on(self.client.simulate_transaction((request, false)))
                 .map(|r| r.result),
             Err("no response from runtime".to_string()),
         )
+    }
+
+    pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
+        if self.is_create_key(&request) {
+            return self.create_key(request);
+        }
+        contract_call_result(
+            "simulate_transaction",
+            self.block_on(self.client.simulate_transaction((request, true)))
+                .map(|r| r.result),
+            Err("no response from runtime".to_string()),
+        )
+    }
+
+    fn is_create_key(&self, request: &TransactionRequest) -> bool {
+        let system_address = Address::from("ffffffffffffffffffffffffffffffffffffffff");
+        return system_address == request.address.unwrap_or(Address::from(0));
+    }
+
+    fn create_key(&self, request: TransactionRequest) -> Result<Bytes, String> {
+        match request.caller {
+            None => Err("Cannot create a key without specifying a from address".to_string()),
+            Some(address) => {
+                let next_address = self.next_create_address(address)?;
+                let contract_id: ContractId =
+                    ekiden_core::bytes::H256::from(&keccak(next_address.to_vec())[..]);
+                self.key_manager
+                    .lock()
+                    .expect("Should always have a key maanger")
+                    .get_or_create_secret_keys(contract_id)
+                    .map_err(|_| "error creating keys".to_string())?;
+                Ok(self.public_key(next_address)?.public_key.to_vec())
+            }
+        }
+    }
+
+    fn next_create_address(&self, address: Address) -> Result<Address, String> {
+        let block_num = self.best_block_number();
+        let nonce = self.nonce(&address, BlockId::Latest);
+        if nonce.is_none() {
+            return Err("Could not get account nonce".to_string());
+        }
+        let next_address = contract_address(
+            self.engine.create_address_scheme(block_num),
+            &address,
+            &nonce.unwrap(),
+            &[],
+        ).0;
+        Ok(next_address)
     }
 
     #[cfg(feature = "read_state")]
@@ -817,7 +893,7 @@ impl Client {
     pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
         contract_call_result(
             "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
+            self.block_on(self.client.simulate_transaction((request, false)))
                 .map(|r| Ok(r.used_gas + r.refunded_gas)),
             Err("no response from runtime".to_string()),
         )

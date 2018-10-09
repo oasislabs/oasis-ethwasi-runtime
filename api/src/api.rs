@@ -7,7 +7,7 @@ contract_api! {
 
     pub fn debug_null_call(bool) -> ();
 
-    pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
+    pub fn simulate_transaction((TransactionRequest, bool)) -> SimulateTransactionResponse;
 
     pub fn execute_raw_transaction((Vec<u8>, bool)) -> ExecuteTransactionResponse;
 

@@ -16,7 +16,7 @@ contract("Confidential Counter", async (accounts) => {
    */
   it("deploys, updates, and retrieves the storage of a confidential contract", async () => {
 	let counter = new Counter();
-	await counter.confidential_deploy();
+	await counter.deploy();
 	const firstCounter = await counter.confidential_getCounter(counter);
 	await counter.confidential_incrementCounter();
 	const secondCounter = await counter.confidential_getCounter(counter);
@@ -65,7 +65,7 @@ contract("Confidential Counter", async (accounts) => {
   it("encrypts increment count logs in the transaction receipt", async () => {
 	// given
 	let counter = new Counter();
-	await counter.confidential_deploy();
+	await counter.deploy();
 	// when
 	let txHash = await counter.confidential_incrementCounter();
 	let firstReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);
@@ -82,7 +82,7 @@ contract("Confidential Counter", async (accounts) => {
   it("encrypts increment count logs returned by eth_getLogs", async () => {
 	// given
 	let counter = new Counter();
-	await counter.confidential_deploy();
+	await counter.deploy();
 	// when
 	let txHash = await counter.confidential_incrementCounter();
 	let firstReceipt = await makeRpc("eth_getTransactionReceipt", [txHash.result]);

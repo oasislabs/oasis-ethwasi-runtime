@@ -17,6 +17,8 @@ extern crate log;
 extern crate protobuf;
 extern crate sha3;
 
+extern crate keccak_hash as hash;
+
 mod evm;
 #[macro_use]
 mod logger;
@@ -28,6 +30,7 @@ mod storage;
 
 use ekiden_core::error::{Error, Result};
 use ekiden_keymanager_common::confidential;
+use ekiden_keymanager_common::ContractId;
 use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 create_contract,
                                 dispatcher::{BatchHandler, ContractCallContext}},
@@ -43,6 +46,7 @@ use ethcore::{block::{IsBlock, OpenBlock},
 use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
                    Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
+use hash::keccak;
 use state::Cache;
 use storage::GlobalStorage;
 
@@ -73,6 +77,20 @@ impl<'a> EthereumContext<'a> {
             cache,
             force_emit_block: false,
         })
+    }
+
+    pub fn with_encryption<F>(&mut self, contract: Address, f: F) -> Result<()>
+    where
+        F: FnOnce(&mut EthereumContext) -> Result<()>,
+    {
+        let contract_id: ContractId =
+            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
+        let mut maybe_contract = state::ENCRYPTION_MODE.lock().unwrap();
+        assert!(maybe_contract.is_none());
+        maybe_contract.get_or_insert(contract_id);
+        f(self)?;
+        maybe_contract.take();
+        Ok(())
     }
 }
 
@@ -285,11 +303,12 @@ pub fn execute_raw_transaction(
     pair: &(Vec<u8>, bool),
     ctx: &mut ContractCallContext,
 ) -> Result<ExecuteTransactionResponse> {
-    let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
-
     debug!("execute_raw_transaction");
+
+    let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
     let request = &pair.0;
     let encrypted = pair.1;
+
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
@@ -324,17 +343,7 @@ fn transact(
     let tx_hash = transaction.hash();
     let mut storage = GlobalStorage::new();
     if encrypted {
-        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
-        ectx.block.push_transaction_with_processing(
-            transaction,
-            None,
-            &mut storage,
-            |tx| Ok(transaction_decrypted),
-            |receipt| {
-                encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
-                    .map_err(|_| BlockError::InvalidSeal.into())
-            },
-        )?;
+        transact_encrypted(ectx, transaction, &mut storage);
     } else {
         ectx.block
             .push_transaction(transaction, None, &mut storage)?;
@@ -342,7 +351,51 @@ fn transact(
     Ok(tx_hash)
 }
 
-fn decrypt_transaction(
+fn transact_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    storage: &mut GlobalStorage,
+) -> Result<()> {
+    match transaction.action {
+        Action::Call(to_address) => call_encrypted(ectx, transaction, storage, to_address),
+        Action::Create => create_encrypted(ectx, transaction, storage),
+    }
+}
+
+fn call_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    storage: &mut GlobalStorage,
+    to_address: Address,
+) -> Result<()> {
+    debug!("Executing encrypted call");
+    ectx.with_encryption(to_address, |ectx| {
+        let (transaction_decrypted, decryption) = decrypt_transaction(&transaction)?;
+        ectx.block.push_transaction_with_processing(
+            transaction,
+            None,
+            storage,
+            |tx| Ok(transaction_decrypted),
+            |receipt| {
+                encrypt_receipt(receipt, decryption.nonce, decryption.peer_public_key)
+                    .map_err(|_| BlockError::InvalidSeal.into())
+            },
+        )?;
+        Ok(())
+    })
+}
+
+fn create_encrypted(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+    storage: &mut GlobalStorage,
+) -> Result<()> {
+    debug!("Executing encrypted create");
+    // todo
+    Ok(())
+}
+
+pub fn decrypt_transaction(
     transaction: &SignedTransaction,
 ) -> Result<(SignedTransaction, confidential::Decryption)> {
     let decryption = confidential::decrypt(Some(transaction.data.clone()))?;
@@ -361,7 +414,7 @@ fn decrypt_transaction(
         .map_err(|_| Error::new("Unable to create a signed transaction"))?;
     tx.set_sender(transaction.sender().clone());
     tx.set_public_key(transaction.public_key().clone());
-    Ok((tx, decryption))
+    return Ok((tx, decryption));
 }
 
 fn encrypt_receipt(
@@ -413,13 +466,17 @@ fn make_unsigned_transaction(
     })
 }
 
+// TODO: DB CONFIGURE_KEY_MANAGER
 pub fn simulate_transaction(
-    request: &TransactionRequest,
+    pair: &(TransactionRequest, bool),
     ctx: &mut ContractCallContext,
 ) -> Result<SimulateTransactionResponse> {
+    debug!("simulate_transaction");
+
+    let request = &pair.0;
+    let encrypted = pair.1;
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
-    debug!("simulate_transaction");
     let tx = match make_unsigned_transaction(&ectx.cache, request) {
         Ok(t) => t,
         Err(e) => {
@@ -430,22 +487,26 @@ pub fn simulate_transaction(
             })
         }
     };
-    let exec = match evm::simulate_transaction(&ectx.cache, &tx) {
-        Ok(exec) => exec,
-        Err(e) => {
-            return Ok(SimulateTransactionResponse {
-                used_gas: U256::from(0),
-                refunded_gas: U256::from(0),
-                result: Err(e.to_string()),
-            })
-        }
+
+    let exec = if encrypted {
+        evm::simulate_transaction_enc(ectx, tx)
+    } else {
+        evm::simulate_transaction(&ectx.cache, &tx)
     };
 
-    Ok(SimulateTransactionResponse {
-        used_gas: exec.gas_used,
-        refunded_gas: exec.refunded,
-        result: Ok(exec.output),
-    })
+    let resp = match exec {
+        Err(e) => SimulateTransactionResponse {
+            used_gas: U256::from(0),
+            refunded_gas: U256::from(0),
+            result: Err(e.to_string()),
+        },
+        Ok(exec) => SimulateTransactionResponse {
+            used_gas: exec.gas_used,
+            refunded_gas: exec.refunded,
+            result: Ok(exec.output),
+        },
+    };
+    Ok(resp)
 }
 
 #[cfg(test)]
@@ -538,7 +599,12 @@ mod tests {
                 nonce: None,
             };
 
-            with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())
+            with_batch_handler(|ctx| {
+                simulate_transaction(&(tx, false), ctx)
+                    .unwrap()
+                    .result
+                    .unwrap()
+            })
         }
     }
 

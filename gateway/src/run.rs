@@ -23,6 +23,7 @@ use client::Client;
 
 use client_utils;
 use ekiden_core::environment::Environment;
+use ekiden_keymanager_client::KeyManager;
 use ekiden_storage_base::StorageBackend;
 use ethereum_types::U256;
 use jsonrpc_core;
@@ -46,6 +47,7 @@ pub fn execute(
     num_threads: usize,
     ws_port: u16,
     gas_price: U256,
+    key_manager: KeyManager,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
         &util::load_spec(),
@@ -54,6 +56,7 @@ pub fn execute(
         environment.clone(),
         storage.clone(),
         gas_price,
+        key_manager,
     ));
 
     #[cfg(feature = "pubsub")]

@@ -21,10 +21,17 @@ use ethcore::{self,
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
 
+use ekiden_keymanager_common::ContractId;
+
 use super::evm::{get_contract_address, SPEC};
 
 lazy_static! {
     static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
+    /**
+     * The contract whose key is being used to encrypt/decrypt all accesses
+     * to the the StateDb. If this is None, then encryption is turned off.
+     */
+    pub static ref ENCRYPTION_MODE: Mutex<Option<ContractId>> = Mutex::new(None);
 }
 
 /// Cache is the in-memory blockchain cache backed by the database.
@@ -37,6 +44,8 @@ pub struct Cache {
     /// Actual blockchain cache.
     chain: BlockChain,
 }
+
+use std::sync::atomic::AtomicBool;
 
 impl Cache {
     /// Create a new in-memory cache for the given state root.
@@ -170,11 +179,11 @@ impl Cache {
             None => return vec![],
         };
 
-        let blocks = filter.bloom_possibilities().iter()
-            .map(|bloom| {
-                self.chain.blocks_with_bloom(bloom, from, to)
-            })
-        .flat_map(|m| m)
+        let blocks = filter
+            .bloom_possibilities()
+            .iter()
+            .map(|bloom| self.chain.blocks_with_bloom(bloom, from, to))
+            .flat_map(|m| m)
             // remove duplicate elements
             .collect::<HashSet<u64>>()
             .into_iter()
@@ -316,7 +325,10 @@ impl Cache {
     }
 }
 
-pub struct StateDb {}
+pub struct StateDb {
+    //encryption_mode: AtomicBool,
+//contract: Mutex<Option<ekiden_core::bytes::H256>>,
+}
 
 type Backend = BasicBackend<OverlayDB>;
 type State = ethcore::state::State<Backend>;
@@ -388,11 +400,42 @@ fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
         .collect()
 }
 
+fn get(col: Option<u32>, key: &[u8]) -> Option<kvdb::DBValue> {
+    DatabaseHandle::instance()
+        .get(&get_key(col, key))
+        .map(kvdb::DBValue::from_vec)
+}
+
+fn get_enc(col: Option<u32>, key: &[u8], contract_id: ContractId) -> Option<kvdb::DBValue> {
+    let mut result = None;
+    DatabaseHandle::instance().with_encryption(contract_id, |db| {
+        match db.get(&get_key(col, key)) {
+            Some(val) => {
+                result = Some(kvdb::DBValue::from_vec(val));
+            }
+            _ => {}
+        };
+    });
+    result
+}
+
+fn insert(col: Option<u32>, key: &[u8], value: &[u8]) {
+    DatabaseHandle::instance().insert(&get_key(col, key), value);
+}
+
+fn insert_enc(col: Option<u32>, key: &[u8], value: &[u8], contract_id: ContractId) {
+    DatabaseHandle::instance().with_encryption(contract_id, |db| {
+        db.insert(&get_key(col, key), value);
+    });
+}
+
 impl kvdb::KeyValueDB for StateDb {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-        Ok(DatabaseHandle::instance()
-            .get(&get_key(col, key))
-            .map(kvdb::DBValue::from_vec))
+        let val = match ENCRYPTION_MODE.lock().unwrap().take() {
+            None => get(col, key),
+            Some(contract_id) => get_enc(col, key, contract_id),
+        };
+        Ok(val)
     }
 
     fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {
@@ -406,7 +449,12 @@ impl kvdb::KeyValueDB for StateDb {
                 ref value,
                 col,
             } => {
-                DatabaseHandle::instance().insert(&get_key(col, key), value.to_vec().as_slice());
+                match ENCRYPTION_MODE.lock().unwrap().take() {
+                    None => insert(col, key, value.to_vec().as_slice()),
+                    Some(contract_id) => {
+                        insert_enc(col, key, value.to_vec().as_slice(), contract_id)
+                    }
+                };
             }
             &kvdb::DBOp::Delete { .. } => {
                 // This is a no-op for us. Parity cleans up old state (anything

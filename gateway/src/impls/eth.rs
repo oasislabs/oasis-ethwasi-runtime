@@ -238,7 +238,7 @@ impl EthClient {
         }
     }
 
-    fn get_block_id(&self, number: BlockNumber) -> BlockId {
+    pub fn get_block_id(number: BlockNumber) -> BlockId {
         // for "pending", just use latest block
         match number {
             BlockNumber::Num(num) => BlockId::Number(num),
@@ -300,7 +300,7 @@ impl Eth for EthClient {
 
         info!("eth_getBalance(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.balance(&address, self.get_block_id(num)) {
+        let res = match self.client.balance(&address, Self::get_block_id(num)) {
             Some(balance) => Ok(balance.into()),
             None => Err(errors::state_pruned()),
         };
@@ -326,7 +326,7 @@ impl Eth for EthClient {
 
         let res =
             match self.client
-                .storage_at(&address, &H256::from(position), self.get_block_id(num))
+                .storage_at(&address, &H256::from(position), Self::get_block_id(num))
             {
                 Some(s) => Ok(s.into()),
                 None => Err(errors::state_pruned()),
@@ -411,7 +411,7 @@ impl Eth for EthClient {
 
         info!("eth_getCode(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.code(&address, self.get_block_id(num)) {
+        let res = match self.client.code(&address, Self::get_block_id(num)) {
             Some(code) => Ok(code.map_or_else(Bytes::default, Bytes::new)),
             None => Err(errors::state_pruned()),
         };
@@ -617,7 +617,7 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.call(&signed, self.get_block_id(num));
+        let result = self.client.call(&signed, Self::get_block_id(num));
         Box::new(future::done(
             result
                 .map_err(errors::call)
@@ -650,7 +650,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.call(request, self.get_block_id(num));
+        let result = self.client.call(request, Self::get_block_id(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))
@@ -671,7 +671,7 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.estimate_gas(&signed, self.get_block_id(num));
+        let result = self.client.estimate_gas(&signed, Self::get_block_id(num));
         Box::new(future::done(result.map(Into::into).map_err(errors::call)))
     }
 
@@ -696,7 +696,7 @@ impl Eth for EthClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.estimate_gas(request, self.get_block_id(num));
+        let result = self.client.estimate_gas(request, Self::get_block_id(num));
         Box::new(future::done(
             result.map_err(errors::execution).map(Into::into),
         ))

@@ -90,6 +90,32 @@ fn main() {
                 .multiple(true)
                 .help("Sets the level of verbosity"),
         )
+        .arg(
+            Arg::with_name("key-manager-host")
+                .long("key-manager-host")
+                .help("Address for the key manager server.")
+                .takes_value(true)
+                .default_value("127.0.0.1"),
+        )
+        .arg(
+            Arg::with_name("key-manager-port")
+                .long("key-manager-port")
+                .help("Port for the KeyManager server.")
+                .default_value("8547")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("key-manager-key-pair")
+                .long("key-manager-key-pair")
+                .required(true)
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("key-manager-mrenclave")
+                .long("key-manager-mrenclave")
+                .help("keymanager MRENCLAVE")
+                .takes_value(true),
+        )
         .get_matches();
 
     // reset max log level to Info after default_app macro sets it to Trace
