@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
-use ekiden_core::error::Result;
+use ekiden_core::error::{Error, Result};
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
               spec::Spec,
-              transaction::{LocalizedTransaction, SignedTransaction},
+              transaction::{Action, LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
 

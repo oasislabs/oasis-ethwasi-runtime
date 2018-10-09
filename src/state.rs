@@ -1,7 +1,8 @@
-use std::{collections::HashSet,
+use std::{self,
+          collections::HashSet,
           sync::{Arc, Mutex}};
 
-use ekiden_core::{self, error::Result};
+use ekiden_core::{self, error::Result, mrae::sivaessha2::NONCE_SIZE};
 use ekiden_storage_base::StorageBackend;
 use ekiden_trusted::db::{Database, DatabaseHandle};
 use ethcore::{self,
@@ -12,7 +13,7 @@ use ethcore::{self,
               filter::Filter as EthcoreFilter,
               header::Header,
               kvdb::{self, KeyValueDB},
-              state::backend::Wrapped as WrappedBackend,
+              state::{backend::Wrapped as WrappedBackend, Encrypter},
               transaction::Action,
               types::{ids::BlockId,
                       log_entry::{LocalizedLogEntry, LogEntry},
@@ -21,6 +22,8 @@ use ethcore::{self,
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
 use runtime_ethereum_common::{get_factories, Backend, BlockchainStateDb, State, StorageHashDB};
+
+use ekiden_keymanager_common::confidential;
 
 use super::evm::{get_contract_address, SPEC};
 
@@ -115,6 +118,7 @@ impl Cache {
             root,
             U256::zero(), /* account_start_nonce */
             get_factories(),
+            Some(Box::new(_Encrypter)),
         )?)
     }
 
@@ -132,6 +136,7 @@ impl Cache {
             vec![],                           /* extra data */
             true,                             /* is epoch_begin */
             &mut Vec::new().into_iter(),      /* ancestry */
+            Some(Box::new(_Encrypter)),
         )?)
     }
 
@@ -324,6 +329,37 @@ impl Cache {
 
     pub fn best_block_header(&self) -> Header {
         self.chain.best_block_header()
+    }
+}
+
+/// Implementation of the Encrypter trait to inject into parity for confidential contracts.
+struct _Encrypter;
+
+impl Encrypter for _Encrypter {
+    fn encrypt(
+        &self,
+        plaintext: Vec<u8>,
+        peer_public_key: &[u8; 32],
+    ) -> std::result::Result<Vec<u8>, String> {
+        // just generate arbitrary nonce for now (change this to a random nonce once we encrypt
+        // with an actual key manager)
+        let mut nonce = [1u8; NONCE_SIZE];
+        confidential::encrypt(plaintext, nonce.to_vec(), *peer_public_key)
+            .map_err(|_| "Error".to_string())
+    }
+
+    /// Returns a tuple containing the nonce, public key, and plaintext
+    /// used to generate the given cypher.
+    fn decrypt(
+        &self,
+        cypher: Vec<u8>,
+    ) -> std::result::Result<(Vec<u8>, [u8; 32], Vec<u8>), String> {
+        let decryption = confidential::decrypt(Some(cypher)).map_err(|_| "Error".to_string())?;
+        Ok((
+            decryption.nonce,
+            decryption.peer_public_key,
+            decryption.plaintext,
+        ))
     }
 }
 
