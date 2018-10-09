@@ -323,6 +323,11 @@ jobs:
           command: ./scripts/test-storage.sh
 
 
+      # Run the rust logistic contract test
+      - run:
+          name: Rust logistic contract test
+          command: ./scripts/test_rust_logistic.sh
+
   set-docker-tag:
     # The purpose of this job is to determine
     # the tag to use for docker image versioning
