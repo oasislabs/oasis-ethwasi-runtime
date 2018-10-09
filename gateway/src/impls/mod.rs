@@ -27,7 +27,6 @@ pub mod eth_filter;
 pub mod eth_pubsub;
 pub mod net;
 pub mod oasis;
-//pub mod trace;
 pub mod web3;
 
 #[cfg(feature = "confidential")]
@@ -38,5 +37,4 @@ pub use self::eth_filter::EthFilterClient;
 pub use self::eth_pubsub::EthPubSubClient;
 pub use self::net::NetClient;
 pub use self::oasis::OasisClient;
-//pub use self::trace::TracesClient;
 pub use self::web3::Web3Client;
