@@ -14,24 +14,29 @@ const PRIVATE_KEY = new Buffer('c61675c22aee77da8f6e19444ece45557dc80e1482aa848f
 
 program
   .option('--gateway <gateway>', 'gateway http address', 'http://localhost:8545')
+  .option('--gas-limit <limit>', 'contract gas limit', '0x1e84800')
+  .option('--gas-price <price>', 'contract gas price', '0x3b9aca00')
   .option('--dump-json', 'dump cURLable json')
   .parse(process.argv);
 
+console.log('reading contract');
 const contractFilename = program.args[0] || fs.readdirSync('target').reduce((f, d) => {
   return f || (d.endsWith('.wasm') && 'target/' + d);
 }, undefined);
 
 const contract = fs.readFileSync(contractFilename).toString('hex');
+console.log('contract read');
 
 web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
   const tx = new Tx({
     data: '0x' + contract.toString('hex'),
-    gasLimit: '0xfffffffffffff',
-    gasPrice: 0,
+    gasLimit: program.gasLimit,
+    gasPrice: program.gasPrice,
     nonce: nonce,
     value: 0,
   });
   tx.sign(PRIVATE_KEY);
+  console.log('signed transaction');
 
   let serializedTx = '0x' + tx.serialize().toString('hex');
 
@@ -49,13 +54,7 @@ web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
     console.log('submitted tx');
     console.log(receipt);
     console.log(receipt.contractAddress);
-    web3.eth.call({to: receipt.contractAddress,}).then(result => {
-      console.log("called contract");
-      console.log(result);
-    })
-    .catch(function(error) {
-      console.log(error);
-    });
+    process.exit();
   });
 }).catch(err => {
   console.error('ERROR: Could not deploy contract')

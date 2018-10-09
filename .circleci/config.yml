@@ -304,10 +304,24 @@ jobs:
           name: Copy contents of workspace target dir to target dir on agent
           command: cp -R /workspace/target/* target/
 
-      # Run the end-to-end tests
+      # Run setup script
+      - run:
+          name: Run setup script
+          command: ./scripts/setup-e2e.sh
+
+      # Run the end-to-end test
       - run: 
-          name: Run the end-to-end tests
+          name: Run the end-to-end test
           command: ./scripts/test-e2e.sh
+      # Run the basic wasm contract test
+      - run:
+          name: Basic wasm contract test
+          command: ./scripts/test-basic-wasm.sh
+      # Run the storage contract test
+      - run:
+          name: Storage contract test
+          command: ./scripts/test-storage.sh
+
 
   set-docker-tag:
     # The purpose of this job is to determine
