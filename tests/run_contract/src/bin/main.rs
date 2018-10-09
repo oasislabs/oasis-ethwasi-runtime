@@ -51,7 +51,7 @@ fn main() {
         4 => simple_logger::init_with_level(log::Level::Warn),
         5 => simple_logger::init_with_level(log::Level::Error),
         _ => Ok(()),
-    };
+    }.expect("initialize simple logger");
 
     println!("{:?}", store_bytes(&[1, 2, 3, 4, 5]));
     let contract = fs::read(args.value_of("contract").unwrap()).unwrap();

@@ -23,17 +23,21 @@ use ethereum_api::{ExecuteTransactionResponse, Receipt};
 use ethereum_types::{Address, H256, U256};
 use ethkey::Secret;
 use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt,
-                       storage::GlobalStorage, EthereumBatchHandler, EthereumContext};
+                       storage::GlobalStorage, EthereumBatchHandler};
 
 fn dummy_ctx() -> ContractCallContext {
     let root_hash = DatabaseHandle::instance().get_root_hash();
-    ContractCallContext {
-        header: Header {
-            timestamp: 0xcafedeadbeefc0de,
-            ..Default::default()
-        },
-        runtime: EthereumContext::new(root_hash),
-    }
+    let mut ctx = ContractCallContext::new(Header {
+        timestamp: 0xcafedeadbeefc0de,
+        state_root: root_hash,
+        ..Default::default()
+    });
+
+    // Initialize the context in the same way as a batch handler does.
+    let batch_handler = EthereumBatchHandler;
+    batch_handler.start_batch(&mut ctx);
+
+    ctx
 }
 
 fn with_batch_handler<F, R>(f: F) -> R
