@@ -31,9 +31,9 @@ use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::EthPubSub;
 use parity_rpc::v1::types::{pubsub, Log, RichHeader};
 
-use ethcore::client::BlockId;
 use ethcore::encoded;
 use ethcore::filter::Filter as EthFilter;
+use ethcore::ids::BlockId;
 use parity_reactor::Remote;
 use parking_lot::RwLock;
 

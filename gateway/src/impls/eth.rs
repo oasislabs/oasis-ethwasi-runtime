@@ -25,8 +25,8 @@ use client::Client;
 #[cfg(not(feature = "read_state"))]
 use util::log_to_rpc_log;
 
-use ethcore::client::{BlockId, TransactionId};
 use ethcore::filter::Filter as EthcoreFilter;
+use ethcore::ids::{BlockId, TransactionId};
 
 use jsonrpc_core::futures::future;
 use jsonrpc_core::{BoxFuture, Result};
@@ -39,7 +39,7 @@ use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
                             CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
-                            Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, SyncStatus,
+                            Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock,
                             Transaction as RpcTransaction, U256 as RpcU256, Work};
 
 #[cfg(not(feature = "read_state"))]
@@ -258,9 +258,9 @@ impl Eth for EthClient {
         Ok(format!("{}", 63))
     }
 
-    fn syncing(&self) -> Result<SyncStatus> {
+    fn syncing(&self) -> Result<bool> {
         measure_counter_inc!("syncing");
-        Ok(SyncStatus::None)
+        Ok(false)
     }
 
     fn author(&self, _meta: Metadata) -> Result<RpcH160> {

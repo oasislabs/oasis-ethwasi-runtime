@@ -10,8 +10,8 @@ use ekiden_registry_client;
 use ekiden_roothash_client;
 use ekiden_scheduler_client;
 use ekiden_storage_frontend;
-use ethcore::client::BlockId;
 use ethcore::encoded;
+use ethcore::ids::BlockId;
 use hex;
 
 use client::ChainNotify;
