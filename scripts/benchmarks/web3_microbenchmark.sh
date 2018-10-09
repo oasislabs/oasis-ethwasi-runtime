@@ -41,6 +41,7 @@ run_compute_node() {
         --max-batch-size 50 \
         --max-batch-timeout 100 \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
+	--disable-key-manager \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
