@@ -28,8 +28,8 @@ console.log('contract read');
 web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
   const tx = new Tx({
     data: '0x' + contract.toString('hex'),
-    gasLimit: '0xfffffffffffff',
-    gasPrice: 0,
+    gasLimit: '0x100000',
+    gasPrice: '0x3b9aca00',
     nonce: nonce,
     value: 0,
   });
