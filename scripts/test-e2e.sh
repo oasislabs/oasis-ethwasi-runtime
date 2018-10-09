@@ -103,6 +103,7 @@ run_compute_node() {
         --storage-multilayer-bottom-backend remote \
         --max-batch-timeout 100 \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --disable-key-manager \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
