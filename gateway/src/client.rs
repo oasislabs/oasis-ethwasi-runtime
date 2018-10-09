@@ -33,9 +33,9 @@ use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
+use ethereum_api::TransactionRequest;
 #[cfg(not(feature = "read_state"))]
-use ethereum_api::{Filter, Log, Receipt, Transaction, TransactionRequest};
-
+use ethereum_api::{Filter, Log, Receipt, Transaction};
 #[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
 use storage::Web3GlobalStorage;
@@ -785,6 +785,15 @@ impl Client {
         )
     }
 
+    pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
+        contract_call_result(
+            "simulate_transaction",
+            self.block_on(self.client.simulate_transaction(request))
+                .map(|r| r.result),
+            Err("no response from runtime".to_string()),
+        )
+    }
+
     #[cfg(feature = "read_state")]
     pub fn estimate_gas(
         &self,
@@ -843,21 +852,17 @@ impl Client {
         Ok(())
     }
 
-    pub fn send_raw_transaction(&self, raw: Bytes, encrypted: bool) -> Result<H256, String> {
+    pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, String> {
         match self.precheck_transaction(&raw) {
             Ok(_) => (),
             Err(e) => return Err(e.to_string()),
         }
         contract_call_result(
             "execute_raw_transaction",
-            self.block_on(self.client.execute_raw_transaction((raw, encrypted)))
+            self.block_on(self.client.execute_raw_transaction(raw))
                 .map(|r| {
                     if r.created_contract {
-                        if encrypted {
-                            measure_counter_inc!("confidential_contract_created")
-                        } else {
-                            measure_counter_inc!("contract_created")
-                        }
+                        measure_counter_inc!("contract_created")
                     }
                     r.hash
                 }),
