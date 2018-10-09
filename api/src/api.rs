@@ -9,7 +9,7 @@ runtime_api! {
 
     pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
 
-    pub fn execute_raw_transaction((Vec<u8>, bool)) -> ExecuteTransactionResponse;
+    pub fn execute_raw_transaction(Vec<u8>) -> ExecuteTransactionResponse;
 
     pub fn get_block_height(bool) -> U256;
 
