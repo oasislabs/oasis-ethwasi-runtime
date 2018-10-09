@@ -31,7 +31,7 @@ use ekiden_keymanager_common::confidential;
 use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
                                 create_contract,
                                 dispatcher::{BatchHandler, ContractCallContext}},
-                     db::DatabaseHandle,
+                     db::{Database, DatabaseHandle},
                      enclave::enclave_init};
 use ethcore::{block::{IsBlock, OpenBlock},
               error::{BlockError, Error as EthcoreError},
