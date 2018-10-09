@@ -183,4 +183,4 @@ run_test() {
     pkill -P $$
 }
 
-run_test
+run_test run_dummy_node_go_tm

@@ -14,6 +14,8 @@ const PRIVATE_KEY = new Buffer('c61675c22aee77da8f6e19444ece45557dc80e1482aa848f
 
 program
   .option('--gateway <gateway>', 'gateway http address', 'http://localhost:8545')
+  .option('--gas-limit <limit>', 'contract gas limit', '0x1e84800')
+  .option('--gas-price <price>', 'contract gas price', '0x3b9aca00')
   .option('--dump-json', 'dump cURLable json')
   .parse(process.argv);
 
@@ -28,8 +30,8 @@ console.log('contract read');
 web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
   const tx = new Tx({
     data: '0x' + contract.toString('hex'),
-    gasLimit: '0x100000',
-    gasPrice: '0x3b9aca00',
+    gasLimit: program.gasLimit,
+    gasPrice: program.gasPrice,
     nonce: nonce,
     value: 0,
   });

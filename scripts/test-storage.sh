@@ -62,7 +62,7 @@ run_gateway() {
         --threads 100 \
         --ws-port ${ws_port} \
         --prometheus-metrics-addr 0.0.0.0:${prometheus_port} \
-        --prometheus-mode pull &> gateway${id}.log &
+        --prometheus-mode pull -v &> gateway${id}.log &
 }
 
 run_test() {
@@ -90,6 +90,7 @@ run_test() {
     run_gateway 1
     sleep 10
 
+    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
 
     echo "Uploading bytes to storage."
     curl -X POST -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","method":"oasis_storeBytes","params":[[1, 2, 3, 4, 5], 9223372036854775807],"id":"1"}' localhost:8545 > /dev/null
@@ -100,6 +101,8 @@ run_test() {
     npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
     OUTPUT="$(./deploy_contract.js ${WORKDIR}/tests/contracts/storage_contract/target/storage_contract.wasm | tail -1)"
+    echo "Contract address: $OUTPUT"
+    OUTPUT="$(./call_contract.js --contract-address $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
 
     if [ "$OUTPUT" = "0x0102030405" ]; then
