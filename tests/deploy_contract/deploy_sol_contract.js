@@ -5,9 +5,12 @@ let program = require('commander');
 let Web3 = require('web3');
 let solc = require('solc');
 let Tx = require('ethereumjs-tx');
+let HDWalletProvider = require('truffle-hdwallet-provider');
 
+const address = '0x1cca28600d7491365520b31b466f88647b9839ec';
+const mnemonic = 'patient oppose cotton portion chair gentle jelly dice supply salmon blast priority';
+const provider = new HDWalletProvider(mnemonic, "http://localhost:8545");
 const web3 = new Web3(new Web3.providers.HttpProvider(program.gateway));
-web3.eth.defaultAccount = '0x1cca28600d7491365520b31b466f88647b9839ec';
 
 // private key corresponding to defaultAccount. generated from mnemonic:
 // patient oppose cotton portion chair gentle jelly dice supply salmon blast priority
@@ -29,10 +32,24 @@ console.log('compiling contract');
 var contract = solc.compile(input, 1);
 
 let Event = new web3.eth.Contract(JSON.parse(contract.contracts[':Event'].interface));
+console.log(Event.options.jsonInterface);
 
-web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
+Event.deploy({
+  data: '0x' + contract.contracts[':Event'].bytecode
+})
+.send({
+  from: web3.eth.defaultAccount,
+  gas: program.gasLimit,
+  gasPrice: program.gasPrice
+}, function(error, transactionHash) {
+  if (!error)
+    console.log(transactionHash);
+  console.log(error);
+})
+
+/*web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
   const tx = new Tx({
-    data: '0x' + contract.contracts[':Event'],
+    data: '0x' + contract.contracts[':Event'].bytecode,
     gasLimit: program.gasLimit,
     gasPrice: program.gasPrice,
     nonce: nonce,
@@ -58,11 +75,11 @@ web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
     console.log(receipt);
     console.log(receipt.contractAddress);
     Event.options.address = receipt.contractAddress;
-    let transaction = Event.methods.emitEvent(123);
-    console.log(transaction.log);
-    process.exit();
+    console.log(Event.methods);
+    Event.methods.emitEvent(123).send({from: web3.eth.defaultAccount})
   });
 }).catch(err => {
   console.error('ERROR: Could not deploy contract')
   console.error(err)
 });
+*/
