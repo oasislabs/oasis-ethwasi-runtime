@@ -72,11 +72,6 @@ run_test() {
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
 
-    echo "Installing pubsub dependencies."
-    pushd ${WORKDIR}/tests/web3js > /dev/null
-    npm install > /dev/null
-    popd
-
     # Run the gateway. We start the gateway first so that we test 1) whether the
     # snapshot manager can recover after initially failing to connect to the
     # root hash stream, and 2) whether the gateway waits for the committee to be
@@ -98,18 +93,19 @@ run_test() {
     sleep 3
     ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
 
+    echo "Subscribing to log notifications on web3js."
+    ${WORKDIR}/tests/web3js/test_pubsub.js &> pubsub.log &
+
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
     npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
     popd > /dev/null
 
-    echo "Subscribing to log notifications on web3js."
-    ${WORKDIR}/tests/web3js/test_pubsub.js &> pubsub.log &
-
     # Subscribe to logs from gateway 2, and check that we get a log result
     echo "Subscribing to log notifications."
     RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+    echo $RESULT
 
     PUBSUB=`grep 'transactionHash' pubsub.log` || exit 1
 
