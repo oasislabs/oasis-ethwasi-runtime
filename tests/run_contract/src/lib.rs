@@ -15,7 +15,7 @@ use std::str::FromStr;
 use either::Either;
 use ekiden_roothash_base::Header;
 use ekiden_trusted::{contract::dispatcher::{BatchHandler, ContractCallContext},
-                     db::DatabaseHandle};
+                     db::{Database, DatabaseHandle}};
 use ethcore::{rlp,
               storage::Storage,
               transaction::{Action, SignedTransaction, Transaction}};

@@ -40,7 +40,7 @@ fn main() {
                 .long("call-args")
                 .help("Arguments to be passed to contract call")
                 .takes_value(true)
-                .default_value("")
+                .default_value(""),
         )
         .get_matches();
 
