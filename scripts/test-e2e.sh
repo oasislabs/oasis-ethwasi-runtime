@@ -54,7 +54,7 @@ run_gateway() {
     let "prometheus_port=id + 3000"
 
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
-    target/debug/gateway \
+    gateway/target/debug/gateway \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway_${id} \
         --storage-multilayer-bottom-backend remote \
@@ -101,7 +101,8 @@ run_test() {
 
     # Subscribe to logs from gateway 2, and check that we get a log result
     echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}"`
+    echo $RESULT
 
     # Check truffle test exit code
     wait $truffle_pid
