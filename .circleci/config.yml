@@ -528,6 +528,7 @@ workflows:
       - build-web3-gateway-benchmark
       - build-genesis
       - build-playback
+      - build-run-contract
       - end-to-end-tests:
           requires:
             - build-go
@@ -554,6 +555,7 @@ workflows:
             - build-web3-gateway-benchmark
             - build-genesis
             - build-playback
+            - build-run-contract
       - hold-for-production:
           type: approval
           filters:
