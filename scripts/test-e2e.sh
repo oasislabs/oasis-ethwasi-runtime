@@ -54,7 +54,7 @@ run_gateway() {
     let "prometheus_port=id + 3000"
 
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
-    gateway/target/debug/gateway \
+    target/debug/gateway \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway_${id} \
         --storage-multilayer-bottom-backend remote \
@@ -71,6 +71,11 @@ run_test() {
 
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
+
+    echo "Installing pubsub dependencies."
+    pushd ${WORKDIR}/tests/web3js > /dev/null
+    npm install > /dev/null
+    popd
 
     # Run the gateway. We start the gateway first so that we test 1) whether the
     # snapshot manager can recover after initially failing to connect to the
@@ -99,10 +104,14 @@ run_test() {
     npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
     popd > /dev/null
 
+    echo "Subscribing to log notifications on web3js."
+    ${WORKDIR}/tests/web3js/test_pubsub.js &> pubsub.log &
+
     # Subscribe to logs from gateway 2, and check that we get a log result
     echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}"`
-    echo $RESULT
+    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+
+    PUBSUB=`grep 'transactionHash' pubsub.log` || exit 1
 
     # Check truffle test exit code
     wait $truffle_pid
