@@ -425,6 +425,18 @@ jobs:
           # allows for easy changing if necessary.
           name: Set STAGING_TAG env var to 'staging'
           command: echo 'export STAGING_TAG=staging' >> $BASH_ENV
+
+      - run:
+          name: Login to docker
+          command: echo "$DOCKERHUB_PASSWORD" |
+                   docker login
+                     --username "$DOCKERHUB_USERNAME"
+                     --password-stdin
+
+      - run:
+          name: Pull the build image from Docker Hub
+          command: docker pull
+                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
       
       - run:
           name: Tag the build image as the latest staging image
@@ -433,12 +445,12 @@ jobs:
                      oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
 
       - run:
-          name: Publish as the latest staging image
+          name: Push latest staging image to Docker Hub
           command: docker push
                      oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
 
       - run:
-          name: Trigger a buildhook that triggers a staging deploy
+          name: Trigger a deploy to the staging env in the private-ops project
           command: ./scripts/buildhook-notify.sh
                      staging
                      oasislabs/runtime-ethereum
