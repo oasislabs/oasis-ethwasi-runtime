@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 WORKDIR=${1:-$(pwd)}
 
@@ -93,18 +93,18 @@ run_test() {
     sleep 3
     ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
 
-    echo "Subscribing to log notifications on web3js."
-    ${WORKDIR}/tests/web3js/test_pubsub.js &> pubsub.log &
-
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
     npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
     popd > /dev/null
 
+    echo "Subscribing to log notifications on web3js."
+    ${WORKDIR}/tests/web3js/test_pubsub.js &> pubsub.log &
+
     # Subscribe to logs from gateway 2, and check that we get a log result
     echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash`
     echo $RESULT
 
     PUBSUB=`grep 'transactionHash' pubsub.log` || exit 1
