@@ -2,17 +2,17 @@ use std::{collections::HashSet,
           sync::{Arc, Mutex}};
 
 use ekiden_core::{self, error::Result};
+use ekiden_storage_base::StorageBackend;
 use ekiden_trusted::db::{Database, DatabaseHandle};
 use ethcore::{self,
-              block::{Drain, IsBlock, LockedBlock, OpenBlock},
+              block::{IsBlock, LockedBlock, OpenBlock},
               blockchain::{BlockChain, BlockProvider, ExtrasInsert},
               encoded::Block,
               engines::ForkChoice,
               filter::Filter as EthcoreFilter,
               header::Header,
-              journaldb::overlaydb::OverlayDB,
               kvdb::{self, KeyValueDB},
-              state::backend::Basic as BasicBackend,
+              state::backend::Wrapped as WrappedBackend,
               transaction::Action,
               types::{ids::BlockId,
                       log_entry::{LocalizedLogEntry, LogEntry},
@@ -20,6 +20,7 @@ use ethcore::{self,
                       BlockNumber}};
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
+use runtime_ethereum_common::{get_factories, Backend, BlockchainStateDb, State, StorageHashDB};
 
 use super::evm::{get_contract_address, SPEC};
 
@@ -29,28 +30,31 @@ lazy_static! {
 
 /// Cache is the in-memory blockchain cache backed by the database.
 pub struct Cache {
-    /// Root hash where the last invocation finished at. If the root hash
-    /// differs on next invocation, the cache will be cleared first.
-    root_hash: ekiden_core::bytes::H256,
-    /// State database instance.
-    state_db: Arc<StateDb>,
+    /// Blockchain state database instance.
+    blockchain_db: Arc<BlockchainStateDb<DatabaseHandle>>,
+    /// Ethereum state backend.
+    state_backend: Backend,
+    /// Ethereum state database.
+    state_db: StorageHashDB<DatabaseHandle>,
     /// Actual blockchain cache.
     chain: BlockChain,
 }
 
 impl Cache {
     /// Create a new in-memory cache for the given state root.
-    pub fn new(root_hash: ekiden_core::bytes::H256) -> Self {
-        let mut db = SPEC.ensure_db_good(get_backend(), &Default::default() /* factories */)
-            .unwrap();
-        db.0.commit().unwrap();
-
-        let state_db = Arc::new(StateDb::instance());
+    pub fn new(storage: Arc<StorageBackend>, db: DatabaseHandle) -> Self {
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let state_db = StorageHashDB::new(storage, blockchain_db.clone());
+        // Initialize Ethereum state with the genesis block in case there is none.
+        let state_backend =
+            SPEC.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
+                .expect("state to be initialized");
 
         Self {
-            root_hash,
-            state_db: state_db.clone(),
-            chain: Self::new_chain(state_db),
+            blockchain_db: blockchain_db.clone(),
+            state_backend,
+            state_db,
+            chain: Self::new_chain(blockchain_db),
         }
     }
 
@@ -58,50 +62,58 @@ impl Cache {
     ///
     /// In case the current global instance is not valid for the given state root,
     /// it will be replaced.
-    pub fn from_global(root_hash: ekiden_core::bytes::H256) -> Cache {
+    pub fn from_global(storage: Arc<StorageBackend>, db: DatabaseHandle) -> Cache {
         let mut maybe_cache = GLOBAL_CACHE.lock().unwrap();
-        let mut cache = maybe_cache.take().unwrap_or_else(|| Cache::new(root_hash));
-
-        if cache.root_hash != root_hash {
-            // Root hash differs, re-create the block chain cache from scratch.
-            cache.chain = Self::new_chain(cache.state_db.clone());
-            cache.root_hash = root_hash;
+        match maybe_cache.take() {
+            Some(cache) => {
+                if cache.blockchain_db.get_root_hash() != db.get_root_hash() {
+                    // Root hash differs, re-create the cache from scratch.
+                    Cache::new(storage, db)
+                } else {
+                    cache
+                }
+            }
+            None => {
+                // No cache is available, create one.
+                Cache::new(storage, db)
+            }
         }
-
-        cache
     }
 
     /// Commit changes to global `Cache` instance.
-    pub fn commit_global(mut self, root_hash: ekiden_core::bytes::H256) {
+    pub fn commit_global(self) -> ekiden_core::bytes::H256 {
         let mut maybe_cache = GLOBAL_CACHE.lock().unwrap();
         if maybe_cache.is_some() {
             panic!("Multiple concurrent cache commits");
         }
 
-        self.root_hash = root_hash;
-        *maybe_cache = Some(self)
+        // Commit any pending state updates.
+        self.state_db.commit();
+        // Commit any blockchain state updates.
+        let root_hash = self.blockchain_db
+            .commit()
+            .expect("commit blockchain state");
+
+        *maybe_cache = Some(self);
+
+        root_hash
     }
 
-    fn new_chain(state_db: Arc<StateDb>) -> BlockChain {
+    fn new_chain(blockchain_db: Arc<BlockchainStateDb<DatabaseHandle>>) -> BlockChain {
         BlockChain::new(
             Default::default(), /* config */
             &*SPEC.genesis_block(),
-            state_db,
+            blockchain_db,
         )
     }
 
-    pub(crate) fn get_backend(&self) -> Backend {
-        BasicBackend(OverlayDB::new(self.state_db.clone(), None /* col */))
-    }
-
     pub(crate) fn get_state(&self) -> Result<State> {
-        let backend = self.get_backend();
         let root = self.chain.best_block_header().state_root().clone();
         Ok(ethcore::state::State::from_existing(
-            backend,
+            self.state_backend.clone(),
             root,
-            U256::zero(),       /* account_start_nonce */
-            Default::default(), /* factories */
+            U256::zero(), /* account_start_nonce */
+            get_factories(),
         )?)
     }
 
@@ -109,9 +121,9 @@ impl Cache {
         let parent = self.chain.best_block_header();
         Ok(OpenBlock::new(
             &*SPEC.engine,
-            Default::default(),               /* factories */
+            get_factories(),
             cfg!(debug_assertions),           /* tracing */
-            self.get_backend(),               /* state_db */
+            self.state_backend.clone(),       /* state_db */
             &parent,                          /* parent */
             self.last_hashes(&parent.hash()), /* last hashes */
             Address::default(),               /* author */
@@ -203,12 +215,11 @@ impl Cache {
         Arc::new(last_hashes)
     }
 
-    pub fn add_block(&self, block: LockedBlock) -> Result<()> {
+    pub fn add_block(&mut self, block: LockedBlock) -> Result<()> {
         let block = block.seal(&*SPEC.engine, Vec::new())?;
 
+        // Queue the db operations necessary to insert this block.
         let mut db_tx = kvdb::DBTransaction::default();
-
-        // queue the db ops necessary to insert this block
         self.chain.insert_block(
             &mut db_tx,
             &block.rlp_bytes(),
@@ -220,13 +231,12 @@ impl Cache {
             },
         );
 
-        self.chain.commit(); // commit the insert to the in-memory BlockChain repr
-        let mut db = block.drain().0;
-        db.commit_to_batch(&mut db_tx)
-            .expect("could not commit state updates"); // add any pending state updates to the db transaction
-        StateDb::instance()
+        // Commit the insert to the in-memory blockchain cache.
+        self.chain.commit();
+        // Write blockchain updates.
+        self.blockchain_db
             .write(db_tx)
-            .expect("could not persist state updates"); // persist the changes to the backing db
+            .expect("write blockchain updates");
 
         Ok(())
     }
@@ -316,28 +326,7 @@ impl Cache {
     }
 }
 
-pub struct StateDb {}
-
-type Backend = BasicBackend<OverlayDB>;
-type State = ethcore::state::State<Backend>;
-
-pub(crate) fn get_backend() -> Backend {
-    BasicBackend(OverlayDB::new(
-        Arc::new(StateDb::instance()),
-        None, /* col */
-    ))
-}
-
-impl StateDb {
-    fn new() -> Self {
-        Self {}
-    }
-
-    pub fn instance() -> Self {
-        Self::new()
-    }
-}
-
+// TODO: Move to util module.
 fn lle_to_log(lle: LocalizedLogEntry) -> Log {
     Log {
         address: lle.entry.address,
@@ -352,6 +341,7 @@ fn lle_to_log(lle: LocalizedLogEntry) -> Log {
     }
 }
 
+// TODO: Move to util module.
 fn le_to_log(le: LogEntry) -> Log {
     Log {
         address: le.address,
@@ -366,6 +356,7 @@ fn le_to_log(le: LogEntry) -> Log {
     }
 }
 
+// TODO: Move to util module.
 fn to_block_id(id: EkidenBlockId) -> BlockId {
     match id {
         EkidenBlockId::Number(number) => BlockId::Number(number.into()),
@@ -375,77 +366,19 @@ fn to_block_id(id: EkidenBlockId) -> BlockId {
     }
 }
 
-// Parity expects the database to namespace keys by column. The Ekiden db
-// doesn't [yet?] have this feature, so we emulate by prepending the column id
-// to the actual key. Columns None and 0 should be distinct, so we use prefix 0
-// for None and col+1 for Some(col).
-fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| (id + 1).to_le_bytes()).unwrap_or([0, 0, 0, 0]);
-    col_bytes
-        .into_iter()
-        .chain(key.into_iter())
-        .map(|v| v.to_owned())
-        .collect()
-}
-
-impl kvdb::KeyValueDB for StateDb {
-    fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-        Ok(DatabaseHandle::instance()
-            .get(&get_key(col, key))
-            .map(kvdb::DBValue::from_vec))
-    }
-
-    fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {
-        unimplemented!();
-    }
-
-    fn write_buffered(&self, transaction: kvdb::DBTransaction) {
-        transaction.ops.iter().for_each(|op| match op {
-            &kvdb::DBOp::Insert {
-                ref key,
-                ref value,
-                col,
-            } => {
-                DatabaseHandle::instance().insert(&get_key(col, key), value.to_vec().as_slice());
-            }
-            &kvdb::DBOp::Delete { .. } => {
-                // This is a no-op for us. Parity cleans up old state (anything
-                // not part of the trie defined by the best block state root).
-                // We want to retain previous states to support web3 APIs that
-                // take a default block parameter:
-                // https://github.com/ethereum/wiki/wiki/JSON-RPC#the-default-block-parameter
-            }
-        });
-    }
-
-    fn flush(&self) -> kvdb::Result<()> {
-        Ok(())
-    }
-
-    fn iter<'a>(&'a self, _col: Option<u32>) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
-        unimplemented!();
-    }
-
-    fn iter_from_prefix<'a>(
-        &'a self,
-        _col: Option<u32>,
-        _prefix: &'a [u8],
-    ) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
-        unimplemented!();
-    }
-
-    fn restore(&self, _new_db: &str) -> kvdb::Result<()> {
-        unimplemented!();
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    extern crate ekiden_storage_dummy;
+
+    use self::ekiden_storage_dummy::DummyStorageBackend;
     use lazy_static;
+
+    use super::*;
 
     #[test]
     fn test_create_chain() {
-        Cache::new(ekiden_core::bytes::H256::zero());
+        let storage = Arc::new(DummyStorageBackend::new());
+
+        Cache::new(storage.clone(), DatabaseHandle::new(storage));
     }
 }

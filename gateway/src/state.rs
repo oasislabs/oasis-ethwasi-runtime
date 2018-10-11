@@ -10,20 +10,22 @@ use ethcore::db::{self, Readable};
 use ethcore::encoded;
 use ethcore::header::BlockNumber;
 use ethcore::ids::BlockId;
-use ethcore::state::backend::Basic as BasicBackend;
+use ethcore::state::backend::Wrapped as WrappedBackend;
 use ethereum_types::{Bloom, H256, U256};
-use journaldb::overlaydb::OverlayDB;
-use kvdb::{self, KeyValueDB};
+use kvdb::KeyValueDB;
 use rayon::prelude::*;
 use rlp_compress::{blocks_swapper, decompress};
 
 use ekiden_db_trusted::Database;
-
-type Backend = BasicBackend<OverlayDB>;
-pub type EthState = ethcore::state::State<Backend>;
+use ekiden_storage_base::StorageBackend;
+pub use runtime_ethereum_common::State as EthState;
+use runtime_ethereum_common::{get_factories, Backend, BlockchainStateDb, StorageHashDB};
 
 pub struct StateDb<T: Database + Send + Sync> {
-    db: Arc<T>,
+    /// Blockchain state database instance.
+    blockchain_db: Arc<BlockchainStateDb<T>>,
+    /// Ethereum state backend.
+    state_backend: Backend,
 }
 
 impl<T> BlockProvider for StateDb<T>
@@ -40,7 +42,7 @@ where
     }
 
     fn block_header_data(&self, hash: &H256) -> Option<encoded::Header> {
-        match self.get(db::COL_HEADERS, &hash) {
+        match self.blockchain_db.get(db::COL_HEADERS, &hash) {
             Ok(hash) => {
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
             }
@@ -53,7 +55,7 @@ where
     }
 
     fn block_body(&self, hash: &H256) -> Option<encoded::Body> {
-        match self.get(db::COL_BODIES, hash) {
+        match self.blockchain_db.get(db::COL_BODIES, hash) {
             Ok(body) => {
                 body.map(|b| encoded::Body::new(decompress(&b, blocks_swapper()).into_vec()))
             }
@@ -66,19 +68,19 @@ where
     }
 
     fn block_details(&self, hash: &H256) -> Option<BlockDetails> {
-        self.read(db::COL_EXTRA, hash)
+        self.blockchain_db.read(db::COL_EXTRA, hash)
     }
 
     fn block_hash(&self, index: BlockNumber) -> Option<H256> {
-        self.read(db::COL_EXTRA, &index)
+        self.blockchain_db.read(db::COL_EXTRA, &index)
     }
 
     fn transaction_address(&self, hash: &H256) -> Option<TransactionAddress> {
-        self.read(db::COL_EXTRA, hash)
+        self.blockchain_db.read(db::COL_EXTRA, hash)
     }
 
     fn block_receipts(&self, hash: &H256) -> Option<BlockReceipts> {
-        self.read(db::COL_EXTRA, hash)
+        self.blockchain_db.read(db::COL_EXTRA, hash)
     }
 
     /// Returns logs matching given filter. The order of logs returned will be the same as the order of the blocks
@@ -190,10 +192,18 @@ where
     T: 'static + Database + Send + Sync,
 {
     // returns None if the database has not been initialized (i.e., no best block)
-    pub fn new(db: T) -> Option<Self> {
-        let state_db = Self { db: Arc::new(db) };
-        match state_db.best_block_hash() {
-            Some(_) => Some(state_db),
+    pub fn new(storage: Arc<StorageBackend>, db: T) -> Option<Self> {
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let state_db = StorageHashDB::new(storage, blockchain_db.clone());
+        let state_backend = WrappedBackend(Box::new(state_db.clone()));
+
+        let instance = Self {
+            blockchain_db,
+            state_backend,
+        };
+
+        match instance.best_block_hash() {
+            Some(_) => Some(instance),
             None => None,
         }
     }
@@ -201,17 +211,11 @@ where
     // returns None if the database has not been initialized
     pub fn get_ethstate_at(&self, id: BlockId) -> Option<EthState> {
         let root = self.state_root_at(id)?;
-        let backend = BasicBackend(OverlayDB::new(
-            Arc::new(StateDb {
-                db: self.db.clone(),
-            }),
-            None, /* col */
-        ));
         match ethcore::state::State::from_existing(
-            backend,
+            self.state_backend.clone(),
             root,
-            U256::zero(),       /* account_start_nonce */
-            Default::default(), /* factories */
+            U256::zero(), /* account_start_nonce */
+            get_factories(),
         ) {
             Ok(state) => Some(state),
             Err(e) => {
@@ -223,7 +227,7 @@ where
     }
 
     pub fn best_block_hash(&self) -> Option<H256> {
-        match self.get(db::COL_EXTRA, b"best") {
+        match self.blockchain_db.get(db::COL_EXTRA, b"best") {
             Ok(best) => best.map(|best| H256::from_slice(&best)),
             Err(e) => {
                 measure_counter_inc!("read_state_failed");
@@ -257,79 +261,19 @@ where
     }
 }
 
-// Parity expects the database to namespace keys by column. The Ekiden db
-// doesn't [yet?] have this feature, so we emulate by prepending the column id
-// to the actual key. Columns None and 0 should be distinct, so we use prefix 0
-// for None and col+1 for Some(col).
-pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
-    let col_bytes = col.map(|id| (id + 1).to_le_bytes()).unwrap_or([0, 0, 0, 0]);
-    col_bytes
-        .into_iter()
-        .chain(key.into_iter())
-        .map(|v| v.to_owned())
-        .collect()
-}
-
-impl<T> kvdb::KeyValueDB for StateDb<T>
-where
-    T: Database + Send + Sync,
-{
-    // we only use get
-    fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
-        Ok(self.db.get(&get_key(col, key)).map(kvdb::DBValue::from_vec))
-    }
-
-    fn get_by_prefix(&self, _col: Option<u32>, _prefix: &[u8]) -> Option<Box<[u8]>> {
-        unimplemented!();
-    }
-
-    // this is a read only interface
-    fn write_buffered(&self, _transaction: kvdb::DBTransaction) {
-        unimplemented!();
-    }
-
-    fn flush(&self) -> kvdb::Result<()> {
-        unimplemented!();
-    }
-
-    fn iter<'a>(&'a self, _col: Option<u32>) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
-        unimplemented!();
-    }
-
-    fn iter_from_prefix<'a>(
-        &'a self,
-        _col: Option<u32>,
-        _prefix: &'a [u8],
-    ) -> Box<Iterator<Item = (Box<[u8]>, Box<[u8]>)> + 'a> {
-        unimplemented!();
-    }
-
-    fn restore(&self, _new_db: &str) -> kvdb::Result<()> {
-        unimplemented!();
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use ekiden_storage_dummy::DummyStorageBackend;
+
     use super::*;
     use ethereum_types::{Address, H256, U256};
+    use runtime_ethereum_common::get_key;
     use test_helpers::MockDb;
 
     #[test]
-    fn test_get_key() {
-        let value = b"somevalue";
-        let col_none = get_key(None, value);
-        let col_0 = get_key(Some(0), value);
-        assert_ne!(col_none, col_0);
-
-        // prefix for column Some(3) is 4=3+1
-        let col_3 = get_key(Some(3), b"three");
-        assert_eq!(col_3, b"\x04\0\0\0three");
-    }
-
-    #[test]
     fn test_get_statedb_empty() {
-        let state = StateDb::new(MockDb::new());
+        let db = MockDb::new();
+        let state = StateDb::new(db.storage(), db);
         assert!(state.is_none());
     }
 
@@ -341,7 +285,7 @@ mod tests {
             &get_key(db::COL_EXTRA, b"best"),
             &H256::from("0xec891bd71e6d6a64ec299b8641c6cce3638989c03a4a41fd5898a2c0356c7ae6"),
         );
-        let state = StateDb::new(db);
+        let state = StateDb::new(db.storage(), db);
         assert!(state.is_some());
     }
 
@@ -350,7 +294,7 @@ mod tests {
         let mut db = MockDb::new();
         // populate the db with test data
         db.populate();
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
         assert_eq!(state.best_block_number(), 4);
     }
 
@@ -364,15 +308,15 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // all blocks
         let blocks = vec![
-            H256::from("f39c325375fa2d5381a950850abd9999abd2ff64cd0f184139f5bb5d74afb14e"),
-            H256::from("d56eee931740bb35eb9bf9f97cfebb66ac51a1d88988c1255b52677b958d658b"),
-            H256::from("17a7a94ad21879641349b6e90ccd7e42e63551ad81b3fda561cd2df4860fbd3f"),
-            H256::from("c57db28f3a012eb2a783cd1295a0c5e7fcc08565c526c2c86c8355a54ab7aae3"),
-            H256::from("339ddee2b78be3e53af2b0a3148643973cf0e0fa98e16ab963ee17bf79e6f199"),
+            H256::from("3546adf1c89e32acd11093f6f78468f5db413a207843aded872397821ea685ae"),
+            H256::from("9a4ffe2733a837c80d0b7e2fd63b838806e3b8294dab3ad86249619b28fd9526"),
+            H256::from("613afac8fd33fd7a35b8928e68f6abc031ca8e16c35caa2eaa7518c4e753cffc"),
+            H256::from("75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e"),
+            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118"),
         ];
 
         // query over all blocks
@@ -398,7 +342,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // get ethstate at latest block
         let ethstate = state.get_ethstate_at(BlockId::Latest).unwrap();
@@ -415,7 +359,7 @@ mod tests {
         assert_eq!(nonce, U256::zero());
 
         // a deployed contract
-        let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
+        let deployed_contract = Address::from("fbe2ab6ee22dace9e2ca1cb42c57bf94a32ddd41");
         let code = ethstate.code(&deployed_contract).unwrap().unwrap();
         assert!(code.len() > 0);
     }
@@ -427,12 +371,12 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // get the transaction from block 4
         let tx = state
             .transaction_address(&H256::from(
-                "0xcfb3d83aa4b9c7d9a698e9b8169383c819fbf6200848ae5fcaec25e414295790",
+                "0x13519e194348f7492afa783639c35185d3e81015c6aa19d5598b4a5de08eec9f",
             ))
             .and_then(|addr| BlockProvider::transaction(&state, &addr))
             .unwrap();
@@ -447,11 +391,11 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         let receipt = state
             .transaction_address(&H256::from(
-                "0xcfb3d83aa4b9c7d9a698e9b8169383c819fbf6200848ae5fcaec25e414295790",
+                "0x13519e194348f7492afa783639c35185d3e81015c6aa19d5598b4a5de08eec9f",
             ))
             .and_then(|addr| state.transaction_receipt(&addr))
             .unwrap();
@@ -466,7 +410,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // get best block
         let best_block = state
@@ -484,10 +428,10 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap();
 
         // a deployed contract
-        let deployed_contract = Address::from("345ca3e014aaf5dca488057592ee47305d9b3e10");
+        let deployed_contract = Address::from("fbe2ab6ee22dace9e2ca1cb42c57bf94a32ddd41");
 
         // get ethstate at block 0
         let ethstate_0 = state.get_ethstate_at(BlockId::Number(0)).unwrap();

@@ -92,6 +92,7 @@ extern crate ekiden_storage_frontend;
 extern crate ethereum_api;
 #[cfg(test)]
 extern crate grpcio;
+extern crate runtime_ethereum_common;
 
 mod client;
 mod impls;

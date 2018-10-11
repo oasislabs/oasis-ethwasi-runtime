@@ -7,6 +7,7 @@ target/
 *.so
 **/generated
 Cargo.lock
+Cargo.enclave.lock
 Xargo.toml
 node_modules/
 
@@ -20,3 +21,12 @@ Enclave_t.h
 
 # Temporary files.
 *.swp
+
+# Log files from E2E tests.
+*.log
+truffle.txt
+
+# Node mess.
+node_modules
+package-lock.json
+

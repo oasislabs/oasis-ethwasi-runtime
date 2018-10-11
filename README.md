@@ -42,9 +42,7 @@ $ mkdir -p /go/src/github.com/oasislabs
 $ cd /go/src/github.com/oasislabs
 $ git clone https://github.com/oasislabs/ekiden
 $ cd ekiden/go
-$ dep ensure
-$ go generate ./...
-$ go build -v -o ./ekiden/ekiden ./ekiden
+$ make
 $ cd ekiden
 $ go install
 ```
