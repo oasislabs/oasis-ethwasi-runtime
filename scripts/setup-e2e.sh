@@ -6,6 +6,11 @@ pushd ${WORKDIR}/tests/ > /dev/null
 npm install
 popd > /dev/null
 
+echo "Installing pubsub dependencies."
+pushd ${WORKDIR}/tests/web3js > /dev/null
+npm install > /dev/null
+popd
+
 echo "Installing wasm32-unknown-unknown target."
 rustup target add wasm32-unknown-unknown
 

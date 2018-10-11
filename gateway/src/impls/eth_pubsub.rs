@@ -141,6 +141,11 @@ impl EthPubSub for EthPubSubClient {
         kind: pubsub::Kind,
         params: Trailing<pubsub::Params>,
     ) {
+        measure_counter_inc!("subscribe");
+        info!(
+            "eth.pubsub.subscribe(subscriber: {:?}, kind: {:?})",
+            subscriber, kind
+        );
         let error = match (kind, params.into()) {
             (pubsub::Kind::NewHeads, None) => {
                 self.heads_subscribers.write().push(subscriber);
