@@ -4,7 +4,7 @@
   "description": "Web3.js helper scripts for integration tests.",
   "main": "test_pubsub.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": 
   },
   "author": "David Yan <david.yan@oasislabs.com>",
   "license": "ISC",
