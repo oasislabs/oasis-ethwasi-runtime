@@ -29,7 +29,7 @@ use keccak_hash::KECCAK_NULL_RLP;
 
 /// A backend for storing Ethereum state (e.g., a hash database).
 pub type Backend = WrappedBackend;
-/// Ethereum  state using the specified backend.
+/// Ethereum state using the specified backend.
 pub type State = ethcore::state::State<Backend>;
 
 /// Create factories for various Ethereum data structures.
@@ -284,6 +284,11 @@ where
     /// Create new blockchain state database.
     pub fn new(db: T) -> Self {
         Self { db: Mutex::new(db) }
+    }
+
+    /// Return current state root hash.
+    pub fn get_root_hash(&self) -> ekiden_core::bytes::H256 {
+        self.db.lock().unwrap().get_root_hash()
     }
 
     /// Commits updates to the underlying database.

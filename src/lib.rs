@@ -78,12 +78,8 @@ pub struct EthereumContext<'a> {
 
 impl<'a> EthereumContext<'a> {
     /// Create new Ethereum-specific batch context.
-    pub fn new(
-        storage: Arc<StorageBackend>,
-        db: DatabaseHandle,
-        root_hash: ekiden_core::bytes::H256,
-    ) -> Box<Self> {
-        let cache = Cache::from_global(storage, db, root_hash);
+    pub fn new(storage: Arc<StorageBackend>, db: DatabaseHandle) -> Box<Self> {
+        let cache = Cache::from_global(storage, db);
 
         Box::new(EthereumContext {
             block: cache.new_block().unwrap(),
@@ -120,7 +116,7 @@ impl BatchHandler for EthereumBatchHandler {
         let mut db = DatabaseHandle::new(storage.clone());
         db.set_root_hash(root_hash).unwrap();
 
-        ctx.runtime = EthereumContext::new(storage, db, root_hash);
+        ctx.runtime = EthereumContext::new(storage, db);
     }
 
     fn end_batch(&self, ctx: ContractCallContext) {
@@ -533,7 +529,13 @@ mod tests {
     where
         F: FnOnce(&mut ContractCallContext) -> R,
     {
-        let mut ctx = dummy_ctx();
+        let root_hash = DatabaseHandle::instance().get_root_hash();
+        let mut ctx = ContractCallContext::new(Header {
+            timestamp: 0xcafedeadbeefc0de,
+            state_root: root_hash,
+            ..Default::default()
+        });
+
         let batch_handler = EthereumBatchHandler {
             storage: STORAGE.clone(),
         };
@@ -792,6 +794,36 @@ mod tests {
                     .block_hash(ectx.cache.get_latest_block_number() - 1)
                     .unwrap()
             );
+        });
+    }
+
+    #[test]
+    fn test_cache_invalidation() {
+        let mut client = CLIENT.lock().unwrap();
+
+        // Perform initial transaction to get a valid state root.
+        let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
+        let (_, address_1) = client.create_contract(code.clone(), &U256::from(42));
+        let state_root_1 = DatabaseHandle::instance().get_root_hash();
+
+        // Perform another transaction to get another state root.
+        let (_, address_2) = client.create_contract(code, &U256::from(21));
+
+        // Ensure both contracts exist.
+        with_batch_handler(|ctx| {
+            assert_eq!(get_account_balance(&address_1, ctx), Ok(U256::from(42)));
+            assert_eq!(get_account_balance(&address_2, ctx), Ok(U256::from(21)));
+        });
+
+        // Simulate batch rolling back.
+        DatabaseHandle::instance()
+            .set_root_hash(state_root_1)
+            .unwrap();
+
+        // Ensure cache is invalidated correctly.
+        with_batch_handler(|ctx| {
+            assert_eq!(get_account_balance(&address_1, ctx), Ok(U256::from(42)));
+            assert_eq!(get_account_balance(&address_2, ctx), Ok(U256::zero()));
         });
     }
 }

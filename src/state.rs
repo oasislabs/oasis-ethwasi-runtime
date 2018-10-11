@@ -3,7 +3,7 @@ use std::{collections::HashSet,
 
 use ekiden_core::{self, error::Result};
 use ekiden_storage_base::StorageBackend;
-use ekiden_trusted::db::DatabaseHandle;
+use ekiden_trusted::db::{Database, DatabaseHandle};
 use ethcore::{self,
               block::{IsBlock, LockedBlock, OpenBlock},
               blockchain::{BlockChain, BlockProvider, ExtrasInsert},
@@ -30,9 +30,6 @@ lazy_static! {
 
 /// Cache is the in-memory blockchain cache backed by the database.
 pub struct Cache {
-    /// Root hash where the last invocation finished at. If the root hash
-    /// differs on next invocation, the cache will be cleared first.
-    root_hash: ekiden_core::bytes::H256,
     /// Blockchain state database instance.
     blockchain_db: Arc<BlockchainStateDb<DatabaseHandle>>,
     /// Ethereum state backend.
@@ -45,11 +42,7 @@ pub struct Cache {
 
 impl Cache {
     /// Create a new in-memory cache for the given state root.
-    pub fn new(
-        storage: Arc<StorageBackend>,
-        db: DatabaseHandle,
-        root_hash: ekiden_core::bytes::H256,
-    ) -> Self {
+    pub fn new(storage: Arc<StorageBackend>, db: DatabaseHandle) -> Self {
         let blockchain_db = Arc::new(BlockchainStateDb::new(db));
         let state_db = StorageHashDB::new(storage, blockchain_db.clone());
         // Initialize Ethereum state with the genesis block in case there is none.
@@ -58,7 +51,6 @@ impl Cache {
                 .expect("state to be initialized");
 
         Self {
-            root_hash,
             blockchain_db: blockchain_db.clone(),
             state_backend,
             state_db,
@@ -70,27 +62,26 @@ impl Cache {
     ///
     /// In case the current global instance is not valid for the given state root,
     /// it will be replaced.
-    pub fn from_global(
-        storage: Arc<StorageBackend>,
-        db: DatabaseHandle,
-        root_hash: ekiden_core::bytes::H256,
-    ) -> Cache {
+    pub fn from_global(storage: Arc<StorageBackend>, db: DatabaseHandle) -> Cache {
         let mut maybe_cache = GLOBAL_CACHE.lock().unwrap();
-        let mut cache = maybe_cache
-            .take()
-            .unwrap_or_else(|| Cache::new(storage, db, root_hash));
-
-        if cache.root_hash != root_hash {
-            // Root hash differs, re-create the block chain cache from scratch.
-            cache.chain = Self::new_chain(cache.blockchain_db.clone());
-            cache.root_hash = root_hash;
+        match maybe_cache.take() {
+            Some(cache) => {
+                if cache.blockchain_db.get_root_hash() != db.get_root_hash() {
+                    // Root hash differs, re-create the cache from scratch.
+                    Cache::new(storage, db)
+                } else {
+                    cache
+                }
+            }
+            None => {
+                // No cache is available, create one.
+                Cache::new(storage, db)
+            }
         }
-
-        cache
     }
 
     /// Commit changes to global `Cache` instance.
-    pub fn commit_global(mut self) -> ekiden_core::bytes::H256 {
+    pub fn commit_global(self) -> ekiden_core::bytes::H256 {
         let mut maybe_cache = GLOBAL_CACHE.lock().unwrap();
         if maybe_cache.is_some() {
             panic!("Multiple concurrent cache commits");
@@ -103,7 +94,6 @@ impl Cache {
             .commit()
             .expect("commit blockchain state");
 
-        self.root_hash = root_hash;
         *maybe_cache = Some(self);
 
         root_hash
@@ -389,10 +379,6 @@ mod tests {
     fn test_create_chain() {
         let storage = Arc::new(DummyStorageBackend::new());
 
-        Cache::new(
-            storage.clone(),
-            DatabaseHandle::new(storage),
-            ekiden_core::bytes::H256::zero(),
-        );
+        Cache::new(storage.clone(), DatabaseHandle::new(storage));
     }
 }
