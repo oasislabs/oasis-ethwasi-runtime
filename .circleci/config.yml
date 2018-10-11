@@ -349,6 +349,19 @@ jobs:
             - build_image_tag
 
   build-and-publish-docker-image:
+    ##
+    # The purpose of this job is to build
+    # and publish docker images for the 
+    # current branch or PR.
+    #
+    # The image is tagged with the value determined
+    # in the set-docker-tag job, which is retrieved
+    # from the workspace in this job.
+    #
+    # NOTE: The published image will NOT be tagged
+    #       as the staging image until the 
+    #       deploy-to-staging job.
+    ##
     docker:
       - image: ekiden/testing:0.2.0
     resource_class: xlarge
@@ -358,8 +371,6 @@ jobs:
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
       - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
-      # Set this as a variable so it can be changed quickly if necessary
-      - run: echo 'export STAGING_TAG=staging' >> $BASH_ENV
       - checkout
       - setup_remote_docker
 
@@ -388,18 +399,16 @@ jobs:
           command: docker push
                      oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
 
-      - run:
-          name: Tag the build image as the latest staging image
-          command: docker tag
-                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
-                     oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
-
-      - run:
-          name: Publish as the latest staging image
-          command: docker push
-                     oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
-
   deploy-to-staging:
+    ##
+    # The purpose of this job is to deploy the docker
+    # image built and published in this workflow 
+    # to the staging environment.
+    #
+    # The docker image is tagged as the latest staging
+    # image and published to Docker Hub before this
+    # job triggers a deploy in the private-ops project.
+    ##
     docker:
       - image: ekiden/testing:0.2.0
     steps:
@@ -411,6 +420,23 @@ jobs:
           name: Load current docker build tag
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
+      - run: 
+          # Defining this as a variable helps remain DRY and
+          # allows for easy changing if necessary.
+          name: Set STAGING_TAG env var to 'staging'
+          command: echo 'export STAGING_TAG=staging' >> $BASH_ENV
+      
+      - run:
+          name: Tag the build image as the latest staging image
+          command: docker tag
+                     oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
+                     oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
+
+      - run:
+          name: Publish as the latest staging image
+          command: docker push
+                     oasislabs/ekiden-runtime-ethereum:$STAGING_TAG
+
       - run:
           name: Trigger a buildhook that triggers a staging deploy
           command: ./scripts/buildhook-notify.sh
@@ -421,6 +447,14 @@ jobs:
                      $CIRCLE_TOKEN
 
   promote-to-production:
+    ##
+    # The purpose of this job is to promote the docker
+    # image built in this workflow to the production
+    # image.
+    #
+    # The docker image is tagged as the latest production
+    # image and published to Docker Hub.
+    ##
     docker:
       - image: ekiden/testing:0.2.0
     steps:
@@ -458,6 +492,12 @@ jobs:
                      oasislabs/ekiden-runtime-ethereum:$PRODUCTION_TAG
 
   deploy-to-production:
+    ##
+    # The purpose of this job is to deploy the image
+    # built in this workflow to the production environment.
+    #
+    # This job triggers a deploy in the private-ops project.
+    ##
     docker:
       - image: ekiden/testing:0.2.0
     steps:
