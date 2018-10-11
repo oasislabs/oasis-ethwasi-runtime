@@ -575,9 +575,6 @@ workflows:
             - build-and-test-runtime
             - build-and-test-web3-gateway
       - build-and-publish-docker-image:
-          filters:
-            branches:
-              only: master
           # This job does *not* require most other jobs
           # so this job can run in parallel.
           requires:
