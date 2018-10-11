@@ -27,7 +27,7 @@ jobs:
                      --branch master
                      --debug
                      ekiden-tools
-      - run: 
+      - run:
           name: Build the runtime
           command: cargo ekiden build-enclave --output-identity
       - persist_to_workspace:
@@ -270,7 +270,7 @@ jobs:
       - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
       - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
       - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
-      
+
       # Check out source from github
       - checkout
 
@@ -294,7 +294,7 @@ jobs:
           at: /workspace
 
       # Copy required resources from the workspace
-      - run: 
+      - run:
           name: Copy ekiden-node from workspace
           command: cp /workspace/go/bin/ekiden ekiden-node
       - run:
@@ -310,7 +310,7 @@ jobs:
           command: ./scripts/setup-e2e.sh
 
       # Run the end-to-end test
-      - run: 
+      - run:
           name: Run the end-to-end test
           command: ./scripts/test-e2e.sh
       # Run the basic wasm contract test
@@ -371,14 +371,14 @@ jobs:
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
       # Build deployment image.
-      
+
       - run:
           name: Login to docker
           command: echo "$DOCKERHUB_PASSWORD" |
                    docker login
                      --username "$DOCKERHUB_USERNAME"
                      --password-stdin
-                     
+
       - run:
           name: Build deployment image
           command: BUILD_IMAGES_NO_ENTER=1 ./docker/deployment/build-images.sh
@@ -535,6 +535,9 @@ workflows:
             - build-and-test-runtime
             - build-and-test-web3-gateway
       - build-and-publish-docker-image:
+          filters:
+            branches:
+              only: master
           # This job does *not* require most other jobs
           # so this job can run in parallel.
           requires:
