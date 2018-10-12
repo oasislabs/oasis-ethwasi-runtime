@@ -17,7 +17,7 @@ workflows:
           type: approval
           filters:
             branches:
-              ignore: master
+              ignore: conorgil/feature/testing-circleci-approval-workflows
       - jobB:
           requires:
             - approve-jobB
