@@ -13,8 +13,9 @@ workflows:
   testing_approval_workflow:
     jobs:
       - jobA
-      # - approve-jobB:
-      #     type: approval
+      - approve-jobB:
+          type: approval
       - jobB:
           requires:
+            - approve-jobB
             - jobA
