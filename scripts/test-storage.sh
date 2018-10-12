@@ -14,18 +14,14 @@ run_test() {
     popd > /dev/null
 
     # Start dummy node.
-    # bash ${WORKDIR}/scripts/utils.sh run_dummy_node_go_tm
     run_dummy_node_go_tm
     sleep 1
 
     # Start compute nodes.
-    # bash ${WORKDIR}/scripts/utils.sh run_compute_node 1
     run_compute_node 1
     sleep 1
-    # bash ${WORKDIR}/scripts/utils.sh run_compute_node 2
     run_compute_node 2
 
-    # bash ${WORKDIR}/scripts/utils.sh run_gateway 1
     run_gateway 1
     sleep 10
 
@@ -41,7 +37,7 @@ run_test() {
     echo "Deploying and calling contract."
     OUTPUT="$(./deploy_contract.js ${WORKDIR}/tests/contracts/storage_contract/target/storage_contract.wasm | tail -1)"
     echo "Contract address: $OUTPUT"
-    OUTPUT="$(./call_contract.js --contract-address $OUTPUT | tail -1)"
+    OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
 
     if [ "$OUTPUT" = "0x0102030405" ]; then

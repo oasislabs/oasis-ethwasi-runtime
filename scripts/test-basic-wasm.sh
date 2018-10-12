@@ -2,7 +2,7 @@
 
 WORKDIR=${1:-$(pwd)}
 
-source utils.sh
+source scripts/utils.sh
 
 run_test() {
     # Ensure cleanup on exit.
@@ -14,18 +14,14 @@ run_test() {
     popd > /dev/null
 
     # Start dummy node.
-    # bash ${WORKDIR}/scripts/utils.sh run_dummy_node_go_tm
     run_dummy_node_go_tm
     sleep 1
 
     # Start compute nodes.
-    # bash ${WORKDIR}/scripts/utils.sh run_compute_node 1
     run_compute_node 1
     sleep 1
-    # bash ${WORKDIR}/scripts/utils.sh run_compute_node 2
     run_compute_node 2
 
-    # bash ${WORKDIR}/scripts/utils.sh run_gateway 1
     run_gateway 1
     sleep 10
 
@@ -38,7 +34,7 @@ run_test() {
     echo "Deploying and calling contract."
     OUTPUT="$(./deploy_contract.js ${WORKDIR}/tests/contracts/basic_wasm_contract/target/basic_contract.wasm | tail -1)"
     echo "Contract address: $OUTPUT"
-    OUTPUT="$(./call_contract.js --contract-address $OUTPUT | tail -1)"
+    OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
 
     if [ "$OUTPUT" = "0x726573756c74" ]; then
