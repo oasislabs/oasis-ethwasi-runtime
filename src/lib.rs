@@ -494,6 +494,8 @@ mod tests {
     use std::sync::Arc;
     use std::sync::Mutex;
 
+    use self::ekiden_common::futures::Future;
+    use self::ekiden_core::bytes::H256 as EkidenH256;
     use self::ekiden_roothash_base::header::Header;
     use self::ekiden_storage_base::StorageBackend;
     use self::ekiden_storage_dummy::DummyStorageBackend;
@@ -506,6 +508,10 @@ mod tests {
     lazy_static! {
         // Global dummy storage used in tests.
         static ref STORAGE: Arc<StorageBackend> = Arc::new(DummyStorageBackend::new());
+
+        // Genesis block state root as Ekiden H256.
+        static ref GENESIS_STATE_ROOT: EkidenH256 =
+            EkidenH256::from_slice(&evm::SPEC.state_root().to_vec());
     }
 
     fn dummy_ctx() -> ContractCallContext {
@@ -544,6 +550,10 @@ mod tests {
         let result = f(&mut ctx);
 
         batch_handler.end_batch(ctx);
+
+        // Check that the genesis block state root is in storage.
+        // It should always exist in storage after any batch has committed.
+        assert!(STORAGE.get(*GENESIS_STATE_ROOT).wait().is_ok());
 
         result
     }
