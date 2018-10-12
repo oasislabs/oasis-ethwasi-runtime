@@ -49,6 +49,7 @@ impl Cache {
         let state_backend =
             SPEC.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
                 .expect("state to be initialized");
+        state_db.commit();
 
         Self {
             blockchain_db: blockchain_db.clone(),
