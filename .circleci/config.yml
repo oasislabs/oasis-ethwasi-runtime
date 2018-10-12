@@ -1,9 +1,11 @@
 version: 2
 jobs:
   jobA:
+    machine: true
     steps:
       - run: echo "Hello world!"
   jobB:
+    machine: true
     steps:
       - run: echo "It worked!"
 workflows:
