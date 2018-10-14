@@ -17,7 +17,7 @@ serde_derive = "1.0"
 serde_json = "1.0"
 
 client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-contract-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

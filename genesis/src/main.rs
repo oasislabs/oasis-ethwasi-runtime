@@ -19,9 +19,9 @@ extern crate serde_json;
 use serde_json::{de::SliceRead, StreamDeserializer};
 
 extern crate client_utils;
-use client_utils::{contract_client, default_app};
-extern crate ekiden_contract_client;
-use ekiden_contract_client::create_contract_client;
+use client_utils::{default_app, runtime_client};
+extern crate ekiden_runtime_client;
+use ekiden_runtime_client::create_runtime_client;
 extern crate ekiden_core;
 extern crate ekiden_rpc_client;
 extern crate ekiden_tracing;
@@ -32,7 +32,7 @@ use ethereum_api::{with_api, AccountState};
 use std::time::{Duration, Instant};
 
 with_api! {
-    create_contract_client!(ethereum, ethereum_api, api);
+    create_runtime_client!(ethereum, ethereum_api, api);
 }
 
 /// When restoring an exported state, inject this many accounts at a time.
@@ -165,7 +165,7 @@ fn main() {
     // Initialize tracing.
     ekiden_tracing::report_forever("genesis", &args);
 
-    let client = contract_client!(ethereum, args, container);
+    let client = runtime_client!(ethereum, args, container);
 
     let state_path = args.value_of("exported_state").unwrap();
     let state_fb = filebuffer::FileBuffer::open(state_path).unwrap();

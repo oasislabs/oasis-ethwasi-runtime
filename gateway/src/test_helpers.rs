@@ -141,7 +141,7 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
 
-    contract_client!(runtime_ethereum, args, container)
+    runtime_client!(runtime_ethereum, args, container)
 }
 
 pub struct MockDb {
