@@ -11,6 +11,7 @@ use super::state::Cache;
 use super::storage::GlobalStorage;
 
 lazy_static! {
+    pub(crate) static ref BLOCK_GAS_LIMIT: U256 = U256::from(32_000_000);
     pub(crate) static ref SPEC: Spec = {
         #[cfg(not(feature = "benchmark"))]
         let spec_json = include_str!("../resources/genesis/genesis.json");
