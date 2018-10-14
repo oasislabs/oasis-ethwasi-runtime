@@ -22,8 +22,11 @@ use ethcore::{rlp,
 use ethereum_api::{ExecuteTransactionResponse, Receipt};
 use ethereum_types::{Address, H256, U256};
 use ethkey::Secret;
-use runtime_ethereum::{execute_raw_transaction, get_account_nonce, get_receipt,
-                       storage::GlobalStorage, EthereumBatchHandler};
+use runtime_ethereum::{execute_raw_transaction,
+                       get_account_nonce,
+                       get_receipt,
+                       storage::{get_storage_backend, GlobalStorage},
+                       EthereumBatchHandler};
 
 fn dummy_ctx() -> ContractCallContext {
     let root_hash = DatabaseHandle::instance().get_root_hash();
@@ -34,7 +37,9 @@ fn dummy_ctx() -> ContractCallContext {
     });
 
     // Initialize the context in the same way as a batch handler does.
-    let batch_handler = EthereumBatchHandler;
+    let batch_handler = EthereumBatchHandler {
+        storage: get_storage_backend(),
+    };
     batch_handler.start_batch(&mut ctx);
 
     ctx
@@ -44,8 +49,16 @@ fn with_batch_handler<F, R>(f: F) -> R
 where
     F: FnOnce(&mut ContractCallContext) -> R,
 {
-    let mut ctx = dummy_ctx();
-    let batch_handler = EthereumBatchHandler;
+    let root_hash = DatabaseHandle::instance().get_root_hash();
+    let mut ctx = ContractCallContext::new(Header {
+        timestamp: 0xcafedeadbeefc0de,
+        state_root: root_hash,
+        ..Default::default()
+    });
+
+    let batch_handler = EthereumBatchHandler {
+        storage: get_storage_backend(),
+    };
     batch_handler.start_batch(&mut ctx);
 
     let result = f(&mut ctx);

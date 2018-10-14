@@ -89,11 +89,11 @@ impl<'a> EthereumContext<'a> {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(target_env = "sgx")]
 pub struct EthereumBatchHandler;
-#[cfg(test)]
+#[cfg(not(target_env = "sgx"))]
 pub struct EthereumBatchHandler {
-    /// Allow to configure the storage backend in tests.
+    /// Allow to configure the storage backend in non-SGX environments.
     pub storage: Arc<StorageBackend>,
 }
 
@@ -103,13 +103,9 @@ impl BatchHandler for EthereumBatchHandler {
         let root_hash = ctx.header.state_root;
 
         // Create a new storage backend.
-        #[cfg(not(test))]
         #[cfg(target_env = "sgx")]
         let storage = Arc::new(UntrustedStorageBackend::new());
-        #[cfg(not(test))]
         #[cfg(not(target_env = "sgx"))]
-        let storage = Arc::new(DummyStorageBackend::new());
-        #[cfg(test)]
         let storage = self.storage.clone();
 
         // Create a fresh database instance for the given root hash.

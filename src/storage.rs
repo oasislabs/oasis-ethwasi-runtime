@@ -43,3 +43,9 @@ impl Storage for GlobalStorage {
         }
     }
 }
+
+/// Return the storage backend used by global storage.
+#[cfg(not(target_env = "sgx"))]
+pub fn get_storage_backend() -> Arc<StorageBackend> {
+    BACKEND.clone()
+}
