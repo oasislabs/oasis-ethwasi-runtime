@@ -339,13 +339,18 @@ impl Encrypter for _Encrypter {
     fn encrypt(
         &self,
         plaintext: Vec<u8>,
-        peer_public_key: &[u8; 32],
+        peer_public_key: Vec<u8>,
     ) -> std::result::Result<Vec<u8>, String> {
+        if peer_public_key.len() < 32 {
+            return Err("public keys must be 32 bytes long".to_string());
+        }
         // just generate arbitrary nonce for now (change this to a random nonce once we encrypt
         // with an actual key manager)
         let mut nonce = [1u8; NONCE_SIZE];
-        confidential::encrypt(plaintext, nonce.to_vec(), *peer_public_key)
-            .map_err(|_| "Error".to_string())
+        let mut pub_key: [u8; 32] = Default::default();
+        pub_key.copy_from_slice(&peer_public_key[..32]);
+        confidential::encrypt(plaintext, nonce.to_vec(), pub_key)
+            .map_err(|_| "could not decrypt".to_string())
     }
 
     /// Returns a tuple containing the nonce, public key, and plaintext
@@ -353,11 +358,11 @@ impl Encrypter for _Encrypter {
     fn decrypt(
         &self,
         cypher: Vec<u8>,
-    ) -> std::result::Result<(Vec<u8>, [u8; 32], Vec<u8>), String> {
+    ) -> std::result::Result<(Vec<u8>, Vec<u8>, Vec<u8>), String> {
         let decryption = confidential::decrypt(Some(cypher)).map_err(|_| "Error".to_string())?;
         Ok((
             decryption.nonce,
-            decryption.peer_public_key,
+            decryption.peer_public_key.to_vec(),
             decryption.plaintext,
         ))
     }
