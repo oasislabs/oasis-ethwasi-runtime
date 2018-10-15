@@ -14,8 +14,8 @@ use std::str::FromStr;
 
 use either::Either;
 use ekiden_roothash_base::Header;
-use ekiden_trusted::{contract::dispatcher::{BatchHandler, ContractCallContext},
-                     db::{Database, DatabaseHandle}};
+use ekiden_trusted::{db::{Database, DatabaseHandle},
+                     runtime::dispatcher::{BatchHandler, RuntimeCallContext}};
 use ethcore::{rlp,
               storage::Storage,
               transaction::{Action, SignedTransaction, Transaction}};
@@ -28,9 +28,9 @@ use runtime_ethereum::{execute_raw_transaction,
                        storage::{get_storage_backend, GlobalStorage},
                        EthereumBatchHandler};
 
-fn dummy_ctx() -> ContractCallContext {
+fn dummy_ctx() -> RuntimeCallContext {
     let root_hash = DatabaseHandle::instance().get_root_hash();
-    let mut ctx = ContractCallContext::new(Header {
+    let mut ctx = RuntimeCallContext::new(Header {
         timestamp: 0xcafedeadbeefc0de,
         state_root: root_hash,
         ..Default::default()
@@ -47,10 +47,10 @@ fn dummy_ctx() -> ContractCallContext {
 
 fn with_batch_handler<F, R>(f: F) -> R
 where
-    F: FnOnce(&mut ContractCallContext) -> R,
+    F: FnOnce(&mut RuntimeCallContext) -> R,
 {
     let root_hash = DatabaseHandle::instance().get_root_hash();
-    let mut ctx = ContractCallContext::new(Header {
+    let mut ctx = RuntimeCallContext::new(Header {
         timestamp: 0xcafedeadbeefc0de,
         state_root: root_hash,
         ..Default::default()

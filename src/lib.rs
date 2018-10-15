@@ -40,11 +40,11 @@ use ekiden_storage_base::StorageBackend;
 use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(target_env = "sgx")]
 use ekiden_trusted::db::untrusted::UntrustedStorageBackend;
-use ekiden_trusted::{contract::{configure_runtime_dispatch_batch_handler,
-                                create_contract,
-                                dispatcher::{BatchHandler, ContractCallContext}},
-                     db::{Database, DatabaseHandle},
-                     enclave::enclave_init};
+use ekiden_trusted::{db::{Database, DatabaseHandle},
+                     enclave::enclave_init,
+                     runtime::{configure_runtime_dispatch_batch_handler,
+                               create_runtime,
+                               dispatcher::{BatchHandler, RuntimeCallContext}}};
 use ethcore::{block::{IsBlock, OpenBlock},
               error::BlockError,
               log_entry::LogEntry as EthLogEntry,
@@ -61,9 +61,9 @@ use self::storage::GlobalStorage;
 
 enclave_init!();
 
-// Create enclave contract interface.
+// Create enclave runtime interface.
 with_api! {
-    create_contract!(api);
+    create_runtime!(api);
 }
 
 /// Ethereum-specific batch context.
@@ -98,7 +98,7 @@ pub struct EthereumBatchHandler {
 }
 
 impl BatchHandler for EthereumBatchHandler {
-    fn start_batch(&self, ctx: &mut ContractCallContext) {
+    fn start_batch(&self, ctx: &mut RuntimeCallContext) {
         // Obtain current root hash from the block header.
         let root_hash = ctx.header.state_root;
 
@@ -115,7 +115,7 @@ impl BatchHandler for EthereumBatchHandler {
         ctx.runtime = EthereumContext::new(storage, db);
     }
 
-    fn end_batch(&self, ctx: ContractCallContext) {
+    fn end_batch(&self, ctx: RuntimeCallContext) {
         let timestamp = ctx.header.timestamp;
         let mut ectx = *ctx.runtime.downcast::<EthereumContext>().unwrap();
 
@@ -136,7 +136,7 @@ impl BatchHandler for EthereumBatchHandler {
 configure_runtime_dispatch_batch_handler!(EthereumBatchHandler);
 
 // used for performance debugging
-fn debug_null_call(_request: &bool, _ctx: &ContractCallContext) -> Result<()> {
+fn debug_null_call(_request: &bool, _ctx: &RuntimeCallContext) -> Result<()> {
     Ok(())
 }
 
@@ -153,7 +153,7 @@ fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
 }
 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
-fn inject_accounts(accounts: &Vec<AccountState>, ctx: &mut ContractCallContext) -> Result<()> {
+fn inject_accounts(accounts: &Vec<AccountState>, ctx: &mut RuntimeCallContext) -> Result<()> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     accounts.iter().try_for_each(|ref account| {
@@ -185,7 +185,7 @@ fn inject_accounts(accounts: &Vec<AccountState>, ctx: &mut ContractCallContext) 
 }
 
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
-fn inject_accounts(accounts: &Vec<AccountState>, _ctx: &ContractCallContext) -> Result<()> {
+fn inject_accounts(accounts: &Vec<AccountState>, _ctx: &RuntimeCallContext) -> Result<()> {
     Err(Error::new(
         "API available only in debug and benchmarking builds",
     ))
@@ -194,7 +194,7 @@ fn inject_accounts(accounts: &Vec<AccountState>, _ctx: &ContractCallContext) -> 
 #[cfg(any(debug_assertions, feature = "benchmark"))]
 pub fn inject_account_storage(
     storages: &Vec<(Address, H256, H256)>,
-    ctx: &mut ContractCallContext,
+    ctx: &mut RuntimeCallContext,
 ) -> Result<()> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -215,7 +215,7 @@ pub fn inject_account_storage(
 #[cfg(not(any(debug_assertions, feature = "benchmark")))]
 fn inject_account_storage(
     storage: &Vec<(Address, H256, H256)>,
-    _ctx: &ContractCallContext,
+    _ctx: &RuntimeCallContext,
 ) -> Result<()> {
     Err(Error::new(
         "API available only in debug and benchmarking builds",
@@ -223,13 +223,13 @@ fn inject_account_storage(
 }
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
-pub fn get_block_height(_request: &bool, ctx: &mut ContractCallContext) -> Result<U256> {
+pub fn get_block_height(_request: &bool, ctx: &mut RuntimeCallContext) -> Result<U256> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     Ok(ectx.cache.get_latest_block_number().into())
 }
 
-fn get_block_hash(id: &BlockId, ctx: &mut ContractCallContext) -> Result<Option<H256>> {
+fn get_block_hash(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<H256>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     let hash = match *id {
@@ -241,7 +241,7 @@ fn get_block_hash(id: &BlockId, ctx: &mut ContractCallContext) -> Result<Option<
     Ok(hash)
 }
 
-fn get_block(id: &BlockId, ctx: &mut ContractCallContext) -> Result<Option<Vec<u8>>> {
+fn get_block(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<Vec<u8>>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_block, id: {:?}", id);
@@ -260,35 +260,35 @@ fn get_block(id: &BlockId, ctx: &mut ContractCallContext) -> Result<Option<Vec<u
     }
 }
 
-fn get_logs(filter: &Filter, ctx: &mut ContractCallContext) -> Result<Vec<Log>> {
+fn get_logs(filter: &Filter, ctx: &mut RuntimeCallContext) -> Result<Vec<Log>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_logs, filter: {:?}", filter);
     Ok(ectx.cache.get_logs(filter))
 }
 
-pub fn get_transaction(hash: &H256, ctx: &mut ContractCallContext) -> Result<Option<Transaction>> {
+pub fn get_transaction(hash: &H256, ctx: &mut RuntimeCallContext) -> Result<Option<Transaction>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_transaction, hash: {:?}", hash);
     Ok(ectx.cache.get_transaction(hash))
 }
 
-pub fn get_receipt(hash: &H256, ctx: &mut ContractCallContext) -> Result<Option<Receipt>> {
+pub fn get_receipt(hash: &H256, ctx: &mut RuntimeCallContext) -> Result<Option<Receipt>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_receipt, hash: {:?}", hash);
     Ok(ectx.cache.get_receipt(hash))
 }
 
-pub fn get_account_balance(address: &Address, ctx: &mut ContractCallContext) -> Result<U256> {
+pub fn get_account_balance(address: &Address, ctx: &mut RuntimeCallContext) -> Result<U256> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_account_balance, address: {:?}", address);
     ectx.cache.get_account_balance(address)
 }
 
-pub fn get_account_nonce(address: &Address, ctx: &mut ContractCallContext) -> Result<U256> {
+pub fn get_account_nonce(address: &Address, ctx: &mut RuntimeCallContext) -> Result<U256> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_account_nonce, address: {:?}", address);
@@ -297,7 +297,7 @@ pub fn get_account_nonce(address: &Address, ctx: &mut ContractCallContext) -> Re
 
 pub fn get_account_code(
     address: &Address,
-    ctx: &mut ContractCallContext,
+    ctx: &mut RuntimeCallContext,
 ) -> Result<Option<Vec<u8>>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -305,7 +305,7 @@ pub fn get_account_code(
     ectx.cache.get_account_code(address)
 }
 
-pub fn get_storage_at(pair: &(Address, H256), ctx: &mut ContractCallContext) -> Result<H256> {
+pub fn get_storage_at(pair: &(Address, H256), ctx: &mut RuntimeCallContext) -> Result<H256> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
     debug!("get_storage_at, address: {:?}", pair);
@@ -314,7 +314,7 @@ pub fn get_storage_at(pair: &(Address, H256), ctx: &mut ContractCallContext) -> 
 
 pub fn execute_raw_transaction(
     pair: &(Vec<u8>, bool),
-    ctx: &mut ContractCallContext,
+    ctx: &mut RuntimeCallContext,
 ) -> Result<ExecuteTransactionResponse> {
     let mut ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -446,7 +446,7 @@ fn make_unsigned_transaction(
 
 pub fn simulate_transaction(
     request: &TransactionRequest,
-    ctx: &mut ContractCallContext,
+    ctx: &mut RuntimeCallContext,
 ) -> Result<SimulateTransactionResponse> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -510,9 +510,9 @@ mod tests {
             EkidenH256::from_slice(&evm::SPEC.state_root().to_vec());
     }
 
-    fn dummy_ctx() -> ContractCallContext {
+    fn dummy_ctx() -> RuntimeCallContext {
         let root_hash = DatabaseHandle::instance().get_root_hash();
-        let mut ctx = ContractCallContext::new(Header {
+        let mut ctx = RuntimeCallContext::new(Header {
             timestamp: 0xcafedeadbeefc0de,
             state_root: root_hash,
             ..Default::default()
@@ -529,10 +529,10 @@ mod tests {
 
     fn with_batch_handler<F, R>(f: F) -> R
     where
-        F: FnOnce(&mut ContractCallContext) -> R,
+        F: FnOnce(&mut RuntimeCallContext) -> R,
     {
         let root_hash = DatabaseHandle::instance().get_root_hash();
-        let mut ctx = ContractCallContext::new(Header {
+        let mut ctx = RuntimeCallContext::new(Header {
             timestamp: 0xcafedeadbeefc0de,
             state_root: root_hash,
             ..Default::default()

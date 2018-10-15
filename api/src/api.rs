@@ -1,6 +1,6 @@
-use ekiden_core::contract::contract_api;
+use ekiden_core::runtime::runtime_api;
 
-contract_api! {
+runtime_api! {
     pub fn inject_accounts(Vec<AccountState>) -> ();
 
     pub fn inject_account_storage(Vec<(Address, H256, H256)>) -> ();

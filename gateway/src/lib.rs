@@ -70,10 +70,10 @@ extern crate vm;
 #[macro_use]
 extern crate client_utils;
 extern crate ekiden_common;
-extern crate ekiden_contract_client;
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
 extern crate ekiden_di;
+extern crate ekiden_runtime_client;
 #[macro_use]
 extern crate ekiden_instrumentation;
 extern crate ekiden_keymanager_common;
@@ -115,16 +115,16 @@ use std::sync::Arc;
 use clap::ArgMatches;
 use ethereum_types::U256;
 
-use ekiden_contract_client::create_contract_client;
 use ekiden_core::environment::Environment;
 use ekiden_di::Container;
+use ekiden_runtime_client::create_runtime_client;
 use ekiden_storage_base::StorageBackend;
 use ethereum_api::with_api;
 
 pub use self::run::RunningClient;
 
 with_api! {
-    create_contract_client!(runtime_ethereum, ethereum_api, api);
+    create_runtime_client!(runtime_ethereum, ethereum_api, api);
 }
 
 pub fn start(
@@ -136,7 +136,7 @@ pub fn start(
     ws_port: u16,
     gas_price: U256,
 ) -> Result<RunningClient, String> {
-    let client = contract_client!(runtime_ethereum, args, container);
+    let client = runtime_client!(runtime_ethereum, args, container);
     let storage: Arc<StorageBackend> = container
         .inject()
         .map_err(|err| err.description().to_string())?;
@@ -146,9 +146,9 @@ pub fn start(
 
     #[cfg(feature = "read_state")]
     {
-        let contract_id = client_utils::args::get_contract_id(&args);
+        let runtime_id = client_utils::args::get_runtime_id(&args);
         let snapshot_manager =
-            client_utils::db::Manager::new_from_injected(contract_id, &mut container).unwrap();
+            client_utils::db::Manager::new_from_injected(runtime_id, &mut container).unwrap();
 
         run::execute(
             client,
