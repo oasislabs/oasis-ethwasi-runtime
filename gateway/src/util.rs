@@ -1,5 +1,4 @@
 use std::io::Cursor;
-use std::path::Path;
 
 use ethereum_api::{BlockId as EkidenBlockId, Log};
 

@@ -192,19 +192,17 @@ where
     T: 'static + Database + Send + Sync,
 {
     // returns None if the database has not been initialized (i.e., no best block)
-    pub fn new(storage: Arc<StorageBackend>, db: T) -> Option<Self> {
+    pub fn new(storage: Arc<StorageBackend>, db: T) -> Result<Option<Self>, String> {
         let blockchain_db = Arc::new(BlockchainStateDb::new(db));
         let state_db = StorageHashDB::new(storage, blockchain_db.clone());
         let state_backend = WrappedBackend(Box::new(state_db.clone()));
 
-        let instance = Self {
-            blockchain_db,
-            state_backend,
-        };
-
-        match instance.best_block_hash() {
-            Some(_) => Some(instance),
-            None => None,
+        match blockchain_db.get(db::COL_EXTRA, b"best") {
+            Ok(best) => Ok(best.map(|_| Self {
+                blockchain_db,
+                state_backend,
+            })),
+            Err(e) => Err(e.to_string()),
         }
     }
 
@@ -273,7 +271,7 @@ mod tests {
     #[test]
     fn test_get_statedb_empty() {
         let db = MockDb::new();
-        let state = StateDb::new(db.storage(), db);
+        let state = StateDb::new(db.storage(), db).unwrap();
         assert!(state.is_none());
     }
 
@@ -285,7 +283,7 @@ mod tests {
             &get_key(db::COL_EXTRA, b"best"),
             &H256::from("0xec891bd71e6d6a64ec299b8641c6cce3638989c03a4a41fd5898a2c0356c7ae6"),
         );
-        let state = StateDb::new(db.storage(), db);
+        let state = StateDb::new(db.storage(), db).unwrap();
         assert!(state.is_some());
     }
 
@@ -294,7 +292,7 @@ mod tests {
         let mut db = MockDb::new();
         // populate the db with test data
         db.populate();
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
         assert_eq!(state.best_block_number(), 4);
     }
 
@@ -308,7 +306,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // all blocks
         let blocks = vec![
@@ -342,7 +340,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // get ethstate at latest block
         let ethstate = state.get_ethstate_at(BlockId::Latest).unwrap();
@@ -371,7 +369,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // get the transaction from block 4
         let tx = state
@@ -391,7 +389,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         let receipt = state
             .transaction_address(&H256::from(
@@ -410,7 +408,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // get best block
         let best_block = state
@@ -428,7 +426,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // a deployed contract
         let deployed_contract = Address::from("fbe2ab6ee22dace9e2ca1cb42c57bf94a32ddd41");
