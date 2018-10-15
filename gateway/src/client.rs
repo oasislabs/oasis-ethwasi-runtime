@@ -96,12 +96,12 @@ impl Client {
     ) -> Self {
         let storage = Web3GlobalStorage::new(backend.clone());
 
-        // get current block number
+        // get current block number from db snapshot (or 0)
         let current_block_number = match snapshot_manager {
             Some(ref manager) => match state::StateDb::new(backend.clone(), manager.get_snapshot())
             {
-                Some(db) => db.best_block_number(),
-                None => 0,
+                Ok(db) => db.map_or(0, |db| db.best_block_number()),
+                Err(_) => 0,
             },
             None => 0,
         };
@@ -291,12 +291,14 @@ impl Client {
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         match self.snapshot_manager {
             Some(ref manager) => {
-                let ret = state::StateDb::new(self.storage_backend.clone(), manager.get_snapshot());
-                if ret.is_none() {
-                    measure_counter_inc!("read_state_failed");
-                    error!("Could not get db snapshot");
+                match state::StateDb::new(self.storage_backend.clone(), manager.get_snapshot()) {
+                    Ok(db) => db,
+                    Err(e) => {
+                        measure_counter_inc!("read_state_failed");
+                        error!("Could not get db snapshot: {:?}", e);
+                        None
+                    }
                 }
-                ret
             }
             None => None,
         }
@@ -307,7 +309,7 @@ impl Client {
     fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
         let mut db = MockDb::new();
         db.populate();
-        Some(StateDb::new(db.storage(), db).unwrap())
+        StateDb::new(db.storage(), db).unwrap()
     }
 
     // block-related
@@ -879,7 +881,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // start with best block
         let hashes = Client::last_hashes(
@@ -918,7 +920,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         let envinfo = Client::get_env_info(&state);
         assert_eq!(envinfo.number, 5);
@@ -939,7 +941,7 @@ mod tests {
         db.populate();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         // blocks 1...4
         let headers = Client::headers_since(&state, 1, 4, 256);
