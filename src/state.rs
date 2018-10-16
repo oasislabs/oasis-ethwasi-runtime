@@ -13,7 +13,7 @@ use ethcore::{self,
               filter::Filter as EthcoreFilter,
               header::Header,
               kvdb::{self, KeyValueDB},
-              state::{backend::Wrapped as WrappedBackend, Encrypter},
+              state::{backend::Wrapped as WrappedBackend, Encrypter, KeyManager},
               transaction::Action,
               types::{ids::BlockId,
                       log_entry::{LocalizedLogEntry, LogEntry},
@@ -119,6 +119,7 @@ impl Cache {
             U256::zero(), /* account_start_nonce */
             get_factories(),
             Some(Box::new(_Encrypter)),
+            Some(Box::new(_KeyManager)),
         )?)
     }
 
@@ -137,6 +138,7 @@ impl Cache {
             true,                             /* is epoch_begin */
             &mut Vec::new().into_iter(),      /* ancestry */
             Some(Box::new(_Encrypter)),
+            Some(Box::new(_KeyManager)),
         )?)
     }
 
@@ -332,9 +334,17 @@ impl Cache {
     }
 }
 
+/// Implementation of the parity KeyManager trait to inject into the ConfidentialVm.
+struct _KeyManager;
+impl KeyManager for _KeyManager {
+    fn long_term_public_key(&self, contract: Address) -> Vec<u8> {
+        let (pk, _sk) = confidential::default_contract_keys();
+        pk.to_vec()
+    }
+}
+
 /// Implementation of the Encrypter trait to inject into parity for confidential contracts.
 struct _Encrypter;
-
 impl Encrypter for _Encrypter {
     fn encrypt(
         &self,
