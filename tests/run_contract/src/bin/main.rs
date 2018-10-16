@@ -44,14 +44,12 @@ fn main() {
         )
         .get_matches();
 
-    match args.occurrences_of("v") {
-        1 => simple_logger::init_with_level(log::Level::Trace),
-        2 => simple_logger::init_with_level(log::Level::Debug),
-        3 => simple_logger::init_with_level(log::Level::Info),
-        4 => simple_logger::init_with_level(log::Level::Warn),
-        5 => simple_logger::init_with_level(log::Level::Error),
-        _ => Ok(()),
-    }.expect("initialize simple logger");
+    simple_logger::init_with_level(match args.occurrences_of("v") {
+        0 => log::Level::Warn,
+        1 => log::Level::Info,
+        2 => log::Level::Debug,
+        _ => log::Level::Trace,
+    }).expect("cound not init simple_logger");
 
     println!("{:?}", store_bytes(&[1, 2, 3, 4, 5]));
     let contract = fs::read(args.value_of("contract").unwrap()).unwrap();
