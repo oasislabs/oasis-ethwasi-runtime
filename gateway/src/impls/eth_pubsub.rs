@@ -114,9 +114,20 @@ impl ChainNotify for ChainNotificationHandler {
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
         for &(ref subscriber, ref filter) in self.logs_subscribers.read().values() {
             let mut filter = filter.clone();
-            // (from, to) <- (max(filter.from_block, from_block), min(filter.to_block, to_block))
+
+            // if filter.from_block == "Latest", replace with from_block
+            if filter.from_block == BlockId::Latest {
+                filter.from_block = from_block;
+            }
+            // if filter.to_block == "Latest", replace with to_block
+            if filter.to_block == BlockId::Latest {
+                filter.to_block = to_block;
+            }
+
+            // limit query to range (from_block, to_block)
             filter.from_block = self.client.max_block_number(filter.from_block, from_block);
             filter.to_block = self.client.min_block_number(filter.to_block, to_block);
+
             let logs = self.client
                 .logs(filter)
                 .into_iter()
@@ -143,7 +154,7 @@ impl EthPubSub for EthPubSubClient {
     ) {
         measure_counter_inc!("subscribe");
         info!(
-            "eth.pubsub.subscribe(subscriber: {:?}, kind: {:?})",
+            "eth_subscribe(subscriber: {:?}, kind: {:?})",
             subscriber, kind
         );
         let error = match (kind, params.into()) {
@@ -175,6 +186,8 @@ impl EthPubSub for EthPubSubClient {
     }
 
     fn unsubscribe(&self, id: SubscriptionId) -> Result<bool> {
+        measure_counter_inc!("unsubscribe");
+        info!("unsubscribe(id: {:?})", id);
         let res = self.heads_subscribers.write().remove(&id).is_some();
         let res2 = self.logs_subscribers.write().remove(&id).is_some();
 
