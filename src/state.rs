@@ -22,7 +22,7 @@ use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
 use runtime_ethereum_common::{get_factories, Backend, BlockchainStateDb, State, StorageHashDB};
 
-use super::evm::{get_contract_address, BLOCK_GAS_LIMIT, SPEC};
+use super::evm::{get_contract_address, GAS_LIMIT, SPEC};
 
 lazy_static! {
     static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
@@ -128,7 +128,7 @@ impl Cache {
             &parent,                          /* parent */
             self.last_hashes(&parent.hash()), /* last hashes */
             Address::default(),               /* author */
-            *BLOCK_GAS_LIMIT,                 /* block gas limit */
+            *GAS_LIMIT,                       /* block gas limit */
             vec![],                           /* extra data */
             true,                             /* is epoch_begin */
             &mut Vec::new().into_iter(),      /* ancestry */
