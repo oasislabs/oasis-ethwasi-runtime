@@ -20,7 +20,7 @@ extern crate ctrlc;
 extern crate fdlimit;
 extern crate log;
 extern crate parking_lot;
-
+extern crate runtime_ethereum_common;
 extern crate web3_gateway;
 
 // Ekiden client packages
@@ -37,6 +37,7 @@ use ctrlc::CtrlC;
 use fdlimit::raise_fd_limit;
 use log::LevelFilter;
 use parking_lot::{Condvar, Mutex};
+use runtime_ethereum_common::MIN_GAS_PRICE_GWEI;
 use std::sync::Arc;
 use web3_gateway::util;
 
@@ -45,6 +46,8 @@ fn main() {
     // TODO: is this needed?
     // increase max number of open files
     raise_fd_limit();
+
+    let gas_price = MIN_GAS_PRICE_GWEI.to_string();
 
     let known_components = client_utils::components::create_known_components();
     let args = default_app!()
@@ -81,7 +84,7 @@ fn main() {
             Arg::with_name("gas-price")
                 .long("gas-price")
                 .help("Gas price (in Gwei).")
-                .default_value("1")
+                .default_value(&gas_price)
                 .takes_value(true),
         )
         .arg(

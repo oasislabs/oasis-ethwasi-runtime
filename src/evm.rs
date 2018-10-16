@@ -6,11 +6,13 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
               transaction::{LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
+use runtime_ethereum_common::BLOCK_GAS_LIMIT;
 
 use super::state::Cache;
 use super::storage::GlobalStorage;
 
 lazy_static! {
+    pub(crate) static ref GAS_LIMIT: U256 = U256::from(BLOCK_GAS_LIMIT);
     pub(crate) static ref SPEC: Spec = {
         #[cfg(not(feature = "benchmark"))]
         let spec_json = include_str!("../resources/genesis/genesis.json");
