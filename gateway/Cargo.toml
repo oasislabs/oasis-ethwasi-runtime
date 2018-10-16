@@ -26,24 +26,24 @@ jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
 wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15", features = ["gateway"] }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
+ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16", features = ["gateway"] }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-parity-machine = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-path = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-kvdb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-journaldb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-mem = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-evm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-vm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
-util-error = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden15" }
+rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+parity-machine = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+path = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+kvdb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+journaldb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+mem = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+evm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+common-types = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+vm = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+util-error = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
 
 ## Common functionality between runtime and gateway
 runtime-ethereum-common = { path = "../common" }
