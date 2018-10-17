@@ -422,6 +422,7 @@ jobs:
       - image: ekiden/testing:0.2.0
     steps:
       - checkout
+      - setup_remote_docker
       - attach_workspace:
           at: /workspace
 
