@@ -26,3 +26,11 @@ debug-assertions = true
 [[bin]]
 name = "run-contract"
 path = "src/bin/main.rs"
+
+[patch."https://github.com/oasislabs/parity"]
+ethcore = { path = "/oasis/parity/ethcore" }
+ethkey = { path = "/oasis/parity/ethkey" }
+rlp = { path = "/oasis/parity/util/rlp" }
+common-types = { path = "/oasis/parity/ethcore/types" }
+hashdb = { path = "/oasis/parity/util/hashdb" }
+keccak-hash = { path = "/oasis/parity/util/hash" }
