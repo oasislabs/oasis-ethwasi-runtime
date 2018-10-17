@@ -45,15 +45,15 @@ use test_helpers::{self, MockDb};
 use util;
 use util::from_block_id;
 
-// record contract call outcome
-fn contract_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
+/// Record runtime call outcome.
+fn runtime_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
     match result {
         Ok(val) => {
-            measure_counter_inc!("contract_call_succeeded");
+            measure_counter_inc!("runtime_call_succeeded");
             val
         }
         Err(e) => {
-            measure_counter_inc!("contract_call_failed");
+            measure_counter_inc!("runtime_call_failed");
             error!("{}: {:?}", call, e);
             default
         }
@@ -320,8 +320,8 @@ impl Client {
                 return db.best_block_number();
             }
         }
-        // fall back to contract call if database has not been initialized
-        contract_call_result(
+        // fall back to runtime call if database has not been initialized
+        runtime_call_result(
             "get_block_height",
             self.block_on(self.client.get_block_height(false)),
             U256::from(0),
@@ -335,8 +335,8 @@ impl Client {
                 return self.block_hash(id).and_then(|h| db.block(&h));
             }
         }
-        // fall back to contract call if database has not been initialized
-        contract_call_result::<Option<Vec<u8>>>(
+        // fall back to runtime call if database has not been initialized
+        runtime_call_result::<Option<Vec<u8>>>(
             "get_block",
             self.block_on(self.client.get_block(from_block_id(id))),
             None,
@@ -366,7 +366,7 @@ impl Client {
         if let BlockId::Hash(hash) = id {
             Some(hash)
         } else {
-            contract_call_result(
+            runtime_call_result(
                 "get_block_hash",
                 self.block_on(self.client.get_block_hash(from_block_id(id))),
                 None,
@@ -408,7 +408,7 @@ impl Client {
 
     #[cfg(not(feature = "read_state"))]
     pub fn transaction(&self, hash: H256) -> Option<Transaction> {
-        contract_call_result(
+        runtime_call_result(
             "get_transaction",
             self.block_on(self.client.get_transaction(hash)),
             None,
@@ -469,7 +469,7 @@ impl Client {
 
     #[cfg(not(feature = "read_state"))]
     pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
-        contract_call_result(
+        runtime_call_result(
             "get_receipt",
             self.block_on(self.client.get_receipt(hash)),
             None,
@@ -553,7 +553,7 @@ impl Client {
             topics: filter.topics.into_iter().map(Into::into).collect(),
             limit: filter.limit.map(Into::into),
         };
-        contract_call_result(
+        runtime_call_result(
             "get_logs",
             self.block_on(self.client.get_logs(filter)),
             vec![],
@@ -584,8 +584,8 @@ impl Client {
                 }
             }
         }
-        // fall back to contract call if database has not been initialized
-        contract_call_result(
+        // fall back to runtime call if database has not been initialized
+        runtime_call_result(
             "get_account_balance",
             self.block_on(self.client.get_account_balance(*address))
                 .map(Some),
@@ -608,8 +608,8 @@ impl Client {
                 }
             }
         }
-        // fall back to contract call if database has not been initialized
-        contract_call_result(
+        // fall back to runtime call if database has not been initialized
+        runtime_call_result(
             "get_account_code",
             self.block_on(self.client.get_account_code(*address))
                 .map(Some),
@@ -631,8 +631,8 @@ impl Client {
                 }
             }
         }
-        // fall back to contract call if database has not been initialized
-        contract_call_result(
+        // fall back to runtime call if database has not been initialized
+        runtime_call_result(
             "get_account_nonce",
             self.block_on(self.client.get_account_nonce(*address))
                 .map(Some),
@@ -654,8 +654,8 @@ impl Client {
                 }
             }
         }
-        // fall back to contract call if database has not been initialized
-        contract_call_result(
+        // fall back to runtime call if database has not been initialized
+        runtime_call_result(
             "get_storage_at",
             self.block_on(self.client.get_storage_at((*address, *position)))
                 .map(Some),
@@ -777,7 +777,7 @@ impl Client {
 
     #[cfg(not(feature = "read_state"))]
     pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
-        contract_call_result(
+        runtime_call_result(
             "simulate_transaction",
             self.block_on(self.client.simulate_transaction(request))
                 .map(|r| r.result),
@@ -786,7 +786,7 @@ impl Client {
     }
 
     pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
-        contract_call_result(
+        runtime_call_result(
             "simulate_transaction",
             self.block_on(self.client.simulate_transaction(request))
                 .map(|r| r.result),
@@ -831,7 +831,7 @@ impl Client {
 
     #[cfg(not(feature = "read_state"))]
     pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
-        contract_call_result(
+        runtime_call_result(
             "simulate_transaction",
             self.block_on(self.client.simulate_transaction(request))
                 .map(|r| Ok(r.used_gas + r.refunded_gas)),
@@ -857,7 +857,7 @@ impl Client {
             Ok(_) => (),
             Err(e) => return Err(e.to_string()),
         }
-        contract_call_result(
+        runtime_call_result(
             "execute_raw_transaction",
             self.block_on(self.client.execute_raw_transaction(raw))
                 .map(|r| {
