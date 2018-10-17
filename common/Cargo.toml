@@ -8,10 +8,10 @@ ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-lru = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden17" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
-hashdb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden16" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden17" }
+hashdb = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden17" }
 elastic-array = "0.10"
 
 [dev-dependencies]
