@@ -14,7 +14,7 @@ const PRIVATE_KEY = new Buffer('c61675c22aee77da8f6e19444ece45557dc80e1482aa848f
 
 program
   .option('--gateway <gateway>', 'gateway http address', 'http://localhost:8545')
-  .option('--gas-limit <limit>', 'contract gas limit', '0x1e84800')
+  .option('--gas-limit <limit>', 'contract gas limit', '0xf42400')
   .option('--gas-price <price>', 'contract gas price', '0x3b9aca00')
   .option('--dump-json', 'dump cURLable json')
   .parse(process.argv);

@@ -81,7 +81,7 @@ lazy_static! {
 /// Either a CREATE containing the contract bytes or a CALL to an address with some data bytes.
 pub fn make_tx(spec: Either<Vec<u8>, (Address, Vec<u8>)>) -> SignedTransaction {
     let mut tx = Transaction::default();
-    tx.gas = U256::from("1e84800");
+    tx.gas = U256::from("f42400");
     tx.nonce = U256::from(get_account_nonce(&DEFAULT_ACCOUNT, &mut dummy_ctx()).unwrap());
     match spec {
         Either::Left(data) => tx.data = data,
