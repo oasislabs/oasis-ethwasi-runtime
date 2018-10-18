@@ -51,6 +51,7 @@ fn main() {
         _ => log::Level::Trace,
     }).expect("cound not init simple_logger");
 
+    store_bytes(&[1, 2, 3, 4, 5]);
     let contract = fs::read(args.value_of("contract").unwrap()).unwrap();
     let create_tx = make_tx(Either::Left(contract));
     if let Some(tx_file) = args.value_of("dump-tx") {

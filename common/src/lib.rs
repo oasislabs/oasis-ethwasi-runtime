@@ -33,7 +33,7 @@ pub type Backend = WrappedBackend;
 pub type State = ethcore::state::State<Backend>;
 
 /// Gas parameters
-pub const BLOCK_GAS_LIMIT: usize = 32_000_000;
+pub const BLOCK_GAS_LIMIT: usize = <usize>::max_value();
 pub const MIN_GAS_PRICE_GWEI: usize = 1;
 
 /// Create factories for various Ethereum data structures.
