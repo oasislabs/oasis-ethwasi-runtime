@@ -93,10 +93,9 @@ jsonrpc-macros = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "p
 jsonrpc-pubsub = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "parity-1.11-ekiden" }
 
 [features]
-default = ["confidential", "pubsub", "read_state"]
-pubsub = ["read_state"]
+default = ["confidential", "pubsub"]
+pubsub = []
 confidential = []
-read_state = []
 
 [[bin]]
 name = "gateway"

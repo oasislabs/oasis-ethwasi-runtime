@@ -24,19 +24,14 @@ use runtime_ethereum;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils;
-#[cfg(feature = "read_state")]
 use client_utils::db::Snapshot;
 use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
-#[cfg(feature = "read_state")]
 use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
 use ethereum_api::TransactionRequest;
-#[cfg(not(feature = "read_state"))]
-use ethereum_api::{Filter, Log, Receipt, Transaction};
-#[cfg(feature = "read_state")]
 use state::{self, EthState, StateDb};
 use storage::Web3GlobalStorage;
 #[cfg(test)]
@@ -287,7 +282,7 @@ impl Client {
 
     /// Returns a StateDb backed by an Ekiden db snapshot, or None when the
     /// blockchain database has not yet been initialized by the runtime.
-    #[cfg(all(not(test), feature = "read_state"))]
+    #[cfg(not(test))]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
         match self.snapshot_manager {
             Some(ref manager) => {
@@ -305,7 +300,7 @@ impl Client {
     }
 
     /// Returns a MockDb-backed StateDb for unit tests.
-    #[cfg(all(test, feature = "read_state"))]
+    #[cfg(test)]
     fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
         let mut db = MockDb::new();
         db.populate();
@@ -314,12 +309,10 @@ impl Client {
 
     // block-related
     pub fn best_block_number(&self) -> BlockNumber {
-        #[cfg(feature = "read_state")]
-        {
-            if let Some(db) = self.get_db_snapshot() {
-                return db.best_block_number();
-            }
+        if let Some(db) = self.get_db_snapshot() {
+            return db.best_block_number();
         }
+
         // fall back to runtime call if database has not been initialized
         runtime_call_result(
             "get_block_height",
@@ -329,12 +322,10 @@ impl Client {
     }
 
     pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
-        #[cfg(feature = "read_state")]
-        {
-            if let Some(db) = self.get_db_snapshot() {
-                return self.block_hash(id).and_then(|h| db.block(&h));
-            }
+        if let Some(db) = self.get_db_snapshot() {
+            return self.block_hash(id).and_then(|h| db.block(&h));
         }
+
         // fall back to runtime call if database has not been initialized
         runtime_call_result::<Option<Vec<u8>>>(
             "get_block",
@@ -343,7 +334,6 @@ impl Client {
         ).map(|block| encoded::Block::new(block))
     }
 
-    #[cfg(feature = "read_state")]
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
         if let BlockId::Hash(hash) = id {
             Some(hash)
@@ -361,20 +351,6 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "read_state"))]
-    pub fn block_hash(&self, id: BlockId) -> Option<H256> {
-        if let BlockId::Hash(hash) = id {
-            Some(hash)
-        } else {
-            runtime_call_result(
-                "get_block_hash",
-                self.block_on(self.client.get_block_hash(from_block_id(id))),
-                None,
-            )
-        }
-    }
-
-    #[cfg(feature = "read_state")]
     fn id_to_block_number(&self, id: BlockId) -> Option<BlockNumber> {
         match id {
             BlockId::Latest => Some(self.best_block_number()),
@@ -388,7 +364,7 @@ impl Client {
     }
 
     // transaction-related
-    #[cfg(feature = "read_state")]
+
     pub fn transaction(&self, id: TransactionId) -> Option<LocalizedTransaction> {
         if let Some(db) = self.get_db_snapshot() {
             let address = match id {
@@ -406,16 +382,6 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "read_state"))]
-    pub fn transaction(&self, hash: H256) -> Option<Transaction> {
-        runtime_call_result(
-            "get_transaction",
-            self.block_on(self.client.get_transaction(hash)),
-            None,
-        )
-    }
-
-    #[cfg(feature = "read_state")]
     pub fn transaction_receipt(&self, hash: H256) -> Option<LocalizedReceipt> {
         if let Some(db) = self.get_db_snapshot() {
             let address = db.transaction_address(&hash)?;
@@ -467,16 +433,6 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "read_state"))]
-    pub fn transaction_receipt(&self, hash: H256) -> Option<Receipt> {
-        runtime_call_result(
-            "get_receipt",
-            self.block_on(self.client.get_receipt(hash)),
-            None,
-        )
-    }
-
-    #[cfg(feature = "read_state")]
     fn id_to_block_hash<T>(db: &StateDb<T>, id: BlockId) -> Option<H256>
     where
         T: 'static + Database + Send + Sync,
@@ -489,7 +445,6 @@ impl Client {
         }
     }
 
-    #[cfg(feature = "read_state")]
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<LocalizedLogEntry> {
         if let Some(db) = self.get_db_snapshot() {
             let fetch_logs = || {
@@ -541,49 +496,27 @@ impl Client {
         }
     }
 
-    #[cfg(not(feature = "read_state"))]
-    pub fn logs(&self, filter: EthcoreFilter) -> Vec<Log> {
-        let filter = Filter {
-            from_block: from_block_id(filter.from_block),
-            to_block: from_block_id(filter.to_block),
-            address: match filter.address {
-                Some(address) => Some(address.into_iter().map(Into::into).collect()),
-                None => None,
-            },
-            topics: filter.topics.into_iter().map(Into::into).collect(),
-            limit: filter.limit.map(Into::into),
-        };
-        runtime_call_result(
-            "get_logs",
-            self.block_on(self.client.get_logs(filter)),
-            vec![],
-        )
-    }
-
     // account state-related
 
     /// Returns an EthState at the specified BlockId, backed by an Ekiden db
     /// snapshot, or None when the blockchain database has not yet been
     /// initialized by the runtime.
-    #[cfg(feature = "read_state")]
     fn get_ethstate_snapshot_at(&self, id: BlockId) -> Option<EthState> {
         self.get_db_snapshot()?.get_ethstate_at(id)
     }
 
     pub fn balance(&self, address: &Address, id: BlockId) -> Option<U256> {
-        #[cfg(feature = "read_state")]
-        {
-            if let Some(state) = self.get_ethstate_snapshot_at(id) {
-                match state.balance(&address) {
-                    Ok(balance) => return Some(balance),
-                    Err(e) => {
-                        measure_counter_inc!("read_state_failed");
-                        error!("Could not get balance from ethstate: {:?}", e);
-                        return None;
-                    }
+        if let Some(state) = self.get_ethstate_snapshot_at(id) {
+            match state.balance(&address) {
+                Ok(balance) => return Some(balance),
+                Err(e) => {
+                    measure_counter_inc!("read_state_failed");
+                    error!("Could not get balance from ethstate: {:?}", e);
+                    return None;
                 }
             }
         }
+
         // fall back to runtime call if database has not been initialized
         runtime_call_result(
             "get_account_balance",
@@ -595,19 +528,17 @@ impl Client {
 
     pub fn code(&self, address: &Address, id: BlockId) -> Option<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
-        #[cfg(feature = "read_state")]
-        {
-            if let Some(state) = self.get_ethstate_snapshot_at(id) {
-                match state.code(&address) {
-                    Ok(code) => return Some(code.map(|c| (&*c).clone())),
-                    Err(e) => {
-                        measure_counter_inc!("read_state_failed");
-                        error!("Could not get code from ethstate: {:?}", e);
-                        return None;
-                    }
+        if let Some(state) = self.get_ethstate_snapshot_at(id) {
+            match state.code(&address) {
+                Ok(code) => return Some(code.map(|c| (&*c).clone())),
+                Err(e) => {
+                    measure_counter_inc!("read_state_failed");
+                    error!("Could not get code from ethstate: {:?}", e);
+                    return None;
                 }
             }
         }
+
         // fall back to runtime call if database has not been initialized
         runtime_call_result(
             "get_account_code",
@@ -618,19 +549,17 @@ impl Client {
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
-        #[cfg(feature = "read_state")]
-        {
-            if let Some(state) = self.get_ethstate_snapshot_at(id) {
-                match state.nonce(&address) {
-                    Ok(nonce) => return Some(nonce),
-                    Err(e) => {
-                        measure_counter_inc!("read_state_failed");
-                        error!("Could not get nonce from ethstate: {:?}", e);
-                        return None;
-                    }
+        if let Some(state) = self.get_ethstate_snapshot_at(id) {
+            match state.nonce(&address) {
+                Ok(nonce) => return Some(nonce),
+                Err(e) => {
+                    measure_counter_inc!("read_state_failed");
+                    error!("Could not get nonce from ethstate: {:?}", e);
+                    return None;
                 }
             }
         }
+
         // fall back to runtime call if database has not been initialized
         runtime_call_result(
             "get_account_nonce",
@@ -641,19 +570,17 @@ impl Client {
     }
 
     pub fn storage_at(&self, address: &Address, position: &H256, id: BlockId) -> Option<H256> {
-        #[cfg(feature = "read_state")]
-        {
-            if let Some(state) = self.get_ethstate_snapshot_at(id) {
-                match state.storage_at(address, position) {
-                    Ok(val) => return Some(val),
-                    Err(e) => {
-                        measure_counter_inc!("read_state_failed");
-                        error!("Could not get storage from ethstate: {:?}", e);
-                        return None;
-                    }
+        if let Some(state) = self.get_ethstate_snapshot_at(id) {
+            match state.storage_at(address, position) {
+                Ok(val) => return Some(val),
+                Err(e) => {
+                    measure_counter_inc!("read_state_failed");
+                    error!("Could not get storage from ethstate: {:?}", e);
+                    return None;
                 }
             }
         }
+
         // fall back to runtime call if database has not been initialized
         runtime_call_result(
             "get_storage_at",
@@ -663,7 +590,6 @@ impl Client {
         )
     }
 
-    #[cfg(feature = "read_state")]
     fn last_hashes<T>(db: &StateDb<T>, parent_hash: &H256) -> Arc<LastHashes>
     where
         T: 'static + Database + Send + Sync,
@@ -684,7 +610,6 @@ impl Client {
 
     /// Returns a vector of block headers from block numbers start...end (inclusive).
     /// Limited to the `max` most recent headers.
-    #[cfg(feature = "read_state")]
     fn headers_since<T>(
         db: &StateDb<T>,
         start: BlockNumber,
@@ -719,7 +644,6 @@ impl Client {
         headers
     }
 
-    #[cfg(feature = "read_state")]
     fn get_env_info<T>(db: &StateDb<T>) -> EnvInfo
     where
         T: 'static + Database + Send + Sync,
@@ -740,7 +664,6 @@ impl Client {
     }
 
     // transaction-related
-    #[cfg(feature = "read_state")]
     pub fn call(
         &self,
         transaction: &SignedTransaction,
@@ -775,16 +698,6 @@ impl Client {
         Ok(ret)
     }
 
-    #[cfg(not(feature = "read_state"))]
-    pub fn call(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
-        runtime_call_result(
-            "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
-                .map(|r| r.result),
-            Err("no response from runtime".to_string()),
-        )
-    }
-
     pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
         runtime_call_result(
             "simulate_transaction",
@@ -794,7 +707,6 @@ impl Client {
         )
     }
 
-    #[cfg(feature = "read_state")]
     pub fn estimate_gas(
         &self,
         transaction: &SignedTransaction,
@@ -827,16 +739,6 @@ impl Client {
             &*self.storage.read().unwrap(),
         ).transact_virtual(transaction, options)?;
         Ok(ret.gas_used + ret.refunded)
-    }
-
-    #[cfg(not(feature = "read_state"))]
-    pub fn estimate_gas(&self, request: TransactionRequest, _id: BlockId) -> Result<U256, String> {
-        runtime_call_result(
-            "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
-                .map(|r| Ok(r.used_gas + r.refunded_gas)),
-            Err("no response from runtime".to_string()),
-        )
     }
 
     /// Checks whether transaction is well formed and meets min gas price.
@@ -875,11 +777,10 @@ impl Client {
 mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
-    #[cfg(feature = "read_state")]
+
     use test_helpers::{MockDb, MockNotificationHandler};
 
     #[test]
-    #[cfg(feature = "read_state")]
     fn test_last_hashes() {
         let mut db = MockDb::new();
         // populate the db with test data
@@ -918,7 +819,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "read_state")]
     fn test_envinfo() {
         let mut db = MockDb::new();
         // populate the db with test data

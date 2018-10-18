@@ -22,8 +22,6 @@ use std::sync::Arc;
 use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
-#[cfg(not(feature = "read_state"))]
-use util::log_to_rpc_log;
 
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
@@ -41,9 +39,6 @@ use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransac
                             CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
                             Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock,
                             Transaction as RpcTransaction, U256 as RpcU256, Work};
-
-#[cfg(not(feature = "read_state"))]
-use ethereum_api::TransactionRequest;
 
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.
@@ -179,7 +174,6 @@ impl EthClient {
         }
     }
 
-    #[cfg(feature = "read_state")]
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
         let client_transaction = |id| match self.client.transaction(id) {
             Some(t) => Ok(Some(RpcTransaction::from_localized(
@@ -198,43 +192,6 @@ impl EthClient {
                 // we don't have pending blocks
                 Ok(None)
             }
-        }
-    }
-
-    #[cfg(not(feature = "read_state"))]
-    fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
-        if let PendingTransactionId::Hash(hash) = id {
-            let hash: H256 = hash.into();
-            if let Some(tx) = self.client.transaction(hash) {
-                let transaction = RpcTransaction {
-                    hash: tx.hash.into(),
-                    nonce: tx.nonce.into(),
-                    block_hash: tx.block_hash.map(Into::into),
-                    block_number: tx.block_number.map(Into::into),
-                    transaction_index: tx.index.map(Into::into),
-                    from: tx.from.into(),
-                    to: tx.to.map(Into::into),
-                    value: tx.value.into(),
-                    gas_price: tx.gas_price.into(),
-                    gas: tx.gas.into(),
-                    input: tx.input.clone().into(),
-                    creates: tx.creates.map(Into::into),
-                    raw: tx.raw.clone().into(),
-                    public_key: tx.public_key.map(Into::into),
-                    chain_id: tx.chain_id.map(Into::into),
-                    standard_v: tx.standard_v.into(),
-                    v: tx.v.into(),
-                    r: tx.r.into(),
-                    s: tx.s.into(),
-                    condition: None,
-                };
-                Ok(Some(transaction))
-            } else {
-                Ok(None)
-            }
-        } else {
-            warn!("Only transaction hash parameter supported");
-            Ok(None)
         }
     }
 
@@ -486,38 +443,12 @@ impl Eth for EthClient {
         Box::new(future::done(self.transaction(transaction_id)))
     }
 
-    #[cfg(feature = "read_state")]
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         measure_counter_inc!("getTransactionReceipt");
         let hash: H256 = hash.into();
         info!("eth_getTransactionReceipt(hash: {:?})", hash);
         let receipt = self.client.transaction_receipt(hash);
         Box::new(future::ok(receipt.map(Into::into)))
-    }
-
-    #[cfg(not(feature = "read_state"))]
-    fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
-        measure_counter_inc!("getTransactionReceipt");
-        let hash: H256 = hash.into();
-        info!("eth_getTransactionReceipt(hash: {:?})", hash);
-        if let Some(receipt) = self.client.transaction_receipt(hash) {
-            let rpc_receipt = RpcReceipt {
-                transaction_hash: receipt.hash.map(Into::into),
-                transaction_index: receipt.index.map(Into::into),
-                block_hash: receipt.block_hash.map(Into::into),
-                block_number: receipt.block_number.map(Into::into),
-                cumulative_gas_used: receipt.cumulative_gas_used.into(),
-                gas_used: receipt.gas_used.map(Into::into),
-                contract_address: receipt.contract_address.map(Into::into),
-                logs: receipt.logs.into_iter().map(log_to_rpc_log).collect(),
-                state_root: receipt.state_root.map(Into::into),
-                logs_bloom: receipt.logs_bloom.into(),
-                status_code: receipt.status_code.map(Into::into),
-            };
-            Box::new(future::ok(Some(rpc_receipt)))
-        } else {
-            Box::new(future::ok(None))
-        }
     }
 
     fn uncle_by_block_hash_and_index(
@@ -551,18 +482,11 @@ impl Eth for EthClient {
         measure_counter_inc!("getLogs");
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
-        #[cfg(feature = "read_state")]
         let logs = self.client
             .logs(filter.clone())
             .into_iter()
             .map(From::from)
             .collect::<Vec<RpcLog>>();
-        #[cfg(not(feature = "read_state"))]
-        let logs = self.client
-            .logs(filter.clone())
-            .into_iter()
-            .map(log_to_rpc_log)
-            .collect();
         let logs = limit_logs(logs, filter.limit);
         Box::new(future::ok(logs))
     }
@@ -602,7 +526,6 @@ impl Eth for EthClient {
         self.send_raw_transaction(raw)
     }
 
-    #[cfg(feature = "read_state")]
     fn call(
         &self,
         meta: Self::Metadata,
@@ -629,34 +552,6 @@ impl Eth for EthClient {
         ))
     }
 
-    #[cfg(not(feature = "read_state"))]
-    fn call(
-        &self,
-        _meta: Self::Metadata,
-        request: CallRequest,
-        num: Trailing<BlockNumber>,
-    ) -> BoxFuture<Bytes> {
-        measure_counter_inc!("call");
-        measure_histogram_timer!("call_time");
-        let num = num.unwrap_or_default();
-
-        info!("eth_call(request: {:?}, number: {:?})", request, num);
-
-        let request = TransactionRequest {
-            nonce: request.nonce.map(Into::into),
-            caller: request.from.map(Into::into),
-            is_call: request.to.is_some(),
-            address: request.to.map(Into::into),
-            input: request.data.map(Into::into),
-            value: request.value.map(Into::into),
-        };
-        let result = self.client.call(request, Self::get_block_id(num));
-        Box::new(future::done(
-            result.map_err(errors::execution).map(Into::into),
-        ))
-    }
-
-    #[cfg(feature = "read_state")]
     fn estimate_gas(
         &self,
         meta: Self::Metadata,
@@ -673,33 +568,6 @@ impl Eth for EthClient {
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
         let result = self.client.estimate_gas(&signed, Self::get_block_id(num));
         Box::new(future::done(result.map(Into::into).map_err(errors::call)))
-    }
-
-    #[cfg(not(feature = "read_state"))]
-    fn estimate_gas(
-        &self,
-        meta: Self::Metadata,
-        request: CallRequest,
-        num: Trailing<BlockNumber>,
-    ) -> BoxFuture<RpcU256> {
-        measure_counter_inc!("estimateGas");
-        measure_histogram_timer!("estimateGas_time");
-        let num = num.unwrap_or_default();
-
-        info!("eth_estimateGas(request: {:?}, number: {:?})", request, num);
-
-        let request = TransactionRequest {
-            nonce: request.nonce.map(Into::into),
-            caller: request.from.map(Into::into),
-            is_call: request.to.is_some(),
-            address: request.to.map(Into::into),
-            input: request.data.map(Into::into),
-            value: request.value.map(Into::into),
-        };
-        let result = self.client.estimate_gas(request, Self::get_block_id(num));
-        Box::new(future::done(
-            result.map_err(errors::execution).map(Into::into),
-        ))
     }
 
     fn compile_lll(&self, _: String) -> Result<Bytes> {

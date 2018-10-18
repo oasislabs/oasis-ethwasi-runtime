@@ -20,8 +20,6 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use client::Client;
-#[cfg(not(feature = "read_state"))]
-use util::log_to_rpc_log;
 
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::BlockId;
@@ -86,7 +84,6 @@ impl Filterable for EthFilterClient {
         Vec::new()
     }
 
-    #[cfg(feature = "read_state")]
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<Log>> {
         measure_counter_inc!("getFilterLogs");
         info!("eth_getFilterLogs(filter: {:?})", filter);
@@ -96,19 +93,6 @@ impl Filterable for EthFilterClient {
                 .into_iter()
                 .map(From::from)
                 .collect::<Vec<Log>>()
-        }))
-    }
-
-    #[cfg(not(feature = "read_state"))]
-    fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<Log>> {
-        measure_counter_inc!("getFilterLogs");
-        info!("eth_getFilterLogs(filter: {:?})", filter);
-        Box::new(future::ok({
-            self.client
-                .logs(filter)
-                .into_iter()
-                .map(log_to_rpc_log)
-                .collect()
         }))
     }
 
