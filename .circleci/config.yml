@@ -596,19 +596,12 @@ workflows:
             - build-go
             - build-and-test-runtime
             - build-and-test-web3-gateway
-      - manual-approval-on-non-master-branches:
-          # This job requires manual approval in
-          # the CircleCI on non-master branches.
-          type: approval
+      - build-and-publish-docker-image:
           filters:
             branches:
-              ignore: master
-      - build-and-publish-docker-image:
-          # This job does *not* require most other jobs
-          # so this job can run in parallel.
+              only: master
           requires:
             - set-docker-tag
-            - manual-approval-on-non-master-branches
       - deploy-to-staging:
           filters:
             branches:
