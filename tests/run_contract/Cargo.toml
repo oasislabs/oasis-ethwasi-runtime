@@ -34,3 +34,6 @@ rlp = { path = "/oasis/parity/util/rlp" }
 common-types = { path = "/oasis/parity/ethcore/types" }
 hashdb = { path = "/oasis/parity/util/hashdb" }
 keccak-hash = { path = "/oasis/parity/util/hash" }
+
+[patch."https://github.com/oasislabs/wasmi"]
+wasmi = { path = "/oasis/wasmi" }
