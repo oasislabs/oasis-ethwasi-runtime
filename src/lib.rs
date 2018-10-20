@@ -755,9 +755,11 @@ mod tests {
         let (_, address_2) = client.create_contract(code, &U256::from(21));
 
         // Ensure both contracts exist.
-        with_batch_handler(|ctx| {
+        let best_block = with_batch_handler(|ctx| {
             assert_eq!(get_account_balance(&address_1, ctx), Ok(U256::from(42)));
             assert_eq!(get_account_balance(&address_2, ctx), Ok(U256::from(21)));
+            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+            ectx.cache.best_block_header().number()
         });
 
         // Simulate batch rolling back.
@@ -769,6 +771,8 @@ mod tests {
         with_batch_handler(|ctx| {
             assert_eq!(get_account_balance(&address_1, ctx), Ok(U256::from(42)));
             assert_eq!(get_account_balance(&address_2, ctx), Ok(U256::zero()));
+            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+            assert_eq!(best_block, ectx.cache.best_block_header().number() + 1)
         });
     }
 }
