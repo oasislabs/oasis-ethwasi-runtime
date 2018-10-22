@@ -91,7 +91,6 @@ pub fn execute(
         apis: deps_for_rpc_apis.clone(),
         remote: event_loop.raw_remote(),
         stats: rpc_stats.clone(),
-        pool: Some(rpc::CpuPool::new(http_conf.processing_threads)),
     };
 
     // start rpc servers
