@@ -128,16 +128,19 @@ impl ChainNotify for ChainNotificationHandler {
             filter.from_block = self.client.max_block_number(filter.from_block, from_block);
             filter.to_block = self.client.min_block_number(filter.to_block, to_block);
 
-            let logs = self.client
-                .logs(filter)
-                .into_iter()
-                .map(From::from)
-                .collect::<Vec<Log>>();
             let remote = self.remote.clone();
             let subscriber = subscriber.clone();
-            for log in logs {
-                Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
-            }
+            self.remote.spawn({
+                let logs = self.client
+                    .logs(filter)
+                    .into_iter()
+                    .map(From::from)
+                    .collect::<Vec<Log>>();
+                for log in logs {
+                    Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
+                }
+                Ok(())
+            });
         }
     }
 }
