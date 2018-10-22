@@ -366,7 +366,7 @@ jobs:
   build-and-publish-docker-image:
     ##
     # The purpose of this job is to build
-    # and publish docker images for the 
+    # and publish docker images for the
     # current branch or PR.
     #
     # The image is tagged with the value determined
@@ -374,7 +374,7 @@ jobs:
     # from the workspace in this job.
     #
     # NOTE: The published image will NOT be tagged
-    #       as the staging image until the 
+    #       as the staging image until the
     #       deploy-to-staging job.
     ##
     docker:
@@ -417,7 +417,7 @@ jobs:
   deploy-to-staging:
     ##
     # The purpose of this job is to deploy the docker
-    # image built and published in this workflow 
+    # image built and published in this workflow
     # to the staging environment.
     #
     # The docker image is tagged as the latest staging
@@ -436,7 +436,7 @@ jobs:
           name: Load current docker build tag
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
 
-      - run: 
+      - run:
           # Defining this as a variable helps remain DRY and
           # allows for easy changing if necessary.
           name: Set STAGING_TAG env var to 'staging'
@@ -453,7 +453,7 @@ jobs:
           name: Pull the build image from Docker Hub
           command: docker pull
                      oasislabs/ekiden-runtime-ethereum:$BUILD_IMAGE_TAG
-      
+
       - run:
           name: Tag the build image as the latest staging image
           command: docker tag
@@ -583,6 +583,49 @@ jobs:
               }
             }' \
             "https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/master?circle-token=$CIRCLE_TOKEN"
+  dapp-tests:
+    docker:
+      - image: ekiden/testing:0.2.0
+    resource_class: xlarge
+    steps:
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      - checkout
+
+      - run:
+          name: Install ekiden-tools
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-tools
+      - run:
+          name: Install ekiden-compute
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-compute
+      # Attach CircleCI workspace (temp storage for this workflow run)
+      - attach_workspace:
+          at: /workspace
+      # Copy required resources from the workspace
+      - run:
+          name: Copy ekiden-node from workspace
+          command: cp /workspace/go/bin/ekiden ekiden-node
+      - run:
+          name: Ensure target directory exists
+          command: mkdir -p target
+      - run:
+          name: Copy contents of workspace target dir to target dir on agent
+          command: cp -R /workspace/target/* target/
+      # Finally run the tests
+      - run:
+          name: Run all contract test suites from external dapps
+          command: ./scripts/test-dapps.sh
 
 workflows:
   version: 2
@@ -597,6 +640,11 @@ workflows:
       - build-genesis
       - build-playback
       - build-run-contract
+      - dapp-tests:
+          requires:
+            - build-go
+            - build-and-test-runtime
+            - build-and-test-web3-gateway
       - end-to-end-tests:
           requires:
             - build-go
