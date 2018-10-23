@@ -37,10 +37,10 @@ run_test() {
     OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
 
-    if [ "$OUTPUT" = "0x4d61746368696e6720636c617373657320697320313030" ]; then
+    if [ "$OUTPUT" = "0x726573756c74" ]; then
         echo "Test passed."
     else
-        echo "Incorrect output. Expected 0x4d61746368696e6720636c617373657320697320313030."
+        echo "Incorrect output. Expected 0x726573756c74."
         exit 1
     fi
 
