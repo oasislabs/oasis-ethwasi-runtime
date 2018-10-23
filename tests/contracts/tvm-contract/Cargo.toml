@@ -1,0 +1,6 @@
+[package]
+name = "tvm-contract"
+version = "0.1.0"
+authors = ["sharmaster96 <ennsharma@oasislabs.com>"]
+
+[dependencies]
