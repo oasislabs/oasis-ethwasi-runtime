@@ -9,9 +9,8 @@ run_test() {
     trap 'kill -- -0' EXIT
 
     echo "Building contract."
-    pushd /oasis/tvm_contract > /dev/null
-    make clean
-    make
+    pushd ${WORKDIR}/tests/contracts/tvm-contract > /dev/null
+    ./build.sh
     popd > /dev/null
 
     # Start dummy node.

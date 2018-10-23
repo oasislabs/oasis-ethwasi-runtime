@@ -136,8 +136,7 @@ pub fn call() {
     let mut a_dl: DLTensor = (&mut a).into();
     let mut b_dl: DLTensor = (&mut b).into();
 
-	// let mut a_dl: DLTensor = (&mut t).into();
-	// call_packed!(tvm_fn, &mut a_dl);
+    let c = Array::from_vec(vec![2f32, 1., 2., 3.]);
 
     let _result: i32 = call_packed!(add_one, &mut a_dl, &mut b_dl)
         .try_into()
