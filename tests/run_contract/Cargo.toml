@@ -10,13 +10,13 @@ either = "1.5.0"
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden19" }
+ethcore = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden20" }
 ethereum-api = { path = "../../api" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden19" }
+ethkey = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden20" }
 lazy_static = "1.0.1"
 log = "0.4.5"
-rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden19" }
+rlp = { git = "https://github.com/oasislabs/parity", tag = "v1.12.0-ekiden20" }
 runtime-ethereum = { path = "../../" }
 simple_logger = "0.5.0"
 

@@ -102,10 +102,9 @@ mod rpc;
 mod rpc_apis;
 mod run;
 mod servers;
-#[cfg(feature = "read_state")]
 mod state;
 mod storage;
-#[cfg(all(feature = "read_state", test))]
+#[cfg(test)]
 mod test_helpers;
 mod traits;
 pub mod util;
@@ -144,29 +143,13 @@ pub fn start(
         .inject()
         .map_err(|err| err.description().to_string())?;
 
-    #[cfg(feature = "read_state")]
-    {
-        let runtime_id = client_utils::args::get_runtime_id(&args);
-        let snapshot_manager =
-            client_utils::db::Manager::new_from_injected(runtime_id, &mut container).unwrap();
+    let runtime_id = client_utils::args::get_runtime_id(&args);
+    let snapshot_manager =
+        client_utils::db::Manager::new_from_injected(runtime_id, &mut container).unwrap();
 
-        run::execute(
-            client,
-            Some(snapshot_manager),
-            storage,
-            environment,
-            pubsub_interval_secs,
-            http_port,
-            num_threads,
-            ws_port,
-            gas_price,
-        )
-    }
-
-    #[cfg(not(feature = "read_state"))]
     run::execute(
         client,
-        None,
+        Some(snapshot_manager),
         storage,
         environment,
         pubsub_interval_secs,

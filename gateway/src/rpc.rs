@@ -26,7 +26,6 @@ use rpc_apis::{self, ApiSet};
 
 use servers;
 
-pub use parity_rpc::informant::CpuPool;
 pub use parity_rpc::ws::Server as WsServer;
 pub use parity_rpc::{HttpServer, RequestMiddleware};
 
@@ -124,7 +123,6 @@ pub struct Dependencies<D: rpc_apis::Dependencies> {
     pub apis: Arc<D>,
     pub remote: TokioRemote,
     pub stats: Arc<RpcStats>,
-    pub pool: Option<CpuPool>,
 }
 
 pub fn new_ws<D: rpc_apis::Dependencies>(
@@ -144,11 +142,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
             rpc::WsDispatcher::new(full_handler),
-            Middleware::new(
-                deps.stats.clone(),
-                deps.apis.activity_notifier(),
-                deps.pool.clone(),
-            ),
+            Middleware::new(deps.stats.clone(), deps.apis.activity_notifier(), None),
         ));
         let apis = conf.apis.list_apis();
         deps.apis.extend_with_set(&mut handler, &apis);
@@ -269,7 +263,7 @@ where
     let mut handler = MetaIoHandler::with_middleware(Middleware::new(
         deps.stats.clone(),
         deps.apis.activity_notifier(),
-        deps.pool.clone(),
+        None,
     ));
     let apis = apis.list_apis();
     deps.apis.extend_with_set(&mut handler, &apis);
