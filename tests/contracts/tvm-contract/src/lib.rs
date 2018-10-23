@@ -1,15 +1,11 @@
-<<<<<<< HEAD
 // #[macro_use]
 // extern crate tvm;
 
 extern crate ndarray;
 extern crate pwasm_ethereum;
-=======
 extern crate ndarray;
 #[macro_use]
 extern crate tvm;
-
-extern crate pwasm_ethereum;
 extern crate pwasm_std;
 
 use std::convert::TryInto;
@@ -20,14 +16,12 @@ use tvm::{
     ffi::runtime::DLTensor,
     runtime::{Module, SystemLibModule},
 };
->>>>>>> 63d41c3... Setup integration test
 
 #[no_mangle]
 pub fn deploy() {}
 
 #[no_mangle]
 pub fn call() {
-<<<<<<< HEAD
 	let dataset = vec![vec![0.0, 5.1, 3.5, 1.4, 0.2],
                        vec![0.0, 4.9, 3.0, 1.4, 0.2],
                        vec![0.0, 4.7, 3.2, 1.3, 0.2],
@@ -132,13 +126,6 @@ pub fn call() {
 	let mut a_nd: ndarray::Array = ndarray::Array::from_vec(&dataset);
 	println!("{:?}", a_nd);
 	// let mut a: Tensor = a_nd.into();
-
-	// let mut a_dl: DLTensor = (&mut t).into();
-	// call_packed!(tvm_fn, &mut a_dl);
-
-	// let mut a_nd = ndarray::Array::try_from(&a).unwrap();
-}
-=======
     // Must be run first to register the functions.
     unsafe { __tvm_module_startup(); }
 
@@ -149,7 +136,8 @@ pub fn call() {
     let mut a_dl: DLTensor = (&mut a).into();
     let mut b_dl: DLTensor = (&mut b).into();
 
-    let c = Array::from_vec(vec![2f32, 1., 2., 3.]);
+	// let mut a_dl: DLTensor = (&mut t).into();
+	// call_packed!(tvm_fn, &mut a_dl);
 
     let _result: i32 = call_packed!(add_one, &mut a_dl, &mut b_dl)
         .try_into()
@@ -159,4 +147,3 @@ pub fn call() {
     assert!(c.all_close(&b, 1e-8f32));
     pwasm_ethereum::ret(&b"success"[..]);
 }
->>>>>>> 63d41c3... Setup integration test
