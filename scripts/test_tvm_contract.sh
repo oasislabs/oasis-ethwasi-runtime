@@ -33,7 +33,7 @@ run_test() {
     npm install > /dev/null
     npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
-    OUTPUT="$(./deploy_contract.js --gas-limit 0xf42400 --gas-price 0x3b9aca00 /oasis/tvm_contract/target/tvm_contract.wasm | tail -1)"
+    OUTPUT="$(./deploy_contract.js --gas-limit 0xf42400 --gas-price 0x3b9aca00 ${WORKDIR}/tests/contracts/tvm-contract/target/tvm_contract.wasm | tail -1)"
     echo "Contract address: $OUTPUT"
     OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
