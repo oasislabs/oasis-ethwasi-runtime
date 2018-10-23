@@ -392,6 +392,8 @@ jobs:
       - attach_workspace:
           at: /workspace
 
+      - run: echo "BASE_DOCKER_IMAGE_TAG=c09445b1ba0e43117627c5cc2098bf2eafd28d55" >> $BASH_ENV
+
       - run:
           name: Load current docker build tag
           command: echo "export BUILD_IMAGE_TAG=$(cat /workspace/build_image_tag)" >> $BASH_ENV
@@ -589,71 +591,9 @@ workflows:
   build_and_test_and_release:
     jobs:
       - set-docker-tag
-      - build-go
-      - build-and-test-runtime
-      - build-runtime-benchmark
-      - build-and-test-web3-gateway
-      - build-web3-gateway-benchmark
-      - build-genesis
-      - build-playback
-      - build-run-contract
-      - end-to-end-tests:
-          requires:
-            - build-go
-            - build-and-test-runtime
-            - build-and-test-web3-gateway
       - build-and-publish-docker-image:
-          filters:
-            branches:
-              only: master
           requires:
             - set-docker-tag
-      - deploy-to-staging:
-          filters:
-            branches:
-              only: master
-          requires:
-            # Requires end-to-end-test job so that deploy
-            # will only happen if all tests succeed.
-            - end-to-end-tests
-            - build-and-publish-docker-image
-            - build-go
-            - build-and-test-runtime
-            - build-runtime-benchmark
-            - build-and-test-web3-gateway
-            - build-web3-gateway-benchmark
-            - build-genesis
-            - build-playback
-            - build-run-contract
-      - hold-for-production:
-          type: approval
-          filters:
-            branches:
-              only: master
-          requires:
-            - deploy-to-staging
-      - promote-to-production:
-          filters:
-            branches:
-              only: master
-          requires:
-            - hold-for-production
-      - deploy-to-production:
-          filters:
-            branches:
-              only: master
-          requires:
-            - promote-to-production
-  benchmarking:
-    triggers:
-      - schedule:
-          cron: "0 1 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - benchmark
 
 experimental:
   notify:
