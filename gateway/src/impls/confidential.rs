@@ -70,9 +70,11 @@ impl Confidential for ConfidentialClient {
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
         };
-        let result = self.client.call_enc(request, EthClient::get_block_id(num));
-        Box::new(future::done(
-            result.map(Into::into).map_err(errors::execution),
-        ))
+        Box::new(
+            self.client
+                .call_enc(request, EthClient::get_block_id(num))
+                .map_err(errors::execution)
+                .map(Into::into),
+        )
     }
 }

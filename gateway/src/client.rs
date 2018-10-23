@@ -27,6 +27,7 @@ use client_utils;
 use client_utils::db::Snapshot;
 use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
+use ekiden_core::futures::prelude::*;
 use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
@@ -41,18 +42,26 @@ use util;
 use util::from_block_id;
 
 /// Record runtime call outcome.
-fn runtime_call_result<T>(call: &str, result: Result<T, Error>, default: T) -> T {
-    match result {
-        Ok(val) => {
-            measure_counter_inc!("runtime_call_succeeded");
-            val
-        }
-        Err(e) => {
-            measure_counter_inc!("runtime_call_failed");
-            error!("{}: {:?}", call, e);
-            default
-        }
-    }
+fn record_runtime_call_result<F, T>(call: &'static str, result: F) -> BoxFuture<T>
+where
+    T: 'static + Send,
+    F: 'static + Future<Item = T, Error = Error> + Send,
+{
+    result
+        .then(move |result| {
+            match result {
+                Ok(_) => {
+                    measure_counter_inc!("runtime_call_succeeded");
+                }
+                Err(ref error) => {
+                    measure_counter_inc!("runtime_call_failed");
+                    error!("{}: {:?}", call, error);
+                }
+            }
+
+            result
+        })
+        .into_box()
 }
 
 /// An actor listening to chain events.
@@ -308,30 +317,35 @@ impl Client {
     }
 
     // block-related
+
     pub fn best_block_number(&self) -> BlockNumber {
         if let Some(db) = self.get_db_snapshot() {
             return db.best_block_number();
         }
 
-        // fall back to runtime call if database has not been initialized
-        runtime_call_result(
+        // Fall back to runtime call if database has not been initialized.
+        // NOTE: We need to block on this call as making this method futures-aware
+        //       would complicate the consumers a lot.
+        self.block_on(record_runtime_call_result(
             "get_block_height",
-            self.block_on(self.client.get_block_height(false)),
-            U256::from(0),
-        ).into()
+            self.client
+                .get_block_height(false)
+                .map(|height| height.into()),
+        )).unwrap_or_default()
     }
 
-    pub fn block(&self, id: BlockId) -> Option<encoded::Block> {
+    pub fn block(&self, id: BlockId) -> BoxFuture<Option<encoded::Block>> {
         if let Some(db) = self.get_db_snapshot() {
-            return self.block_hash(id).and_then(|h| db.block(&h));
+            return future::ok(self.block_hash(id).and_then(|h| db.block(&h))).into_box();
         }
 
-        // fall back to runtime call if database has not been initialized
-        runtime_call_result::<Option<Vec<u8>>>(
+        // Fall back to runtime call if database has not been initialized.
+        record_runtime_call_result(
             "get_block",
-            self.block_on(self.client.get_block(from_block_id(id))),
-            None,
-        ).map(|block| encoded::Block::new(block))
+            self.client
+                .get_block(from_block_id(id))
+                .map(|block| block.map(|block| encoded::Block::new(block))),
+        )
     }
 
     pub fn block_hash(&self, id: BlockId) -> Option<H256> {
@@ -505,88 +519,74 @@ impl Client {
         self.get_db_snapshot()?.get_ethstate_at(id)
     }
 
-    pub fn balance(&self, address: &Address, id: BlockId) -> Option<U256> {
+    pub fn balance(&self, address: &Address, id: BlockId) -> BoxFuture<U256> {
         if let Some(state) = self.get_ethstate_snapshot_at(id) {
             match state.balance(&address) {
-                Ok(balance) => return Some(balance),
+                Ok(balance) => return future::ok(balance).into_box(),
                 Err(e) => {
                     measure_counter_inc!("read_state_failed");
                     error!("Could not get balance from ethstate: {:?}", e);
-                    return None;
+                    return future::err(Error::new("Could not get balance")).into_box();
                 }
             }
         }
 
-        // fall back to runtime call if database has not been initialized
-        runtime_call_result(
+        // Fall back to runtime call if database has not been initialized.
+        record_runtime_call_result(
             "get_account_balance",
-            self.block_on(self.client.get_account_balance(*address))
-                .map(Some),
-            None,
+            self.client.get_account_balance(*address),
         )
     }
 
-    pub fn code(&self, address: &Address, id: BlockId) -> Option<Option<Bytes>> {
+    pub fn code(&self, address: &Address, id: BlockId) -> BoxFuture<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
         if let Some(state) = self.get_ethstate_snapshot_at(id) {
             match state.code(&address) {
-                Ok(code) => return Some(code.map(|c| (&*c).clone())),
+                Ok(code) => return future::ok(code.map(|c| (&*c).clone())).into_box(),
                 Err(e) => {
                     measure_counter_inc!("read_state_failed");
                     error!("Could not get code from ethstate: {:?}", e);
-                    return None;
+                    return future::err(Error::new("Could not get code")).into_box();
                 }
             }
         }
 
-        // fall back to runtime call if database has not been initialized
-        runtime_call_result(
-            "get_account_code",
-            self.block_on(self.client.get_account_code(*address))
-                .map(Some),
-            None,
-        )
+        // Fall back to runtime call if database has not been initialized.
+        record_runtime_call_result("get_account_code", self.client.get_account_code(*address))
     }
 
-    pub fn nonce(&self, address: &Address, id: BlockId) -> Option<U256> {
+    pub fn nonce(&self, address: &Address, id: BlockId) -> BoxFuture<U256> {
         if let Some(state) = self.get_ethstate_snapshot_at(id) {
             match state.nonce(&address) {
-                Ok(nonce) => return Some(nonce),
+                Ok(nonce) => return future::ok(nonce).into_box(),
                 Err(e) => {
                     measure_counter_inc!("read_state_failed");
                     error!("Could not get nonce from ethstate: {:?}", e);
-                    return None;
+                    return future::err(Error::new("Could not get nonce")).into_box();
                 }
             }
         }
 
-        // fall back to runtime call if database has not been initialized
-        runtime_call_result(
-            "get_account_nonce",
-            self.block_on(self.client.get_account_nonce(*address))
-                .map(Some),
-            None,
-        )
+        // Fall back to runtime call if database has not been initialized.
+        record_runtime_call_result("get_account_nonce", self.client.get_account_nonce(*address))
     }
 
-    pub fn storage_at(&self, address: &Address, position: &H256, id: BlockId) -> Option<H256> {
+    pub fn storage_at(&self, address: &Address, position: &H256, id: BlockId) -> BoxFuture<H256> {
         if let Some(state) = self.get_ethstate_snapshot_at(id) {
             match state.storage_at(address, position) {
-                Ok(val) => return Some(val),
+                Ok(val) => return future::ok(val).into_box(),
                 Err(e) => {
                     measure_counter_inc!("read_state_failed");
                     error!("Could not get storage from ethstate: {:?}", e);
-                    return None;
+                    return future::err(Error::new("Could not get storage")).into_box();
                 }
             }
         }
 
-        // fall back to runtime call if database has not been initialized
-        runtime_call_result(
+        // Fall back to runtime call if database has not been initialized.
+        record_runtime_call_result(
             "get_storage_at",
-            self.block_on(self.client.get_storage_at((*address, *position)))
-                .map(Some),
-            None,
+            self.client.get_storage_at((*address, *position)),
         )
     }
 
@@ -698,12 +698,12 @@ impl Client {
         Ok(ret)
     }
 
-    pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> Result<Bytes, String> {
-        runtime_call_result(
+    pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> BoxFuture<Bytes> {
+        record_runtime_call_result(
             "simulate_transaction",
-            self.block_on(self.client.simulate_transaction(request))
-                .map(|r| r.result),
-            Err("no response from runtime".to_string()),
+            self.client
+                .simulate_transaction(request)
+                .and_then(|r| r.result.map_err(|error| Error::new(error))),
         )
     }
 
@@ -751,24 +751,28 @@ impl Client {
         if unsigned.gas_price < self.gas_price() {
             return Err("Insufficient gas price".to_string());
         }
+
         Ok(())
     }
 
-    pub fn send_raw_transaction(&self, raw: Bytes) -> Result<H256, String> {
-        match self.precheck_transaction(&raw) {
-            Ok(_) => (),
-            Err(e) => return Err(e.to_string()),
-        }
-        runtime_call_result(
+    /// Submit raw transaction to the current leader.
+    ///
+    /// This method returns immediately and does not wait for the transaction to
+    /// be confirmed.
+    pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
+        if let Err(error) = self.precheck_transaction(&raw) {
+            return future::err(Error::new(error)).into_box();
+        };
+
+        record_runtime_call_result(
             "execute_raw_transaction",
-            self.block_on(self.client.execute_raw_transaction(raw))
-                .map(|r| {
-                    if r.created_contract {
-                        measure_counter_inc!("contract_created")
-                    }
-                    r.hash
-                }),
-            Err("no response from runtime".to_string()),
+            self.client.execute_raw_transaction(raw).and_then(|result| {
+                if result.created_contract {
+                    measure_counter_inc!("contract_created");
+                }
+
+                result.hash.map_err(|error| Error::new(error))
+            }),
         )
     }
 }

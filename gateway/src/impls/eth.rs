@@ -26,7 +26,7 @@ use client::Client;
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
 
-use jsonrpc_core::futures::future;
+use jsonrpc_core::futures::{future, Future};
 use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
@@ -104,9 +104,7 @@ impl EthClient {
         }
     }
 
-    fn rich_block(&self, id: BlockNumberOrId, include_txs: bool) -> Result<Option<RichBlock>> {
-        let client = &self.client;
-
+    fn rich_block(&self, id: BlockNumberOrId, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
         let block = match id {
             BlockNumberOrId::Number(num) => {
                 // for "pending", just use latest block
@@ -117,61 +115,67 @@ impl EthClient {
                     BlockNumber::Pending => BlockId::Latest,
                 };
 
-                client.block(id)
+                self.client.block(id)
             }
 
-            BlockNumberOrId::Id(id) => client.block(id),
+            BlockNumberOrId::Id(id) => self.client.block(id),
         };
 
-        match block {
-            Some(block) => {
-                let view = block.header_view();
-                Ok(Some(RichBlock {
-                    inner: Block {
-                        hash: Some(view.hash().into()),
-                        size: Some(block.rlp().as_raw().len().into()),
-                        parent_hash: view.parent_hash().into(),
-                        uncles_hash: view.uncles_hash().into(),
-                        author: view.author().into(),
-                        miner: view.author().into(),
-                        state_root: view.state_root().into(),
-                        transactions_root: view.transactions_root().into(),
-                        receipts_root: view.receipts_root().into(),
-                        number: Some(view.number().into()),
-                        gas_used: view.gas_used().into(),
-                        gas_limit: view.gas_limit().into(),
-                        logs_bloom: Some(view.log_bloom().into()),
-                        timestamp: view.timestamp().into(),
-                        difficulty: view.difficulty().into(),
-                        total_difficulty: Some(RpcU256::from(0)),
-                        seal_fields: view.seal().into_iter().map(Into::into).collect(),
-                        uncles: block.uncle_hashes().into_iter().map(Into::into).collect(),
-                        transactions: match include_txs {
-                            true => BlockTransactions::Full(
-                                block
-                                    .view()
-                                    .localized_transactions()
-                                    .into_iter()
-                                    .map(|t| {
-                                        RpcTransaction::from_localized(t, self.eip86_transition)
-                                    })
-                                    .collect(),
-                            ),
-                            false => BlockTransactions::Hashes(
-                                block
-                                    .transaction_hashes()
-                                    .into_iter()
-                                    .map(Into::into)
-                                    .collect(),
-                            ),
-                        },
-                        extra_data: Bytes::new(view.extra_data()),
-                    },
-                    extra_info: BLOCK_EXTRA_INFO.clone(),
-                }))
-            }
-            _ => Ok(None),
-        }
+        let eip86_transition = self.eip86_transition;
+
+        Box::new(
+            block
+                .map_err(|error| errors::internal("runtime call failed", error))
+                .map(move |block| match block {
+                    Some(block) => {
+                        let view = block.header_view();
+                        Some(RichBlock {
+                            inner: Block {
+                                hash: Some(view.hash().into()),
+                                size: Some(block.rlp().as_raw().len().into()),
+                                parent_hash: view.parent_hash().into(),
+                                uncles_hash: view.uncles_hash().into(),
+                                author: view.author().into(),
+                                miner: view.author().into(),
+                                state_root: view.state_root().into(),
+                                transactions_root: view.transactions_root().into(),
+                                receipts_root: view.receipts_root().into(),
+                                number: Some(view.number().into()),
+                                gas_used: view.gas_used().into(),
+                                gas_limit: view.gas_limit().into(),
+                                logs_bloom: Some(view.log_bloom().into()),
+                                timestamp: view.timestamp().into(),
+                                difficulty: view.difficulty().into(),
+                                total_difficulty: Some(RpcU256::from(0)),
+                                seal_fields: view.seal().into_iter().map(Into::into).collect(),
+                                uncles: block.uncle_hashes().into_iter().map(Into::into).collect(),
+                                transactions: match include_txs {
+                                    true => BlockTransactions::Full(
+                                        block
+                                            .view()
+                                            .localized_transactions()
+                                            .into_iter()
+                                            .map(|t| {
+                                                RpcTransaction::from_localized(t, eip86_transition)
+                                            })
+                                            .collect(),
+                                    ),
+                                    false => BlockTransactions::Hashes(
+                                        block
+                                            .transaction_hashes()
+                                            .into_iter()
+                                            .map(Into::into)
+                                            .collect(),
+                                    ),
+                                },
+                                extra_data: Bytes::new(view.extra_data()),
+                            },
+                            extra_info: BLOCK_EXTRA_INFO.clone(),
+                        })
+                    }
+                    _ => None,
+                }),
+        )
     }
 
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
@@ -257,12 +261,12 @@ impl Eth for EthClient {
 
         info!("eth_getBalance(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.balance(&address, Self::get_block_id(num)) {
-            Some(balance) => Ok(balance.into()),
-            None => Err(errors::state_pruned()),
-        };
-
-        Box::new(future::done(res))
+        Box::new(
+            self.client
+                .balance(&address, Self::get_block_id(num))
+                .map(|balance| balance.into())
+                .map_err(|_error| errors::state_pruned()),
+        )
     }
 
     fn storage_at(
@@ -281,15 +285,12 @@ impl Eth for EthClient {
             address, position, num
         );
 
-        let res =
-            match self.client
+        Box::new(
+            self.client
                 .storage_at(&address, &H256::from(position), Self::get_block_id(num))
-            {
-                Some(s) => Ok(s.into()),
-                None => Err(errors::state_pruned()),
-            };
-
-        Box::new(future::done(res))
+                .map(|hash| hash.into())
+                .map_err(|_error| errors::state_pruned()),
+        )
     }
 
     fn transaction_count(
@@ -306,59 +307,69 @@ impl Eth for EthClient {
             address, num
         );
 
-        let res = match num {
-            BlockNumber::Pending => match self.client.nonce(&address, BlockId::Latest) {
-                Some(nonce) => Ok(nonce.into()),
-                None => Err(errors::database("latest nonce missing")),
-            },
-            number => match self.client.nonce(&address, block_number_to_id(number)) {
-                Some(nonce) => Ok(nonce.into()),
-                None => Err(errors::state_pruned()),
-            },
+        let result: BoxFuture<U256> = match num {
+            BlockNumber::Pending => Box::new(
+                self.client
+                    .nonce(&address, BlockId::Latest)
+                    .map_err(|_error| errors::database("latest nonce missing")),
+            ),
+            number => Box::new(
+                self.client
+                    .nonce(&address, block_number_to_id(number))
+                    .map_err(|_error| errors::state_pruned()),
+            ),
         };
 
-        Box::new(future::done(res))
+        Box::new(result.map(|nonce| nonce.into()))
     }
 
     fn block_transaction_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getBlockTransactionCountByHash");
         info!("eth_getBlockTransactionCountByHash(hash: {:?})", hash);
-        Box::new(future::ok(
+        Box::new(
             self.client
                 .block(BlockId::Hash(hash.into()))
-                .map(|block| block.transactions_count().into()),
-        ))
+                .map_err(|error| errors::internal("runtime call failed", error))
+                .map(|block| block.map(|block| block.transactions_count().into())),
+        )
     }
 
     fn block_transaction_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getBlockTransactionCountByNumber");
         info!("eth_getBlockTransactionCountByNumber(number: {:?})", num);
-        Box::new(future::ok(match num {
+        match num {
             // we don't have pending blocks
-            BlockNumber::Pending => Some(RpcU256::from(0)),
-            _ => self.client
-                .block(block_number_to_id(num))
-                .map(|block| block.transactions_count().into()),
-        }))
+            BlockNumber::Pending => Box::new(future::ok(Some(RpcU256::from(0)))),
+            _ => Box::new(
+                self.client
+                    .block(block_number_to_id(num))
+                    .map_err(|error| errors::internal("runtime call failed", error))
+                    .map(|block| block.map(|block| block.transactions_count().into())),
+            ),
+        }
     }
 
     fn block_uncles_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getUncleCountByBlockHash");
-        Box::new(future::ok(
+        Box::new(
             self.client
                 .block(BlockId::Hash(hash.into()))
-                .map(|block| block.uncles_count().into()),
-        ))
+                .map_err(|error| errors::internal("runtime call failed", error))
+                .map(|block| block.map(|block| block.uncles_count().into())),
+        )
     }
 
     fn block_uncles_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         measure_counter_inc!("getUncleCountByBlockNumber");
-        Box::new(future::ok(match num {
-            BlockNumber::Pending => Some(0.into()),
-            _ => self.client
-                .block(block_number_to_id(num))
-                .map(|block| block.uncles_count().into()),
-        }))
+        match num {
+            BlockNumber::Pending => Box::new(future::ok(Some(0.into()))),
+            _ => Box::new(
+                self.client
+                    .block(block_number_to_id(num))
+                    .map_err(|error| errors::internal("runtime call failed", error))
+                    .map(|block| block.map(|block| block.uncles_count().into())),
+            ),
+        }
     }
 
     fn code_at(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<Bytes> {
@@ -368,12 +379,12 @@ impl Eth for EthClient {
 
         info!("eth_getCode(address: {:?}, number: {:?})", address, num);
 
-        let res = match self.client.code(&address, Self::get_block_id(num)) {
-            Some(code) => Ok(code.map_or_else(Bytes::default, Bytes::new)),
-            None => Err(errors::state_pruned()),
-        };
-
-        Box::new(future::done(res))
+        Box::new(
+            self.client
+                .code(&address, Self::get_block_id(num))
+                .map(|code| code.map_or_else(Bytes::default, Bytes::new))
+                .map_err(|_error| errors::state_pruned()),
+        )
     }
 
     fn block_by_hash(&self, hash: RpcH256, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
@@ -382,10 +393,7 @@ impl Eth for EthClient {
             "eth_getBlockByHash(hash: {:?}, full: {:?})",
             hash, include_txs
         );
-        Box::new(future::done(self.rich_block(
-            BlockId::Hash(hash.into()).into(),
-            include_txs,
-        )))
+        self.rich_block(BlockId::Hash(hash.into()).into(), include_txs)
     }
 
     fn block_by_number(&self, num: BlockNumber, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
@@ -394,7 +402,7 @@ impl Eth for EthClient {
             "eth_getBlockByNumber(number: {:?}, full: {:?})",
             num, include_txs
         );
-        Box::new(future::done(self.rich_block(num.into(), include_txs)))
+        self.rich_block(num.into(), include_txs)
     }
 
     fn transaction_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcTransaction>> {
@@ -506,7 +514,7 @@ impl Eth for EthClient {
         Err(errors::unimplemented(None))
     }
 
-    fn send_raw_transaction(&self, raw: Bytes) -> Result<RpcH256> {
+    fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {
         measure_counter_inc!("sendRawTransaction");
         measure_histogram_timer!("sendRawTransaction_time");
         if log_enabled!(log::Level::Debug) {
@@ -514,13 +522,16 @@ impl Eth for EthClient {
         } else {
             info!("eth_sendRawTransaction(data: ...)");
         }
-        self.client
-            .send_raw_transaction(raw.into())
-            .map(Into::into)
-            .map_err(errors::execution)
+
+        Box::new(
+            self.client
+                .send_raw_transaction(raw.into())
+                .map(Into::into)
+                .map_err(errors::execution),
+        )
     }
 
-    fn submit_transaction(&self, raw: Bytes) -> Result<RpcH256> {
+    fn submit_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {
         measure_counter_inc!("submitTransaction");
         info!("eth_submitTransaction(data: {:?})", raw);
         self.send_raw_transaction(raw)
