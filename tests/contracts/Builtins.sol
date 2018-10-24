@@ -45,7 +45,7 @@ contract Builtins {
 
 /// Wrapper for built-in BigNumber_modexp (contract 0x5).
 /// See https://github.com/ethereum/EIPs/pull/198 and
-/// https://gist.github.com/lionello/ee285ea220dc64517499c971ff92a2a5
+/// https://gist.github.com/axic/6ae83f0ab7ee2e8e69f4c240c5b90de8
 library ModexpPrecompile {
   function modexp(bytes base, bytes exponent, bytes modulus) internal returns (bool success, bytes output) {
     uint base_length = base.length;
