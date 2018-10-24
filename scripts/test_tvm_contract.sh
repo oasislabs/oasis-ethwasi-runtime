@@ -1,5 +1,4 @@
-#!/bin/bash -e
-
+#!/bin/bash -e;
 WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
