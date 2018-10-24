@@ -11,10 +11,10 @@ pub fn gwei_to_wei(gwei: u64) -> U256 {
 }
 
 pub fn load_spec() -> Spec {
-    #[cfg(not(feature = "benchmark"))]
+    #[cfg(not(any(debug_assertions, feature = "benchmark")))]
     let spec_json = include_str!("../../resources/genesis/genesis.json");
-    #[cfg(feature = "benchmark")]
-    let spec_json = include_str!("../../resources/genesis/genesis_benchmarking.json");
+    #[cfg(any(debug_assertions, feature = "benchmark"))]
+    let spec_json = include_str!("../../resources/genesis/genesis_testing.json");
     Spec::load(Cursor::new(spec_json)).unwrap()
 }
 
