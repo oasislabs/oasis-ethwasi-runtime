@@ -18,7 +18,8 @@ use rlp_compress::{blocks_swapper, decompress};
 
 use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
-pub use runtime_ethereum_common::State as EthState;
+pub use runtime_ethereum_common::{confidential::{Encrypter, KeyManager},
+                                  State as EthState};
 use runtime_ethereum_common::{get_factories, Backend, BlockchainStateDb, StorageHashDB};
 
 pub struct StateDb<T: Database + Send + Sync> {
@@ -214,8 +215,8 @@ where
             root,
             U256::zero(), /* account_start_nonce */
             get_factories(),
-            None,
-            None,
+            Some(Box::new(Encrypter)),
+            Some(Box::new(KeyManager)),
         ) {
             Ok(state) => Some(state),
             Err(e) => {

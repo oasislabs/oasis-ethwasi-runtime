@@ -5,11 +5,14 @@ extern crate ekiden_core;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_lru;
 extern crate ekiden_trusted;
+extern crate ekiden_keymanager_common;
 extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash;
+
+pub mod confidential;
 
 use std::{collections::{hash_map::Entry, HashMap}, sync::{Arc, Mutex}};
 

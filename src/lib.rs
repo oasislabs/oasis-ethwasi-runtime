@@ -3,7 +3,6 @@
 extern crate common_types as ethcore_types;
 extern crate ekiden_common;
 extern crate ekiden_core;
-extern crate ekiden_keymanager_common;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
 extern crate ekiden_storage_lru;
@@ -34,7 +33,6 @@ mod storage;
 use std::sync::Arc;
 
 use ekiden_core::error::{Error, Result};
-use ekiden_keymanager_common::confidential;
 use ekiden_storage_base::StorageBackend;
 #[cfg(not(target_env = "sgx"))]
 use ekiden_storage_dummy::DummyStorageBackend;
