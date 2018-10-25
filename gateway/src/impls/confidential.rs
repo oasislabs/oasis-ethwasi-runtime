@@ -42,7 +42,7 @@ impl Confidential for ConfidentialClient {
             .as_secs();
 
         Ok(PublicKeyResult {
-            key: Bytes::new(public_key.to_vec()),
+            public_key: Bytes::new(public_key.to_vec()),
             timestamp,
             signature: Bytes::new(B512::from(0).to_vec()), // TODO: V1
         })
