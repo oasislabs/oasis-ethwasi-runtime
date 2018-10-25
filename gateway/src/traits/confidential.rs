@@ -26,7 +26,7 @@ build_rpc_trait! {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PublicKeyResult {
     /// Public key of the contract
-    pub key: Bytes,
+    pub public_key: Bytes,
     /// Time at which the key was issued
     pub timestamp: u64,
     /// Signature from the key manager authenticating the public key,
