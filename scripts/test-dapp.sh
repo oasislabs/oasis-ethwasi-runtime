@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-# Runs the test suites for various popular dapps against our gateway.
+# Runs the test suites for dapps against our gateway.
+# CLI args: "celer" or "ens".
 
 WORKDIR=${1:-$(pwd)}
 
@@ -26,14 +27,20 @@ run_test() {
     mkdir -p /tmp/dapps
     cd /tmp/dapps
 
-    run_dapps
+    run_dapp $1
 
     pkill -P $$
 }
 
-run_dapps() {
-    #run_ens
-    :
+run_dapp() {
+    case "$1" in
+        "celer")
+            run_celer
+            ;;
+        "ens")
+            run_ens
+            ;;
+    esac
 }
 
 run_ens() {
@@ -68,4 +75,4 @@ test_wait() {
     fi
 }
 
-run_test
+run_test $1
