@@ -48,7 +48,6 @@ ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
 [workspace]
 members = [
 	"api",
-	"benchmark",
 	"common",
 	"gateway",
 	"genesis",

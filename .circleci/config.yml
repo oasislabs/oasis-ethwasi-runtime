@@ -104,30 +104,6 @@ jobs:
           working_directory: gateway
           command: cargo test
 
-  build-web3-gateway-benchmark:
-    # The purpose of this job is to ensure
-    # that the web3 gateway benchmarking code
-    # compiles. We would also run tests on
-    # web3-gateway-benchmarking, but we don't
-    # have any yet.
-    docker:
-      - image: ekiden/testing:0.2.0
-    resource_class: xlarge
-    steps:
-      # Set up
-      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
-      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
-      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
-      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
-
-      # Check out source from github
-      - checkout
-
-      - run:
-          name: Build the web3 gateway microbenchmark
-          working_directory: benchmark
-          command: cargo build
-
   build-genesis:
     # The purpose of this job is to ensure
     # that the gensis code compiles. Currently,
@@ -203,6 +179,10 @@ jobs:
       - restore_cache:
           keys:
             - go-cache
+
+      # Check out source from github
+      - checkout
+
       - run: |
           wget 'https://github.com/google/protobuf/releases/download/v3.5.1/protoc-3.5.1-linux-x86_64.zip' && \
           sudo unzip protoc-3.5.1-linux-x86_64.zip -x readme.txt -d /usr && \
@@ -225,6 +205,10 @@ jobs:
           go build -v -o ./ekiden/ekiden ./ekiden && \
           cd $GOPATH/src/github.com/oasislabs/ekiden/go/ekiden && \
           go install
+      - run: |
+          cd benchmark && \
+          make && \
+          cp benchmark /go/bin
       - save_cache:
           key: go-cache
           paths:
@@ -613,7 +597,6 @@ workflows:
       - build-and-test-runtime
       - build-runtime-benchmark
       - build-and-test-web3-gateway
-      - build-web3-gateway-benchmark
       - build-genesis
       - build-playback
       - build-run-contract
@@ -646,7 +629,6 @@ workflows:
             - build-and-test-runtime
             - build-runtime-benchmark
             - build-and-test-web3-gateway
-            - build-web3-gateway-benchmark
             - build-genesis
             - build-playback
             - build-run-contract

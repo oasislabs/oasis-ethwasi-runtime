@@ -76,9 +76,10 @@ run_test() {
 
     # Start benchmark.
     echo "Starting benchmark."
-    ${WORKDIR}/benchmark/target/release/web3_benchmark \
-        --threads 100 \
-        transfer eth_blockNumber net_version eth_getBlockByNumber debug_nullCall &
+    benchmark \
+        --benchmarks.concurrency 100 \
+        --benchmarks transfer,eth_blockNumber,net_version,eth_getBlockByNumber \
+        --log.level INFO
     benchmark_pid=$!
 
     # Wait on the benchmark and check its exit status.

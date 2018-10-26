@@ -133,10 +133,16 @@ $ CARGO_TARGET_DIR=target_benchmark cargo ekiden build-enclave --output-identity
 
 The built enclave will be stored under `target_benchmark/enclave/runtime-ethereum.so`.
 
-Release builds of `benchmark`, `gateway`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
+Release builds of `gateway`, `genesis`, and `playback` are also used for benchmarking. To build, for each component:
 ```bash
 $ cd <component>
 $ cargo build --release
+```
+
+The actual benchmark itself is written in Go.  To build the benchmark:
+```bash
+$ cd benchmark
+$ make
 ```
 
 Some sample benchmark driver scripts are located in `scripts/benchmarks/`.
