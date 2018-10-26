@@ -523,17 +523,27 @@ jobs:
       - checkout
       - run: echo "export CIRCLE_SHA1=$(git rev-parse HEAD)" >> $BASH_ENV
       - run: cargo build
-      # install & tarpaulin test.
+      # install tarpaulin
       - run:
           name: Installing Tarpaulin
           command: git clone https://github.com/xd009642/tarpaulin && cd tarpaulin && git checkout tags/0.6.5 && rm Cargo.lock && sed -i 's/proc-macro2 = "/proc-macro2 = "=/' Cargo.toml && cargo install
           working_directory: /root/
-      - run: |
-          cargo tarpaulin --all \
-            --ignore-tests \
-            --out Xml \
-            --coveralls $COVERALLS_REPO_TOKEN \
-            -v
+      # test runtime
+      #- run: |
+      #    cargo tarpaulin --all \
+      #      --ignore-tests \
+      #      --out Xml \
+      #      --coveralls $COVERALLS_REPO_TOKEN \
+      #      -v
+      # test gateway
+      - run:
+          name: Test gateway
+          working_directory: gateway
+          command: cargo tarpaulin --all
+                     --ignore-tests
+                     --out Xml
+                     --coveralls $COVERALLS_REPO_TOKEN
+                     -v
       # Store coverage report.
       - persist_to_workspace:
           root: .
