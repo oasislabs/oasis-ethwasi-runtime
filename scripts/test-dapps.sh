@@ -42,13 +42,7 @@ run_ens() {
     git checkout ekiden
     npm install > /dev/null
     truffle test --network oasis_test & test_pid=$!
-
-    wait $test_pid
-    test_ret=$?
-    if [ $test_ret -ne 0 ]; then
-        echo "ens test suite failed"
-        exit $test_ret
-    fi
+    test_wait $test_pid
     cd ../
 }
 
@@ -57,17 +51,21 @@ run_celer() {
     cd cChannel-eth
     git checkout ekiden
     npm install > /dev/null
-    truffle compile
+    truffle compile > /dev/null
     truffle migrate --network oasis_test
     truffle test --network oasis_test & test_pid=$!
+    test_wait $test_pid
+    cd ../
+}
 
+test_wait() {
+    local test_pid=$1
     wait $test_pid
     test_ret=$?
     if [ $test_ret -ne 0 ]; then
         echo "ens test suite failed"
         exit $test_ret
     fi
-    cd ../
 }
 
 run_test
