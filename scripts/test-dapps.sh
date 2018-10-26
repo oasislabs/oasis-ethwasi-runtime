@@ -52,4 +52,22 @@ run_ens() {
     cd ../
 }
 
+run_celer() {
+    git clone https://github.com/oasislabs/cChannel-eth.git
+    cd cChannel-eth
+    git checkout ekiden
+    npm install > /dev/null
+    truffle compile
+    truffle migrate --network oasis_test
+    truffle test --network oasis_test & test_pid=$!
+
+    wait $test_pid
+    test_ret=$?
+    if [ $test_ret -ne 0 ]; then
+        echo "ens test suite failed"
+        exit $test_ret
+    fi
+    cd ../
+}
+
 run_test
