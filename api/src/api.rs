@@ -5,8 +5,6 @@ runtime_api! {
 
     pub fn inject_account_storage(Vec<(Address, H256, H256)>) -> ();
 
-    pub fn debug_null_call(bool) -> ();
-
     pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
 
     pub fn execute_raw_transaction(Vec<u8>) -> ExecuteTransactionResponse;
