@@ -133,11 +133,6 @@ impl BatchHandler for EthereumBatchHandler {
 
 configure_runtime_dispatch_batch_handler!(EthereumBatchHandler);
 
-// used for performance debugging
-fn debug_null_call(_request: &bool, _ctx: &RuntimeCallContext) -> Result<()> {
-    Ok(())
-}
-
 fn strip_0x<'a>(hex: &'a str) -> &'a str {
     if hex.starts_with("0x") {
         hex.get(2..).unwrap()
