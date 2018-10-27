@@ -522,7 +522,6 @@ jobs:
       - run: echo 'export CIRCLE_BRANCH=master' >> $BASH_ENV
       - checkout
       - run: echo "export CIRCLE_SHA1=$(git rev-parse HEAD)" >> $BASH_ENV
-      - run: cargo build
       # install tarpaulin
       - run:
           name: Installing Tarpaulin
