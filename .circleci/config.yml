@@ -534,20 +534,11 @@ jobs:
                      --out Xml
                      --coveralls $COVERALLS_REPO_TOKEN
                      -v
-      - run:
-          name: Test gateway
-          working_directory: gateway
-          command: cargo tarpaulin --all
-                     --ignore-tests
-                     --out Xml
-                     --coveralls $COVERALLS_REPO_TOKEN
-                     -v
       # Store coverage report.
       - persist_to_workspace:
           root: .
           paths:
             - cobertura.xml
-            - gateway/cobertura.xml
 
   benchmark:
     docker:
