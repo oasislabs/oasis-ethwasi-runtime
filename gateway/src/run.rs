@@ -45,6 +45,7 @@ pub fn execute(
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
+    ws_max_connections: usize,
     gas_price: U256,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
@@ -71,6 +72,10 @@ pub fn execute(
     ws_conf.hosts = None;
     ws_conf.interface = "0.0.0.0".into();
     ws_conf.port = ws_port;
+
+    // max # of concurrent connections. the default is 100, which is "low" and "should be increased":
+    // https://github.com/tomusdrw/ws-rs/blob/f12d19c4c19422fc79af28a3181f598bc07ecd1e/src/lib.rs#L128
+    ws_conf.max_connections = ws_max_connections;
 
     let mut http_conf = HttpConfiguration::default();
     http_conf.cors = None;
