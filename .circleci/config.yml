@@ -18,9 +18,6 @@ jobs:
       - checkout
 
       - run:
-          name: Check source code style
-          command: cargo fmt -- --write-mode=check
-      - run:
           name: Install ekiden-tools
           command: cargo install
                      --git https://github.com/oasislabs/ekiden
@@ -30,6 +27,9 @@ jobs:
       - run:
           name: Build the runtime
           command: cargo ekiden build-enclave --output-identity
+      - run:
+          name: Check source code style
+          command: cargo fmt -- --write-mode=check
       - persist_to_workspace:
           # Save files for use in the
           # end-to-end-tests job.
@@ -57,9 +57,6 @@ jobs:
       # Check out source from github
       - checkout
 
-      - run:
-          name: Check source code style
-          command: cargo fmt -- --write-mode=check
       - run:
           name: Install ekiden-tools
           command: cargo install
@@ -92,10 +89,6 @@ jobs:
       # Check out source from github
       - checkout
 
-      - run:
-          name: Check source code style
-          working_directory: gateway
-          command: cargo fmt -- --write-mode=check
       - run:
           name: Build the web3 gateway
           working_directory: gateway
@@ -131,10 +124,6 @@ jobs:
       - checkout
 
       - run:
-          name: Check source code style
-          working_directory: benchmark
-          command: cargo fmt -- --write-mode=check
-      - run:
           name: Build the web3 gateway microbenchmark
           working_directory: benchmark
           command: cargo build
@@ -157,10 +146,6 @@ jobs:
       # Check out source from github
       - checkout
 
-      - run:
-          name: Check source code style
-          working_directory: genesis
-          command: cargo fmt -- --write-mode=check
       - run:
           name: Build the genesis state injector tool
           working_directory: genesis
@@ -185,10 +170,6 @@ jobs:
       - checkout
 
       - run:
-          name: Check source code style
-          working_directory: playback
-          command: cargo fmt -- --write-mode=check
-      - run:
           name: Build the transaction playback tool
           working_directory: playback
           command: cargo build
@@ -209,10 +190,6 @@ jobs:
       # Check out source from github
       - checkout
 
-      - run:
-          name: Check source code style
-          working_directory: tests/run_contract
-          command: cargo fmt -- --write-mode=check
       - run:
           name: Build run-contract
           working_directory: tests/run_contract
