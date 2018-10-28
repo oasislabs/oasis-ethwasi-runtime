@@ -74,6 +74,13 @@ fn main() {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("ws-max-connections")
+                .long("ws-max-connections")
+                .help("Max number of concurrent WebSocket connections.")
+                .default_value("1000")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("pubsub-interval")
                 .long("pubsub-interval")
                 .help("Time interval used for pub/sub notifications (in sec).")
@@ -115,6 +122,7 @@ fn main() {
     let num_threads = value_t!(args, "threads", usize).unwrap();
     let http_port = value_t!(args, "http-port", u16).unwrap();
     let ws_port = value_t!(args, "ws-port", u16).unwrap();
+    let ws_max_connections = value_t!(args, "ws-max-connections", usize).unwrap();
     let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64).unwrap();
     let gas_price = util::gwei_to_wei(value_t!(args, "gas-price", u64).unwrap());
     let client = web3_gateway::start(
@@ -124,6 +132,7 @@ fn main() {
         http_port,
         num_threads,
         ws_port,
+        ws_max_connections,
         gas_price,
     ).unwrap();
 

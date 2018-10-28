@@ -133,6 +133,7 @@ pub fn start(
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
+    ws_max_connections: usize,
     gas_price: U256,
 ) -> Result<RunningClient, String> {
     let client = runtime_client!(runtime_ethereum, args, container);
@@ -156,6 +157,7 @@ pub fn start(
         http_port,
         num_threads,
         ws_port,
+        ws_max_connections,
         gas_price,
     )
 }
