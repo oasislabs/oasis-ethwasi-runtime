@@ -96,7 +96,7 @@ jobs:
       - persist_to_workspace:
           # Save gateway for use in the
           # end-to-end-tests job.
-          root: gateway
+          root: .
           paths:
             - target/debug/gateway
       - run:
