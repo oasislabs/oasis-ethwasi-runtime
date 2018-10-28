@@ -1,36 +1,36 @@
 extern crate hex;
-extern crate pwasm_ethereum;
 extern crate parity_hash;
+extern crate pwasm_ethereum;
 
 extern crate rand;
 #[macro_use]
 extern crate rulinalg;
-extern crate num as libnum;
-extern crate rusty_machine;
 extern crate dpmlrust;
-extern crate pwasm_std;
 extern crate ml_reader;
+extern crate num as libnum;
+extern crate pwasm_std;
 extern crate rusty_libsvm;
+extern crate rusty_machine;
 
 use parity_hash::H256;
-use std::str;
 use std::panic;
+use std::str;
 
-use std::io::{Read, Write};
-use std::fs;
-use std::path;
-use std::mem;
 use std::fmt::Debug;
-use std::vec::Vec;
+use std::fs;
+use std::io::{Read, Write};
+use std::mem;
+use std::path;
 use std::path::PathBuf;
+use std::vec::Vec;
 
-use rulinalg::matrix::{Axes, Matrix, MatrixSlice, MatrixSliceMut, BaseMatrix, BaseMatrixMut};
-use rulinalg::vector::Vector;
-use rulinalg::norm;
-use dpmlrust::logistic::{compute_grad, add_normal_noise, update_model, learn, predict, accuracy};
-use pwasm_std::logger::debug;
+use dpmlrust::logistic::{accuracy, add_normal_noise, compute_grad, learn, predict, update_model};
 use ml_reader::rusty::Dataset;
 use ml_reader::rusty::Reader;
+use pwasm_std::logger::debug;
+use rulinalg::matrix::{Axes, BaseMatrix, BaseMatrixMut, Matrix, MatrixSlice, MatrixSliceMut};
+use rulinalg::norm;
+use rulinalg::vector::Vector;
 use rusty_libsvm::Libsvm;
 
 #[no_mangle]
@@ -41,7 +41,7 @@ pub fn call() {
     panic::set_hook(Box::new(|panic_info| {
         if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
             pwasm_std::logger::debug(s);
-        } 
+        }
     }));
 
     debug("In call...");
@@ -151,8 +151,7 @@ pub fn call() {
 
     debug("About to read from buffer");
 
-    let mut dataset =
-        Libsvm::read_from_buffer(&buffer.to_string(), false, 4);
+    let mut dataset = Libsvm::read_from_buffer(&buffer.to_string(), false, 4);
 
     debug("Done reading from buffer");
 
@@ -173,8 +172,21 @@ pub fn call() {
     for i in result.mut_data().into_iter() {
         debug(&format!("{}", i));
     }
-    let classes = result.into_iter().map(|x|if x > 0.5 {return 1.0;} else {return 0.0;}).collect::<Vec<_>>();
-    let matching = classes.into_iter().zip(targets.into_iter()).filter(|(a, b)| a==*b ).count();
+    let classes = result
+        .into_iter()
+        .map(|x| {
+            if x > 0.5 {
+                return 1.0;
+            } else {
+                return 0.0;
+            }
+        })
+        .collect::<Vec<_>>();
+    let matching = classes
+        .into_iter()
+        .zip(targets.into_iter())
+        .filter(|(a, b)| a == *b)
+        .count();
 
     let result = format!("Matching classes is {}", matching);
     debug(&result);

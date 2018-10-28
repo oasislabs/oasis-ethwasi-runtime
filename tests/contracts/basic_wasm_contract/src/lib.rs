@@ -1,6 +1,6 @@
 extern crate hex;
-extern crate pwasm_ethereum;
 extern crate parity_hash;
+extern crate pwasm_ethereum;
 
 use parity_hash::H256;
 
