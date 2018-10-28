@@ -10,13 +10,13 @@ either = "1.5.0"
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
 ethereum-api = { path = "../../api" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
 lazy_static = "1.0.1"
 log = "0.4.5"
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
 runtime-ethereum = { path = "../../" }
 simple_logger = "0.5.0"
 
