@@ -1,5 +1,5 @@
-use ekiden_keymanager_common::confidential;
 use ekiden_core::mrae::sivaessha2::NONCE_SIZE;
+use ekiden_keymanager_common::confidential;
 use ethcore::state::{Encrypter as EthEncrypter, KeyManager as EthKeyManager};
 use ethereum_types::Address;
 
@@ -15,11 +15,7 @@ impl EthKeyManager for KeyManager {
 /// Implementation of the Encrypter trait to inject into parity for confidential contracts.
 pub struct Encrypter;
 impl EthEncrypter for Encrypter {
-    fn encrypt(
-        &self,
-        plaintext: Vec<u8>,
-        peer_public_key: Vec<u8>,
-    ) -> Result<Vec<u8>, String> {
+    fn encrypt(&self, plaintext: Vec<u8>, peer_public_key: Vec<u8>) -> Result<Vec<u8>, String> {
         if peer_public_key.len() < 32 {
             return Err("public keys must be 32 bytes long".to_string());
         }
