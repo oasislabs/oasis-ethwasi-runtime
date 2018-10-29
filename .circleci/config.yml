@@ -507,6 +507,45 @@ jobs:
                      master
                      $CIRCLE_TOKEN
 
+  cover-rust:
+    docker:
+      - image: ekiden/testing:0.2.0
+        environment:
+          RUST_BACKTRACE: "1"
+    resource_class: xlarge
+    steps:
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+      - checkout
+      # Install tarpaulin.
+      - run:
+          name: Installing Tarpaulin
+          command: RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/oasislabs/tarpaulin --branch ekiden cargo-tarpaulin
+      # Workaround to avoid linker errors in tarpaulin: disable cargo build script.
+      - run:
+          name: Disable cargo build script
+          command: echo 'fn main() {}' > build.rs
+      - run:
+          name: Run tests
+          command: cargo tarpaulin
+                     --packages runtime-ethereum
+                     --packages runtime-ethereum-common
+                     --packages web3-gateway
+                     --exclude-files *generated*
+                     --exclude-files genesis*
+                     --exclude-files node_modules*
+                     --ignore-tests
+                     --out Xml
+                     --coveralls $COVERALLS_REPO_TOKEN
+                     -v
+      # Store coverage report.
+      - persist_to_workspace:
+          root: .
+          paths:
+            - cobertura.xml
+
   benchmark:
     docker:
       - image: ekiden/testing:0.2.0
@@ -600,6 +639,7 @@ workflows:
       - build-genesis
       - build-playback
       - build-run-contract
+      - cover-rust
       - dapp-tests:
           requires:
             - build-go

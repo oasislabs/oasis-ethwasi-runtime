@@ -1,5 +1,8 @@
 # Ekiden Ethereum runtime
 
+[![CircleCI](https://circleci.com/gh/oasislabs/runtime-ethereum.svg?style=svg&circle-token=95b120ce7c4e0eb6a7e5c0d222d63b81e9d02879)](https://circleci.com/gh/oasislabs/runtime-ethereum)
+[![Coverage Status](https://coveralls.io/repos/github/oasislabs/runtime-ethereum/badge.svg?branch=master&t=shmqoK)](https://coveralls.io/github/oasislabs/runtime-ethereum?branch=master)
+
 ## Setting up the development environment
 
 The easiest way to build SGX code is to use the provided ekiden "shell,"  which runs a Docker
