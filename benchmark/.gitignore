@@ -1,1 +1,3 @@
-/target
+benchmark
+/vendor
+Gopkg.lock
