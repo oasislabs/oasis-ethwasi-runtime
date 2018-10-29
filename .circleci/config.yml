@@ -523,7 +523,7 @@ jobs:
       - run:
           name: Installing Tarpaulin
           command: RUSTFLAGS="--cfg procmacro2_semver_exempt" cargo install --git https://github.com/oasislabs/tarpaulin --branch ekiden cargo-tarpaulin
-      # FIXME: clear build.rs to fix linker errors
+      # workaround to avoid linker errors in tarpaulin: disable cargo build script
       - run:
           name: Disable cargo build script
           command: echo 'fn main() {}' > build.rs
@@ -533,6 +533,9 @@ jobs:
                      --packages runtime-ethereum
                      --packages runtime-ethereum-common
                      --packages web3-gateway
+                     --exclude-files *generated*
+                     --exclude-files genesis*
+                     --exclude-files node_modules*
                      --ignore-tests
                      --out Xml
                      --coveralls $COVERALLS_REPO_TOKEN
