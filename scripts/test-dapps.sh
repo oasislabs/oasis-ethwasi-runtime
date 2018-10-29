@@ -32,7 +32,8 @@ run_test() {
 }
 
 run_dapps() {
-    run_ens
+    #run_ens
+    :
 }
 
 run_ens() {
