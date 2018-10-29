@@ -33,7 +33,7 @@ impl Storage for GlobalStorage {
         result.map_err(|err| Error::Storage(err.description().to_string()))
     }
 
-    fn store_bytes(&mut self, bytes: &[u8]) -> Result<H256> {
+    fn store_bytes(&self, bytes: &[u8]) -> Result<H256> {
         let result = BACKEND
             .insert(bytes.to_vec(), <u64>::max_value(), InsertOptions::default())
             .wait();

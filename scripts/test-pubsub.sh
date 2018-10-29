@@ -8,11 +8,6 @@ run_test() {
     # Ensure cleanup on exit.
     trap 'kill -- -0' EXIT
 
-    echo "Building contract."
-    pushd ${WORKDIR}/tests/contracts/storage_contract > /dev/null
-    ./build.sh
-    popd > /dev/null
-
     # Start dummy node.
     run_dummy_node_go_tm
     sleep 1

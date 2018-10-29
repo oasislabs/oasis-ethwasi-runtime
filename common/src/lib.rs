@@ -2,10 +2,10 @@
 #![feature(int_to_from_bytes)]
 
 extern crate ekiden_core;
+extern crate ekiden_keymanager_common;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_lru;
 extern crate ekiden_trusted;
-extern crate ekiden_keymanager_common;
 extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_types;
@@ -14,7 +14,8 @@ extern crate keccak_hash;
 
 pub mod confidential;
 
-use std::{collections::{hash_map::Entry, HashMap}, sync::{Arc, Mutex}};
+use std::{collections::{hash_map::Entry, HashMap},
+          sync::{Arc, Mutex}};
 
 use ekiden_core::{error::Result, futures::prelude::*};
 use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
@@ -75,7 +76,7 @@ pub struct StorageHashDB<T: Database + Send + Sync> {
 
 impl<T> StorageHashDB<T>
 where
-    T: Database + Send + Sync
+    T: Database + Send + Sync,
 {
     /// Size of the in-memory storage cache (number of entries).
     const STORAGE_CACHE_SIZE: usize = 1024;
@@ -143,7 +144,7 @@ where
 
 impl<T> Clone for StorageHashDB<T>
 where
-    T: Database + Send + Sync
+    T: Database + Send + Sync,
 {
     fn clone(&self) -> Self {
         Self {
@@ -154,7 +155,7 @@ where
 
 impl<T> HashDB for StorageHashDB<T>
 where
-    T: Database + Send + Sync
+    T: Database + Send + Sync,
 {
     fn keys(&self) -> HashMap<H256, i32> {
         unimplemented!();
@@ -286,7 +287,7 @@ pub struct BlockchainStateDb<T: Database + Send + Sync> {
 
 impl<T> BlockchainStateDb<T>
 where
-    T: Database + Send + Sync
+    T: Database + Send + Sync,
 {
     /// Create new blockchain state database.
     pub fn new(db: T) -> Self {
@@ -320,7 +321,7 @@ pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
 
 impl<T> kvdb::KeyValueDB for BlockchainStateDb<T>
 where
-    T: Database + Send + Sync
+    T: Database + Send + Sync,
 {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
         let db = self.db.lock().unwrap();

@@ -26,24 +26,24 @@ jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
 wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden", features = ["gateway"] }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-machine = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-path = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-journaldb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-mem = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-evm = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-vm = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-util-error = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+parity-machine = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+path = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+journaldb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+evm = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+vm = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
+util-error = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/consolidate" }
 
 ## Common functionality between runtime and gateway
 runtime-ethereum-common = { path = "../common" }
@@ -76,9 +76,6 @@ ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch 
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 hex = "0.3"
-
-[profile.release]
-panic = "abort"
 
 [patch.crates-io]
 ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
