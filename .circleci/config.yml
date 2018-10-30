@@ -596,13 +596,6 @@ jobs:
       - checkout
 
       - run:
-          name: Install ekiden-tools
-          command: cargo install
-                     --git https://github.com/oasislabs/ekiden
-                     --branch master
-                     --debug
-                     ekiden-tools
-      - run:
           name: Install ekiden-compute
           command: cargo install
                      --git https://github.com/oasislabs/ekiden
@@ -639,13 +632,6 @@ jobs:
 
       - checkout
 
-      - run:
-          name: Install ekiden-tools
-          command: cargo install
-                     --git https://github.com/oasislabs/ekiden
-                     --branch master
-                     --debug
-                     ekiden-tools
       - run:
           name: Install ekiden-compute
           command: cargo install
