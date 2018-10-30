@@ -67,7 +67,7 @@ run_test() {
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
-    gateway/target/debug/gateway \
+    target/debug/gateway \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway \
         --storage-multilayer-bottom-backend remote \
