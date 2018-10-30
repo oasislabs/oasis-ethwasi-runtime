@@ -9,23 +9,31 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/oasislabs/runtime-ethereum/benchmark/benchmarks/api"
 )
 
+const (
+	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
+
+	gasLimit = 1000000
+)
+
 var (
+	flagWatchNewHead bool
+
 	gasPrice       = big.NewInt(1000000000)
 	transferAmount = big.NewInt(1)
 	fundAmount     = big.NewInt(100000000000000000)
 )
-
-const gasLimit = 1000000
 
 type benchTransfer struct {
 	fundingAccount *transferAccount
@@ -34,6 +42,8 @@ type benchTransfer struct {
 type transferAccount struct {
 	client *ethclient.Client
 
+	newHeads *newHeadWatcher
+
 	privateKey *ecdsa.PrivateKey
 	nonce      uint64
 }
@@ -41,6 +51,60 @@ type transferAccount struct {
 func (account *transferAccount) newTransfer(nonce uint64, dst common.Address, amount *big.Int) (*types.Transaction, error) {
 	tx := types.NewTransaction(nonce, dst, amount, gasLimit, gasPrice, nil)
 	return types.SignTx(tx, types.HomesteadSigner{}, account.privateKey)
+}
+
+type newHeadWatcher struct {
+	sync.WaitGroup
+
+	state *api.State
+
+	sub ethereum.Subscription
+	ch  chan *types.Header
+}
+
+func (w *newHeadWatcher) Stop() {
+	w.sub.Unsubscribe()
+	w.Wait()
+}
+
+func (w *newHeadWatcher) worker() {
+	defer w.Done()
+
+	for {
+		select {
+		case err, ok := <-w.sub.Err():
+			if ok {
+				_ = level.Error(w.state.Logger).Log("msg", "failed to receive newHead",
+					"err", err,
+				)
+			}
+			return
+		case hdr := <-w.ch:
+			if w.state.Config.LogVerboseDebug {
+				_ = level.Debug(w.state.Logger).Log("msg", "newHead received from subscription",
+					"header", hdr,
+				)
+			}
+		}
+	}
+}
+
+func watchNewHeads(ctx context.Context, state *api.State, client *ethclient.Client) (*newHeadWatcher, error) {
+	var (
+		watcher = newHeadWatcher{
+			state: state,
+			ch:    make(chan *types.Header),
+		}
+		err error
+	)
+	if watcher.sub, err = client.SubscribeNewHead(ctx, watcher.ch); err != nil {
+		return nil, err
+	}
+
+	watcher.Add(1)
+	go watcher.worker()
+
+	return &watcher, nil
 }
 
 func (bench *benchTransfer) Name() string {
@@ -52,10 +116,20 @@ func (bench *benchTransfer) Prepare(ctx context.Context, state *api.State) error
 	if err != nil {
 		return err
 	}
-	state.State = &transferAccount{
+
+	account := &transferAccount{
 		client:     ethclient.NewClient(state.RPCClient),
 		privateKey: privKey,
 	}
+
+	if flagWatchNewHead {
+		if account.newHeads, err = watchNewHeads(ctx, state, account.client); err != nil {
+			account.client.Close()
+			return err
+		}
+	}
+
+	state.State = account
 
 	return nil
 }
@@ -132,6 +206,9 @@ func (bench *benchTransfer) Scenario(ctx context.Context, state *api.State) (uin
 
 func (bench *benchTransfer) Cleanup(state *api.State) {
 	account := (state.State).(*transferAccount)
+	if account.newHeads != nil {
+		account.newHeads.Stop()
+	}
 	if account.client != nil {
 		account.client.Close()
 	}
@@ -144,6 +221,14 @@ func privKeyToAddress(privKey *ecdsa.PrivateKey) common.Address {
 
 // Init initializes and registers the synthetic transfer benchmark.
 func Init(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&flagWatchNewHead, cfgWatchNewHead, false, "Subscribe for `newHeads` events")
+
+	for _, v := range []string{
+		cfgWatchNewHead,
+	} {
+		viper.BindPFlag(v, cmd.Flags().Lookup(v)) // nolint: errcheck
+	}
+
 	// TODO: This probably shouldn't be hardcoded, but just initialize
 	// the funding account here for now.
 	const (
