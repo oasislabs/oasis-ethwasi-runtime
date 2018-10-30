@@ -3,9 +3,9 @@
 # Runs the test suites for dapps against our gateway.
 # CLI args: "celer" or "ens".
 
-WORKDIR=${1:-$(pwd)}
-
 source scripts/utils.sh
+
+WORKDIR=$(pwd)
 
 run_test() {
     # Ensure cleanup on exit.
