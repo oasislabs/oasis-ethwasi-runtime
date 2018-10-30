@@ -18,6 +18,7 @@
 
 //! Eth PUB-SUB rpc implementation.
 
+use std::collections::BTreeMap;
 use std::sync::{Arc, Weak};
 
 use jsonrpc_core::futures::Future;
@@ -29,7 +30,7 @@ use jsonrpc_pubsub::SubscriptionId;
 use parity_rpc::v1::helpers::{errors, Subscribers};
 use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::EthPubSub;
-use parity_rpc::v1::types::{pubsub, Log, RichHeader};
+use parity_rpc::v1::types::{pubsub, H256, H64, Log, RichHeader};
 
 use ethcore::encoded;
 use ethcore::filter::Filter as EthFilter;
@@ -99,12 +100,22 @@ impl ChainNotify for ChainNotificationHandler {
     fn notify_heads(&self, headers: &[encoded::Header]) {
         for subscriber in self.heads_subscribers.read().values() {
             for &ref header in headers {
+                // geth will fail to decode the response unless it has a number of
+                // fields even if they aren't relevant.
+                //
+                // See:
+                //  * https://github.com/ethereum/go-ethereum/issues/3230
+                //  * https://github.com/paritytech/parity-ethereum/issues/8841
+                let mut extra_info: BTreeMap<String, String> = BTreeMap::new();
+                extra_info.insert("mixHash".to_string(), format!("0x{:?}", H256::default()));
+                extra_info.insert("nonce".to_string(), format!("0x{:?}", H64::default()));
+
                 Self::notify(
                     &self.remote,
                     subscriber,
                     pubsub::Result::Header(RichHeader {
                         inner: header.into(),
-                        extra_info: Default::default(),
+                        extra_info,
                     }),
                 );
             }
