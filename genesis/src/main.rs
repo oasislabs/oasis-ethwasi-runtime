@@ -1,55 +1,54 @@
-use std::collections::HashMap;
-use std::str::FromStr;
-
 extern crate clap;
-use clap::{crate_authors, crate_description, crate_name, crate_version, value_t_or_exit, App, Arg};
+extern crate ethcore;
 extern crate ethereum_types;
-use ethereum_types::{Address, H256, U256};
 extern crate filebuffer;
-extern crate futures;
-use futures::future::Future;
 extern crate hex;
 extern crate log;
-use log::debug;
 extern crate pretty_env_logger;
 extern crate rlp;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-use serde_json::{de::SliceRead, StreamDeserializer};
 
 extern crate client_utils;
-use client_utils::{default_app, runtime_client};
-extern crate ekiden_runtime_client;
-use ekiden_runtime_client::create_runtime_client;
 extern crate ekiden_core;
-extern crate ekiden_rpc_client;
+extern crate ekiden_db_trusted;
+extern crate ekiden_roothash_api;
+extern crate ekiden_roothash_base;
+extern crate ekiden_storage_base;
+extern crate ekiden_storage_batch;
 extern crate ekiden_tracing;
 
-extern crate ethereum_api;
-use ethereum_api::{with_api, AccountState};
+extern crate runtime_ethereum_common;
 
-use std::time::{Duration, Instant};
+use std::collections::BTreeMap;
+use std::fs::File;
+use std::io::Cursor;
+use std::str::FromStr;
+use std::sync::Arc;
 
-with_api! {
-    create_runtime_client!(ethereum, ethereum_api, api);
-}
+use clap::{crate_authors, crate_description, crate_name, crate_version, App, Arg};
+use ethcore::{block::{IsBlock, OpenBlock},
+              blockchain::{BlockChain, ExtrasInsert},
+              engines::ForkChoice,
+              kvdb::{self, KeyValueDB},
+              spec::Spec,
+              state::backend::Wrapped as WrappedBackend};
+use ethereum_types::{Address, H256, U256};
+use log::{debug, info};
+use serde_json::{de::SliceRead, StreamDeserializer};
 
-/// When restoring an exported state, inject this many accounts at a time.
-const INJECT_CHUNK_SIZE: usize = 100;
-/// When restoring an exported state, inject this many account storage items at a time.
-const INJECT_STORAGE_CHUNK_SIZE: usize = 1000;
+use ekiden_core::{futures::Future, protobuf::Message};
+use ekiden_db_trusted::DatabaseHandle;
+use ekiden_storage_base::{InsertOptions, StorageBackend};
+use runtime_ethereum_common::{get_factories, BlockchainStateDb, StorageHashDB, BLOCK_GAS_LIMIT};
 
 #[derive(Deserialize)]
 struct ExportedAccount {
     balance: String,
     nonce: String,
     code: Option<String>,
-    storage: Option<HashMap<String, String>>,
-}
-
-fn to_ms(d: Duration) -> f64 {
-    d.as_secs() as f64 * 1e3 + d.subsec_nanos() as f64 * 1e-6
+    storage: Option<BTreeMap<String, String>>,
 }
 
 fn strip_0x(hex: &str) -> &str {
@@ -58,6 +57,10 @@ fn strip_0x(hex: &str) -> &str {
     } else {
         hex
     }
+}
+
+fn from_hex<S: AsRef<str>>(hex: S) -> Vec<u8> {
+    hex::decode(strip_0x(hex.as_ref())).expect("input should be valid hex-encoding")
 }
 
 const EXPORTED_STATE_START: &[u8] = b"{ \"state\": {";
@@ -148,84 +151,176 @@ impl<'a> Iterator for StateParser<'a> {
 }
 
 fn main() {
+    // Initialize logger.
+    pretty_env_logger::init();
+
     let known_components = client_utils::components::create_known_components();
-    let args = default_app!()
+    let args = App::new(concat!(crate_name!(), " client"))
+        .about(crate_description!())
+        .author(crate_authors!())
+        .version(crate_version!())
         .args(&known_components.get_arguments())
         .arg(
             Arg::with_name("exported_state")
+                .help("Exported Ethereum blockchain state in JSON format")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("output_file")
+                .help("Resulting roothash genesis block")
                 .takes_value(true)
                 .required(true),
         )
         .get_matches();
+
+    // Initialize tracing.
+    ekiden_tracing::report_forever("genesis", &args);
+
     // Initialize component container.
     let mut container = known_components
         .build_with_arguments(&args)
         .expect("failed to initialize component container");
 
-    // Initialize tracing.
-    ekiden_tracing::report_forever("genesis", &args);
+    // Initialize storage and database overlays.
+    let raw_storage = container.inject::<StorageBackend>().unwrap();
+    let storage = Arc::new(ekiden_storage_batch::BatchStorageBackend::new(raw_storage));
+    let db = DatabaseHandle::new(storage.clone());
+    let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+    let state_db = StorageHashDB::new(storage.clone(), blockchain_db.clone());
 
-    let client = runtime_client!(ethereum, args, container);
+    // Initialize state with genesis block.
+    info!("Initializing genesis block");
+    let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");
+    let spec = Spec::load(Cursor::new(genesis_json)).unwrap();
+    let state_backend =
+        spec.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
+            .expect("state to be initialized");
+    state_db.commit();
 
+    // Open a new block.
+    let chain = BlockChain::new(
+        Default::default(), /* config */
+        &spec.genesis_block(),
+        blockchain_db.clone(),
+    );
+    let parent = chain.best_block_header();
+    let mut block = OpenBlock::new(
+        &*spec.engine,
+        get_factories(),
+        false,                         /* tracing */
+        state_backend.clone(),         /* state_db */
+        &parent,                       /* parent */
+        Arc::new(vec![parent.hash()]), /* last hashes */
+        Address::default(),            /* author */
+        U256::from(BLOCK_GAS_LIMIT),   /* block gas limit */
+        vec![],                        /* extra data */
+        true,                          /* is epoch_begin */
+        &mut Vec::new().into_iter(),   /* ancestry */
+        None,
+        None,
+    ).unwrap();
+
+    // Iteratively parse input and import into state.
+    info!("Injecting accounts");
     let state_path = args.value_of("exported_state").unwrap();
     let state_fb = filebuffer::FileBuffer::open(state_path).unwrap();
-    let mut accounts = StateParser::new(&state_fb);
-    let mut num_accounts_injected = 0;
-    loop {
-        let chunk = accounts.by_ref().take(INJECT_CHUNK_SIZE);
-        let mut accounts_req = Vec::new();
-        let mut storage_req = Vec::new();
-        for (addr, account) in chunk {
-            let address = Address::from_str(strip_0x(&addr)).unwrap();
+    let accounts = StateParser::new(&state_fb);
 
-            let mut account_state = AccountState {
-                nonce: U256::from_str(strip_0x(&account.nonce)).unwrap(),
-                address,
-                balance: U256::from_str(strip_0x(&account.balance)).unwrap(),
-                code: match account.code {
-                    Some(code) => code,
-                    None => String::new(),
-                },
-            };
-            if let Some(storage) = account.storage {
-                for (key, value) in storage {
-                    storage_req.push((
-                        address,
-                        H256::from_str(strip_0x(&key)).unwrap(),
-                        H256::from_str(strip_0x(&value)).unwrap(),
-                    ));
-                }
+    for (addr, account) in accounts {
+        debug!("Injecting account {}", addr);
+
+        let address = Address::from_str(strip_0x(&addr)).unwrap();
+        let balance = U256::from_str(strip_0x(&account.balance)).unwrap();
+        let nonce = U256::from_str(strip_0x(&account.nonce)).unwrap();
+
+        // Inject account.
+        block
+            .block_mut()
+            .state_mut()
+            .new_contract(&address, balance, nonce);
+        if let Some(code) = account.code {
+            block
+                .block_mut()
+                .state_mut()
+                .init_code(&address, from_hex(&code))
+                .unwrap();
+        }
+
+        // Inject account storage items.
+        if let Some(storage) = account.storage {
+            debug!("Injecting {} account storage items", storage.len());
+
+            for (key, value) in storage {
+                let key = H256::from_str(strip_0x(&key)).unwrap();
+                let value = H256::from_str(strip_0x(&value)).unwrap();
+
+                block
+                    .block_mut()
+                    .state_mut()
+                    .set_storage(&address, key, value)
+                    .unwrap();
             }
-            accounts_req.push(account_state);
         }
-        if accounts_req.is_empty() && storage_req.is_empty() {
-            break;
-        }
-        let accounts_len = accounts_req.len();
-        debug!("Injecting {} accounts", accounts_len);
-        client.inject_accounts(accounts_req).wait().unwrap();
-
-        debug!("Injecting {} account storage items", storage_req.len());
-        for chunk in storage_req.chunks(INJECT_STORAGE_CHUNK_SIZE) {
-            let chunk_len = chunk.len();
-            let chunk_vec = chunk.to_vec();
-            let start = Instant::now();
-            client.inject_account_storage(chunk_vec).wait().unwrap();
-            let end = Instant::now();
-            let duration_ms = to_ms(end - start);
-            debug!(
-                "Injected {} account storage items in {:.3} ms: {:.3} items/sec",
-                chunk_len,
-                duration_ms,
-                chunk_len as f64 / duration_ms * 1000.
-            );
-        }
-
-        num_accounts_injected += accounts_len;
-        debug!(
-            "Injected {} accounts, {} total",
-            accounts_len, num_accounts_injected
-        );
     }
-    debug!("Done injecting accounts");
+
+    info!("Injected all state, ready to commit");
+
+    let block = block
+        .close_and_lock()
+        .seal(&*spec.engine, Vec::new())
+        .unwrap();
+
+    // Queue the db operations necessary to insert this block.
+    info!("Block sealed, generating storage transactions for commit");
+    let mut db_tx = kvdb::DBTransaction::default();
+    chain.insert_block(
+        &mut db_tx,
+        &block.rlp_bytes(),
+        block.receipts().to_owned(),
+        ExtrasInsert {
+            fork_choice: ForkChoice::New,
+            is_finalized: true,
+            metadata: None,
+        },
+    );
+
+    // Commit the insert to the in-memory blockchain cache.
+    info!("Commit into in-memory blockchain cache");
+    chain.commit();
+    // Write blockchain updates.
+    info!("Writing blockchain update transactions");
+    blockchain_db
+        .write(db_tx)
+        .expect("write blockchain updates");
+
+    // Commit any pending state updates.
+    info!("Commit state updates");
+    state_db.commit();
+    // Commit any blockchain state updates.
+    info!("Commit blockchain state updates");
+    let state_root = blockchain_db.commit().expect("commit blockchain state");
+
+    info!("Done, genesis state root is {:?}", state_root);
+
+    // Now push everything to underlying storage as this has all been in-memory.
+    info!("Pushing batches to storage backend");
+    storage
+        .commit(10000, InsertOptions::default())
+        .wait()
+        .unwrap();
+
+    // Generate genesis roothash block file.
+    let mut genesis_blocks = ekiden_roothash_api::GenesisBlocks::new();
+    let mut genesis_block = ekiden_roothash_api::GenesisBlock::new();
+    let mut block = ekiden_roothash_base::Block::default();
+    block.header.state_root = state_root;
+    // TODO: Take runtime identifier as an argument.
+    genesis_block.set_runtime_id(block.header.namespace.to_vec());
+    genesis_block.set_block(block.into());
+    genesis_blocks.mut_genesis_blocks().push(genesis_block);
+
+    // Save to file.
+    let mut file = File::create(args.value_of("output_file").unwrap()).unwrap();
+    genesis_blocks.write_to_writer(&mut file).unwrap();
 }
