@@ -38,7 +38,8 @@ run_dapp() {
             run_celer
             ;;
         "ens")
-            run_ens
+            #run_ens
+            :
             ;;
     esac
 }
