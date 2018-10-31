@@ -18,6 +18,7 @@ import (
 
 	"github.com/oasislabs/runtime-ethereum/benchmark/benchmarks/api"
 	"github.com/oasislabs/runtime-ethereum/benchmark/benchmarks/basic"
+	"github.com/oasislabs/runtime-ethereum/benchmark/benchmarks/playback"
 	"github.com/oasislabs/runtime-ethereum/benchmark/benchmarks/transfer"
 )
 
@@ -228,6 +229,7 @@ func benchmarkInit(cmd *cobra.Command) {
 
 	for _, fn := range []api.SuiteInitFn{
 		basic.Init,
+		playback.Init,
 		transfer.Init,
 	} {
 		fn(cmd)
