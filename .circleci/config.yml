@@ -127,29 +127,6 @@ jobs:
           working_directory: genesis
           command: cargo build
 
-  build-playback:
-    # The purpose of this job is to ensure
-    # that the playback code compiles. Currently,
-    # there are no tests to run, but they should
-    # run here once we write them.
-    docker:
-      - image: ekiden/testing:0.2.0
-    resource_class: xlarge
-    steps:
-      # Set up
-      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
-      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
-      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
-      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
-
-      # Check out source from github
-      - checkout
-
-      - run:
-          name: Build the transaction playback tool
-          working_directory: playback
-          command: cargo build
-
   build-run-contract:
     # The purpose of this job is to ensure
     # that the run_contract code compiles.
@@ -667,7 +644,6 @@ workflows:
       - build-runtime-benchmark
       - build-and-test-web3-gateway
       - build-genesis
-      - build-playback
       - build-run-contract
       - cover-rust
       - ens-tests:
@@ -705,7 +681,6 @@ workflows:
             - build-runtime-benchmark
             - build-and-test-web3-gateway
             - build-genesis
-            - build-playback
             - build-run-contract
       - hold-for-production:
           type: approval
