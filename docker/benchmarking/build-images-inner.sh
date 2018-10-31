@@ -21,7 +21,6 @@ cargo ekiden build-enclave --output-identity --release --cargo-addendum feature.
 (cd benchmark && make)
 (cd gateway && CARGO_TARGET_DIR=../target cargo build --release)
 (cd genesis && CARGO_TARGET_DIR=../target cargo build --release)
-(cd playback && CARGO_TARGET_DIR=../target cargo build --release)
 
 # Package all binaries and resources.
 mkdir -p target/docker-benchmarking/context/bin target/docker-benchmarking/context/lib target/docker-benchmarking/context/res
@@ -30,7 +29,6 @@ ln target/enclave/runtime-ethereum.mrenclave target/docker-benchmarking/context/
 ln benchmark/benchmark target/docker-benchmarking/context/bin
 ln target/release/gateway target/docker-benchmarking/context/bin
 ln target/release/genesis target/docker-benchmarking/context/bin
-ln target/release/playback target/docker-benchmarking/context/bin
 ln docker/benchmarking/Dockerfile target/docker-benchmarking/context/Dockerfile
 tar cvzhf target/docker-benchmarking/context.tar.gz -C target/docker-benchmarking/context .
 rm -rf target/docker-benchmarking/context
