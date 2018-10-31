@@ -151,7 +151,7 @@ jobs:
   build-go:
     working_directory: /go/src/github.com/oasislabs/
     docker:
-      - image: circleci/golang:1.10
+      - image: circleci/golang:1.11
     steps:
       - restore_cache:
           keys:
@@ -184,7 +184,7 @@ jobs:
           go install
       - run: |
           cd benchmark && \
-          make && \
+          env -u GOPATH make && \
           cp benchmark /go/bin
       - save_cache:
           key: go-cache
