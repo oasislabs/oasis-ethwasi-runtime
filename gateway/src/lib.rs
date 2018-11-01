@@ -28,6 +28,7 @@ extern crate futures;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+extern crate order_stat;
 extern crate parking_lot;
 extern crate path;
 extern crate rayon;
@@ -95,7 +96,9 @@ extern crate grpcio;
 extern crate runtime_ethereum_common;
 
 mod client;
+mod extractors;
 mod impls;
+mod informant;
 #[cfg(feature = "pubsub")]
 mod notifier;
 mod rpc;

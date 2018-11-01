@@ -32,6 +32,7 @@ ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "e
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+order-stat = "0.1"
 parity-machine = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }

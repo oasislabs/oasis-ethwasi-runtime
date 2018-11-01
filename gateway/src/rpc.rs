@@ -18,9 +18,10 @@ use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 
+use extractors;
+use informant::{Middleware, RpcStats};
 use jsonrpc_core::MetaIoHandler;
 use parity_reactor::TokioRemote;
-use parity_rpc::informant::{Middleware, RpcStats};
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
 
@@ -142,7 +143,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
             rpc::WsDispatcher::new(full_handler),
-            Middleware::new(deps.stats.clone(), deps.apis.activity_notifier(), None),
+            Middleware::new(deps.stats.clone(), deps.apis.activity_notifier()),
         ));
         let apis = conf.apis.list_apis();
         deps.apis.extend_with_set(&mut handler, &apis);
@@ -161,9 +162,9 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
         allowed_origins,
         allowed_hosts,
         conf.max_connections,
-        rpc::WsExtractor::new(None),
-        rpc::WsExtractor::new(None),
-        rpc::WsStats::new(deps.stats.clone()),
+        extractors::WsExtractor::new(None),
+        extractors::WsExtractor::new(None),
+        extractors::WsStats::new(deps.stats.clone()),
     );
 
     match start_result {
@@ -263,7 +264,6 @@ where
     let mut handler = MetaIoHandler::with_middleware(Middleware::new(
         deps.stats.clone(),
         deps.apis.activity_notifier(),
-        None,
     ));
     let apis = apis.list_apis();
     deps.apis.extend_with_set(&mut handler, &apis);

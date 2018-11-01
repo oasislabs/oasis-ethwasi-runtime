@@ -21,9 +21,9 @@ use std::sync::Arc;
 
 use client::Client;
 use ekiden_storage_base::StorageBackend;
+use informant::ActivityNotifier;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
-use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::{Host, Metadata};
 
 #[cfg(feature = "confidential")]
