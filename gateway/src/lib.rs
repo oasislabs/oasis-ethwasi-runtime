@@ -138,6 +138,7 @@ pub fn start(
     ws_port: u16,
     ws_max_connections: usize,
     gas_price: U256,
+    jsonrpc_max_batch_size: usize,
 ) -> Result<RunningClient, String> {
     let client = runtime_client!(runtime_ethereum, args, container);
     let storage: Arc<StorageBackend> = container
@@ -162,5 +163,6 @@ pub fn start(
         ws_port,
         ws_max_connections,
         gas_price,
+        jsonrpc_max_batch_size,
     )
 }

@@ -187,16 +187,29 @@ pub trait ActivityNotifier: Send + Sync + 'static {
 pub struct Middleware<T: ActivityNotifier> {
     stats: Arc<RpcStats>,
     notifier: T,
+    max_batch_size: usize,
 }
 
 impl<T: ActivityNotifier> Middleware<T> {
     /// Create new Middleware with stats counter and activity notifier.
-    pub fn new(stats: Arc<RpcStats>, notifier: T) -> Self {
-        Middleware { stats, notifier }
+    pub fn new(stats: Arc<RpcStats>, notifier: T, max_batch_size: usize) -> Self {
+        Middleware {
+            stats,
+            notifier,
+            max_batch_size,
+        }
     }
 
     fn as_micro(dur: time::Duration) -> u32 {
         (dur.as_secs() * 1_000_000) as u32 + dur.subsec_nanos() / 1_000
+    }
+}
+
+fn batch_too_large() -> rpc::Error {
+    rpc::Error {
+        code: rpc::ErrorCode::ServerError(-32091),
+        message: "Batch size too large".into(),
+        data: None,
     }
 }
 
@@ -212,6 +225,20 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
 
         self.notifier.active();
         self.stats.count_request();
+
+        // check number of calls in batch
+        if let rpc::Request::Batch(ref calls) = request {
+            let batch_size = calls.len();
+
+            // if batch is too large, return an error
+            if (batch_size > self.max_batch_size) {
+                error!("Rejecting JSON-RPC batch: {:?} calls", batch_size);
+                return Box::new(rpc::futures::finished(Some(rpc::Response::from(
+                    batch_too_large(),
+                    None,
+                ))));
+            }
+        }
 
         let id = match request {
             rpc::Request::Single(rpc::Call::MethodCall(ref call)) => Some(call.id.clone()),
