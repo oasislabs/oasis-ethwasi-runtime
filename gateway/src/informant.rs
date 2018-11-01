@@ -28,7 +28,7 @@ const RATE_SECONDS: usize = 10;
 const STATS_SAMPLES: usize = 60;
 
 /// Custom JSON-RPC error code for oversized batches
-const ERROR_BATCH_SIZE: i64 = -32091;
+const ERROR_BATCH_SIZE: i64 = -32099;
 
 struct RateCalculator {
     era: time::Instant,
