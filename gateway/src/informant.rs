@@ -205,10 +205,11 @@ impl<T: ActivityNotifier> Middleware<T> {
     }
 }
 
+/// A custom JSON-RPC error for batches containing too many requests.
 fn batch_too_large() -> rpc::Error {
     rpc::Error {
         code: rpc::ErrorCode::ServerError(-32091),
-        message: "Batch size too large".into(),
+        message: "Too many JSON-RPC requests in batch".into(),
         data: None,
     }
 }
@@ -226,13 +227,13 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
         self.notifier.active();
         self.stats.count_request();
 
-        // check number of calls in batch
+        // Check the number of requests in the JSON-RPC batch.
         if let rpc::Request::Batch(ref calls) = request {
             let batch_size = calls.len();
 
-            // if batch is too large, return an error
+            // If it exceeds the limit, respond with a custom application error.
             if (batch_size > self.max_batch_size) {
-                error!("Rejecting JSON-RPC batch: {:?} calls", batch_size);
+                error!("Rejecting JSON-RPC batch: {:?} requests", batch_size);
                 return Box::new(rpc::futures::finished(Some(rpc::Response::from(
                     batch_too_large(),
                     None,
