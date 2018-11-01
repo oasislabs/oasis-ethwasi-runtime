@@ -27,6 +27,9 @@ use std::time;
 const RATE_SECONDS: usize = 10;
 const STATS_SAMPLES: usize = 60;
 
+/// Custom JSON-RPC error code for oversized batches
+const ERROR_BATCH_SIZE: i64 = -32091;
+
 struct RateCalculator {
     era: time::Instant,
     samples: [u16; RATE_SECONDS],
@@ -208,7 +211,7 @@ impl<T: ActivityNotifier> Middleware<T> {
 /// A custom JSON-RPC error for batches containing too many requests.
 fn batch_too_large() -> rpc::Error {
     rpc::Error {
-        code: rpc::ErrorCode::ServerError(-32091),
+        code: rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE),
         message: "Too many JSON-RPC requests in batch".into(),
         data: None,
     }
@@ -259,24 +262,16 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
     }
 }
 
-/*
-/// Client Notifier
-pub struct ClientNotifier {
-	/// Client
-	pub client: Arc<::ethcore::client::Client>,
-}
-
-impl ActivityNotifier for ClientNotifier {
-	fn active(&self) {
-		self.client.keep_alive()
-	}
-}
-*/
-
 #[cfg(test)]
 mod tests {
 
-    use super::{RateCalculator, RpcStats, StatsCalculator};
+    use super::*;
+
+    pub struct TestNotifier {}
+
+    impl ActivityNotifier for TestNotifier {
+        fn active(&self) {}
+    }
 
     #[test]
     fn should_calculate_rate() {
@@ -341,5 +336,71 @@ mod tests {
 
     fn is_sync<F: Send + Sync>(x: F) {
         drop(x)
+    }
+
+    #[test]
+    fn should_limit_batch_size() {
+        use futures::Future;
+        use jsonrpc_core::Middleware as mw;
+
+        // Middleware that accepts a max batch size of 1 request
+        let middleware = Middleware::new(Arc::new(RpcStats::default()), TestNotifier {}, 1);
+
+        let batch_1 = rpc::Request::Batch(vec![rpc::Call::MethodCall(rpc::MethodCall {
+            jsonrpc: Some(rpc::Version::V2),
+            method: "test".to_owned(),
+            params: Some(rpc::Params::Array(vec![
+                rpc::Value::from(1),
+                rpc::Value::from(2),
+            ])),
+            id: rpc::Id::Num(1),
+        })]);
+
+        let batch_2 = rpc::Request::Batch(vec![
+            rpc::Call::MethodCall(rpc::MethodCall {
+                jsonrpc: Some(rpc::Version::V2),
+                method: "test".to_owned(),
+                params: Some(rpc::Params::Array(vec![
+                    rpc::Value::from(1),
+                    rpc::Value::from(2),
+                ])),
+                id: rpc::Id::Num(2),
+            }),
+            rpc::Call::Notification(rpc::Notification {
+                jsonrpc: Some(rpc::Version::V2),
+                method: "test".to_owned(),
+                params: Some(rpc::Params::Array(vec![rpc::Value::from(1)])),
+            }),
+        ]);
+
+        // batch size: 1 (should pass)
+        let response_1 = middleware
+            .on_request(batch_1, (), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
+
+        // no Failure response for batch size of 1
+        assert_eq!(response_1, None);
+
+        // batch size: 2 (should fail)
+        let response_2 = middleware
+            .on_request(batch_2, (), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
+
+        // should respond with a Failure for batch size of 2
+        match response_2 {
+            Some(rpc::Response::Single(rpc::Output::Failure(failure))) => {
+                assert_eq!(
+                    failure.error.code,
+                    rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE)
+                );
+            }
+            _ => assert!(false, "Did not enforce batch size limit"),
+        };
     }
 }
