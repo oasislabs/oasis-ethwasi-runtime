@@ -233,6 +233,7 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
         // Check the number of requests in the JSON-RPC batch.
         if let rpc::Request::Batch(ref calls) = request {
             let batch_size = calls.len();
+            measure_histogram!("jsonrpc_batch_size", batch_size);
 
             // If it exceeds the limit, respond with a custom application error.
             if (batch_size > self.max_batch_size) {
