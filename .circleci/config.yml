@@ -168,7 +168,7 @@ jobs:
       - run: |
           go get -d github.com/golang/protobuf/protoc-gen-go && \
           cd $GOPATH/src/github.com/golang/protobuf && \
-          git checkout v1.0.0 && \
+          git checkout v1.1.0 && \
           cd protoc-gen-go && \
           go install
       - run: |
@@ -177,11 +177,8 @@ jobs:
           git config --global --add url."git@github.com:".insteadOf "https://github.com/" && \
           git clone --depth 1 git@github.com:/oasislabs/ekiden && \
           cd ekiden/go && \
-          dep ensure && \
-          go generate ./... && \
-          go build -v -o ./ekiden/ekiden ./ekiden && \
-          cd $GOPATH/src/github.com/oasislabs/ekiden/go/ekiden && \
-          go install
+          env -u GOPATH make && \
+          cp $GOPATH/src/github.com/oasislabs/ekiden/go/ekiden/ekiden /go/bin
       - run: |
           cd benchmark && \
           env -u GOPATH make && \
