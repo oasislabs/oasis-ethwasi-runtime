@@ -2,7 +2,7 @@
 
 runtime_ethereum_commit_sha=${CIRCLE_SHA1:-unknown}
 base_docker_image_tag=${BASE_DOCKER_IMAGE_TAG:-latest}
-ekiden_image=${EKIDEN_DOCKER_IMAGE:-ekiden/development:0.2.0}
+ekiden_image=${EKIDEN_DOCKER_IMAGE:-oasislabs/development:0.2.0}
 base_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )
 
 cd ${base_dir}

@@ -1,11 +1,19 @@
+defaults: &defaults
+  docker:
+    - image: oasislabs/testing:0.2.0
+      auth:
+        username: $DOCKERHUB_USERNAME
+        password: $DOCKERHUB_PASSWORD
+      environment:
+        RUST_BACKTRACE: "1"
+
 version: 2
 jobs:
   build-and-test-runtime:
     # The purpose of this job is to ensure
     # that the runtime code compiles
     # and tests pass.
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -44,8 +52,7 @@ jobs:
   build-runtime-benchmark:
     # The purpose of this job is to ensure
     # that the runtime-benchmark code compiles.
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -76,8 +83,7 @@ jobs:
     # The purpose of this job is to ensure
     # that the web3-gateway code compiles
     # and tests pass.
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -109,8 +115,7 @@ jobs:
     # that the gensis code compiles. Currently,
     # there are no tests to run, but they should
     # run here once we write them.
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -130,8 +135,7 @@ jobs:
   build-run-contract:
     # The purpose of this job is to ensure
     # that the run_contract code compiles.
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -196,8 +200,7 @@ jobs:
   end-to-end-tests:
     # The purpose of this job is to run
     # the end-to-end tests.
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -312,8 +315,7 @@ jobs:
     #       as the staging image until the
     #       deploy-to-staging job.
     ##
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -359,8 +361,7 @@ jobs:
     # image and published to Docker Hub before this
     # job triggers a deploy in the private-ops project.
     ##
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     steps:
       - checkout
       - setup_remote_docker
@@ -418,8 +419,7 @@ jobs:
     # The docker image is tagged as the latest production
     # image and published to Docker Hub.
     ##
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     steps:
       # Set this as a variable so it can be changed quickly if necessary
       - run: echo 'export PRODUCTION_TAG=latest' >> $BASH_ENV
@@ -461,8 +461,7 @@ jobs:
     #
     # This job triggers a deploy in the private-ops project.
     ##
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     steps:
       - checkout
       - attach_workspace:
@@ -482,10 +481,7 @@ jobs:
                      $CIRCLE_TOKEN
 
   cover-rust:
-    docker:
-      - image: ekiden/testing:0.2.0
-        environment:
-          RUST_BACKTRACE: "1"
+    <<: *defaults
     resource_class: xlarge
     steps:
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
@@ -521,8 +517,7 @@ jobs:
             - cobertura.xml
 
   benchmark:
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       # Set up
@@ -558,8 +553,7 @@ jobs:
             }' \
             "https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/master?circle-token=$CIRCLE_TOKEN"
   ens-tests:
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
@@ -595,8 +589,7 @@ jobs:
           command: ./scripts/test-dapp.sh ens
 
   celer-tests:
-    docker:
-      - image: ekiden/testing:0.2.0
+    <<: *defaults
     resource_class: xlarge
     steps:
       - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
