@@ -96,9 +96,8 @@ extern crate grpcio;
 extern crate runtime_ethereum_common;
 
 mod client;
-mod extractors;
 mod impls;
-mod informant;
+mod middleware;
 #[cfg(feature = "pubsub")]
 mod notifier;
 mod rpc;

@@ -18,11 +18,10 @@ use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 
-use extractors;
-use informant::{Middleware, RpcStats};
 use jsonrpc_core::MetaIoHandler;
+use middleware::Middleware;
 use parity_reactor::TokioRemote;
-use parity_rpc::{self as rpc, DomainsValidation, Metadata};
+use parity_rpc::{self as rpc, informant::RpcStats, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
 
 use servers;
@@ -170,9 +169,9 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
         allowed_origins,
         allowed_hosts,
         conf.max_connections,
-        extractors::WsExtractor::new(None),
-        extractors::WsExtractor::new(None),
-        extractors::WsStats::new(deps.stats.clone()),
+        rpc::WsExtractor::new(None),
+        rpc::WsExtractor::new(None),
+        rpc::WsStats::new(deps.stats.clone()),
     );
 
     match start_result {
