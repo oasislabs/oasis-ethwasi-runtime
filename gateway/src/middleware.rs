@@ -8,6 +8,15 @@ use std::time;
 /// Custom JSON-RPC error code for oversized batches
 const ERROR_BATCH_SIZE: i64 = -32099;
 
+/// A custom JSON-RPC error for batches containing too many requests.
+fn batch_too_large() -> rpc::Error {
+    rpc::Error {
+        code: rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE),
+        message: "Too many JSON-RPC requests in batch".into(),
+        data: None,
+    }
+}
+
 /// RPC middleware that counts stats and enforces batch size limits.
 pub struct Middleware<T: ActivityNotifier> {
     stats: Arc<RpcStats>,
@@ -16,7 +25,6 @@ pub struct Middleware<T: ActivityNotifier> {
 }
 
 impl<T: ActivityNotifier> Middleware<T> {
-    /// Create new Middleware with stats counter and activity notifier.
     pub fn new(stats: Arc<RpcStats>, notifier: T, max_batch_size: usize) -> Self {
         Middleware {
             stats,
@@ -27,15 +35,6 @@ impl<T: ActivityNotifier> Middleware<T> {
 
     fn as_micro(dur: time::Duration) -> u32 {
         (dur.as_secs() * 1_000_000) as u32 + dur.subsec_nanos() / 1_000
-    }
-}
-
-/// A custom JSON-RPC error for batches containing too many requests.
-fn batch_too_large() -> rpc::Error {
-    rpc::Error {
-        code: rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE),
-        message: "Too many JSON-RPC requests in batch".into(),
-        data: None,
     }
 }
 

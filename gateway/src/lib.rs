@@ -28,7 +28,6 @@ extern crate futures;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate order_stat;
 extern crate parking_lot;
 extern crate path;
 extern crate rayon;
