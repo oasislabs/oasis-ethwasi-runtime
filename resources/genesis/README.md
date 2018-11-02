@@ -7,7 +7,7 @@ during compilation.
 
 The genesis block contains the following accounts:
 
-* `1c20a5e03c029c24b4e900363479c81f8e8003ea` is the account for the private faucet
+* `abc6fdb3c0e53552acf5eb4061b54e4e38962dc6` is the account for the private faucet
   that is used to fund all other accounts. The private key is stored securely and
   is only available to the [private faucet application](https://github.com/oasislabs/private-faucet).
 
@@ -18,7 +18,7 @@ debug mode or with the `benchmark` feature enabled.*
 
 The genesis block contains the following accounts:
 
-* `1c20a5e03c029c24b4e900363479c81f8e8003ea` is the account for the private faucet
+* `abc6fdb3c0e53552acf5eb4061b54e4e38962dc6` is the account for the private faucet
   that is used to fund all other accounts. The private key is stored securely and
   is only available to the [private faucet application](https://github.com/oasislabs/private-faucet).
 
