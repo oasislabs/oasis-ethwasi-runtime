@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use ethereum_api::{BlockId as EkidenBlockId, Log};
+use ethereum_api::BlockId as EkidenBlockId;
 
 use ethcore::ids::BlockId;
 use ethcore::spec::Spec;

@@ -1,5 +1,4 @@
-use std::{self,
-          collections::HashSet,
+use std::{collections::HashSet,
           sync::{Arc, Mutex}};
 
 use super::evm::{get_contract_address, GAS_LIMIT, SPEC};
