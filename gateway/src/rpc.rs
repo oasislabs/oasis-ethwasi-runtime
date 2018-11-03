@@ -61,7 +61,7 @@ impl Default for HttpConfiguration {
             hosts: Some(vec![]),
             server_threads: 1,
             processing_threads: 4,
-            max_batch_size: 1000,
+            max_batch_size: 10,
         }
     }
 }

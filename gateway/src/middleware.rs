@@ -73,9 +73,6 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
         let stats = self.stats.clone();
         let future = process(request, meta).map(move |res| {
             let time = Self::as_micro(start.elapsed());
-            if time > 10_000 {
-                debug!(target: "rpc", "[{:?}] Took {}ms", id, time / 1_000);
-            }
             stats.add_roundtrip(time);
             res
         });
@@ -86,7 +83,6 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     pub struct TestNotifier {}
