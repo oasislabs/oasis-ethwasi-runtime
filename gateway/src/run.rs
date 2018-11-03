@@ -47,6 +47,7 @@ pub fn execute(
     ws_port: u16,
     ws_max_connections: usize,
     gas_price: U256,
+    jsonrpc_max_batch_size: usize,
 ) -> Result<RunningClient, String> {
     let client = Arc::new(Client::new(
         &util::load_spec(),
@@ -72,6 +73,7 @@ pub fn execute(
     ws_conf.hosts = None;
     ws_conf.interface = "0.0.0.0".into();
     ws_conf.port = ws_port;
+    ws_conf.max_batch_size = jsonrpc_max_batch_size;
 
     // max # of concurrent connections. the default is 100, which is "low" and "should be increased":
     // https://github.com/tomusdrw/ws-rs/blob/f12d19c4c19422fc79af28a3181f598bc07ecd1e/src/lib.rs#L128
@@ -83,6 +85,7 @@ pub fn execute(
     http_conf.interface = "0.0.0.0".into();
     http_conf.port = http_port;
     http_conf.processing_threads = num_threads;
+    http_conf.max_batch_size = jsonrpc_max_batch_size;
 
     // start RPCs
     let deps_for_rpc_apis = Arc::new(rpc_apis::FullDependencies {
@@ -99,7 +102,6 @@ pub fn execute(
     };
 
     // start rpc servers
-    let rpc_direct = rpc::setup_apis(rpc_apis::ApiSet::All, &dependencies);
     let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
     let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)?;
 
@@ -110,7 +112,6 @@ pub fn execute(
 
     let running_client = RunningClient {
         inner: RunningClientInner::Full {
-            rpc: rpc_direct,
             client,
             keep_alive: Box::new(keep_alive_set),
         },
@@ -128,40 +129,21 @@ pub struct RunningClient {
 
 enum RunningClientInner {
     Full {
-        rpc: jsonrpc_core::MetaIoHandler<Metadata, informant::Middleware<rpc_apis::ClientNotifier>>,
         client: Arc<Client>,
         keep_alive: Box<Any>,
     },
 }
 
 impl RunningClient {
-    /// Performs a synchronous RPC query.
-    /// Blocks execution until the result is ready.
-    pub fn rpc_query_sync(&self, request: &str) -> Option<String> {
-        let metadata = Metadata {
-            origin: Origin::CApi,
-            session: None,
-        };
-
-        match self.inner {
-            RunningClientInner::Full { ref rpc, .. } => rpc.handle_request_sync(request, metadata),
-        }
-    }
-
     /// Shuts down the client.
     pub fn shutdown(self) {
         match self.inner {
-            RunningClientInner::Full {
-                rpc,
-                client,
-                keep_alive,
-            } => {
+            RunningClientInner::Full { client, keep_alive } => {
                 info!("Finishing work, please wait...");
                 // Create a weak reference to the client so that we can wait on shutdown
                 // until it is dropped
                 let weak_client = Arc::downgrade(&client);
                 // drop this stuff as soon as exit detected.
-                drop(rpc);
                 drop(keep_alive);
                 drop(client);
                 wait_for_drop(weak_client);

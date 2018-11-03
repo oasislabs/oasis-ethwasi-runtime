@@ -95,6 +95,13 @@ fn main() {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("jsonrpc-max-batch")
+                .long("jsonrpc-max-batch")
+                .help("Max number of JSON-RPC calls allowed in a batch.")
+                .default_value("10")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("v")
                 .short("v")
                 .multiple(true)
@@ -125,6 +132,7 @@ fn main() {
     let ws_max_connections = value_t!(args, "ws-max-connections", usize).unwrap();
     let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64).unwrap();
     let gas_price = util::gwei_to_wei(value_t!(args, "gas-price", u64).unwrap());
+    let jsonrpc_max_batch_size = value_t!(args, "jsonrpc-max-batch", usize).unwrap();
     let client = web3_gateway::start(
         args,
         container,
@@ -134,6 +142,7 @@ fn main() {
         ws_port,
         ws_max_connections,
         gas_price,
+        jsonrpc_max_batch_size,
     ).unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
