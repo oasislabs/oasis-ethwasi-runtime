@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
-use ekiden_core::error::{Error, Result};
+use ekiden_core::error::Result;
 use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
               spec::Spec,
-              transaction::{Action, LocalizedTransaction, SignedTransaction},
+              transaction::{LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
 use runtime_ethereum_common::BLOCK_GAS_LIMIT;
