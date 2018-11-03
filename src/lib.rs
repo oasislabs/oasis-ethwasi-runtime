@@ -44,14 +44,11 @@ use ekiden_trusted::{db::{Database, DatabaseHandle},
                                create_runtime,
                                dispatcher::{BatchHandler, RuntimeCallContext}}};
 use ethcore::{block::{IsBlock, OpenBlock},
-              error::BlockError,
-              log_entry::LogEntry as EthLogEntry,
-              receipt::Receipt as EthReceipt,
               rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
-use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
-                   Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
+use ethereum_api::{with_api, BlockId, ExecuteTransactionResponse, Filter, Log, Receipt,
+                   SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 
 use self::state::Cache;
@@ -132,18 +129,6 @@ impl BatchHandler for EthereumBatchHandler {
 }
 
 configure_runtime_dispatch_batch_handler!(EthereumBatchHandler);
-
-fn strip_0x<'a>(hex: &'a str) -> &'a str {
-    if hex.starts_with("0x") {
-        hex.get(2..).unwrap()
-    } else {
-        hex
-    }
-}
-
-fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
-    Ok(hex::decode(strip_0x(hex.as_ref()))?)
-}
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 pub fn get_block_height(_request: &bool, ctx: &mut RuntimeCallContext) -> Result<U256> {

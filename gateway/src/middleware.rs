@@ -57,7 +57,7 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
             measure_histogram!("jsonrpc_batch_size", batch_size);
 
             // If it exceeds the limit, respond with a custom application error.
-            if (batch_size > self.max_batch_size) {
+            if batch_size > self.max_batch_size {
                 error!("Rejecting JSON-RPC batch: {:?} requests", batch_size);
                 return Box::new(rpc::futures::finished(Some(rpc::Response::from(
                     batch_too_large(),
@@ -66,10 +66,6 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
             }
         }
 
-        let id = match request {
-            rpc::Request::Single(rpc::Call::MethodCall(ref call)) => Some(call.id.clone()),
-            _ => None,
-        };
         let stats = self.stats.clone();
         let future = process(request, meta).map(move |res| {
             let time = Self::as_micro(start.elapsed());
