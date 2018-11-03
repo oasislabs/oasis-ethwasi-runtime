@@ -19,9 +19,9 @@ use std::io;
 use std::sync::Arc;
 
 use jsonrpc_core::MetaIoHandler;
+use middleware::Middleware;
 use parity_reactor::TokioRemote;
-use parity_rpc::informant::{Middleware, RpcStats};
-use parity_rpc::{self as rpc, DomainsValidation, Metadata};
+use parity_rpc::{self as rpc, informant::RpcStats, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
 
 use servers;
@@ -41,6 +41,7 @@ pub struct HttpConfiguration {
     pub hosts: Option<Vec<String>>,
     pub server_threads: usize,
     pub processing_threads: usize,
+    pub max_batch_size: usize,
 }
 
 impl HttpConfiguration {
@@ -60,6 +61,7 @@ impl Default for HttpConfiguration {
             hosts: Some(vec![]),
             server_threads: 1,
             processing_threads: 4,
+            max_batch_size: 10,
         }
     }
 }
@@ -75,6 +77,7 @@ pub struct WsConfiguration {
     pub hosts: Option<Vec<String>>,
     pub support_token_api: bool,
     pub dapps_address: Option<rpc::Host>,
+    pub max_batch_size: usize,
 }
 
 impl Default for WsConfiguration {
@@ -93,6 +96,7 @@ impl Default for WsConfiguration {
             hosts: Some(Vec::new()),
             support_token_api: true,
             dapps_address: Some("127.0.0.1:8545".into()),
+            max_batch_size: 1000,
         }
     }
 }
@@ -138,11 +142,15 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let addr = url.parse()
         .map_err(|_| format!("Invalid WebSockets listen host/port given: {}", url))?;
 
-    let full_handler = setup_apis(rpc_apis::ApiSet::SafeContext, deps);
+    let full_handler = setup_apis(rpc_apis::ApiSet::SafeContext, deps, conf.max_batch_size);
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
             rpc::WsDispatcher::new(full_handler),
-            Middleware::new(deps.stats.clone(), deps.apis.activity_notifier(), None),
+            Middleware::new(
+                deps.stats.clone(),
+                deps.apis.activity_notifier(),
+                conf.max_batch_size,
+            ),
         ));
         let apis = conf.apis.list_apis();
         deps.apis.extend_with_set(&mut handler, &apis);
@@ -190,7 +198,7 @@ pub fn new_http<D: rpc_apis::Dependencies>(
     let url = format!("{}:{}", conf.interface, conf.port);
     let addr = url.parse()
         .map_err(|_| format!("Invalid {} listen host/port given: {}", id, url))?;
-    let handler = setup_apis(conf.apis, deps);
+    let handler = setup_apis(conf.apis, deps, conf.max_batch_size);
     let remote = deps.remote.clone();
 
     let cors_domains = into_domains(conf.cors);
@@ -256,6 +264,7 @@ fn with_domain(
 pub fn setup_apis<D>(
     apis: ApiSet,
     deps: &Dependencies<D>,
+    max_batch_size: usize,
 ) -> MetaIoHandler<Metadata, Middleware<D::Notifier>>
 where
     D: rpc_apis::Dependencies,
@@ -263,7 +272,7 @@ where
     let mut handler = MetaIoHandler::with_middleware(Middleware::new(
         deps.stats.clone(),
         deps.apis.activity_notifier(),
-        None,
+        max_batch_size,
     ));
     let apis = apis.list_apis();
     deps.apis.extend_with_set(&mut handler, &apis);
