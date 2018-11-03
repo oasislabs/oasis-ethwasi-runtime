@@ -49,3 +49,17 @@ impl Storage for GlobalStorage {
 pub fn get_storage_backend() -> Arc<StorageBackend> {
     BACKEND.clone()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_storage() {
+        let storage = GlobalStorage::new();
+        let val = "wonderwall".as_bytes();
+        let key = storage.store_bytes(&val).unwrap();
+        let result = storage.fetch_bytes(&key).unwrap();
+        assert_eq!(val, result.as_slice());
+    }
+}
