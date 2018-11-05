@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -24,7 +25,7 @@ import (
 const (
 	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
 
-	gasLimit = 1000000
+	transferCost = 21000 // Simple transfers always cost this much gas.
 )
 
 var (
@@ -49,8 +50,43 @@ type transferAccount struct {
 }
 
 func (account *transferAccount) newTransfer(nonce uint64, dst common.Address, amount *big.Int) (*types.Transaction, error) {
-	tx := types.NewTransaction(nonce, dst, amount, gasLimit, gasPrice, nil)
+	tx := types.NewTransaction(nonce, dst, amount, transferCost, gasPrice, nil)
 	return types.SignTx(tx, types.HomesteadSigner{}, account.privateKey)
+}
+
+func (account *transferAccount) drainTo(ctx context.Context, dst common.Address) error {
+	transferFee := big.NewInt(transferCost)
+	transferFee.Mul(transferFee, gasPrice)
+
+	// Query the account's balance.
+	accountAddr := privKeyToAddress(account.privateKey)
+	balance, err := account.client.BalanceAt(ctx, accountAddr, nil)
+	if err != nil {
+		return err
+	}
+
+	// Transfer off the remaining balance back to the funding account.
+	balance.Sub(balance, transferFee)
+	if balance.Cmp(&big.Int{}) <= 0 {
+		return fmt.Errorf("insufficient balance to transfer: %v", balance)
+	}
+	tx, err := account.newTransfer(account.nonce, dst, balance)
+	if err != nil {
+		return err
+	}
+	if err = account.client.SendTransaction(ctx, tx); err != nil {
+		return err
+	}
+
+	// Query the account's final balance, ensure it is zero.
+	balance, err = account.client.BalanceAt(ctx, accountAddr, nil)
+	if err != nil {
+		return err
+	}
+	if balance.Cmp(&big.Int{}) != 0 {
+		return fmt.Errorf("transfer: non-zero final balance: %v", balance)
+	}
+	return nil
 }
 
 type newHeadWatcher struct {
@@ -204,14 +240,38 @@ func (bench *benchTransfer) Scenario(ctx context.Context, state *api.State) (uin
 	return 1, nil
 }
 
-func (bench *benchTransfer) Cleanup(state *api.State) {
-	account := (state.State).(*transferAccount)
-	if account.newHeads != nil {
-		account.newHeads.Stop()
+func (bench *benchTransfer) BulkCleanup(ctx context.Context, states []*api.State) {
+	fundingAccountAddr := privKeyToAddress(bench.fundingAccount.privateKey)
+
+	var wg sync.WaitGroup
+	for i := 0; i < len(states); i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+
+			if states[idx].State == nil {
+				return
+			}
+			account := (states[idx].State).(*transferAccount)
+
+			defer func() {
+				if account.newHeads != nil {
+					account.newHeads.Stop()
+				}
+				if account.client != nil {
+					account.client.Close()
+				}
+			}()
+
+			if err := account.drainTo(ctx, fundingAccountAddr); err != nil {
+				_ = level.Error(states[idx].Logger).Log("msg", "failed to drain balance",
+					"err", err,
+				)
+			}
+		}(i)
 	}
-	if account.client != nil {
-		account.client.Close()
-	}
+
+	wg.Wait()
 }
 
 func privKeyToAddress(privKey *ecdsa.PrivateKey) common.Address {

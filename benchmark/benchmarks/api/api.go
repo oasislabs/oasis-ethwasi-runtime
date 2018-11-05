@@ -35,6 +35,10 @@ func (cfg *Config) RunBenchmark(ctx context.Context, benchmark Benchmark) error 
 
 	states := make([]*State, 0, cfg.Concurrency)
 	defer func() {
+		if bulkCleanupable, ok := benchmark.(BulkCleanupable); ok {
+			bulkCleanupable.BulkCleanup(ctx, states)
+		}
+
 		for _, state := range states {
 			if cleanupable, ok := benchmark.(Cleanupable); ok {
 				cleanupable.Cleanup(state)
@@ -240,13 +244,22 @@ type Prepareable interface {
 	Prepare(context.Context, *State) error
 }
 
-// BulkPreparable is the interface exposed by benchmakrs that require
+// BulkPreparable is the interface exposed by benchmarks that require
 // a bulk pre-flight prepare step.
 //
 // If a benchmark also is a Preparable, the BulkPrepare operation will
 // be invoked after every Prepeare operation has been completed.
 type BulkPreparable interface {
 	BulkPrepare(context.Context, []*State) error
+}
+
+// BulkCleanupable is the interface exposed by benchmarks that require
+// a bulk cleanup step.
+//
+// If a benchmark is also a Cleanupable, the BulkCleanup operation will
+// be invoked before any Prepare operations are dispatched.
+type BulkCleanupable interface {
+	BulkCleanup(context.Context, []*State)
 }
 
 // Cleanupable is the interface exposed by benchmarks require a
