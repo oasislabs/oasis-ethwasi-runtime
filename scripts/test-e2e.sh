@@ -29,7 +29,7 @@ run_test() {
 
     # Advance epoch to elect a new committee.
     sleep 3
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."

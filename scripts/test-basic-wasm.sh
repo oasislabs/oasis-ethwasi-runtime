@@ -25,7 +25,7 @@ run_test() {
     run_gateway 1
     sleep 10
 
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Installing deploy_contract dependencies."
     pushd ${WORKDIR}/tests/deploy_contract > /dev/null
