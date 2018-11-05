@@ -6,9 +6,9 @@ run_dummy_node_default() {
     echo "Starting dummy node."
 
     ekiden-node-dummy \
-	--random-beacon-backend dummy \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-	--time-source-notifier mockrpc \
+        --random-beacon-backend dummy \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --time-source-notifier mockrpc \
         --storage-backend dummy \
         &> dummy.log &
 }
@@ -25,13 +25,13 @@ run_compute_node() {
 
     ekiden-compute \
         --no-persist-identity \
-	--max-batch-timeout 100 \
-	--max-batch-size 50 \
+        --max-batch-timeout 100 \
+        --max-batch-size 50 \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
         --storage-multilayer-bottom-backend remote \
-	--time-source-notifier system \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --time-source-notifier system \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
@@ -55,7 +55,7 @@ run_test() {
     # Advance epoch to elect a new committee.
     echo "Advancing epoch."
     sleep 2
-    ekiden-node-dummy-controller set-epoch --epoch 1
+    ekiden-node debug dummy set-epoch --epoch 1
     sleep 2
 
     # Start genesis state injector.
@@ -63,7 +63,7 @@ run_test() {
     ${WORKDIR}/genesis/target/release/genesis \
         --storage-backend remote \
         --mr-enclave $(cat target_benchmark/enclave/runtime-ethereum.mrenclave) \
-	${WORKDIR}/genesis/state-9999.json &> genesis.log &
+        ${WORKDIR}/genesis/state-9999.json &> genesis.log &
     genesis_pid=$!
 
     # Wait on genesis.
@@ -80,9 +80,9 @@ run_test() {
     # Run transaction playback.
     echo "Starting transaction playback."
     ${WORKDIR}/playback/target/release/playback \
-	--transactions 10000 \
-	--threads 100 \
-	${WORKDIR}/playback/blocks-10000-1000000.bin &> playback.log &
+        --transactions 10000 \
+        --threads 100 \
+        ${WORKDIR}/playback/blocks-10000-1000000.bin &> playback.log &
     playback_pid=$!
 
     # Wait on playback.
