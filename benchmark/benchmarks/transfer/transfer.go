@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 
@@ -18,17 +20,20 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/oasislabs/runtime-ethereum/benchmark/benchmarks/api"
 )
 
 const (
+	cfgFaucetURL    = "benchmarks.transfer.faucet_url"
 	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
 
 	transferCost = 21000 // Simple transfers always cost this much gas.
 )
 
 var (
+	flagFaucetURL    string
 	flagWatchNewHead bool
 
 	gasPrice       = big.NewInt(1000000000)
@@ -171,6 +176,11 @@ func (bench *benchTransfer) Prepare(ctx context.Context, state *api.State) error
 }
 
 func (bench *benchTransfer) BulkPrepare(ctx context.Context, states []*api.State) error {
+	// Ensure that there is sufficeint balance in the funding account.
+	if err := bench.ensureMinBalance(ctx, states); err != nil {
+		return err
+	}
+
 	// Generate and sign all of the initial funding transactions.
 	txs := make([]*types.Transaction, 0, len(states))
 	for i := 0; i < len(states); i++ {
@@ -274,6 +284,64 @@ func (bench *benchTransfer) BulkCleanup(ctx context.Context, states []*api.State
 	wg.Wait()
 }
 
+func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.State) error {
+	// Work out the balance required to fund all the accounts, including
+	// transaction fees.
+	txFees := big.NewInt(transferCost)
+	minBalance := big.NewInt(int64(len(states)))
+	txFees.Mul(txFees, gasPrice)
+	txFees.Mul(txFees, minBalance)
+	minBalance.Mul(fundAmount, minBalance)
+	minBalance.Add(minBalance, txFees)
+
+	logger := states[0].Logger
+	client := (states[0].State).(*transferAccount).client
+	fundingAccountAddr := privKeyToAddress(bench.fundingAccount.privateKey)
+	balance, err := client.BalanceAt(ctx, fundingAccountAddr, nil)
+	if err != nil {
+		return err
+	}
+
+	level.Debug(logger).Log("msg", "funding account balance",
+		"balance", balance,
+		"required_balance", &minBalance,
+	)
+
+	// Sufficient balance is present in the account.
+	if balance.Cmp(minBalance) > 0 {
+		return nil
+	}
+
+	// Hit up the faucet's private endpoint for more money.
+	if flagFaucetURL == "" {
+		return fmt.Errorf("insufficient funds, no faucet configured")
+	}
+	u, err := url.Parse(flagFaucetURL)
+	if err != nil {
+		return fmt.Errorf("invalid faucet URL: ", err)
+	}
+	q := u.Query()
+	q.Set("to", fundingAccountAddr.Hex())
+	q.Set("amnt", minBalance.String())
+	u.RawQuery = q.Encode()
+
+	level.Debug(logger).Log("msg", "requesting funding from faucet",
+		"url", u,
+	)
+
+	resp, err := ctxhttp.Get(ctx, nil, u.String())
+	if err != nil {
+		return fmt.Errorf("failed to query faucet: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("faucet failed funding: %v", resp.StatusCode)
+	}
+
+	return nil
+}
+
 func privKeyToAddress(privKey *ecdsa.PrivateKey) common.Address {
 	pubKey := (privKey.Public()).(*ecdsa.PublicKey)
 	return crypto.PubkeyToAddress(*pubKey)
@@ -281,9 +349,11 @@ func privKeyToAddress(privKey *ecdsa.PrivateKey) common.Address {
 
 // Init initializes and registers the synthetic transfer benchmark.
 func Init(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&flagFaucetURL, cfgFaucetURL, "", "Faucet private endpoint URL")
 	cmd.Flags().BoolVar(&flagWatchNewHead, cfgWatchNewHead, false, "Subscribe for `newHeads` events")
 
 	for _, v := range []string{
+		cfgFaucetURL,
 		cfgWatchNewHead,
 	} {
 		viper.BindPFlag(v, cmd.Flags().Lookup(v)) // nolint: errcheck
