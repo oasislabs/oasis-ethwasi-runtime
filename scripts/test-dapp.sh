@@ -21,7 +21,7 @@ run_test() {
     sleep 1
 
     # Advance epoch to elect a new commitee
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     # Location for all the dapp repos
     mkdir -p /tmp/dapps

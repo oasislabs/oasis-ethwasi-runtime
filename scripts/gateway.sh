@@ -62,7 +62,7 @@ run_test() {
     sleep 2
 
     # Advance epoch to elect a new committee.
-    ekiden dummy set-epoch --epoch 1
+    ekiden debug dummy set-epoch --epoch 1
 
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
@@ -72,6 +72,7 @@ run_test() {
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway \
         --storage-multilayer-bottom-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
+        --ws-max-connections 10000 \
         --threads 100 &> gateway.log &
     gateway_pid=$!
 
