@@ -69,6 +69,7 @@ impl Confidential for ConfidentialClient {
             address: request.to.map(Into::into),
             input: request.data.map(Into::into),
             value: request.value.map(Into::into),
+            gas: request.gas.map(Into::into),
         };
         Box::new(
             self.client

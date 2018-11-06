@@ -90,6 +90,7 @@ pub struct TransactionRequest {
     // Opaque call input.
     pub input: Option<Vec<u8>>,
     pub value: Option<U256>,
+    pub gas: Option<U256>
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
