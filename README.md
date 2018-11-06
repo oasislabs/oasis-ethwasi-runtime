@@ -112,7 +112,7 @@ The compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by defau
 
 To start the gateway:
 ```bash
-$ gateway/target/debug/gateway \
+$ target/debug/gateway \
     --storage-backend multilayer \
     --storage-multilayer-local-storage-base /tmp/ekiden-storage-gateway \
     --storage-multilayer-bottom-backend remote \
