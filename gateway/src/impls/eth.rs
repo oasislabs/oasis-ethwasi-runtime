@@ -28,7 +28,7 @@ use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
 
 use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
 use jsonrpc_macros::Trailing;
 
 use log;
@@ -94,6 +94,15 @@ enum PendingOrBlock {
 enum PendingTransactionId {
     Hash(H256),
     Location(PendingOrBlock, usize),
+}
+
+/// Constructs a JSON-RPC error from a string message, with error code -32603.
+fn jsonrpc_error(message: String) -> Error {
+    Error {
+        code: ErrorCode::InternalError,
+        message: message,
+        data: None,
+    }
 }
 
 impl EthClient {
