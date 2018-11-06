@@ -267,6 +267,17 @@ fn make_unsigned_transaction(
     cache: &Cache,
     request: &TransactionRequest,
 ) -> Result<SignedTransaction> {
+    // this max_gas value comes from
+    // https://github.com/oasislabs/parity/blob/ekiden/rpc/src/v1/helpers/fake_sign.rs#L24
+    let max_gas = 50_000_000.into();
+    let gas = match request.gas {
+        Some(gas) if gas > max_gas => {
+            warn!("Gas limit capped to {} (from {})", max_gas, gas);
+            max_gas
+        }
+        Some(gas) => gas,
+        None => max_gas,
+    };
     let tx = EthcoreTransaction {
         action: if request.is_call {
             Action::Call(request
@@ -277,7 +288,7 @@ fn make_unsigned_transaction(
         },
         value: request.value.unwrap_or(U256::zero()),
         data: request.input.clone().unwrap_or(vec![]),
-        gas: U256::max_value(),
+        gas: gas,
         gas_price: U256::zero(),
         nonce: request.nonce.unwrap_or_else(|| {
             request
@@ -448,6 +459,7 @@ mod tests {
                 input: Some(data),
                 value: Some(*value),
                 nonce: None,
+                gas: None,
             };
 
             with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())
