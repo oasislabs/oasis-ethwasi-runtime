@@ -459,6 +459,7 @@ mod tests {
                 input: Some(data),
                 value: Some(*value),
                 nonce: None,
+                gas: None,
             };
 
             with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())
