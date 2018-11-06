@@ -27,7 +27,7 @@ use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
 
 use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
 use jsonrpc_macros::Trailing;
 
 use log;
@@ -95,6 +95,15 @@ enum PendingTransactionId {
     Location(PendingOrBlock, usize),
 }
 
+/// Constructs a JSON-RPC error from a string message, with error code -32603.
+fn jsonrpc_error(message: String) -> Error {
+    Error {
+        code: ErrorCode::InternalError,
+        message: message,
+        data: None,
+    }
+}
+
 impl EthClient {
     /// Creates new EthClient.
     pub fn new(client: &Arc<Client>) -> Self {
@@ -123,59 +132,57 @@ impl EthClient {
 
         let eip86_transition = self.eip86_transition;
 
-        Box::new(
-            block
-                .map_err(|error| errors::internal("runtime call failed", error))
-                .map(move |block| match block {
-                    Some(block) => {
-                        let view = block.header_view();
-                        Some(RichBlock {
-                            inner: Block {
-                                hash: Some(view.hash().into()),
-                                size: Some(block.rlp().as_raw().len().into()),
-                                parent_hash: view.parent_hash().into(),
-                                uncles_hash: view.uncles_hash().into(),
-                                author: view.author().into(),
-                                miner: view.author().into(),
-                                state_root: view.state_root().into(),
-                                transactions_root: view.transactions_root().into(),
-                                receipts_root: view.receipts_root().into(),
-                                number: Some(view.number().into()),
-                                gas_used: view.gas_used().into(),
-                                gas_limit: view.gas_limit().into(),
-                                logs_bloom: Some(view.log_bloom().into()),
-                                timestamp: view.timestamp().into(),
-                                difficulty: view.difficulty().into(),
-                                total_difficulty: Some(RpcU256::from(0)),
-                                seal_fields: view.seal().into_iter().map(Into::into).collect(),
-                                uncles: block.uncle_hashes().into_iter().map(Into::into).collect(),
-                                transactions: match include_txs {
-                                    true => BlockTransactions::Full(
-                                        block
-                                            .view()
-                                            .localized_transactions()
-                                            .into_iter()
-                                            .map(|t| {
-                                                RpcTransaction::from_localized(t, eip86_transition)
-                                            })
-                                            .collect(),
-                                    ),
-                                    false => BlockTransactions::Hashes(
-                                        block
-                                            .transaction_hashes()
-                                            .into_iter()
-                                            .map(Into::into)
-                                            .collect(),
-                                    ),
-                                },
-                                extra_data: Bytes::new(view.extra_data()),
+        Box::new(block.map_err(|error| jsonrpc_error(error.message)).map(
+            move |block| match block {
+                Some(block) => {
+                    let view = block.header_view();
+                    Some(RichBlock {
+                        inner: Block {
+                            hash: Some(view.hash().into()),
+                            size: Some(block.rlp().as_raw().len().into()),
+                            parent_hash: view.parent_hash().into(),
+                            uncles_hash: view.uncles_hash().into(),
+                            author: view.author().into(),
+                            miner: view.author().into(),
+                            state_root: view.state_root().into(),
+                            transactions_root: view.transactions_root().into(),
+                            receipts_root: view.receipts_root().into(),
+                            number: Some(view.number().into()),
+                            gas_used: view.gas_used().into(),
+                            gas_limit: view.gas_limit().into(),
+                            logs_bloom: Some(view.log_bloom().into()),
+                            timestamp: view.timestamp().into(),
+                            difficulty: view.difficulty().into(),
+                            total_difficulty: Some(RpcU256::from(0)),
+                            seal_fields: view.seal().into_iter().map(Into::into).collect(),
+                            uncles: block.uncle_hashes().into_iter().map(Into::into).collect(),
+                            transactions: match include_txs {
+                                true => BlockTransactions::Full(
+                                    block
+                                        .view()
+                                        .localized_transactions()
+                                        .into_iter()
+                                        .map(|t| {
+                                            RpcTransaction::from_localized(t, eip86_transition)
+                                        })
+                                        .collect(),
+                                ),
+                                false => BlockTransactions::Hashes(
+                                    block
+                                        .transaction_hashes()
+                                        .into_iter()
+                                        .map(Into::into)
+                                        .collect(),
+                                ),
                             },
-                            extra_info: BLOCK_EXTRA_INFO.clone(),
-                        })
-                    }
-                    _ => None,
-                }),
-        )
+                            extra_data: Bytes::new(view.extra_data()),
+                        },
+                        extra_info: BLOCK_EXTRA_INFO.clone(),
+                    })
+                }
+                _ => None,
+            },
+        ))
     }
 
     fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
@@ -265,7 +272,7 @@ impl Eth for EthClient {
             self.client
                 .balance(&address, Self::get_block_id(num))
                 .map(|balance| balance.into())
-                .map_err(|_error| errors::state_pruned()),
+                .map_err(|error| jsonrpc_error(error.message)),
         )
     }
 
@@ -289,7 +296,7 @@ impl Eth for EthClient {
             self.client
                 .storage_at(&address, &H256::from(position), Self::get_block_id(num))
                 .map(|hash| hash.into())
-                .map_err(|_error| errors::state_pruned()),
+                .map_err(|error| jsonrpc_error(error.message)),
         )
     }
 
@@ -316,7 +323,7 @@ impl Eth for EthClient {
             number => Box::new(
                 self.client
                     .nonce(&address, block_number_to_id(number))
-                    .map_err(|_error| errors::state_pruned()),
+                    .map_err(|error| jsonrpc_error(error.message)),
             ),
         };
 
@@ -329,7 +336,7 @@ impl Eth for EthClient {
         Box::new(
             self.client
                 .block(BlockId::Hash(hash.into()))
-                .map_err(|error| errors::internal("runtime call failed", error))
+                .map_err(|error| jsonrpc_error(error.message))
                 .map(|block| block.map(|block| block.transactions_count().into())),
         )
     }
@@ -343,7 +350,7 @@ impl Eth for EthClient {
             _ => Box::new(
                 self.client
                     .block(block_number_to_id(num))
-                    .map_err(|error| errors::internal("runtime call failed", error))
+                    .map_err(|error| jsonrpc_error(error.message))
                     .map(|block| block.map(|block| block.transactions_count().into())),
             ),
         }
@@ -354,7 +361,7 @@ impl Eth for EthClient {
         Box::new(
             self.client
                 .block(BlockId::Hash(hash.into()))
-                .map_err(|error| errors::internal("runtime call failed", error))
+                .map_err(|error| jsonrpc_error(error.message))
                 .map(|block| block.map(|block| block.uncles_count().into())),
         )
     }
@@ -366,7 +373,7 @@ impl Eth for EthClient {
             _ => Box::new(
                 self.client
                     .block(block_number_to_id(num))
-                    .map_err(|error| errors::internal("runtime call failed", error))
+                    .map_err(|error| jsonrpc_error(error.message))
                     .map(|block| block.map(|block| block.uncles_count().into())),
             ),
         }
@@ -383,7 +390,7 @@ impl Eth for EthClient {
             self.client
                 .code(&address, Self::get_block_id(num))
                 .map(|code| code.map_or_else(Bytes::default, Bytes::new))
-                .map_err(|_error| errors::state_pruned()),
+                .map_err(|error| jsonrpc_error(error.message)),
         )
     }
 
