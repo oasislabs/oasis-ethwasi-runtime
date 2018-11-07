@@ -6,7 +6,7 @@ authors = ["Oasis Labs<info@oasislabs.com>"]
 [dependencies]
 hex = "0.3"
 parity-hash = { version = "1.2.0", default-features = false }
-pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum", branch = "ekiden" }
+pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum-private", branch = "ekiden" }
 rand = { version = "0.5" }
 num = { git = "https://github.com/rust-num/num", version = "0.2" }
 rulinalg = { git = "https://github.com/AtheMathmo/rulinalg", version = "0.4.2" }
