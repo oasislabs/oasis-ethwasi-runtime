@@ -44,14 +44,11 @@ use ekiden_trusted::{db::{Database, DatabaseHandle},
                                create_runtime,
                                dispatcher::{BatchHandler, RuntimeCallContext}}};
 use ethcore::{block::{IsBlock, OpenBlock},
-              error::BlockError,
-              log_entry::LogEntry as EthLogEntry,
-              receipt::Receipt as EthReceipt,
               rlp,
               transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
                             UnverifiedTransaction}};
-use ethereum_api::{with_api, AccountState, BlockId, ExecuteTransactionResponse, Filter, Log,
-                   Receipt, SimulateTransactionResponse, Transaction, TransactionRequest};
+use ethereum_api::{with_api, BlockId, ExecuteTransactionResponse, Filter, Log, Receipt,
+                   SimulateTransactionResponse, Transaction, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 
 use self::state::Cache;
@@ -132,18 +129,6 @@ impl BatchHandler for EthereumBatchHandler {
 }
 
 configure_runtime_dispatch_batch_handler!(EthereumBatchHandler);
-
-fn strip_0x<'a>(hex: &'a str) -> &'a str {
-    if hex.starts_with("0x") {
-        hex.get(2..).unwrap()
-    } else {
-        hex
-    }
-}
-
-fn from_hex<S: AsRef<str>>(hex: S) -> Result<Vec<u8>> {
-    Ok(hex::decode(strip_0x(hex.as_ref()))?)
-}
 
 /// TODO: first argument is ignored; remove once APIs support zero-argument signatures (#246)
 pub fn get_block_height(_request: &bool, ctx: &mut RuntimeCallContext) -> Result<U256> {
@@ -282,6 +267,17 @@ fn make_unsigned_transaction(
     cache: &Cache,
     request: &TransactionRequest,
 ) -> Result<SignedTransaction> {
+    // this max_gas value comes from
+    // https://github.com/oasislabs/parity/blob/ekiden/rpc/src/v1/helpers/fake_sign.rs#L24
+    let max_gas = 50_000_000.into();
+    let gas = match request.gas {
+        Some(gas) if gas > max_gas => {
+            warn!("Gas limit capped to {} (from {})", max_gas, gas);
+            max_gas
+        }
+        Some(gas) => gas,
+        None => max_gas,
+    };
     let tx = EthcoreTransaction {
         action: if request.is_call {
             Action::Call(request
@@ -292,7 +288,7 @@ fn make_unsigned_transaction(
         },
         value: request.value.unwrap_or(U256::zero()),
         data: request.input.clone().unwrap_or(vec![]),
-        gas: U256::max_value(),
+        gas: gas,
         gas_price: U256::zero(),
         nonce: request.nonce.unwrap_or_else(|| {
             request
@@ -463,6 +459,7 @@ mod tests {
                 input: Some(data),
                 value: Some(*value),
                 nonce: None,
+                gas: None,
             };
 
             with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())

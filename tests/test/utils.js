@@ -4,7 +4,7 @@ const HDWalletProvider = require("truffle-hdwallet-provider");
 
 const GAS_PRICE = '0x3b9aca00';
 const GAS_LIMIT = '0x100000';
-const _CONFIDENTIAL_PREFIX = '00707269';
+const _CONFIDENTIAL_PREFIX = '00656e63';
 const _GATEWAY_URL = "http://localhost:8545";
 
 /**

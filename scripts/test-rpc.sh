@@ -86,7 +86,7 @@ run_test() {
     run_gateway 1
     sleep 3
 
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Installing RPC test dependencies."
     pushd ${WORKDIR}/tests/ > /dev/null

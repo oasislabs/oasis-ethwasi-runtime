@@ -20,7 +20,7 @@ run_test() {
     run_gateway 1
     sleep 10
 
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests > /dev/null

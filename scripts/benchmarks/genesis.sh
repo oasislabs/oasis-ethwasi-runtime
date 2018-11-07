@@ -6,9 +6,9 @@ run_dummy_node_default() {
     echo "Starting dummy node."
 
     ekiden-node-dummy \
-	--random-beacon-backend dummy \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-	--time-source-notifier mockrpc \
+        --random-beacon-backend dummy \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --time-source-notifier mockrpc \
         --storage-backend dummy \
         &> dummy.log &
 }
@@ -38,9 +38,9 @@ run_compute_node_default() {
 
     ekiden-compute \
         --no-persist-identity \
-	--max-batch-timeout 10 \
-	--time-source-notifier system \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --max-batch-timeout 10 \
+        --time-source-notifier system \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --storage-backend remote \
         --port ${port} \
         ${extra_args} \
@@ -61,9 +61,9 @@ run_compute_node_storage_multilayer() {
     ekiden-compute \
         --no-persist-identity \
         --max-batch-size 50 \
-	--max-batch-timeout 10 \
+        --max-batch-timeout 10 \
         --time-source-notifier system \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base "$db_dir" \
         --storage-multilayer-aws-region us-east-1 \
@@ -92,7 +92,7 @@ run_test() {
     # Advance epoch to elect a new committee.
     echo "Advancing epoch."
     sleep 2
-    ekiden-node-dummy-controller set-epoch --epoch 1
+    ekiden-node debug dummy set-epoch --epoch 1
     sleep 2
 
     # Start genesis state injector.
@@ -100,7 +100,7 @@ run_test() {
     ${WORKDIR}/genesis/target/release/genesis \
         --storage-backend remote \
         --mr-enclave $(cat ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.mrenclave) \
-	${WORKDIR}/genesis/state-999999.json &
+        ${WORKDIR}/genesis/state-999999.json &
     genesis_pid=$!
 
     # Wait on genesis.

@@ -25,7 +25,7 @@ run_test() {
     run_gateway 1
     sleep 10
 
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Uploading bytes to storage."
     curl -X POST -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","method":"oasis_storeBytes","params":[[1, 2, 3, 4, 5], 9223372036854775807],"id":"1"}' localhost:8545 > /dev/null

@@ -512,82 +512,109 @@ impl Client {
 
     // account state-related
 
-    /// Returns an EthState at the specified BlockId, backed by an Ekiden db
-    /// snapshot, or None when the blockchain database has not yet been
-    /// initialized by the runtime.
-    fn get_ethstate_snapshot_at(&self, id: BlockId) -> Option<EthState> {
-        self.get_db_snapshot()?.get_ethstate_at(id)
-    }
-
     pub fn balance(&self, address: &Address, id: BlockId) -> BoxFuture<U256> {
-        if let Some(state) = self.get_ethstate_snapshot_at(id) {
-            match state.balance(&address) {
-                Ok(balance) => return future::ok(balance).into_box(),
-                Err(e) => {
-                    measure_counter_inc!("read_state_failed");
-                    error!("Could not get balance from ethstate: {:?}", e);
-                    return future::err(Error::new("Could not get balance")).into_box();
+        match self.get_db_snapshot() {
+            Some(db) => {
+                if let Some(state) = db.get_ethstate_at(id) {
+                    match state.balance(&address) {
+                        Ok(balance) => future::ok(balance).into_box(),
+                        Err(e) => {
+                            measure_counter_inc!("read_state_failed");
+                            error!("Could not get balance from ethstate: {:?}", e);
+                            future::err(Error::new("Could not get balance")).into_box()
+                        }
+                    }
+                } else {
+                    future::err(Error::new("Unknown block")).into_box()
                 }
             }
+            None => {
+                // Fall back to runtime call if database has not been initialized.
+                record_runtime_call_result(
+                    "get_account_balance",
+                    self.client.get_account_balance(*address),
+                )
+            }
         }
-
-        // Fall back to runtime call if database has not been initialized.
-        record_runtime_call_result(
-            "get_account_balance",
-            self.client.get_account_balance(*address),
-        )
     }
 
     pub fn code(&self, address: &Address, id: BlockId) -> BoxFuture<Option<Bytes>> {
         // TODO: differentiate between no account vs no code?
-        if let Some(state) = self.get_ethstate_snapshot_at(id) {
-            match state.code(&address) {
-                Ok(code) => return future::ok(code.map(|c| (&*c).clone())).into_box(),
-                Err(e) => {
-                    measure_counter_inc!("read_state_failed");
-                    error!("Could not get code from ethstate: {:?}", e);
-                    return future::err(Error::new("Could not get code")).into_box();
+        match self.get_db_snapshot() {
+            Some(db) => {
+                if let Some(state) = db.get_ethstate_at(id) {
+                    match state.code(&address) {
+                        Ok(code) => future::ok(code.map(|c| (&*c).clone())).into_box(),
+                        Err(e) => {
+                            measure_counter_inc!("read_state_failed");
+                            error!("Could not get code from ethstate: {:?}", e);
+                            future::err(Error::new("Could not get code")).into_box()
+                        }
+                    }
+                } else {
+                    future::err(Error::new("Unknown block")).into_box()
                 }
             }
+            None => {
+                // Fall back to runtime call if database has not been initialized.
+                record_runtime_call_result(
+                    "get_account_code",
+                    self.client.get_account_code(*address),
+                )
+            }
         }
-
-        // Fall back to runtime call if database has not been initialized.
-        record_runtime_call_result("get_account_code", self.client.get_account_code(*address))
     }
 
     pub fn nonce(&self, address: &Address, id: BlockId) -> BoxFuture<U256> {
-        if let Some(state) = self.get_ethstate_snapshot_at(id) {
-            match state.nonce(&address) {
-                Ok(nonce) => return future::ok(nonce).into_box(),
-                Err(e) => {
-                    measure_counter_inc!("read_state_failed");
-                    error!("Could not get nonce from ethstate: {:?}", e);
-                    return future::err(Error::new("Could not get nonce")).into_box();
+        match self.get_db_snapshot() {
+            Some(db) => {
+                if let Some(state) = db.get_ethstate_at(id) {
+                    match state.nonce(&address) {
+                        Ok(nonce) => future::ok(nonce).into_box(),
+                        Err(e) => {
+                            measure_counter_inc!("read_state_failed");
+                            error!("Could not get nonce from ethstate: {:?}", e);
+                            future::err(Error::new("Could not get nonce")).into_box()
+                        }
+                    }
+                } else {
+                    future::err(Error::new("Unknown block")).into_box()
                 }
             }
+            None => {
+                // Fall back to runtime call if database has not been initialized.
+                record_runtime_call_result(
+                    "get_account_nonce",
+                    self.client.get_account_nonce(*address),
+                )
+            }
         }
-
-        // Fall back to runtime call if database has not been initialized.
-        record_runtime_call_result("get_account_nonce", self.client.get_account_nonce(*address))
     }
 
     pub fn storage_at(&self, address: &Address, position: &H256, id: BlockId) -> BoxFuture<H256> {
-        if let Some(state) = self.get_ethstate_snapshot_at(id) {
-            match state.storage_at(address, position) {
-                Ok(val) => return future::ok(val).into_box(),
-                Err(e) => {
-                    measure_counter_inc!("read_state_failed");
-                    error!("Could not get storage from ethstate: {:?}", e);
-                    return future::err(Error::new("Could not get storage")).into_box();
+        match self.get_db_snapshot() {
+            Some(db) => {
+                if let Some(state) = db.get_ethstate_at(id) {
+                    match state.storage_at(address, position) {
+                        Ok(val) => future::ok(val).into_box(),
+                        Err(e) => {
+                            measure_counter_inc!("read_state_failed");
+                            error!("Could not get storage from ethstate: {:?}", e);
+                            future::err(Error::new("Could not get storage")).into_box()
+                        }
+                    }
+                } else {
+                    future::err(Error::new("Unknown block")).into_box()
                 }
             }
+            None => {
+                // Fall back to runtime call if database has not been initialized.
+                record_runtime_call_result(
+                    "get_storage_at",
+                    self.client.get_storage_at((*address, *position)),
+                )
+            }
         }
-
-        // Fall back to runtime call if database has not been initialized.
-        record_runtime_call_result(
-            "get_storage_at",
-            self.client.get_storage_at((*address, *position)),
-        )
     }
 
     fn last_hashes<T>(db: &StateDb<T>, parent_hash: &H256) -> Arc<LastHashes>

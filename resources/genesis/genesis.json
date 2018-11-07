@@ -45,7 +45,7 @@
     "0000000000000000000000000000000000000006": { "builtin": { "name": "alt_bn128_add", "activate_at": 0, "pricing": { "linear": { "base": 500, "word": 0 } } } },
     "0000000000000000000000000000000000000007": { "builtin": { "name": "alt_bn128_mul", "activate_at": 0, "pricing": { "linear": { "base": 40000, "word": 0 } } } },
     "0000000000000000000000000000000000000008": { "builtin": { "name": "alt_bn128_pairing", "activate_at": 0, "pricing": { "alt_bn128_pairing": { "base": 100000, "pair": 80000 } } } },
-    "1c20a5e03c029c24b4e900363479c81f8e8003ea": {
+    "abc6fdb3c0e53552acf5eb4061b54e4e38962dc6": {
       "balance": "1606938044258990275541962092341162602522202993782792835301376"
     }
   }

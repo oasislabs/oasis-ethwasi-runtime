@@ -12,7 +12,7 @@ use clap::Arg;
 use either::Either;
 use ethcore::rlp;
 
-use run_contract::{make_tx, run_tx, store_bytes};
+use run_contract::{make_tx, run_tx};
 
 fn main() {
     let args = app_from_crate!()
