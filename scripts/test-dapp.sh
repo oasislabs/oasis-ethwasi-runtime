@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 # Runs the test suites for dapps against our gateway.
-# CLI args: "celer" or "ens".
+# CLI args: "augur", "celer" or "ens".
 
 source scripts/utils.sh
 
@@ -34,6 +34,9 @@ run_test() {
 
 run_dapp() {
     case "$1" in
+        "augur")
+            run_augur
+            ;;
         "celer")
             run_celer
             ;;
@@ -64,6 +67,24 @@ run_celer() {
     truffle test --network oasis_test & test_pid=$!
     test_wait $test_pid
     cd ../
+}
+
+run_augur() {
+    apt-get install -y python3-pip
+    pip3 install virtualenv
+    npm install npx
+
+    git clone https://github.com/oasislabs/augur-core.git
+    cd augur-core
+    git checkout ekiden
+    npm install > /dev/null
+    pip3 install -r requirements.txt
+
+    export OASIS_PRIVATE_KEY=c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179
+    export PATH=$PATH:$(pwd)/bin
+
+    npm run build
+    npm run test:integration
 }
 
 test_wait() {
