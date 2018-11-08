@@ -2,6 +2,12 @@
 
 WORKDIR=${1:-$(pwd)}
 
+source scripts/utils.sh
+
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
+
 run_dummy_node_go_tm() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
@@ -72,9 +78,6 @@ run_gateway() {
 }
 
 run_test() {
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
-
     # Start dummy node.
     # bash ${WORKDIR}/scripts/utils.sh run_dummy_node_go_tm
     run_dummy_node_go_tm
@@ -94,16 +97,17 @@ run_test() {
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Installing RPC test dependencies."
-    pushd ${WORKDIR}/tests/ > /dev/null
-    git clone https://github.com/oasislabs/rpc-tests.git --branch ekiden
-    pushd rpc-tests > /dev/null
+    cd ${WORKDIR}/tests
+    if [ ! -d rpc-tests ]; then
+      git clone https://github.com/oasislabs/rpc-tests.git --branch ekiden
+    fi
+
+    cd rpc-tests
+    git pull
     npm install > /dev/null
+    
     echo "Running RPC tests."
     ./run_tests.sh
-
-    # Cleanup.
-    echo "Cleaning up."
-    pkill -P $$
 }
 
 run_test

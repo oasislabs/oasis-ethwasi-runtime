@@ -1,0 +1,131 @@
+docker_plugin: &docker_plugin_configuration
+  docker#v2.0.0:
+    image: "oasislabs/testing:build-agent-test"
+    always_pull: true
+    workdir: /workdir
+    volumes:
+      - .:/workdir
+      - /var/lib/buildkite-agent/.ssh:/root/.ssh
+      - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
+      - /tmp/cargo_target:/cargo_target
+    environment:
+      - "CARGO_TARGET_DIR=/cargo_target"
+      - "CARGO_INSTALL_ROOT=/root/.cargo"
+
+steps:
+  - label: Build genesis
+    command: .buildkite/rust/build_generic.sh
+              /workdir/genesis
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build run_contract
+    command: .buildkite/rust/build_generic.sh
+               /workdir/tests/run_contract
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build runtime benchmark
+    command: .buildkite/rust/build_runtime_benchmark.sh /workdir
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build and test web3 gateway
+    command:
+      # Build code and run tests
+      - .buildkite/rust/build_and_test_generic.sh
+          /workdir/gateway
+
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /cargo_target/debug
+      - buildkite-agent artifact upload gateway
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build and test runtime
+    command:
+      - .buildkite/rust/build_and_test_runtime.sh /workdir
+      
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /cargo_target/enclave
+      - buildkite-agent artifact upload runtime-ethereum.so
+      - buildkite-agent artifact upload runtime-ethereum.mrenclave
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build oasislabs/ekiden go
+    command: 
+      - .buildkite/go/build_ekiden_go.sh
+
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /go/bin
+      - mv ekiden ekiden-node
+      - buildkite-agent artifact upload ekiden-node
+    plugins:
+      <<: *docker_plugin_configuration
+
+  # - label: Code coverage
+  #   command:
+  #     - .buildkite/rust/code_coverage.sh
+
+  #     # Save the report as a build artifact
+  #     # so it can be easily accessed for debugging.
+  #     - buildkite-agent artifact upload cobertura.xml
+  #   plugins:
+  #     <<: *docker_plugin_configuration
+
+  # Wait for all jobs defined before this point
+  # to finish running in parallel before continuing.
+  - wait
+
+  # TODO: figure out a way to start running the
+  #       end-to-end tests as soon as its dependencies
+  #       are done running. Don't wait for all other
+  #       parallel jobs to finish, just the ones we need
+  #       to run the tests...
+  - label: End-to-end tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/rust/run_end_to_end_tests.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Ens tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/run_dapp_test.sh ens
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Celer tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/run_dapp_test.sh celer
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Augur tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/run_dapp_test.sh augur
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - wait
+
+  - label: ":rocket: Deploy"
+    trigger: runtime-ethereum-deploy-to-staging
+
+    # TODO: restrict to master branches before
+    #       merging PR.
+    #branches: "master"
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"

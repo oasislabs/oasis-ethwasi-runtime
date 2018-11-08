@@ -2,6 +2,12 @@
 
 WORKDIR=${1:-$(pwd)}
 
+source scripts/utils.sh
+
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
+
 run_dummy_node_default() {
     echo "Starting dummy node."
 
@@ -77,9 +83,6 @@ run_test() {
     local dummy_node_runner=$1
     local compute_node_runner=$2
 
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
-
     # Start dummy node.
     $dummy_node_runner
     sleep 1
@@ -105,11 +108,6 @@ run_test() {
 
     # Wait on genesis.
     wait ${genesis_pid}
-
-    # Cleanup.
-    echo "Cleaning up."
-    pkill -P $$
-    wait || true
 }
 
 #run_test run_dummy_node_storage_dynamodb run_compute_node_storage_multilayer

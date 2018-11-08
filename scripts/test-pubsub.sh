@@ -4,10 +4,11 @@ WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
-run_test() {
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
 
+run_test() {
     # Start dummy node.
     run_dummy_node_go_tm
     sleep 1
@@ -39,10 +40,6 @@ run_test() {
         echo "truffle test failed"
         exit $truffle_ret
     fi
-
-    # Cleanup.
-    echo "Cleaning up."
-    pkill -P $$
 }
 
 run_test
