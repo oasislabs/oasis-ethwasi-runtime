@@ -102,9 +102,7 @@ steps:
 
   - label: Build and test runtime
     command:
-      - .buildkite/rust/build_and_test_runtime.sh
-          /workdir
-          .
+      - .buildkite/rust/build_and_test_runtime.sh /workdir
       
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
