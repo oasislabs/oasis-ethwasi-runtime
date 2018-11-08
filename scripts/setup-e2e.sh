@@ -1,3 +1,7 @@
+#!/bin/bash -eux
+
+source scripts/utils.sh
+
 WORKDIR=${1:-$(pwd)}
 echo ${WORKDIR}
 
@@ -20,5 +24,25 @@ npm install -g wscat
 echo "Installing jq."
 apt-get install -y jq
 
-echo "Installing wasm-build."
-cargo install --git https://github.com/oasislabs/wasm-utils --branch ekiden
+# Only run 'cargo install' if the resulting binaries
+# are not already present. 
+set +u
+cargo_install_root=$(get_cargo_install_root)
+echo "cargo_install_root=$cargo_install_root"
+set -u
+
+if [ ! -e "$cargo_install_root/bin/ekiden-compute" ]; then
+  echo "Installing ekiden-compute."  
+  cargo install \
+    --git https://github.com/oasislabs/ekiden \
+    --branch master \
+    --debug \
+    ekiden-compute
+fi
+
+if [ ! -e "$cargo_install_root/bin/wasm-build" ]; then
+  echo "Installing wasm-build."
+  cargo install \
+  --git https://github.com/oasislabs/wasm-utils \
+  --branch ekiden
+fi

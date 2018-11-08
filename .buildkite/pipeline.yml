@@ -1,0 +1,198 @@
+steps:
+  - label: Build playback
+    command: .buildkite/rust/build_generic.sh
+               /workdir
+               playback
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          # The container must have access to the
+          # SSH key on the host so that it can check
+          # out dependencies from Github during 'cargo build'.
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build genesis
+    command: .buildkite/rust/build_generic.sh
+              /workdir
+              genesis
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build run_contract
+    command: .buildkite/rust/build_generic.sh
+               /workdir
+               tests/run_contract
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build web3 gateway benchmark
+    command: .buildkite/rust/build_generic.sh
+               /workdir
+               benchmark
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build runtime benchmark
+    command: .buildkite/rust/build_runtime_benchmark.sh
+               /workdir
+               .
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build and test web3 gateway
+    command:
+      # Build code and run tests
+      - .buildkite/rust/build_and_test_generic.sh
+          /workdir
+          gateway
+
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /cargo_target/debug
+      - buildkite-agent artifact upload gateway
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build and test runtime
+    command:
+      - .buildkite/rust/build_and_test_runtime.sh
+          /workdir
+          .
+      
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /cargo_target/enclave
+      - buildkite-agent artifact upload runtime-ethereum.so
+      - buildkite-agent artifact upload runtime-ethereum.mrenclave
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Build oasislabs/ekiden go
+    command: 
+      - .buildkite/go/build_ekiden_go.sh
+
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /go/bin
+      - mv ekiden ekiden-node
+      - buildkite-agent artifact upload ekiden-node
+    plugins:
+      docker#v2.0.0:
+        # TODO: build ekiden-node using go v1.11
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+
+  # Wait for all jobs defined before this point
+  # to finish running in parallel before continuing.
+  - wait
+
+  # TODO: figure out a way to start running the
+  #       end-to-end tests as soon as its dependencies
+  #       are done running. Don't wait for all other
+  #       parallel jobs to finish, just the ones we need
+  #       to run the tests...
+  - label: End-to-end tests
+    command:
+      # Download artifacts required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - buildkite-agent artifact download ekiden-node .
+      - chmod +x ekiden-node
+      - mkdir -p target/enclave
+      - buildkite-agent artifact download
+          runtime-ethereum.so
+          target/enclave
+      - buildkite-agent artifact download
+          runtime-ethereum.mrenclave
+          target/enclave
+      - mkdir -p target/debug
+      - buildkite-agent artifact download
+          gateway
+          target/debug
+      - chmod +x target/debug/gateway
+
+      # Run the tests
+      - .buildkite/rust/run_end_to_end_tests.sh .
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - wait
+
+  - label: ":rocket: Deploy"
+    trigger: runtime-ethereum-deploy-to-staging
+
+    # TODO: restrict to master branches before
+    #       merging PR.
+    #branches: "master"
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"

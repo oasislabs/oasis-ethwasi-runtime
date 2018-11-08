@@ -1,2 +1,9 @@
 cargo build --target wasm32-unknown-unknown --release
-wasm-build --target wasm32-unknown-unknown --max-mem 262144 ../../../target rust_logistic_contract
+
+target_dir=${CARGO_TARGET_DIR:-target}
+
+wasm-build \
+  --target wasm32-unknown-unknown \
+  --stack-size 262144 \
+  $target_dir \
+  rust_logistic_contract

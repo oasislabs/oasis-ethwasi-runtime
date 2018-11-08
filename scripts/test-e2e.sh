@@ -4,11 +4,12 @@ WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
+
 run_test() {
     local dummy_node_runner=$1
-
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
 
     # Run the gateway. We start the gateway first so that we test 1) whether the
     # snapshot manager can recover after initially failing to connect to the
@@ -46,16 +47,12 @@ run_test() {
     truffle_ret=$?
     if [ $truffle_ret -ne 0 ]; then
         echo "truffle test failed"
-	exit $truffle_ret
+	      exit $truffle_ret
     fi
 
     # Dump the metrics.
     curl -v http://localhost:3001/metrics
     curl -v http://localhost:3002/metrics
-
-    # Cleanup.
-    echo "Cleaning up."
-    pkill -P $$
 }
 
 run_test run_dummy_node_go_tm

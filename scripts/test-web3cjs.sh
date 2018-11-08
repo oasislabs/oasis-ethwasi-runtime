@@ -6,10 +6,11 @@ WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
-run_test() {
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
 
+run_test() {
     run_dummy_node_go_tm
     sleep 1
     run_compute_node 1
@@ -43,8 +44,6 @@ run_test() {
         echo "web3.js test failed"
     exit $test_ret
     fi
-
-    pkill -P $$
 }
 
 run_test
