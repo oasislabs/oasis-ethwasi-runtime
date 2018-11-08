@@ -5,6 +5,6 @@ echo "target_dir = $target_dir"
 
 wasm-build \
   --target wasm32-unknown-unknown \
-  --stack-size 4194304 \
+  --max-mem 4194304 \
   $target_dir \
   basic_contract
