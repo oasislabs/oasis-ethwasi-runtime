@@ -169,16 +169,41 @@ where
         let inner = self.inner.lock().unwrap();
 
         let result = match inner.pending_inserts.get(key) {
-            Some(PendingItem::Storage(ref_count, value)) if ref_count >= &0 => {
+            Some(PendingItem::Storage(ref_count, value)) if ref_count > &0 => {
                 Some(ElasticArray128::from_slice(&value[..]))
             }
             Some(PendingItem::State(ref_count, value)) if ref_count > &0 => {
                 Some(ElasticArray128::from_slice(&value[..]))
             }
-            Some(PendingItem::Storage(ref_count, _)) if ref_count < &0 => None,
-            Some(PendingItem::State(ref_count, _)) if ref_count < &0 => None,
+            Some(PendingItem::Storage(ref_count, _)) if ref_count <= &0 => {
+                // Reference count indicates missing item, but the item may be
+                // available in storage. It would be tempting to just return it
+                // from cache but we need to make sure that the item exists in
+                // external storage as doing otherwise could lead to state
+                // corruption since pending items with zero or negative reference
+                // count are not persisted.
+                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
+                match inner.backend.get(storage_key).wait() {
+                    Ok(result) => Some(ElasticArray128::from_vec(result)),
+                    _ => None,
+                }
+            }
+            Some(PendingItem::State(ref_count, _)) if ref_count <= &0 => {
+                // Reference count indicates missing item, but the item may be
+                // available in storage. It would be tempting to just return it
+                // from cache but we need to make sure that the item exists in
+                // external storage as doing otherwise could lead to state
+                // corruption since pending items with zero or negative reference
+                // count are not persisted.
+                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
+                inner
+                    .blockchain_db
+                    .get(Self::STATE_DB_COLUMN, &key[..])
+                    .expect("fetch from blockchain db must succeed")
+            }
             _ => {
-                // First, try to fetch from storage backend.
+                // Key is not in local cache. First try to fetch it from the
+                // storage backend.
                 let storage_key = ekiden_core::bytes::H256::from(&key[..]);
                 match inner.backend.get(storage_key).wait() {
                     Ok(result) => Some(ElasticArray128::from_vec(result)),
@@ -187,7 +212,7 @@ where
                         inner
                             .blockchain_db
                             .get(Self::STATE_DB_COLUMN, &key[..])
-                            .expect("fetch from blockchain db")
+                            .expect("fetch from blockchain db must succeed")
                     }
                 }
             }
