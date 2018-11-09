@@ -8,7 +8,7 @@ steps:
   # TODO: limit to master branches before merging PR
   # branches: master
     command:
-      - .buildkite/scripts/build_tag_publish_deployment_image.sh
+      - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
       - .buildkite/scripts/trigger_deployment_to.sh staging
 

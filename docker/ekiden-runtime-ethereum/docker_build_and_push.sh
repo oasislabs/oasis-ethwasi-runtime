@@ -17,6 +17,11 @@ set -euxo pipefail
 git_commit_sha=$1
 docker_image_tag=$2
 
+###############
+# Optional args
+###############
+path_to_ssh_private_key=${3:-"~/.ssh/id_rsa"}
+
 #################
 # Local variables
 #################
@@ -26,18 +31,17 @@ docker_image_name=oasislabs/ekiden-runtime-ethereum
 # TODO: remove before merging PR
 docker_image_tag=ci-test-${docker_image_tag}
 
-###############################################
-# Build and publish the deployment docker image
-###############################################
+####################################
+# Build and publish the docker image
+####################################
 
-# TODO: Accept path to ssh key as optional script argument?
 set +x
 # The docker command will contain the ssh private key
 # in plain text and we don't want that getting into bash
 # history, so we intentionally disable printing commands
 # with set +x.
 docker build --rm --force-rm \
-  --build-arg SSH_PRIVATE_KEY="$(cat ~/.ssh/id_rsa)" \
+  --build-arg SSH_PRIVATE_KEY="$(cat ${path_to_ssh_private_key})" \
   --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=${git_commit_sha} \
   --build-arg RUNTIME_ETHEREUM_BUILD_IMAGE_TAG=${docker_image_tag} \
   -t oasislabs/ekiden-runtime-ethereum:${docker_image_tag} \

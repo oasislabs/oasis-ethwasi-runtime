@@ -1,9 +1,9 @@
 #! /bin/bash
 
 #############################################
-# Simple wrapper script to call
-# promote_docker_image.sh
-# with the correct arguments.
+# Gets the deployment image tag from buildkite
+# metadata and promotes the deployment image
+# by retagging it with the provided tag.
 # 
 # This script is intended to have buildkite
 # specific things, like env vars and calling
@@ -40,6 +40,10 @@ deployment_image_tag=ci-test-${deployment_image_tag}
 # Add the provided tag to the deployment image
 ##############################################
 
-.buildkite/docker/promote_docker_image.sh \
+docker pull "${docker_image_name}:${deployment_image_tag}"
+
+docker tag \
   "${docker_image_name}:${deployment_image_tag}" \
   "${docker_image_name}:${new_image_tag}"
+
+docker push "${docker_image_name}:${new_image_tag}"
