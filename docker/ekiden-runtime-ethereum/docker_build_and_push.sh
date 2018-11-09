@@ -20,7 +20,7 @@ docker_image_tag=$2
 ###############
 # Optional args
 ###############
-path_to_ssh_private_key=${3:-"~/.ssh/id_rsa"}
+path_to_ssh_private_key=${3:-~/.ssh/id_rsa}
 
 #################
 # Local variables
