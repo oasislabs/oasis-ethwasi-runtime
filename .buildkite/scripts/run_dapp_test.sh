@@ -34,6 +34,25 @@ test=$1
 source scripts/utils.sh
 trap 'cleanup' EXIT
 
+####################################################
+# By default, .bashrc will quit if the shell
+# is not interactive. It checks whether $PS1 is
+# set to determine whether the shell is interactive.
+# Here, we set PS1 to any random value so that we
+# can source .bashrc and have it configure $PATH
+# for things like node version manager (nvm) and
+# sgxsdk.
+####################################################
+# TODO this is very unintuitive. Think of a better way to do this.
+export PS1="set PS1 to anything so that we can source .bashrc"
+
+# While sourcing .bashrc, temporarily ignore
+# unset vars and do not print commands because
+# it is a bunch of useless noise.
+set +ux
+. ~/.bashrc
+set -ux
+
 ####################
 # Set up environment
 ####################
