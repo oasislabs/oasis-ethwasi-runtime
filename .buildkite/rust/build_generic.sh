@@ -6,7 +6,7 @@
 # This script builds a generic rust project.
 # 
 # Usage:
-# build_rust_generic.sh <src_dir>
+# build_generic.sh <src_dir>
 #
 # src_dir - Absolute or relative path to the directory
 #           containing the source code.

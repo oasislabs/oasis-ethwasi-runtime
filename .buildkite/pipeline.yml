@@ -1,8 +1,7 @@
 steps:
   - label: Build genesis
     command: .buildkite/rust/build_generic.sh
-              /workdir
-              genesis
+              /workdir/genesis
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"
@@ -16,8 +15,7 @@ steps:
 
   - label: Build run_contract
     command: .buildkite/rust/build_generic.sh
-               /workdir
-               tests/run_contract
+               /workdir/tests/run_contract
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"
@@ -46,8 +44,7 @@ steps:
     command:
       # Build code and run tests
       - .buildkite/rust/build_and_test_generic.sh
-          /workdir
-          gateway
+          /workdir/gateway
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test

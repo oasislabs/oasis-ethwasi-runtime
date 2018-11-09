@@ -6,7 +6,7 @@
 # This script builds the runtime and runs the runtime tests.
 # 
 # Usage:
-# build_rust_runtime.sh <src_dir>
+# build_and_test_runtime.sh <src_dir>
 #
 # src_dir - Absolute or relative path to the directory
 #           containing the source code.
