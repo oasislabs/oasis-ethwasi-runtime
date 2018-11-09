@@ -1,22 +1,4 @@
 steps:
-  - label: Build playback
-    command: .buildkite/rust/build_generic.sh
-               /workdir
-               playback
-    plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          # The container must have access to the
-          # SSH key on the host so that it can check
-          # out dependencies from Github during 'cargo build'.
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-
   - label: Build genesis
     command: .buildkite/rust/build_generic.sh
               /workdir
