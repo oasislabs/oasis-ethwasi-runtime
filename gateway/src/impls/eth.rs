@@ -523,19 +523,19 @@ impl Eth for EthClient {
 
     fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {
         measure_counter_inc!("sendRawTransaction");
-        measure_histogram_timer!("sendRawTransaction_time");
         if log_enabled!(log::Level::Debug) {
             debug!("eth_sendRawTransaction(data: {:?})", raw);
         } else {
             info!("eth_sendRawTransaction(data: ...)");
         }
 
-        Box::new(
+        Box::new(measure_future_histogram_timer!(
+            "sendRawTransaction_time",
             self.client
                 .send_raw_transaction(raw.into())
                 .map(Into::into)
-                .map_err(errors::execution),
-        )
+                .map_err(errors::execution)
+        ))
     }
 
     fn submit_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {
