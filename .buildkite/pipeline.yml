@@ -129,25 +129,46 @@ steps:
   - label: End-to-end tests
     command:
       # Download artifacts required in end-to-end tests.
-      # This is done here to keep the build and test
-      # script generic.
-      - buildkite-agent artifact download ekiden-node .
-      - chmod +x ekiden-node
-      - mkdir -p target/enclave
-      - buildkite-agent artifact download
-          runtime-ethereum.so
-          target/enclave
-      - buildkite-agent artifact download
-          runtime-ethereum.mrenclave
-          target/enclave
-      - mkdir -p target/debug
-      - buildkite-agent artifact download
-          gateway
-          target/debug
-      - chmod +x target/debug/gateway
+      - .buildkite/scripts/download_common_artifacts.sh
 
       # Run the tests
       - .buildkite/rust/run_end_to_end_tests.sh .
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Ens tests
+    command:
+      # Download artifacts required in ens tests.
+      - .buildkite/scripts/download_common_artifacts.sh
+
+      # Run the tests
+      - .buildkite/rust/run_ens_tests.sh .
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
+
+  - label: Celer tests
+    command:
+      # Download artifacts required in celer tests.
+      - .buildkite/scripts/download_common_artifacts.sh
+
+      # Run the tests
+      - .buildkite/rust/run_celer_tests.sh .
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"
