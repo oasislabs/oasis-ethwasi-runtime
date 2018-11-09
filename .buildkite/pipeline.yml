@@ -29,21 +29,6 @@ steps:
         environment:
           - "CARGO_TARGET_DIR=/cargo_target"
 
-  - label: Build web3 gateway benchmark
-    command: .buildkite/rust/build_generic.sh
-               /workdir
-               benchmark
-    plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-
   - label: Build runtime benchmark
     command: .buildkite/rust/build_runtime_benchmark.sh /workdir
     plugins:
