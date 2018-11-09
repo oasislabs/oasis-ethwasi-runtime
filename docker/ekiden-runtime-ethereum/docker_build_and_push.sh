@@ -45,7 +45,7 @@ docker build --rm --force-rm \
   --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=${git_commit_sha} \
   --build-arg RUNTIME_ETHEREUM_BUILD_IMAGE_TAG=${docker_image_tag} \
   -t oasislabs/ekiden-runtime-ethereum:${docker_image_tag} \
-  docker/deployment
+  docker/ekiden-runtime-ethereum
 set -x
 
 docker push ${docker_image_name}:${docker_image_tag}
