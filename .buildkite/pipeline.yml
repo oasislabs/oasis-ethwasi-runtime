@@ -132,7 +132,7 @@ steps:
       - .buildkite/rust/run_end_to_end_tests.sh
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
+        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -147,7 +147,7 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh ens
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
+        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -162,7 +162,7 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh celer
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
+        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -177,7 +177,7 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh augur
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
+        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
