@@ -16,6 +16,11 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
+###########################################
+# Source utils for get_cargo_install_root()
+###########################################
+source scripts/utils.sh
+
 ###############
 # Required args
 ###############
