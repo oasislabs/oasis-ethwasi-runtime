@@ -24,10 +24,12 @@ output_bin_path=${1:-NOT_DEFINED}
 # TODO Check whether this actually needs to happen.
 #      Something similar is already in the base image.
 go get -d github.com/golang/protobuf/protoc-gen-go
-cd $GOPATH/src/github.com/golang/protobuf
-git checkout v1.1.0
-cd protoc-gen-go
-go install
+pushd $GOPATH/src/github.com/golang/protobuf
+  git checkout v1.1.0
+  pushd protoc-gen-go
+    go install
+  popd
+popd
 
 ############################
 # Download oasis/ekiden repo
@@ -40,19 +42,23 @@ go install
 mkdir -p ~/.ssh
 ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 mkdir -p $GOPATH/src/github.com/oasislabs
-cd $GOPATH/src/github.com/oasislabs
-git clone --depth 1 git@github.com:/oasislabs/ekiden
 
-# Build ekiden/go
-cd ekiden/go
-env -u GOPATH make
-cp \
-  $GOPATH/src/github.com/oasislabs/ekiden/go/ekiden/ekiden \
-  /go/bin
+pushd $GOPATH/src/github.com/oasislabs
+  git clone --depth 1 git@github.com:/oasislabs/ekiden
 
-cd benchmark
-env -u GOPATH make
-cp benchmark /go/bin
+  # Build ekiden/go
+  pushd ekiden/go
+    env -u GOPATH make
+    cp \
+      $GOPATH/src/github.com/oasislabs/ekiden/go/ekiden/ekiden \
+      /go/bin
+  popd
+popd
+
+pushd benchmark
+  env -u GOPATH make
+  cp benchmark /go/bin
+popd
 
 if [ $output_bin_path != "NOT_DEFINED" ]; then
   mv /go/bin/ekiden $output_bin_path
