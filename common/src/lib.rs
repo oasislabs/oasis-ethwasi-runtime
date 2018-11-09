@@ -404,7 +404,11 @@ where
 mod tests {
     extern crate ekiden_storage_dummy;
 
+    use ethereum_types::H256;
+    use hashdb::{DBValue, HashDB};
+
     use self::ekiden_storage_dummy::DummyStorageBackend;
+    use ekiden_trusted::db::{Database, DatabaseHandle};
 
     use super::*;
 
@@ -418,5 +422,64 @@ mod tests {
         // prefix for column Some(3) is 4=3+1
         let col_3 = get_key(Some(3), b"three");
         assert_eq!(col_3, b"\x04\0\0\0three");
+    }
+
+    #[test]
+    fn test_storage_hashdb() {
+        let storage = Arc::new(DummyStorageBackend::new());
+        let db = DatabaseHandle::new(storage.clone());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+
+        assert_eq!(hash_db.get(&H256::zero()), None);
+        let hw_key = hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.insert(b"hello world");
+        hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.remove(&hw_key);
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.remove(&hw_key);
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.remove(&hw_key);
+        assert_eq!(hash_db.get(&hw_key), None);
+
+        hash_db.remove(&hw_key);
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+
+        hash_db.remove(&hw_key);
+        hash_db.remove(&hw_key);
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+        hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+
+        // Commit and re-create database.
+        hash_db.commit();
+        let db = DatabaseHandle::new(storage.clone());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
     }
 }
