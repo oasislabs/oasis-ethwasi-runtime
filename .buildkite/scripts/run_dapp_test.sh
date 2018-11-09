@@ -2,25 +2,36 @@
 
 # TODO Update build scripts to be DRY.
 
-#################################################
-# This script runs all contract test suites 
-# from external dapps.
+##################################################
+# Simple wrapper script to call
+# scripts/test-dapp.sh
+# with the correct arguments.
 #
-# Usage:
-# run_ens_tests.sh <src_dir>
+# Downloads all of the required build artifacts
+# to run the tests and makes sure they are in the
+# correct directories, etc.
 #
-# src_dir - Absolute or relative path to the
-#           directory containing the source code.
-#################################################
+# This script is intended to have buildkite
+# specific things, like env vars and calling
+# the buildkite-agent binary. Keeping this
+# separate from the generic script that gets
+# called allows us to use and test the generic
+# scripts easily on a local dev box.
+##################################################
 
 # Helpful tips on writing build scripts:
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-source scripts/utils.sh
+####################
+# Required arguments
+####################
+test=$1
 
-# Ensure cleanup on exit.
-# cleanup() is defined in scripts/utils.sh
+################
+# Ensure cleanup
+################
+source scripts/utils.sh
 trap 'cleanup' EXIT
 
 ####################
@@ -79,4 +90,4 @@ if [ ! -e "$cargo_install_root/bin/ekiden-compute" ]; then
 fi
 
 # Run the ens tests
-./scripts/test-dapp.sh ens
+./scripts/test-dapp.sh ${test}

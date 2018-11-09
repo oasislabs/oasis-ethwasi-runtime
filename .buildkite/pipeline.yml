@@ -128,11 +128,8 @@ steps:
   #       to run the tests...
   - label: End-to-end tests
     command:
-      # Download artifacts required in end-to-end tests.
       - .buildkite/scripts/download_common_artifacts.sh
-
-      # Run the tests
-      - .buildkite/rust/run_end_to_end_tests.sh .
+      - .buildkite/rust/run_end_to_end_tests.sh
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"
@@ -146,11 +143,8 @@ steps:
 
   - label: Ens tests
     command:
-      # Download artifacts required in ens tests.
       - .buildkite/scripts/download_common_artifacts.sh
-
-      # Run the tests
-      - .buildkite/rust/run_ens_tests.sh .
+      - .buildkite/scripts/run_dapp_test.sh ens
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"
@@ -164,11 +158,23 @@ steps:
 
   - label: Celer tests
     command:
-      # Download artifacts required in celer tests.
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/run_dapp_test.sh celer
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /tmp/cargo_target:/cargo_target
+        environment:
+          - "CARGO_TARGET_DIR=/cargo_target"
 
-      # Run the tests
-      - .buildkite/rust/run_celer_tests.sh .
+  - label: Augur tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/run_dapp_test.sh augur
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"

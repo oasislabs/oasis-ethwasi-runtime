@@ -21,10 +21,7 @@
 #     - target/debug/gateway
 #
 # Usage:
-# run_end_to_end_tests.sh <src_dir>
-#
-# src_dir - Absolute or relative path to the
-#           directory containing the source code.
+# run_end_to_end_tests.sh
 #################################################
 
 # Helpful tips on writing build scripts:
