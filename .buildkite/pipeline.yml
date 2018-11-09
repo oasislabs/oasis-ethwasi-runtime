@@ -4,7 +4,7 @@ steps:
               /workdir/genesis
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -19,7 +19,7 @@ steps:
                /workdir/tests/run_contract
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -33,7 +33,7 @@ steps:
     command: .buildkite/rust/build_runtime_benchmark.sh /workdir
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -56,7 +56,7 @@ steps:
       - buildkite-agent artifact upload gateway
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -78,7 +78,7 @@ steps:
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -100,7 +100,7 @@ steps:
       - buildkite-agent artifact upload ekiden-node
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -115,7 +115,7 @@ steps:
   #     - buildkite-agent artifact upload cobertura.xml
   #   plugins:
   #     docker#v2.0.0:
-  #       image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+  #       image: "oasislabs/testing:build-agent-test"
   #       workdir: /workdir
   #       volumes:
   #         - .:/workdir
@@ -137,7 +137,7 @@ steps:
       - .buildkite/rust/run_end_to_end_tests.sh
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -153,7 +153,7 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh ens
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -169,7 +169,7 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh celer
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
@@ -185,7 +185,7 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh augur
     plugins:
       docker#v2.0.0:
-        image: "oasislabs/ci-runtime-ethereum:build-agent-test"
+        image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
           - .:/workdir
