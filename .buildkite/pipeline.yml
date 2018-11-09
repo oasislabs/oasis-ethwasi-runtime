@@ -101,6 +101,22 @@ steps:
           - .:/workdir
           - /var/lib/buildkite-agent/.ssh:/root/.ssh
 
+  - label: Code coverage
+    command:
+      - .buildkite/rust/code_coverage.sh /workdir
+
+      # Save the report as a build artifact
+      # so it can be easily accessed for debugging.
+      - buildkite-agent artifact upload cobertura.xml
+    plugins:
+      docker#v2.0.0:
+        image: "oasislabs/testing:build-agent-test"
+        workdir: /workdir
+        volumes:
+          - .:/workdir
+          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+          - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
+
   # Wait for all jobs defined before this point
   # to finish running in parallel before continuing.
   - wait
