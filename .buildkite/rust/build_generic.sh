@@ -39,8 +39,5 @@ ssh-add
 cd $src_dir
 cd $build_sub_dir
 
-# Apply the rust code formatting rules
-cargo fmt -- --write-mode=check
-
 # Run the build
 cargo build
