@@ -103,7 +103,7 @@ steps:
 
   - label: Code coverage
     command:
-      - .buildkite/rust/code_coverage.sh /workdir
+      - .buildkite/rust/code_coverage.sh
 
       # Save the report as a build artifact
       # so it can be easily accessed for debugging.
