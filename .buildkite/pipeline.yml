@@ -1,50 +1,33 @@
+docker_plugin: &docker_plugin_configuration
+  docker#v2.0.0:
+    image: "oasislabs/testing:build-agent-test"
+    always_pull: true
+    workdir: /workdir
+    volumes:
+      - .:/workdir
+      - /var/lib/buildkite-agent/.ssh:/root/.ssh
+      - /tmp/cargo_target:/cargo_target
+    environment:
+      - "CARGO_TARGET_DIR=/cargo_target"
+      - "CARGO_INSTALL_ROOT=/root/.cargo"
+
 steps:
   - label: Build genesis
     command: .buildkite/rust/build_generic.sh
               /workdir/genesis
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Build run_contract
     command: .buildkite/rust/build_generic.sh
                /workdir/tests/run_contract
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Build runtime benchmark
     command: .buildkite/rust/build_runtime_benchmark.sh /workdir
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Build and test web3 gateway
     command:
@@ -58,17 +41,7 @@ steps:
       - cd /cargo_target/debug
       - buildkite-agent artifact upload gateway
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Build and test runtime
     command:
@@ -81,17 +54,7 @@ steps:
       - buildkite-agent artifact upload runtime-ethereum.so
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Build oasislabs/ekiden go
     command: 
@@ -104,13 +67,7 @@ steps:
       - mv ekiden ekiden-node
       - buildkite-agent artifact upload ekiden-node
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
+      <<: *docker_plugin_configuration
 
   # - label: Code coverage
   #   command:
@@ -142,68 +99,28 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/rust/run_end_to_end_tests.sh
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Ens tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/run_dapp_test.sh ens
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Celer tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/run_dapp_test.sh celer
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - label: Augur tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/run_dapp_test.sh augur
     plugins:
-      docker#v2.0.0:
-        image: "oasislabs/testing:build-agent-test"
-        always_pull: true
-        workdir: /workdir
-        volumes:
-          - .:/workdir
-          - /var/lib/buildkite-agent/.ssh:/root/.ssh
-          - /tmp/cargo_target:/cargo_target
-        environment:
-          - "CARGO_TARGET_DIR=/cargo_target"
-          - "CARGO_INSTALL_ROOT=/root/.cargo"
+      <<: *docker_plugin_configuration
 
   - wait
 
