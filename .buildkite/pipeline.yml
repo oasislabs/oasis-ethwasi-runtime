@@ -63,9 +63,7 @@ steps:
           - "CARGO_TARGET_DIR=/cargo_target"
 
   - label: Build runtime benchmark
-    command: .buildkite/rust/build_runtime_benchmark.sh
-               /workdir
-               .
+    command: .buildkite/rust/build_runtime_benchmark.sh /workdir
     plugins:
       docker#v2.0.0:
         image: "oasislabs/testing:build-agent-test"
