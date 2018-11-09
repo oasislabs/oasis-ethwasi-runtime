@@ -37,6 +37,9 @@ coveralls_api_token=$(cat ${path_to_coveralls_api_token})
 ####################
 # Set up environment
 ####################
+export SGX_MODE="SIM"
+export INTEL_SGX_SDK="/opt/sgxsdk"
+export EKIDEN_UNSAFE_SKIP_AVR_VERIFY="1"
 export RUST_BACKTRACE="1"
 
 ########################################
