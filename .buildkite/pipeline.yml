@@ -95,7 +95,6 @@ steps:
       - buildkite-agent artifact upload ekiden-node
     plugins:
       docker#v2.0.0:
-        # TODO: build ekiden-node using go v1.11
         image: "oasislabs/testing:build-agent-test"
         workdir: /workdir
         volumes:
