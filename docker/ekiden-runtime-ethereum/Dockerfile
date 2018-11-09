@@ -1,5 +1,5 @@
 # TODO: add arg to override this default image
-FROM ekiden/development:0.2.0 as builder
+FROM oasislabs/development:0.2.0 as builder
 
 # Add metadata identifying this image as an
 # intermediate build image so that we can
