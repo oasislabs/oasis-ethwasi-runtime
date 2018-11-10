@@ -70,15 +70,15 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Code coverage
-    command:
-      - .buildkite/rust/code_coverage.sh
+  # - label: Code coverage
+  #   command:
+  #     - .buildkite/rust/code_coverage.sh
 
-      # Save the report as a build artifact
-      # so it can be easily accessed for debugging.
-      - buildkite-agent artifact upload cobertura.xml
-    plugins:
-      <<: *docker_plugin_configuration
+  #     # Save the report as a build artifact
+  #     # so it can be easily accessed for debugging.
+  #     - buildkite-agent artifact upload cobertura.xml
+  #   plugins:
+  #     <<: *docker_plugin_configuration
 
   # Wait for all jobs defined before this point
   # to finish running in parallel before continuing.
