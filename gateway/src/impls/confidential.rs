@@ -55,7 +55,6 @@ impl Confidential for ConfidentialClient {
         tag: Trailing<BlockNumber>,
     ) -> BoxFuture<Bytes> {
         measure_counter_inc!("confidential_call");
-        measure_histogram_timer!("confidential_call_enc_time");
         let num = tag.unwrap_or_default();
         info!(
             "confidential_call_enc(request: {:?}, number: {:?})",
@@ -71,11 +70,12 @@ impl Confidential for ConfidentialClient {
             value: request.value.map(Into::into),
             gas: request.gas.map(Into::into),
         };
-        Box::new(
+        Box::new(measure_future_histogram_timer!(
+            "confidential_call_enc_time",
             self.client
                 .call_enc(request, EthClient::get_block_id(num))
                 .map_err(errors::execution)
-                .map(Into::into),
-        )
+                .map(Into::into)
+        ))
     }
 }
