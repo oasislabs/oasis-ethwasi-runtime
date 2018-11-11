@@ -459,6 +459,34 @@ impl Client {
         }
     }
 
+    pub fn check_filter_range(&self, filter: EthcoreFilter) -> bool {
+        const MAX_BLOCK_RANGE: u64 = 1000;
+
+        if let Some(db) = self.get_db_snapshot() {
+            let check_range = || {
+                let from_hash = Self::id_to_block_hash(&db, filter.from_block)?;
+                let from_number = db.block_number(&from_hash)?;
+                let to_hash = Self::id_to_block_hash(&db, filter.to_block)?;
+                let to_number = db.block_number(&to_hash)?;
+
+                // Check block range
+                if to_number > from_number {
+                    let range = to_number - from_number;
+                    if range > MAX_BLOCK_RANGE {
+                        error!("getLogs denied range: ({:?}, {:?})", from_number, to_number);
+                        return Some(false);
+                    }
+                }
+
+                Some(true)
+            };
+
+            check_range().unwrap_or(true)
+        } else {
+            true
+        }
+    }
+
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<LocalizedLogEntry> {
         if let Some(db) = self.get_db_snapshot() {
             let fetch_logs = || {

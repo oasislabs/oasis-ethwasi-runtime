@@ -22,12 +22,13 @@ use std::sync::Arc;
 use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
+use util::jsonrpc_error;
 
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
 
 use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
+use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
 use log;
@@ -93,15 +94,6 @@ enum PendingOrBlock {
 enum PendingTransactionId {
     Hash(H256),
     Location(PendingOrBlock, usize),
-}
-
-/// Constructs a JSON-RPC error from a string message, with error code -32603.
-fn jsonrpc_error(message: String) -> Error {
-    Error {
-        code: ErrorCode::InternalError,
-        message: message,
-        data: None,
-    }
 }
 
 impl EthClient {
@@ -497,6 +489,14 @@ impl Eth for EthClient {
         measure_counter_inc!("getLogs");
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
+
+        // Check filter block range
+        if !self.client.check_filter_range(filter.clone()) {
+            return Box::new(future::err(jsonrpc_error(
+                "Filter exceeds allowed block range".to_string(),
+            )));
+        }
+
         let logs = self.client
             .logs(filter.clone())
             .into_iter()

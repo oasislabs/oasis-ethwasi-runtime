@@ -20,6 +20,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use client::Client;
+use util::jsonrpc_error;
 
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::BlockId;
@@ -87,6 +88,14 @@ impl Filterable for EthFilterClient {
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<Log>> {
         measure_counter_inc!("getFilterLogs");
         info!("eth_getFilterLogs(filter: {:?})", filter);
+
+        // Check filter block range
+        if !self.client.check_filter_range(filter.clone()) {
+            return Box::new(future::err(jsonrpc_error(
+                "Filter exceeds allowed block range".to_string(),
+            )));
+        }
+
         Box::new(future::ok({
             self.client
                 .logs(filter)
