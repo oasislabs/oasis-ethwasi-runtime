@@ -459,7 +459,7 @@ impl Client {
         }
     }
 
-    // Temporary mitigation for #397: returns false if filter's block range > 1000 blocks
+    /// Temporary mitigation for #397: returns false if filter's block range > 1000 blocks
     pub fn check_filter_range(&self, filter: EthcoreFilter) -> bool {
         const MAX_BLOCK_RANGE: u64 = 1000;
 
