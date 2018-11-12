@@ -73,6 +73,7 @@ RUN eval $(ssh-agent -s) && \
 #    that we can use the SSH identity when
 #    checking out private repos during 'cargo install'.
 # 4. Install cargo-tarpaulin
+# TODO: This should likely go in the oasislabs/testing image.
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
@@ -89,6 +90,7 @@ RUN eval $(ssh-agent -s) && \
 #    that we can use the SSH identity when
 #    checking out private repos during 'cargo install'.
 # 4. Install wasm-utils
+# TODO: This should likely go in the oasislabs/testing image.
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
