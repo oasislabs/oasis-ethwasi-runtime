@@ -490,7 +490,7 @@ impl Eth for EthClient {
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
 
-        // Check filter block range
+        // Temporary mitigation for #397: check filter block range
         if !self.client.check_filter_range(filter.clone()) {
             return Box::new(future::err(jsonrpc_error(
                 "Filter exceeds allowed block range".to_string(),

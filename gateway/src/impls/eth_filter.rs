@@ -89,7 +89,7 @@ impl Filterable for EthFilterClient {
         measure_counter_inc!("getFilterLogs");
         info!("eth_getFilterLogs(filter: {:?})", filter);
 
-        // Check filter block range
+        // Temporary mitigation for #397: check filter block range
         if !self.client.check_filter_range(filter.clone()) {
             return Box::new(future::err(jsonrpc_error(
                 "Filter exceeds allowed block range".to_string(),
