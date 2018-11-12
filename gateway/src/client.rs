@@ -463,32 +463,29 @@ impl Client {
     pub fn check_filter_range(&self, filter: EthcoreFilter) -> bool {
         const MAX_BLOCK_RANGE: u64 = 1000;
 
-        if let Some(db) = self.get_db_snapshot() {
-            let check_range = || {
-                let from_hash = Self::id_to_block_hash(&db, filter.from_block)?;
-                let from_number = db.block_number(&from_hash)?;
-                let to_hash = Self::id_to_block_hash(&db, filter.to_block)?;
-                let to_number = db.block_number(&to_hash)?;
+        let check_range = || {
+            let db = self.get_db_snapshot()?;
+            let from_hash = Self::id_to_block_hash(&db, filter.from_block)?;
+            let from_number = db.block_number(&from_hash)?;
+            let to_hash = Self::id_to_block_hash(&db, filter.to_block)?;
+            let to_number = db.block_number(&to_hash)?;
 
-                // Check block range
-                if to_number > from_number {
-                    if to_number - from_number >= MAX_BLOCK_RANGE {
-                        measure_counter_inc!("log_filter_rejected");
-                        error!(
-                            "getLogs rejected block range: ({:?}, {:?})",
-                            from_number, to_number
-                        );
-                        return Some(false);
-                    }
+            // Check block range
+            if to_number > from_number {
+                if to_number - from_number >= MAX_BLOCK_RANGE {
+                    measure_counter_inc!("log_filter_rejected");
+                    error!(
+                        "getLogs rejected block range: ({:?}, {:?})",
+                        from_number, to_number
+                    );
+                    return Some(false);
                 }
+            }
 
-                Some(true)
-            };
+            Some(true)
+        };
 
-            check_range().unwrap_or(true)
-        } else {
-            true
-        }
+        check_range().unwrap_or(true)
     }
 
     pub fn logs(&self, filter: EthcoreFilter) -> Vec<LocalizedLogEntry> {
