@@ -472,9 +472,12 @@ impl Client {
 
                 // Check block range
                 if to_number > from_number {
-                    let range = to_number - from_number;
-                    if range >= MAX_BLOCK_RANGE {
-                        error!("getLogs denied range: ({:?}, {:?})", from_number, to_number);
+                    if to_number - from_number >= MAX_BLOCK_RANGE {
+                        measure_counter_inc!("log_filter_rejected");
+                        error!(
+                            "getLogs rejected block range: ({:?}, {:?})",
+                            from_number, to_number
+                        );
                         return Some(false);
                     }
                 }
