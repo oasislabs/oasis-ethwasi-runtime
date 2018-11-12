@@ -32,8 +32,6 @@ RUN mkdir -p /root/.ssh/ && \
 # 3. Checkout the runtime-ethereum repo
 #
 # TODO: Add arg to specify which branch or commit sha should be checked out.
-# TODO: Update the git clone command to do a shallow checkout. We only need
-#       the latest source to build an image.
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git clone \
@@ -64,10 +62,40 @@ RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
     CARGO_INSTALL_ROOT="/root/.cargo" \
-        cargo install \
-        --path /workdir/ekiden/compute \
-        --debug \
-        ekiden-compute
+      cargo install \
+      --path /workdir/ekiden/compute \
+      --debug \
+      ekiden-compute
+
+# 1. Setup ssh-agent env
+# 2. Add ssh identity at /root/.ssh/id_rsa
+# 3. Tell git to use SSH instead of HTTPS so
+#    that we can use the SSH identity when
+#    checking out private repos during 'cargo install'.
+# 4. Install cargo-tarpaulin
+RUN eval $(ssh-agent -s) && \
+    ssh-add && \
+    git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
+    CARGO_INSTALL_ROOT="/root/.cargo" \
+    RUSTFLAGS="--cfg procmacro2_semver_exempt" \
+      cargo install \
+      --git https://github.com/oasislabs/tarpaulin \
+      --branch ekiden \
+      cargo-tarpaulin
+
+# 1. Setup ssh-agent env
+# 2. Add ssh identity at /root/.ssh/id_rsa
+# 3. Tell git to use SSH instead of HTTPS so
+#    that we can use the SSH identity when
+#    checking out private repos during 'cargo install'.
+# 4. Install wasm-utils
+RUN eval $(ssh-agent -s) && \
+    ssh-add && \
+    git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
+    CARGO_INSTALL_ROOT="/root/.cargo" \
+      cargo install \
+      --git https://github.com/oasislabs/wasm-utils \
+      --branch ekiden
 
 # TODO: add arg to override this default image
 FROM oasislabs/testing:0.2.0
@@ -78,11 +106,14 @@ ARG BUILD_IMAGE_TAG=latest
 LABEL com.oasislabs.ekiden-commit-sha="${EKIDEN_COMMIT_SHA}"
 LABEL com.oasislabs.ci-runtime-ethereum-build-image-tag="${BUILD_IMAGE_TAG}"
 
-# Copy binary installed by ekiden-tools
+# Copy installed cargo-ekiden (ekiden-tools) binary
 COPY --from=builder /root/.cargo/bin/cargo-ekiden /root/.cargo/bin/cargo-ekiden
 
-# Copy binary installed by ekiden-compute
+# Copy installed ekiden-compute binary
 COPY --from=builder /root/.cargo/bin/ekiden-compute /root/.cargo/bin/ekiden-compute
 
-# Add .gitconfig file for the root user
-COPY gitconfig /root/.gitconfig
+# Copy installed cargo-tarpaulin binary
+COPY --from=builder /root/.cargo/bin/cargo-tarpaulin /root/.cargo/bin/cargo-tarpaulin
+
+# Copy installed wasm-utils binary
+COPY --from=builder /root/.cargo/bin/wasm-utils /root/.cargo/bin/wasm-utils
