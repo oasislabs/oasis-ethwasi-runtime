@@ -60,6 +60,14 @@ pushd benchmark
   cp benchmark /go/bin
 popd
 
+#################################################
+# Optionally, move the ekiden-node binary to a
+# provided path. This is helpful when developing
+# locally so that in one command we can build
+# the binary and also move it to a volume that is
+# mounted on the host so that we can preserve the
+# binary before the docker container goes poof.
+#################################################
 if [ $output_bin_path != "NOT_DEFINED" ]; then
   mv /go/bin/ekiden $output_bin_path
 fi
