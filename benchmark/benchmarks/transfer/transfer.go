@@ -69,6 +69,10 @@ func (account *transferAccount) drainTo(ctx context.Context, dst common.Address)
 	if err != nil {
 		return err
 	}
+	if balance.Cmp(&big.Int{}) <= 0 {
+		// Account balance is <= 0 already.
+		return nil
+	}
 
 	// Transfer off the remaining balance back to the funding account.
 	balance.Sub(balance, transferFee)
