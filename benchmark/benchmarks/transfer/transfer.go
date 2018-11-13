@@ -283,7 +283,6 @@ func (bench *benchTransfer) BulkCleanup(ctx context.Context, states []*api.State
 				)
 			}
 		}(i)
-<<<<<<< HEAD
 	}
 
 	wg.Wait()
@@ -338,62 +337,6 @@ func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.
 	if err != nil {
 		return fmt.Errorf("failed to query faucet: %v", err)
 	}
-=======
-	}
-
-	wg.Wait()
-}
-
-func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.State) error {
-	// Work out the balance required to fund all the accounts, including
-	// transaction fees.
-	txFees := big.NewInt(transferCost)
-	minBalance := big.NewInt(int64(len(states)))
-	txFees.Mul(txFees, gasPrice)
-	txFees.Mul(txFees, minBalance)
-	minBalance.Mul(fundAmount, minBalance)
-	minBalance.Add(minBalance, txFees)
-
-	logger := states[0].Logger
-	client := (states[0].State).(*transferAccount).client
-	fundingAccountAddr := privKeyToAddress(bench.fundingAccount.privateKey)
-	balance, err := client.BalanceAt(ctx, fundingAccountAddr, nil)
-	if err != nil {
-		return err
-	}
-
-	level.Debug(logger).Log("msg", "funding account balance",
-		"balance", balance,
-		"required_balance", &minBalance,
-	)
-
-	// Sufficient balance is present in the account.
-	if balance.Cmp(minBalance) > 0 {
-		return nil
-	}
-
-	// Hit up the faucet's private endpoint for more money.
-	if flagFaucetURL == "" {
-		return fmt.Errorf("insufficient funds, no faucet configured")
-	}
-	u, err := url.Parse(flagFaucetURL)
-	if err != nil {
-		return fmt.Errorf("invalid faucet URL: ", err)
-	}
-	q := u.Query()
-	q.Set("to", fundingAccountAddr.Hex())
-	q.Set("amnt", minBalance.String())
-	u.RawQuery = q.Encode()
-
-	level.Debug(logger).Log("msg", "requesting funding from faucet",
-		"url", u,
-	)
-
-	resp, err := ctxhttp.Get(ctx, nil, u.String())
-	if err != nil {
-		return fmt.Errorf("failed to query faucet: %v", err)
-	}
->>>>>>> e11051e67a7f1649b0679db5af744e6f6f35693c
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
