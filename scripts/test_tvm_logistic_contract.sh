@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -e;
 WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
@@ -8,9 +8,8 @@ run_test() {
     trap 'kill -- -0' EXIT
 
     echo "Building contract."
-    pushd {$WORKDIR}/tests/contracts/tvm_contract > /dev/null
-    make clean
-    make
+    pushd ${WORKDIR}/tests/contracts/tvm-contract > /dev/null
+    ./build.sh
     popd > /dev/null
 
     # Start dummy node.
@@ -32,15 +31,15 @@ run_test() {
     npm install > /dev/null
     npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
-    OUTPUT="$(./deploy_contract.js --gas-limit 0xf42400 --gas-price 0x3b9aca00 ${WORKDIR}/tests/contracts/tvm_contract/target/tvm_contract.wasm | tail -1)"
+    OUTPUT="$(./deploy_contract.js --gas-limit 0xf42400 --gas-price 0x3b9aca00 ${WORKDIR}/tests/contracts/tvm-contract/target/tvm_contract.wasm | tail -1)"
     echo "Contract address: $OUTPUT"
     OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
 
-    if [ "$OUTPUT" = "0x73756363657373" ]; then
+    if [ "$OUTPUT" = "0x726573756c74" ]; then
         echo "Test passed."
     else
-        echo "Incorrect output. Expected 0x73756363657373."
+        echo "Incorrect output. Expected 0x726573756c74."
         exit 1
     fi
 
