@@ -95,6 +95,7 @@ extern crate runtime_ethereum_common;
 
 mod client;
 mod impls;
+mod informant;
 mod middleware;
 #[cfg(feature = "pubsub")]
 mod notifier;

@@ -18,10 +18,11 @@ use std::collections::HashSet;
 use std::io;
 use std::sync::Arc;
 
+use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
-use middleware::Middleware;
+use middleware::{Middleware, WsDispatcher, WsStats};
 use parity_reactor::TokioRemote;
-use parity_rpc::{self as rpc, informant::RpcStats, DomainsValidation, Metadata};
+use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
 
 use servers;
@@ -145,7 +146,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let full_handler = setup_apis(rpc_apis::ApiSet::SafeContext, deps, conf.max_batch_size);
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
-            rpc::WsDispatcher::new(full_handler),
+            WsDispatcher::new(full_handler, deps.stats.clone()),
             Middleware::new(
                 deps.stats.clone(),
                 deps.apis.activity_notifier(),
@@ -171,7 +172,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
         conf.max_connections,
         rpc::WsExtractor::new(None),
         rpc::WsExtractor::new(None),
-        rpc::WsStats::new(deps.stats.clone()),
+        WsStats::new(deps.stats.clone()),
     );
 
     match start_result {

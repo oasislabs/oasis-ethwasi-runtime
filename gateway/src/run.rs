@@ -25,8 +25,8 @@ use client_utils;
 use ekiden_core::environment::Environment;
 use ekiden_storage_base::StorageBackend;
 use ethereum_types::U256;
+use informant;
 use parity_reactor::EventLoop;
-use parity_rpc::informant;
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 

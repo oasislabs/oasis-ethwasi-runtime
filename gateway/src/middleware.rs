@@ -1,18 +1,33 @@
 //! RPC Middleware
 
+use informant::RpcStats;
 use jsonrpc_core as rpc;
-use parity_rpc::informant::{ActivityNotifier, RpcStats};
+use jsonrpc_pubsub::{PubSubMetadata, Session};
+use jsonrpc_ws_server as ws;
+use parity_rpc::informant::ActivityNotifier;
+use parity_rpc::v1::types::H256;
+use parity_rpc::{Metadata, Origin};
 use std::sync::Arc;
 use std::time;
 
-/// Custom JSON-RPC error code for oversized batches
+/// Custom JSON-RPC error codes
 const ERROR_BATCH_SIZE: i64 = -32099;
+const ERROR_RATE_LIMITED: i64 = -32098;
 
 /// A custom JSON-RPC error for batches containing too many requests.
 fn batch_too_large() -> rpc::Error {
     rpc::Error {
         code: rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE),
         message: "Too many JSON-RPC requests in batch".into(),
+        data: None,
+    }
+}
+
+/// A custom JSON-RPC error for WebSocket rate limit.
+fn rate_limited() -> rpc::Error {
+    rpc::Error {
+        code: rpc::ErrorCode::ServerError(ERROR_RATE_LIMITED),
+        message: "Too many requests".into(),
         data: None,
     }
 }
@@ -49,7 +64,6 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
         let start = time::Instant::now();
 
         self.notifier.active();
-        self.stats.count_request();
 
         // Check the number of requests in the JSON-RPC batch.
         if let rpc::Request::Batch(ref calls) = request {
@@ -66,14 +80,74 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
             }
         }
 
-        let stats = self.stats.clone();
-        let future = process(request, meta).map(move |res| {
-            let time = Self::as_micro(start.elapsed());
-            stats.add_roundtrip(time);
-            res
-        });
+        Box::new(process(request, meta))
+    }
+}
 
-        Box::new(future)
+/// WebSockets middleware that dispatches requests to handle.
+pub struct WsDispatcher<M: rpc::Middleware<Metadata>> {
+    full_handler: rpc::MetaIoHandler<Metadata, M>,
+    stats: Arc<RpcStats>,
+}
+
+impl<M: rpc::Middleware<Metadata>> WsDispatcher<M> {
+    /// Create new `WsDispatcher` with given full handler.
+    pub fn new(full_handler: rpc::MetaIoHandler<Metadata, M>, stats: Arc<RpcStats>) -> Self {
+        WsDispatcher {
+            full_handler: full_handler,
+            stats: stats,
+        }
+    }
+}
+
+impl<M: rpc::Middleware<Metadata>> rpc::Middleware<Metadata> for WsDispatcher<M> {
+    type Future = rpc::FutureResponse;
+
+    fn on_request<F, X>(&self, request: rpc::Request, meta: Metadata, process: F) -> Self::Future
+    where
+        F: FnOnce(rpc::Request, Metadata) -> X,
+        X: rpc::futures::Future<Item = Option<rpc::Response>, Error = ()> + Send + 'static,
+    {
+        match meta.origin {
+            Origin::Ws {
+                ref session,
+                ref dapp,
+            } => {
+                // TODO: max request rate parameter
+                if self.stats.count_request(session) > 10 {
+                    error!("Rejecting WS request");
+                    return Box::new(rpc::futures::finished(Some(rpc::Response::from(
+                        rate_limited(),
+                        None,
+                    ))));
+                }
+            }
+            _ => (),
+        };
+
+        Box::new(process(request, meta))
+    }
+}
+
+/// WebSockets RPC usage statistics.
+pub struct WsStats {
+    stats: Arc<RpcStats>,
+}
+
+impl WsStats {
+    /// Creates new WS usage tracker.
+    pub fn new(stats: Arc<RpcStats>) -> Self {
+        WsStats { stats: stats }
+    }
+}
+
+impl ws::SessionStats for WsStats {
+    fn open_session(&self, id: ws::SessionId) {
+        self.stats.open_session(H256::from(id))
+    }
+
+    fn close_session(&self, id: ws::SessionId) {
+        self.stats.close_session(&H256::from(id))
     }
 }
 
