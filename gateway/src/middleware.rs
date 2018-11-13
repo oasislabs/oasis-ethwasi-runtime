@@ -146,10 +146,94 @@ impl ws::SessionStats for WsStats {
 mod tests {
     use super::*;
 
+    use futures::Future;
+    use informant::RpcStats;
+    use jsonrpc_core::Middleware as mw;
+
     pub struct TestNotifier {}
 
     impl ActivityNotifier for TestNotifier {
         fn active(&self) {}
+    }
+
+    fn make_request(id: u64) -> rpc::Request {
+        rpc::Request::Single(rpc::Call::MethodCall(rpc::MethodCall {
+            jsonrpc: Some(rpc::Version::V2),
+            method: "test".to_owned(),
+            params: Some(rpc::Params::Array(vec![
+                rpc::Value::from(1),
+                rpc::Value::from(2),
+            ])),
+            id: rpc::Id::Num(id),
+        }))
+    }
+
+    #[test]
+    fn should_limit_request_rate() {
+        let stats = Arc::new(RpcStats::default());
+
+        // start a new WS session
+        let session_id = H256::from(1);
+        stats.open_session(session_id.clone());
+        let metadata = Metadata {
+            origin: Origin::Ws {
+                dapp: "".into(),
+                session: session_id.clone(),
+            },
+            session: None,
+        };
+
+        let dispatcher = WsDispatcher::new(stats.clone(), 1);
+
+        // a single request (should pass)
+        let request_1 = make_request(1);
+
+        let response = dispatcher
+            .on_request(request_1, metadata.clone(), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
+
+        // no Failure response for a single request
+        assert_eq!(response, None);
+
+        // three requests two ensure two fall within the same time slot
+        let request_2 = make_request(2);
+        let request_3 = make_request(3);
+        let request_4 = make_request(4);
+
+        let response = dispatcher
+            .on_request(request_2, metadata.clone(), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
+
+        let response = dispatcher
+            .on_request(request_3, metadata.clone(), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
+
+        let response = dispatcher
+            .on_request(request_4, metadata.clone(), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
+
+        // should respond with a Failure
+        match response {
+            Some(rpc::Response::Single(rpc::Output::Failure(failure))) => {
+                assert_eq!(
+                    failure.error.code,
+                    rpc::ErrorCode::ServerError(ERROR_RATE_LIMITED)
+                );
+            }
+            _ => assert!(false, "Did not enforce rate limit"),
+        };
     }
 
     #[test]
