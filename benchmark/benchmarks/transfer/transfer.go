@@ -344,6 +344,7 @@ func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.
 
 	nonce, err := client.NonceAt(ctx, bench.fundingAccount.address, nil)
 	if err != nil {
+<<<<<<< HEAD
 		return 0, err
 	}
 
@@ -373,11 +374,26 @@ func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.
 
 	_ = level.Debug(logger).Log("msg", "requesting funding from faucet",
 		"url", u.String(),
+=======
+		return fmt.Errorf("invalid faucet URL: ", err)
+	}
+	q := u.Query()
+	q.Set("to", fundingAccountAddr.Hex())
+	q.Set("amnt", minBalance.String())
+	u.RawQuery = q.Encode()
+
+	level.Debug(logger).Log("msg", "requesting funding from faucet",
+		"url", u,
+>>>>>>> 127acc7... Fixed merge conflict
 	)
 
 	resp, err := ctxhttp.Get(ctx, nil, u.String())
 	if err != nil {
+<<<<<<< HEAD
 		return 0, fmt.Errorf("failed to query faucet: %v", err)
+=======
+		return fmt.Errorf("failed to query faucet: %v", err)
+>>>>>>> 127acc7... Fixed merge conflict
 	}
 	defer resp.Body.Close()
 
