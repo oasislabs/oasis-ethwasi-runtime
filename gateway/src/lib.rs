@@ -135,6 +135,7 @@ pub fn start(
     num_threads: usize,
     ws_port: u16,
     ws_max_connections: usize,
+    ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
 ) -> Result<RunningClient, String> {
@@ -160,6 +161,7 @@ pub fn start(
         num_threads,
         ws_port,
         ws_max_connections,
+        ws_rate_limit,
         gas_price,
         jsonrpc_max_batch_size,
     )

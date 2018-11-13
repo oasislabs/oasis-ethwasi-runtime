@@ -81,6 +81,13 @@ fn main() {
                 .takes_value(true),
         )
         .arg(
+            Arg::with_name("ws-rate-limit")
+                .long("ws-rate-limit")
+                .help("Max requests/second allowed on a WebSocket connection.")
+                .default_value("50")
+                .takes_value(true),
+        )
+        .arg(
             Arg::with_name("pubsub-interval")
                 .long("pubsub-interval")
                 .help("Time interval used for pub/sub notifications (in sec).")
@@ -130,6 +137,7 @@ fn main() {
     let http_port = value_t!(args, "http-port", u16).unwrap();
     let ws_port = value_t!(args, "ws-port", u16).unwrap();
     let ws_max_connections = value_t!(args, "ws-max-connections", usize).unwrap();
+    let ws_rate_limit = value_t!(args, "ws-rate-limit", usize).unwrap();
     let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64).unwrap();
     let gas_price = util::gwei_to_wei(value_t!(args, "gas-price", u64).unwrap());
     let jsonrpc_max_batch_size = value_t!(args, "jsonrpc-max-batch", usize).unwrap();
@@ -141,6 +149,7 @@ fn main() {
         num_threads,
         ws_port,
         ws_max_connections,
+        ws_rate_limit,
         gas_price,
         jsonrpc_max_batch_size,
     ).unwrap();

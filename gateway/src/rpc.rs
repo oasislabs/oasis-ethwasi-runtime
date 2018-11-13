@@ -79,7 +79,7 @@ pub struct WsConfiguration {
     pub support_token_api: bool,
     pub dapps_address: Option<rpc::Host>,
     pub max_batch_size: usize,
-    pub max_rate: usize,
+    pub max_req_per_sec: usize,
 }
 
 impl Default for WsConfiguration {
@@ -99,7 +99,7 @@ impl Default for WsConfiguration {
             support_token_api: true,
             dapps_address: Some("127.0.0.1:8545".into()),
             max_batch_size: 10,
-            max_rate: 10,
+            max_req_per_sec: 50,
         }
     }
 }
@@ -148,7 +148,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let full_handler = setup_apis(rpc_apis::ApiSet::SafeContext, deps, conf.max_batch_size);
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
-            WsDispatcher::new(full_handler, deps.stats.clone(), conf.max_rate),
+            WsDispatcher::new(full_handler, deps.stats.clone(), conf.max_req_per_sec),
             Middleware::new(deps.apis.activity_notifier(), conf.max_batch_size),
         ));
         let apis = conf.apis.list_apis();

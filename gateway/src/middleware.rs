@@ -78,7 +78,7 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
 pub struct WsDispatcher<M: rpc::Middleware<Metadata>> {
     full_handler: rpc::MetaIoHandler<Metadata, M>,
     stats: Arc<RpcStats>,
-    max_rate: usize,
+    max_req_per_sec: usize,
 }
 
 impl<M: rpc::Middleware<Metadata>> WsDispatcher<M> {
@@ -86,12 +86,12 @@ impl<M: rpc::Middleware<Metadata>> WsDispatcher<M> {
     pub fn new(
         full_handler: rpc::MetaIoHandler<Metadata, M>,
         stats: Arc<RpcStats>,
-        max_rate: usize,
+        max_req_per_sec: usize,
     ) -> Self {
         WsDispatcher {
             full_handler: full_handler,
             stats: stats,
-            max_rate: max_rate,
+            max_req_per_sec: max_req_per_sec,
         }
     }
 }
@@ -104,13 +104,14 @@ impl<M: rpc::Middleware<Metadata>> rpc::Middleware<Metadata> for WsDispatcher<M>
         F: FnOnce(rpc::Request, Metadata) -> X,
         X: rpc::futures::Future<Item = Option<rpc::Response>, Error = ()> + Send + 'static,
     {
+        // Check request rate for session, and respond with an error if it exceeds max_req_per_sec.
         match meta.origin {
             Origin::Ws {
                 ref session,
                 dapp: _,
             } => {
-                // TODO: max request rate parameter
-                if self.stats.count_request(session) > self.max_rate as u16 {
+                if self.stats.count_request(session) > self.max_req_per_sec as u16 {
+                    measure_counter_inc!("ws_rate_limited");
                     error!("Rejecting WS request");
                     return Box::new(rpc::futures::finished(Some(rpc::Response::from(
                         error_rate_limited(),
