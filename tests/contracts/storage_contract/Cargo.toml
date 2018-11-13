@@ -6,7 +6,7 @@ authors = ["Oasis Labs<info@oasislabs.com>"]
 [dependencies]
 hex = "0.3"
 parity-hash = { version = "1.2.0", default-features = false }
-pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum", branch = "ekiden" }
+pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum-private", branch = "ekiden" }
 
 [lib]
 crate-type = ["cdylib"]
