@@ -1,21 +1,13 @@
 [package]
 name = "tvm_contract"
 version = "0.1.0"
-<<<<<<< HEAD
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
-=======
-authors = ["David Yan <david.yan@berkeley.edu>"]
->>>>>>> 6ef18fa... Finished TVM integration test
 
 [dependencies]
 ml-reader = { git = "https://github.com/oasislabs/ml-reader", branch = "david-yan/tvm-libsvm" }
 tvm-libsvm = { git = "https://github.com/oasislabs/ml-reader", branch = "david-yan/tvm-libsvm" }
 ndarray = "0.11.2"
-<<<<<<< HEAD
 pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum-private", branch = "ekiden"}
-=======
-pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum", branch = "ekiden"}
->>>>>>> 6ef18fa... Finished TVM integration test
 tvm = { git = "https://github.com/nhynes/tvm-rs" }
 pwasm-std = "0.10.0"
 
