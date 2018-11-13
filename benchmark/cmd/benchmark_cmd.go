@@ -106,6 +106,7 @@ func benchmarkMain(cmd *cobra.Command, args []string) {
 				"err", err,
 				"benchmark", benchmark.Name(),
 			)
+			os.Exit(1)
 		}
 	}
 
