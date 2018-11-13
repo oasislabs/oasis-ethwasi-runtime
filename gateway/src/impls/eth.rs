@@ -22,6 +22,7 @@ use std::sync::Arc;
 use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
+use util::jsonrpc_error;
 
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
@@ -497,6 +498,14 @@ impl Eth for EthClient {
         measure_counter_inc!("getLogs");
         info!("eth_getLogs(filter: {:?})", filter);
         let filter: EthcoreFilter = filter.into();
+
+        // Temporary mitigation for #397: check filter block range
+        if !self.client.check_filter_range(filter.clone()) {
+            return Box::new(future::err(jsonrpc_error(
+                "Filter exceeds allowed block range".to_string(),
+            )));
+        }
+
         let logs = self.client
             .logs(filter.clone())
             .into_iter()
@@ -523,19 +532,19 @@ impl Eth for EthClient {
 
     fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {
         measure_counter_inc!("sendRawTransaction");
-        measure_histogram_timer!("sendRawTransaction_time");
         if log_enabled!(log::Level::Debug) {
             debug!("eth_sendRawTransaction(data: {:?})", raw);
         } else {
             info!("eth_sendRawTransaction(data: ...)");
         }
 
-        Box::new(
+        Box::new(measure_future_histogram_timer!(
+            "sendRawTransaction_time",
             self.client
                 .send_raw_transaction(raw.into())
                 .map(Into::into)
-                .map_err(errors::execution),
-        )
+                .map_err(errors::execution)
+        ))
     }
 
     fn submit_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {

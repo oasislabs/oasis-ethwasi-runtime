@@ -169,16 +169,41 @@ where
         let inner = self.inner.lock().unwrap();
 
         let result = match inner.pending_inserts.get(key) {
-            Some(PendingItem::Storage(ref_count, value)) if ref_count >= &0 => {
+            Some(PendingItem::Storage(ref_count, value)) if ref_count > &0 => {
                 Some(ElasticArray128::from_slice(&value[..]))
             }
             Some(PendingItem::State(ref_count, value)) if ref_count > &0 => {
                 Some(ElasticArray128::from_slice(&value[..]))
             }
-            Some(PendingItem::Storage(ref_count, _)) if ref_count < &0 => None,
-            Some(PendingItem::State(ref_count, _)) if ref_count < &0 => None,
+            Some(PendingItem::Storage(ref_count, _)) if ref_count <= &0 => {
+                // Reference count indicates missing item, but the item may be
+                // available in storage. It would be tempting to just return it
+                // from cache but we need to make sure that the item exists in
+                // external storage as doing otherwise could lead to state
+                // corruption since pending items with zero or negative reference
+                // count are not persisted.
+                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
+                match inner.backend.get(storage_key).wait() {
+                    Ok(result) => Some(ElasticArray128::from_vec(result)),
+                    _ => None,
+                }
+            }
+            Some(PendingItem::State(ref_count, _)) if ref_count <= &0 => {
+                // Reference count indicates missing item, but the item may be
+                // available in storage. It would be tempting to just return it
+                // from cache but we need to make sure that the item exists in
+                // external storage as doing otherwise could lead to state
+                // corruption since pending items with zero or negative reference
+                // count are not persisted.
+                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
+                inner
+                    .blockchain_db
+                    .get(Self::STATE_DB_COLUMN, &key[..])
+                    .expect("fetch from blockchain db must succeed")
+            }
             _ => {
-                // First, try to fetch from storage backend.
+                // Key is not in local cache. First try to fetch it from the
+                // storage backend.
                 let storage_key = ekiden_core::bytes::H256::from(&key[..]);
                 match inner.backend.get(storage_key).wait() {
                     Ok(result) => Some(ElasticArray128::from_vec(result)),
@@ -187,7 +212,7 @@ where
                         inner
                             .blockchain_db
                             .get(Self::STATE_DB_COLUMN, &key[..])
-                            .expect("fetch from blockchain db")
+                            .expect("fetch from blockchain db must succeed")
                     }
                 }
             }
@@ -379,7 +404,11 @@ where
 mod tests {
     extern crate ekiden_storage_dummy;
 
+    use ethereum_types::H256;
+    use hashdb::{DBValue, HashDB};
+
     use self::ekiden_storage_dummy::DummyStorageBackend;
+    use ekiden_trusted::db::{Database, DatabaseHandle};
 
     use super::*;
 
@@ -393,5 +422,64 @@ mod tests {
         // prefix for column Some(3) is 4=3+1
         let col_3 = get_key(Some(3), b"three");
         assert_eq!(col_3, b"\x04\0\0\0three");
+    }
+
+    #[test]
+    fn test_storage_hashdb() {
+        let storage = Arc::new(DummyStorageBackend::new());
+        let db = DatabaseHandle::new(storage.clone());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+
+        assert_eq!(hash_db.get(&H256::zero()), None);
+        let hw_key = hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.insert(b"hello world");
+        hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.remove(&hw_key);
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.remove(&hw_key);
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+        hash_db.remove(&hw_key);
+        assert_eq!(hash_db.get(&hw_key), None);
+
+        hash_db.remove(&hw_key);
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+
+        hash_db.remove(&hw_key);
+        hash_db.remove(&hw_key);
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+        hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
+
+        // Commit and re-create database.
+        hash_db.commit();
+        let db = DatabaseHandle::new(storage.clone());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
     }
 }

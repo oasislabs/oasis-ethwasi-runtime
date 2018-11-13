@@ -624,6 +624,42 @@ jobs:
           name: Run the cChannel-eth contract test suite
           command: ./scripts/test-dapp.sh celer
 
+  augur-tests:
+    <<: *defaults
+    resource_class: xlarge
+    steps:
+      - run: echo 'PS1='"'"'\$ '"'"'; . /root/.bashrc' >> $BASH_ENV
+      - run: echo 'export SGX_MODE=SIM' >> $BASH_ENV
+      - run: echo 'export INTEL_SGX_SDK=/opt/sgxsdk' >> $BASH_ENV
+      - run: echo 'export EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1' >> $BASH_ENV
+
+      - checkout
+
+      - run:
+          name: Install ekiden-compute
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-compute
+      # Attach CircleCI workspace (temp storage for this workflow run)
+      - attach_workspace:
+          at: /workspace
+      # Copy required resources from the workspace
+      - run:
+          name: Copy ekiden-node from workspace
+          command: cp /workspace/go/bin/ekiden ekiden-node
+      - run:
+          name: Ensure target directory exists
+          command: mkdir -p target
+      - run:
+          name: Copy contents of workspace target dir to target dir on agent
+          command: cp -R /workspace/target/* target/
+      # Finally run the tests
+      - run:
+          name: Run Augur tests
+          command: ./scripts/test-dapp.sh augur
+
 workflows:
   version: 2
   build_and_test_and_release:
@@ -636,6 +672,11 @@ workflows:
       - build-genesis
       - build-run-contract
       - cover-rust
+      - augur-tests:
+          requires:
+            - build-go
+            - build-and-test-runtime
+            - build-and-test-web3-gateway
       - ens-tests:
           requires:
             - build-go
