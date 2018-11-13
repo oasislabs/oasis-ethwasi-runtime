@@ -26,6 +26,7 @@ const (
 	cfgBenchmarks            = "benchmarks"
 	cfgBenchmarksConcurrency = "benchmarks.concurrency"
 	cfgBenchmarksDuration    = "benchmarks.duration"
+	cfgBenchmarksRate        = "benchmarks.rate"
 
 	cfgLogLevel        = "log.level"
 	cfgLogVerboseDebug = "log.verbose_debug"
@@ -42,6 +43,7 @@ var (
 	flagBenchmarks            benchmarkValues
 	flagBenchmarksConcurrency uint
 	flagBenchmarksDuration    time.Duration
+	flagBenchmarksRate        uint
 
 	flagLogLevel        logLevel
 	flagLogVerboseDebug bool
@@ -84,6 +86,8 @@ func benchmarkMain(cmd *cobra.Command, args []string) {
 		concurrency = 1
 	}
 	cfg.Concurrency = int(concurrency)
+
+	cfg.Rate, _ = cmd.Flags().GetUint(cfgBenchmarksRate)
 	verboseDebug, _ := cmd.Flags().GetBool(cfgLogVerboseDebug)
 	cfg.LogVerboseDebug = verboseDebug && flagLogLevel == levelDebug
 
@@ -205,6 +209,7 @@ func benchmarkInit(cmd *cobra.Command) {
 	cmd.Flags().VarP(&flagBenchmarks, cfgBenchmarks, "b", "Benchmarks")
 	cmd.Flags().UintVar(&flagBenchmarksConcurrency, cfgBenchmarksConcurrency, 1, "Benchmark concurrency")
 	cmd.Flags().DurationVar(&flagBenchmarksDuration, cfgBenchmarksDuration, 30*time.Second, "Benchmark duration")
+	cmd.Flags().UintVar(&flagBenchmarksRate, cfgBenchmarksRate, 1, "Benchmark maximum per second rate per concurrent connection")
 	cmd.Flags().Var(&flagLogLevel, cfgLogLevel, "Log level")
 	cmd.Flags().BoolVar(&flagLogVerboseDebug, cfgLogVerboseDebug, false, "Extremely verbose debug logging")
 	cmd.Flags().StringVar(&flagLogFile, cfgLogFile, "", "Log file (default stdout)")
@@ -217,6 +222,7 @@ func benchmarkInit(cmd *cobra.Command) {
 		cfgBenchmarks,
 		cfgBenchmarksConcurrency,
 		cfgBenchmarksDuration,
+		cfgBenchmarksRate,
 		cfgLogLevel,
 		cfgLogVerboseDebug,
 		cfgLogFile,

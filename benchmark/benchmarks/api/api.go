@@ -24,6 +24,7 @@ type Config struct {
 
 	Concurrency     int
 	Duration        time.Duration
+	Rate            uint
 	LogVerboseDebug bool
 }
 
@@ -97,10 +98,17 @@ func (cfg *Config) RunBenchmark(ctx context.Context, benchmark Benchmark) error 
 
 	wg.Add(cfg.Concurrency)
 	timeBefore := time.Now()
+
+	var interval int64
+	if cfg.Rate != 0 {
+		interval = time.Second.Nanoseconds() / int64(cfg.Rate)
+	}
+
 	for i := 0; i < cfg.Concurrency; i++ {
 		go func(state *State) {
 			defer wg.Done()
 
+			began, count := time.Now(), int64(0)
 			for {
 				select {
 				case <-ctx.Done():
@@ -128,6 +136,14 @@ func (cfg *Config) RunBenchmark(ctx context.Context, benchmark Benchmark) error 
 					return
 				}
 				counter.Add(iters)
+
+				if interval != 0 {
+					// Rate limit
+					now, next := time.Now(), began.Add(time.Duration(count*interval))
+					time.Sleep(next.Sub(now))
+					count++
+				}
+
 			}
 		}(states[i])
 	}
