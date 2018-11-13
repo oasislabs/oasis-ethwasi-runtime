@@ -14,15 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
+// Based on parity/rpc/src/v1/informant.rs [v1.12.0]
+
 //! RPC Requests Statistics
 
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::atomic::{self, AtomicUsize};
-use std::sync::Arc;
 use std::time;
 
-use jsonrpc_core as rpc;
 use parity_rpc::v1::types::H256;
 use parking_lot::RwLock;
 
@@ -92,14 +91,14 @@ pub struct RpcStats {
 }
 
 impl RpcStats {
-    /// Handle session opened
+    /// Start tracking a session
     pub fn open_session(&self, id: H256) {
         self.sessions
             .write()
             .insert(id, RwLock::new(RateCalculator::default()));
     }
 
-    /// Handle session closed
+    /// Stop tracking a session
     pub fn close_session(&self, id: &H256) {
         self.sessions.write().remove(id);
     }
