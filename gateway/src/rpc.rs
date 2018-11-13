@@ -145,10 +145,9 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let addr = url.parse()
         .map_err(|_| format!("Invalid WebSockets listen host/port given: {}", url))?;
 
-    let full_handler = setup_apis(rpc_apis::ApiSet::SafeContext, deps, conf.max_batch_size);
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
-            WsDispatcher::new(full_handler, deps.stats.clone(), conf.max_req_per_sec),
+            WsDispatcher::new(deps.stats.clone(), conf.max_req_per_sec),
             Middleware::new(deps.apis.activity_notifier(), conf.max_batch_size),
         ));
         let apis = conf.apis.list_apis();

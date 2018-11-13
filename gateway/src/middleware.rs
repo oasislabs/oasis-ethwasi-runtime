@@ -75,28 +75,22 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
 }
 
 /// WebSockets middleware that dispatches requests to handle.
-pub struct WsDispatcher<M: rpc::Middleware<Metadata>> {
-    full_handler: rpc::MetaIoHandler<Metadata, M>,
+pub struct WsDispatcher {
     stats: Arc<RpcStats>,
     max_req_per_sec: usize,
 }
 
-impl<M: rpc::Middleware<Metadata>> WsDispatcher<M> {
+impl WsDispatcher {
     /// Create new `WsDispatcher` with given full handler.
-    pub fn new(
-        full_handler: rpc::MetaIoHandler<Metadata, M>,
-        stats: Arc<RpcStats>,
-        max_req_per_sec: usize,
-    ) -> Self {
+    pub fn new(stats: Arc<RpcStats>, max_req_per_sec: usize) -> Self {
         WsDispatcher {
-            full_handler: full_handler,
             stats: stats,
             max_req_per_sec: max_req_per_sec,
         }
     }
 }
 
-impl<M: rpc::Middleware<Metadata>> rpc::Middleware<Metadata> for WsDispatcher<M> {
+impl rpc::Middleware<Metadata> for WsDispatcher {
     type Future = rpc::FutureResponse;
 
     fn on_request<F, X>(&self, request: rpc::Request, meta: Metadata, process: F) -> Self::Future
