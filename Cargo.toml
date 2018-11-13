@@ -53,7 +53,8 @@ members = [
 	"genesis",
 	"tests/contracts/basic_wasm_contract",
 	"tests/contracts/rust-logistic-contract",
-	"tests/contracts/tvm_contract",
 	"tests/contracts/storage_contract",
+	"tests/contracts/tvm_basic_contract",
+	"tests/contracts/tvm_logistic_contract",
 	"tests/run_contract",
 ]
