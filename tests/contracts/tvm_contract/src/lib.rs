@@ -11,9 +11,8 @@ use std::convert::TryInto;
 
 use ndarray::Array;
 use pwasm_std::logger::debug;
-use tvm::{
-    ffi::runtime::DLTensor,
-    runtime::{Module, SystemLibModule},
+use tvm::{ffi::runtime::DLTensor,
+          runtime::{Module, SystemLibModule},
 };
 
 // This annotation to link the function with the correct external library is required.
@@ -33,7 +32,9 @@ pub fn deploy() {}
 #[no_mangle]
 pub fn call() {
     // Must be run first to register the functions.
-    unsafe { __tvm_module_startup(); }
+    unsafe {
+        __tvm_module_startup();
+    }
 
     let syslib = SystemLibModule::default();
     let add_one = syslib.get_function("add_one").unwrap();
@@ -47,9 +48,8 @@ pub fn call() {
     let _result: i32 = call_packed!(add_one, &mut a_dl, &mut b_dl)
         .try_into()
         .unwrap();
-    // `debug` can be used display messages in the terminal
+
     debug(&format!("output: {:?}", b));
     assert!(c.all_close(&b, 1e-8f32));
     pwasm_ethereum::ret(&b"success"[..]);
 }
-
