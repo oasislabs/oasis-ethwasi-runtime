@@ -8,7 +8,7 @@ run_test() {
     trap 'kill -- -0' EXIT
 
     echo "Building contract."
-    pushd {$WORKDIR}/tests/contracts/tvm_contract > /dev/null
+    pushd /oasis/tvm_contract > /dev/null
     make clean
     make
     popd > /dev/null
@@ -25,14 +25,14 @@ run_test() {
     run_gateway 1
     sleep 10
 
-    ${WORKDIR}/ekiden-node dummy set-epoch --epoch 1
+    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Installing deploy_contract dependencies."
     pushd ${WORKDIR}/tests/deploy_contract > /dev/null
     npm install > /dev/null
     npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
-    OUTPUT="$(./deploy_contract.js --gas-limit 0xf42400 --gas-price 0x3b9aca00 ${WORKDIR}/tests/contracts/tvm_contract/target/tvm_contract.wasm | tail -1)"
+    OUTPUT="$(./deploy_contract.js --gas-limit 0xf42400 --gas-price 0x3b9aca00 /oasis/tvm_contract/target/tvm_contract.wasm | tail -1)"
     echo "Contract address: $OUTPUT"
     OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
