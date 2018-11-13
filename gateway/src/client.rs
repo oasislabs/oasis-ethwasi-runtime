@@ -33,7 +33,7 @@ use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
 use ethereum_api::TransactionRequest;
-use state::{self, EthState, StateDb};
+use state::{self, StateDb};
 use storage::Web3GlobalStorage;
 #[cfg(test)]
 use test_helpers::{self, MockDb};

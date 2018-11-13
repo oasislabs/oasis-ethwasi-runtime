@@ -7,7 +7,6 @@ use parity_rpc::informant::ActivityNotifier;
 use parity_rpc::v1::types::H256;
 use parity_rpc::{Metadata, Origin};
 use std::sync::Arc;
-use std::time;
 
 /// Custom JSON-RPC error codes
 const ERROR_BATCH_SIZE: i64 = -32099;
