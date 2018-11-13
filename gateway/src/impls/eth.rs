@@ -96,15 +96,6 @@ enum PendingTransactionId {
     Location(PendingOrBlock, usize),
 }
 
-/// Constructs a JSON-RPC error from a string message, with error code -32603.
-fn jsonrpc_error(message: String) -> Error {
-    Error {
-        code: ErrorCode::InternalError,
-        message: message,
-        data: None,
-    }
-}
-
 impl EthClient {
     /// Creates new EthClient.
     pub fn new(client: &Arc<Client>) -> Self {
