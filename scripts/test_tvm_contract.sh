@@ -8,7 +8,7 @@ run_test() {
     trap 'kill -- -0' EXIT
 
     echo "Building contract."
-    pushd /oasis/tvm_contract > /dev/null
+    pushd {$WORKDIR}/tests/contracts/tvm_contract > /dev/null
     make clean
     make
     popd > /dev/null
