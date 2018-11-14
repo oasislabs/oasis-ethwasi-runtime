@@ -31,6 +31,15 @@ run_test() {
     sleep 3
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
+    # Advance epoch periodically in background.
+    (
+        NEXT_EPOCH=2
+        while true; do
+            sleep 5
+            ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch $((NEXT_EPOCH++))
+        done
+    ) &
+
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
