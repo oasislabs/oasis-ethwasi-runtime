@@ -11,6 +11,12 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+const (
+	cfgLogLevel = "log.level"
+	cfgLogFile  = "log.file"
 )
 
 var (
@@ -20,12 +26,20 @@ var (
 		Run:   benchmarkMain,
 	}
 
+	debugCmd = &cobra.Command{
+		Use:   "debug",
+		Short: "Various debug/testing sub-commands",
+	}
+
 	logLevelMap = map[logLevel]string{
 		levelError: "ERROR",
 		levelWarn:  "WARN",
 		levelInfo:  "INFO",
 		levelDebug: "DEBUG",
 	}
+
+	flagLogLevel logLevel
+	flagLogFile  string
 )
 
 // Execute spawns the main entry point of the command.
@@ -74,7 +88,6 @@ func (lvl *logLevel) Type() string {
 }
 
 func (lvl *logLevel) GetLogger(w io.Writer) log.Logger {
-
 	// Suppress geth logging entirely.
 	gethLog.Root().SetHandler(gethLog.DiscardHandler())
 
@@ -96,5 +109,18 @@ func (lvl *logLevel) GetLogger(w io.Writer) log.Logger {
 }
 
 func init() {
+	rootCmd.PersistentFlags().Var(&flagLogLevel, cfgLogLevel, "Log level")
+	rootCmd.PersistentFlags().StringVar(&flagLogFile, cfgLogFile, "", "Log file (default stdout)")
+
+	for _, v := range []string{
+		cfgLogFile,
+		cfgLogLevel,
+	} {
+		_ = viper.BindPFlag(v, rootCmd.PersistentFlags().Lookup(v))
+	}
+
 	benchmarkInit(rootCmd)
+
+	rootCmd.AddCommand(debugCmd)
+	faucetInit(debugCmd)
 }

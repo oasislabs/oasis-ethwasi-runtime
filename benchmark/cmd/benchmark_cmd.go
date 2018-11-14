@@ -27,15 +27,15 @@ const (
 	cfgBenchmarksConcurrency = "benchmarks.concurrency"
 	cfgBenchmarksDuration    = "benchmarks.duration"
 
-	cfgLogLevel        = "log.level"
 	cfgLogVerboseDebug = "log.verbose_debug"
-	cfgLogFile         = "log.file"
 
 	cfgGatewayURL = "gateway_url"
 
 	cfgPrometheusPushAddr          = "prometheus.push.addr"
 	cfgPrometheusPushJobName       = "prometheus.push.job_name"
 	cfgPrometheusPushInstanceLabel = "prometheus.push.instance_label"
+
+	defaultGatewayURL = "ws://127.0.0.1:8546"
 )
 
 var (
@@ -43,9 +43,7 @@ var (
 	flagBenchmarksConcurrency uint
 	flagBenchmarksDuration    time.Duration
 
-	flagLogLevel        logLevel
 	flagLogVerboseDebug bool
-	flagLogFile         string
 
 	flagGatewayURL string
 
@@ -64,7 +62,7 @@ func benchmarkMain(cmd *cobra.Command, args []string) {
 
 	flagBenchmarks.deduplicate()
 	if len(flagBenchmarks.benchmarks) == 0 {
-		_ = level.Error(logger).Log("err", "insufficient benchmarks requested")
+		_ = level.Error(logger).Log("msg", "insufficient benchmarks requested")
 		os.Exit(1)
 	}
 
@@ -205,10 +203,8 @@ func benchmarkInit(cmd *cobra.Command) {
 	cmd.Flags().VarP(&flagBenchmarks, cfgBenchmarks, "b", "Benchmarks")
 	cmd.Flags().UintVar(&flagBenchmarksConcurrency, cfgBenchmarksConcurrency, 1, "Benchmark concurrency")
 	cmd.Flags().DurationVar(&flagBenchmarksDuration, cfgBenchmarksDuration, 30*time.Second, "Benchmark duration")
-	cmd.Flags().Var(&flagLogLevel, cfgLogLevel, "Log level")
 	cmd.Flags().BoolVar(&flagLogVerboseDebug, cfgLogVerboseDebug, false, "Extremely verbose debug logging")
-	cmd.Flags().StringVar(&flagLogFile, cfgLogFile, "", "Log file (default stdout)")
-	cmd.Flags().StringVar(&flagGatewayURL, cfgGatewayURL, "ws://127.0.0.1:8546", "JSON-RPC gateway URL")
+	cmd.Flags().StringVar(&flagGatewayURL, cfgGatewayURL, defaultGatewayURL, "JSON-RPC gateway URL")
 	cmd.Flags().StringVar(&flagPrometheusPushAddr, cfgPrometheusPushAddr, "", "Prometheus push gateway address")
 	cmd.Flags().StringVar(&flagPrometheusPushJobName, cfgPrometheusPushJobName, "", "Prometheus push `job` name")
 	cmd.Flags().StringVar(&flagPrometheusPushInstanceLabel, cfgPrometheusPushInstanceLabel, "", "Prometheus push `instance` label")
@@ -217,9 +213,7 @@ func benchmarkInit(cmd *cobra.Command) {
 		cfgBenchmarks,
 		cfgBenchmarksConcurrency,
 		cfgBenchmarksDuration,
-		cfgLogLevel,
 		cfgLogVerboseDebug,
-		cfgLogFile,
 		cfgGatewayURL,
 		cfgPrometheusPushAddr,
 		cfgPrometheusPushJobName,

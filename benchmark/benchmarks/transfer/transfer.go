@@ -26,6 +26,10 @@ import (
 )
 
 const (
+	// FundingAccount is the account in the development environment
+	// genesis block that has a large amount of funds.
+	FundingAccount = "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c"
+
 	cfgFaucetURL    = "benchmarks.transfer.faucet_url"
 	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
 
@@ -306,7 +310,7 @@ func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.
 		return err
 	}
 
-	level.Debug(logger).Log("msg", "funding account balance",
+	_ = level.Debug(logger).Log("msg", "funding account balance",
 		"balance", balance,
 		"required_balance", &minBalance,
 	)
@@ -322,14 +326,14 @@ func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.
 	}
 	u, err := url.Parse(flagFaucetURL)
 	if err != nil {
-		return fmt.Errorf("invalid faucet URL: ", err)
+		return fmt.Errorf("invalid faucet URL: %v", err)
 	}
 	q := u.Query()
 	q.Set("to", fundingAccountAddr.Hex())
 	q.Set("amnt", minBalance.String())
 	u.RawQuery = q.Encode()
 
-	level.Debug(logger).Log("msg", "requesting funding from faucet",
+	_ = level.Debug(logger).Log("msg", "requesting funding from faucet",
 		"url", u,
 	)
 
@@ -363,14 +367,8 @@ func Init(cmd *cobra.Command) {
 		viper.BindPFlag(v, cmd.Flags().Lookup(v)) // nolint: errcheck
 	}
 
-	// TODO: This probably shouldn't be hardcoded, but just initialize
-	// the funding account here for now.
-	const (
-		fundingAccount = "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c"
-		fundingAddress = "0x7110316b618d20d0c44728ac2a3d683536ea682b"
-	)
-
-	privKey, err := crypto.HexToECDSA(fundingAccount)
+	const fundingAddress = "0x7110316b618d20d0c44728ac2a3d683536ea682b"
+	privKey, err := crypto.HexToECDSA(FundingAccount)
 	if err != nil {
 		panic(err)
 	}
