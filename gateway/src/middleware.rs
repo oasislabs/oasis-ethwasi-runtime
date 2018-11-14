@@ -169,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn should_limit_request_rate() {
+    fn should_not_limit_request_rate() {
         let stats = Arc::new(RpcStats::default());
 
         // start a new WS session
@@ -183,6 +183,7 @@ mod tests {
             session: None,
         };
 
+        // limit: 1 request/sec
         let dispatcher = WsDispatcher::new(stats.clone(), 1);
 
         // a single request (should pass)
@@ -197,28 +198,39 @@ mod tests {
 
         // no Failure response for a single request
         assert_eq!(response, None);
+    }
 
-        // three requests two ensure two fall within the same time slot
+    #[test]
+    fn should_limit_request_rate() {
+        let stats = Arc::new(RpcStats::default());
+
+        // start a new WS session
+        let session_id = H256::from(1);
+        stats.open_session(session_id.clone());
+        let metadata = Metadata {
+            origin: Origin::Ws {
+                dapp: "".into(),
+                session: session_id.clone(),
+            },
+            session: None,
+        };
+
+        // limit: 1 request/sec
+        let dispatcher = WsDispatcher::new(stats.clone(), 1);
+
+        // two requests
+        let request_1 = make_request(1);
         let request_2 = make_request(2);
-        let request_3 = make_request(3);
-        let request_4 = make_request(4);
+
+        let response = dispatcher
+            .on_request(request_1, metadata.clone(), |request, meta| {
+                Box::new(rpc::futures::finished(None))
+            })
+            .wait()
+            .unwrap();
 
         let response = dispatcher
             .on_request(request_2, metadata.clone(), |request, meta| {
-                Box::new(rpc::futures::finished(None))
-            })
-            .wait()
-            .unwrap();
-
-        let response = dispatcher
-            .on_request(request_3, metadata.clone(), |request, meta| {
-                Box::new(rpc::futures::finished(None))
-            })
-            .wait()
-            .unwrap();
-
-        let response = dispatcher
-            .on_request(request_4, metadata.clone(), |request, meta| {
                 Box::new(rpc::futures::finished(None))
             })
             .wait()
