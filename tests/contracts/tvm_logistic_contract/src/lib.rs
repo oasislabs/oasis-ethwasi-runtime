@@ -14,10 +14,10 @@ use std::convert::{TryFrom, TryInto};
 use std::panic;
 
 use ml_reader::tvm::{Dataset, TVMReader};
-use tvm_libsvm::TVMLibsvm;
 use ndarray::Array2;
 use pwasm_std::logger::debug;
 use tvm::runtime::{Graph, GraphExecutor, Module, SystemLibModule};
+use tvm_libsvm::TVMLibsvm;
 
 // This annotation to link the function with the correct external library is required.
 // The name of the link is important as it must follow the name of the archive.
@@ -37,7 +37,9 @@ pub fn deploy() {}
 pub fn call() {
     panic::set_hook(Box::new(|panic_info| println!("{}", panic_info)));
     // Must be run first to register the functions.
-    unsafe { __tvm_module_startup(); }
+    unsafe {
+        __tvm_module_startup();
+    }
 
     let input = include_bytes!("../data/training.data");
     let graph_json = include_str!("../tvm_module/graph.json");
@@ -59,4 +61,3 @@ pub fn call() {
     //let weights = exec.get_output(0).unwrap();
     pwasm_ethereum::ret(&b"success"[..]);
 }
-
