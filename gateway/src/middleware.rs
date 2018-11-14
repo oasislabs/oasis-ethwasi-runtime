@@ -104,7 +104,7 @@ impl rpc::Middleware<Metadata> for WsDispatcher {
                 ref session,
                 dapp: _,
             } => {
-                if self.stats.count_request(session) > self.max_req_per_sec as u16 {
+                if self.stats.count_request(session) as usize > self.max_req_per_sec {
                     measure_counter_inc!("ws_rate_limited");
                     error!("Rejecting WS request");
                     return Box::new(rpc::futures::finished(Some(rpc::Response::from(
