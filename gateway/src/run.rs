@@ -25,8 +25,8 @@ use client_utils;
 use ekiden_core::environment::Environment;
 use ekiden_storage_base::StorageBackend;
 use ethereum_types::U256;
+use informant;
 use parity_reactor::EventLoop;
-use parity_rpc::informant;
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 
@@ -45,6 +45,7 @@ pub fn execute(
     num_threads: usize,
     ws_port: u16,
     ws_max_connections: usize,
+    ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
 ) -> Result<RunningClient, String> {
@@ -73,6 +74,7 @@ pub fn execute(
     ws_conf.interface = "0.0.0.0".into();
     ws_conf.port = ws_port;
     ws_conf.max_batch_size = jsonrpc_max_batch_size;
+    ws_conf.max_req_per_sec = ws_rate_limit;
 
     // max # of concurrent connections. the default is 100, which is "low" and "should be increased":
     // https://github.com/tomusdrw/ws-rs/blob/f12d19c4c19422fc79af28a3181f598bc07ecd1e/src/lib.rs#L128
