@@ -108,7 +108,7 @@ impl RpcStats {
         self.sessions
             .read()
             .get(id)
-            .map(|id| id.write().tick())
+            .map(|calc| calc.write().tick())
             .unwrap_or(0)
     }
 
@@ -122,7 +122,7 @@ impl RpcStats {
         self.sessions
             .read()
             .get(id)
-            .map(|id| id.read().rate())
+            .map(|calc| calc.read().rate())
             .unwrap_or(0)
     }
 }
