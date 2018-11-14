@@ -12,7 +12,7 @@ use std::convert::TryInto;
 use ndarray::Array;
 use pwasm_std::logger::debug;
 use tvm::{ffi::runtime::DLTensor,
-    runtime::{Module, SystemLibModule}};
+          runtime::{Module, SystemLibModule}};
 
 // This annotation to link the function with the correct external library is required.
 // The name of the link is important as it must follow the name of the archive.
