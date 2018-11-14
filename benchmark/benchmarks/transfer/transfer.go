@@ -28,6 +28,7 @@ import (
 const (
 	cfgFaucetURL    = "benchmarks.transfer.faucet_url"
 	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
+	cfgQueryNonces  = "benchmarks.transfer.query_nonces"
 
 	transferCost = 21000 // Simple transfers always cost this much gas.
 )
@@ -35,6 +36,7 @@ const (
 var (
 	flagFaucetURL    string
 	flagWatchNewHead bool
+	flagQueryNonces  bool
 
 	gasPrice       = big.NewInt(1000000000)
 	transferAmount = big.NewInt(1)
@@ -46,12 +48,11 @@ type benchTransfer struct {
 }
 
 type transferAccount struct {
-	client *ethclient.Client
-
-	newHeads *newHeadWatcher
-
+	address    common.Address
 	privateKey *ecdsa.PrivateKey
-	nonce      uint64
+
+	client   *ethclient.Client
+	newHeads *newHeadWatcher
 }
 
 func (account *transferAccount) newTransfer(nonce uint64, dst common.Address, amount *big.Int) (*types.Transaction, error) {
@@ -64,8 +65,7 @@ func (account *transferAccount) drainTo(ctx context.Context, dst common.Address)
 	transferFee.Mul(transferFee, gasPrice)
 
 	// Query the account's balance.
-	accountAddr := privKeyToAddress(account.privateKey)
-	balance, err := account.client.BalanceAt(ctx, accountAddr, nil)
+	balance, err := account.client.BalanceAt(ctx, account.address, nil)
 	if err != nil {
 		return err
 	}
@@ -74,12 +74,17 @@ func (account *transferAccount) drainTo(ctx context.Context, dst common.Address)
 		return nil
 	}
 
+	nonce, err := account.getNonce(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Transfer off the remaining balance back to the funding account.
 	balance.Sub(balance, transferFee)
 	if balance.Cmp(&big.Int{}) <= 0 {
 		return fmt.Errorf("insufficient balance to transfer: %v", balance)
 	}
-	tx, err := account.newTransfer(account.nonce, dst, balance)
+	tx, err := account.newTransfer(nonce, dst, balance)
 	if err != nil {
 		return err
 	}
@@ -88,7 +93,7 @@ func (account *transferAccount) drainTo(ctx context.Context, dst common.Address)
 	}
 
 	// Query the account's final balance, ensure it is zero.
-	balance, err = account.client.BalanceAt(ctx, accountAddr, nil)
+	balance, err = account.client.BalanceAt(ctx, account.address, nil)
 	if err != nil {
 		return err
 	}
@@ -96,6 +101,14 @@ func (account *transferAccount) drainTo(ctx context.Context, dst common.Address)
 		return fmt.Errorf("transfer: non-zero final balance: %v", balance)
 	}
 	return nil
+}
+
+func (account *transferAccount) getNonce(ctx context.Context) (uint64, error) {
+	if !flagQueryNonces {
+		return 0, nil
+	}
+
+	return account.client.NonceAt(ctx, account.address, nil)
 }
 
 type newHeadWatcher struct {
@@ -163,8 +176,9 @@ func (bench *benchTransfer) Prepare(ctx context.Context, state *api.State) error
 	}
 
 	account := &transferAccount{
-		client:     ethclient.NewClient(state.RPCClient),
+		address:    privKeyToAddress(privKey),
 		privateKey: privKey,
+		client:     ethclient.NewClient(state.RPCClient),
 	}
 
 	if flagWatchNewHead {
@@ -181,7 +195,8 @@ func (bench *benchTransfer) Prepare(ctx context.Context, state *api.State) error
 
 func (bench *benchTransfer) BulkPrepare(ctx context.Context, states []*api.State) error {
 	// Ensure that there is sufficeint balance in the funding account.
-	if err := bench.ensureMinBalance(ctx, states); err != nil {
+	fundingNonce, err := bench.ensureMinBalance(ctx, states)
+	if err != nil {
 		return err
 	}
 
@@ -191,7 +206,7 @@ func (bench *benchTransfer) BulkPrepare(ctx context.Context, states []*api.State
 		account := (states[i].State).(*transferAccount)
 
 		addr := privKeyToAddress(account.privateKey)
-		tx, err := bench.fundingAccount.newTransfer(bench.fundingAccount.nonce, addr, fundAmount)
+		tx, err := bench.fundingAccount.newTransfer(fundingNonce, addr, fundAmount)
 		if err != nil {
 			_ = level.Error(states[i].Logger).Log("msg", "failed to create/sign transaction",
 				"err", err,
@@ -199,9 +214,27 @@ func (bench *benchTransfer) BulkPrepare(ctx context.Context, states []*api.State
 			return err
 		}
 
-		bench.fundingAccount.nonce++
+		fundingNonce++
 
 		txs = append(txs, tx)
+	}
+
+	// Slow path.  Nonce checking means that the benefits of paralellization are
+	// harder to realize.
+	if flagQueryNonces {
+		// Just use the 0th account's client instance this is serial.
+		account := (states[0].State).(*transferAccount)
+		for idx, v := range txs {
+			if err := account.client.SendTransaction(ctx, v); err != nil {
+				_ = level.Error(states[idx].Logger).Log("msg", "failed to fund account (serial)",
+					"err", err,
+				)
+				return err
+			}
+
+			_ = level.Info(states[idx].Logger).Log("msg", "funded account")
+		}
+		return nil
 	}
 
 	// Use each state's ethclient instance to dispatch all of the initial funding
@@ -227,7 +260,7 @@ func (bench *benchTransfer) BulkPrepare(ctx context.Context, states []*api.State
 	}
 	wg.Wait()
 	select {
-	case err := <-errCh:
+	case err = <-errCh:
 		return err
 	default:
 		return nil
@@ -242,7 +275,12 @@ func (bench *benchTransfer) Scenario(ctx context.Context, state *api.State) (uin
 		return 0, err
 	}
 
-	tx, err := account.newTransfer(account.nonce, recipient, transferAmount)
+	nonce, err := account.getNonce(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	tx, err := account.newTransfer(nonce, recipient, transferAmount)
 	if err != nil {
 		return 0, err
 	}
@@ -250,7 +288,6 @@ func (bench *benchTransfer) Scenario(ctx context.Context, state *api.State) (uin
 		return 0, err
 	}
 
-	account.nonce++
 	return 1, nil
 }
 
@@ -288,7 +325,7 @@ func (bench *benchTransfer) BulkCleanup(ctx context.Context, states []*api.State
 	wg.Wait()
 }
 
-func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.State) error {
+func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.State) (uint64, error) {
 	// Work out the balance required to fund all the accounts, including
 	// transaction fees.
 	txFees := big.NewInt(transferCost)
@@ -300,50 +337,55 @@ func (bench *benchTransfer) ensureMinBalance(ctx context.Context, states []*api.
 
 	logger := states[0].Logger
 	client := (states[0].State).(*transferAccount).client
-	fundingAccountAddr := privKeyToAddress(bench.fundingAccount.privateKey)
-	balance, err := client.BalanceAt(ctx, fundingAccountAddr, nil)
+	balance, err := client.BalanceAt(ctx, bench.fundingAccount.address, nil)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	level.Debug(logger).Log("msg", "funding account balance",
+	nonce, err := client.NonceAt(ctx, bench.fundingAccount.address, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	_ = level.Debug(logger).Log("msg", "funding account balance",
 		"balance", balance,
 		"required_balance", &minBalance,
+		"nonce", nonce,
 	)
 
 	// Sufficient balance is present in the account.
 	if balance.Cmp(minBalance) > 0 {
-		return nil
+		return nonce, nil
 	}
 
 	// Hit up the faucet's private endpoint for more money.
 	if flagFaucetURL == "" {
-		return fmt.Errorf("insufficient funds, no faucet configured")
+		return 0, fmt.Errorf("insufficient funds, no faucet configured")
 	}
 	u, err := url.Parse(flagFaucetURL)
 	if err != nil {
-		return fmt.Errorf("invalid faucet URL: ", err)
+		return 0, fmt.Errorf("invalid faucet URL: %v", err)
 	}
 	q := u.Query()
-	q.Set("to", fundingAccountAddr.Hex())
+	q.Set("to", bench.fundingAccount.address.Hex())
 	q.Set("amnt", minBalance.String())
 	u.RawQuery = q.Encode()
 
-	level.Debug(logger).Log("msg", "requesting funding from faucet",
-		"url", u,
+	_ = level.Debug(logger).Log("msg", "requesting funding from faucet",
+		"url", u.String(),
 	)
 
 	resp, err := ctxhttp.Get(ctx, nil, u.String())
 	if err != nil {
-		return fmt.Errorf("failed to query faucet: %v", err)
+		return 0, fmt.Errorf("failed to query faucet: %v", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("faucet failed funding: %v", resp.StatusCode)
+		return 0, fmt.Errorf("faucet failed funding: %v", resp.StatusCode)
 	}
 
-	return nil
+	return nonce, nil
 }
 
 func privKeyToAddress(privKey *ecdsa.PrivateKey) common.Address {
@@ -355,10 +397,12 @@ func privKeyToAddress(privKey *ecdsa.PrivateKey) common.Address {
 func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&flagFaucetURL, cfgFaucetURL, "", "Faucet private endpoint URL")
 	cmd.Flags().BoolVar(&flagWatchNewHead, cfgWatchNewHead, false, "Subscribe for `newHeads` events")
+	cmd.Flags().BoolVar(&flagQueryNonces, cfgQueryNonces, false, "Query explicitly for account nonces")
 
 	for _, v := range []string{
 		cfgFaucetURL,
 		cfgWatchNewHead,
+		cfgQueryNonces,
 	} {
 		viper.BindPFlag(v, cmd.Flags().Lookup(v)) // nolint: errcheck
 	}
@@ -383,6 +427,7 @@ func Init(cmd *cobra.Command) {
 
 	api.RegisterBenchmark(&benchTransfer{
 		fundingAccount: &transferAccount{
+			address:    addr,
 			privateKey: privKey,
 		},
 	})
