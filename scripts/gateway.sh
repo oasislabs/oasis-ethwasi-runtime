@@ -27,20 +27,25 @@ run_compute_node() {
     shift
     local extra_args=$*
 
+    local cache_dir=/tmp/ekiden-test-worker-cache-$id
+    rm -rf ${cache_dir}
+
     # Generate port number.
     let "port=id + 10000"
 
     echo "Starting compute node ${id} on port ${port}."
 
     ekiden-compute \
+        --worker-path $(which ekiden-worker) \
+        --worker-cache-dir ${cache_dir} \
         --no-persist-identity \
         --storage-backend multilayer \
         --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
         --storage-multilayer-bottom-backend remote \
-	--max-batch-timeout 100 \
-	--entity-ethereum-address 0000000000000000000000000000000000000000 \
-	--disable-key-manager \
-	--port ${port} \
+        --max-batch-timeout 100 \
+        --entity-ethereum-address 0000000000000000000000000000000000000000 \
+        --disable-key-manager \
+        --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
 }
