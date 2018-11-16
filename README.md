@@ -34,6 +34,7 @@ of the Ekiden compute node:
 ```bash
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-worker
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
@@ -98,6 +99,8 @@ $ ekiden \
 To start the compute node (you need to start at least two, on different ports):
 ```bash
 $ ekiden-compute \
+    --worker-path $(which ekiden-worker) \
+    --worker-cache-dir <cache directory, e.g., /tmp/ekiden-worker-cache-id> \
     --no-persist-identity \
     --storage-backend multilayer \
     --storage-multilayer-local-storage-base <storage directory, e.g., /tmp/ekiden-storage-id> \

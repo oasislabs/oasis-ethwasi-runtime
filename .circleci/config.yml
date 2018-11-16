@@ -226,6 +226,13 @@ jobs:
                      --branch master
                      --debug
                      ekiden-compute
+      - run:
+          name: Install ekiden-worker
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-worker
 
       # Attach CircleCI workspace (temp storage for this workflow run)
       - attach_workspace:
@@ -570,6 +577,13 @@ jobs:
                      --branch master
                      --debug
                      ekiden-compute
+      - run:
+          name: Install ekiden-worker
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-worker
       # Attach CircleCI workspace (temp storage for this workflow run)
       - attach_workspace:
           at: /workspace
@@ -606,6 +620,13 @@ jobs:
                      --branch master
                      --debug
                      ekiden-compute
+      - run:
+          name: Install ekiden-worker
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-worker
       # Attach CircleCI workspace (temp storage for this workflow run)
       - attach_workspace:
           at: /workspace
@@ -642,6 +663,13 @@ jobs:
                      --branch master
                      --debug
                      ekiden-compute
+      - run:
+          name: Install ekiden-worker
+          command: cargo install
+                     --git https://github.com/oasislabs/ekiden
+                     --branch master
+                     --debug
+                     ekiden-worker
       # Attach CircleCI workspace (temp storage for this workflow run)
       - attach_workspace:
           at: /workspace
