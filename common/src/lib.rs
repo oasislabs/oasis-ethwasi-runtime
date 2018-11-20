@@ -236,9 +236,9 @@ where
             Entry::Occupied(mut entry) => {
                 let item = entry.get_mut();
                 match item {
-                    PendingItem::Storage(ref_count, value) => {
+                    PendingItem::Storage(ref_count, stored_value) => {
                         *ref_count += 1;
-                        *value = value.to_vec();
+                        *stored_value = value.to_vec();
                     }
                     _ => panic!("storage/state key conflict"),
                 }
@@ -266,9 +266,9 @@ where
             Entry::Occupied(mut entry) => {
                 let item = entry.get_mut();
                 match item {
-                    PendingItem::State(ref_count, value) => {
+                    PendingItem::State(ref_count, stored_value) => {
                         *ref_count += 1;
-                        *value = value.to_vec();
+                        *stored_value = value.to_vec();
                     }
                     _ => panic!("storage/state key conflict"),
                 }
@@ -407,7 +407,8 @@ mod tests {
     use hashdb::{DBValue, HashDB};
 
     use self::ekiden_storage_dummy::DummyStorageBackend;
-    use ekiden_trusted::db::{Database, DatabaseHandle};
+    use ekiden_storage_base::hash_storage_key;
+    use ekiden_trusted::db::DatabaseHandle;
 
     use super::*;
 
@@ -421,6 +422,28 @@ mod tests {
         // prefix for column Some(3) is 4=3+1
         let col_3 = get_key(Some(3), b"three");
         assert_eq!(col_3, b"\x04\0\0\0three");
+    }
+
+    #[test]
+    fn test_remove_before_insert() {
+        let storage = Arc::new(DummyStorageBackend::new());
+        let db = DatabaseHandle::new(storage.clone());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
+        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+
+        let hw_key = H256::from(&hash_storage_key(b"hello world")[..]);
+        // Remove key from db, reference count should be -1, value empty.
+        hash_db.remove(&hw_key);
+        assert_eq!(hash_db.get(&hw_key), None);
+        // Insert key to db, reference count should be 0, value overwritten.
+        hash_db.insert(b"hello world");
+        assert_eq!(hash_db.get(&hw_key), None);
+        // Insert key to db, reference count should be 1, value overwritten.
+        hash_db.insert(b"hello world");
+        assert_eq!(
+            hash_db.get(&hw_key),
+            Some(DBValue::from_slice(b"hello world"))
+        );
     }
 
     #[test]
