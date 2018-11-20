@@ -195,7 +195,6 @@ where
                 // external storage as doing otherwise could lead to state
                 // corruption since pending items with zero or negative reference
                 // count are not persisted.
-                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
                 inner
                     .blockchain_db
                     .get(Self::STATE_DB_COLUMN, &key[..])
@@ -476,7 +475,7 @@ mod tests {
         hash_db.commit();
         let db = DatabaseHandle::new(storage.clone());
         let blockchain_db = Arc::new(BlockchainStateDb::new(db));
-        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+        let hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
         assert_eq!(
             hash_db.get(&hw_key),
             Some(DBValue::from_slice(b"hello world"))
