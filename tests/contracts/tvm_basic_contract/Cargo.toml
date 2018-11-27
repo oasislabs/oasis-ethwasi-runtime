@@ -1,0 +1,20 @@
+[package]
+name = "tvm_basic_contract"
+version = "0.1.0"
+authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
+
+[dependencies]
+ml-reader = { git = "https://github.com/oasislabs/ml-reader", branch = "david-yan/tvm-libsvm" }
+tvm-libsvm = { git = "https://github.com/oasislabs/ml-reader", branch = "david-yan/tvm-libsvm" }
+ndarray = "0.11.2"
+pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum-private", branch = "ekiden"}
+tvm = { git = "https://github.com/nhynes/tvm-rs" }
+pwasm-std = "0.10.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = "z"
