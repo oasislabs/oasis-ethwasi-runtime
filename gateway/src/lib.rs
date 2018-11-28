@@ -93,6 +93,11 @@ extern crate ethereum_api;
 extern crate grpcio;
 extern crate runtime_ethereum_common;
 
+extern crate ekiden_enclave_common;
+extern crate ekiden_keymanager_client;
+use ekiden_enclave_common::quote::MrEnclave;
+use ekiden_keymanager_client::{KeyManager, NetworkRpcClientBackendConfig};
+
 mod client;
 mod impls;
 mod informant;
@@ -111,11 +116,12 @@ mod traits;
 pub mod util;
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use clap::ArgMatches;
 use ethereum_types::U256;
 
-use ekiden_core::environment::Environment;
+use ekiden_core::{environment::Environment, identity::local::load_node_certificate};
 use ekiden_di::Container;
 use ekiden_runtime_client::create_runtime_client;
 use ekiden_storage_base::StorageBackend;
@@ -151,6 +157,8 @@ pub fn start(
     let snapshot_manager =
         client_utils::db::Manager::new_from_injected(runtime_id, &mut container).unwrap();
 
+    setup_key_manager(&args, &mut container);
+
     run::execute(
         client,
         Some(snapshot_manager),
@@ -165,4 +173,36 @@ pub fn start(
         gas_price,
         jsonrpc_max_batch_size,
     )
+}
+
+/// Configures the global KeyManager instance with the MRENCLAVE and
+/// NetworkRpcClientBackendConfig specified by the cli args.
+fn setup_key_manager(args: &ArgMatches, container: &mut Container) {
+    let mut key_manager = KeyManager::instance().expect("Should always have a key manager");
+
+    let backend = key_manager_backend(&args, container);
+    let mrenclave =
+        value_t!(args.value_of("key-manager-mrenclave"), MrEnclave).unwrap_or_else(|e| e.exit());
+
+    key_manager.configure_backend(backend);
+    key_manager.set_contract(mrenclave);
+}
+
+fn key_manager_backend(
+    args: &ArgMatches,
+    container: &mut Container,
+) -> NetworkRpcClientBackendConfig {
+    let environment = container.inject::<Environment>().unwrap().clone();
+    let timeout = Some(Duration::new(5, 0));
+    let host = value_t!(args.value_of("key-manager-host"), String).unwrap_or_else(|e| e.exit());
+    let port = value_t!(args.value_of("key-manager-port"), u16).unwrap_or_else(|e| e.exit());
+    let certificate = load_node_certificate(&args.value_of("key-manager-cert").unwrap())
+        .expect("unable to load key manager's certificate");
+    NetworkRpcClientBackendConfig {
+        environment,
+        timeout,
+        host,
+        port,
+        certificate,
+    }
 }

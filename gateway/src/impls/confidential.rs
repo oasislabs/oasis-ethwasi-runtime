@@ -13,7 +13,6 @@ use parity_rpc::v1::metadata::Metadata;
 use parity_rpc::v1::traits::Eth;
 use parity_rpc::v1::types::{BlockNumber, Bytes, CallRequest, H256};
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 use traits::confidential::{Confidential, PublicKeyResult};
 
 pub struct ConfidentialClient {
@@ -34,18 +33,10 @@ impl Confidential for ConfidentialClient {
 
     fn public_key(&self, contract: Address) -> Result<PublicKeyResult> {
         measure_counter_inc!("confidential_getPublicKey");
-        let (public_key, _) = confidential::default_contract_keys();
-        // TODO: V1 should be issued by the key manager
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
-        Ok(PublicKeyResult {
-            public_key: Bytes::new(public_key.to_vec()),
-            timestamp,
-            signature: Bytes::new(B512::from(0).to_vec()), // TODO: V1
-        })
+        info!("confidential_getPublicKey(contract {:?})", contract);
+        self.client
+            .public_key(contract)
+            .map_err(|_| Error::new(ErrorCode::InternalError))
     }
 
     fn call_enc(

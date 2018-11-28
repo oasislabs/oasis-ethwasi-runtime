@@ -21,12 +21,8 @@ use ethcore::{self,
                       BlockNumber}};
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
-use runtime_ethereum_common::{confidential::{Encrypter, KeyManager},
-                              get_factories,
-                              Backend,
-                              BlockchainStateDb,
-                              State,
-                              StorageHashDB};
+use runtime_ethereum_common::{confidential::ConfidentialCtx, get_factories, Backend,
+                              BlockchainStateDb, State, StorageHashDB};
 
 lazy_static! {
     static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
@@ -119,8 +115,7 @@ impl Cache {
             root,
             U256::zero(), /* account_start_nonce */
             get_factories(),
-            Some(Box::new(Encrypter)),
-            Some(Box::new(KeyManager)),
+            Some(Box::new(ConfidentialCtx::new())),
         )?)
     }
 
@@ -138,8 +133,7 @@ impl Cache {
             vec![],                           /* extra data */
             true,                             /* is epoch_begin */
             &mut Vec::new().into_iter(),      /* ancestry */
-            Some(Box::new(Encrypter)),
-            Some(Box::new(KeyManager)),
+            Some(Box::new(ConfidentialCtx::new())),
         )?)
     }
 
