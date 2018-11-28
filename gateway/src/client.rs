@@ -25,10 +25,13 @@ use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils;
 use client_utils::db::Snapshot;
+use ekiden_common::bytes::B512;
 use ekiden_common::environment::Environment;
 use ekiden_core::error::Error;
 use ekiden_core::futures::prelude::*;
 use ekiden_db_trusted::Database;
+use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
+use ekiden_keymanager_common::ContractId;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
@@ -40,6 +43,11 @@ use test_helpers::{self, MockDb};
 #[cfg(test)]
 use util;
 use util::from_block_id;
+
+use hash::keccak;
+use parity_rpc::v1::types::Bytes as RpcBytes;
+use std::time::{SystemTime, UNIX_EPOCH};
+use traits::confidential::PublicKeyResult;
 
 /// Record runtime call outcome.
 fn record_runtime_call_result<F, T>(call: &'static str, result: F) -> BoxFuture<T>
@@ -830,6 +838,29 @@ impl Client {
                 result.hash.map_err(|error| Error::new(error))
             }),
         )
+    }
+
+    /// Returns the public key for the given contract from the key manager.
+    pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
+        let contract_id: ContractId =
+            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
+
+        let public_key = EkidenKeyManager::instance()
+            .expect("Should always have an key manager client")
+            .get_public_key(contract_id)
+            .map_err(|err| err.description().to_string())?;
+
+        // TODO: V1 should be issued by the key manager
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+
+        Ok(PublicKeyResult {
+            public_key: RpcBytes::from(public_key.to_vec()),
+            timestamp: timestamp,
+            signature: RpcBytes::from(B512::from(2).to_vec()), // todo: v1
+        })
     }
 }
 

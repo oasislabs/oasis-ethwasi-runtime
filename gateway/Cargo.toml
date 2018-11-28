@@ -26,42 +26,43 @@ jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
 wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-machine = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-path = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-journaldb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-mem = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-evm = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-vm = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-util-error = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+parity-machine = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+path = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+journaldb = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+evm = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+vm = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+util-error = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
 
 ## Common functionality between runtime and gateway
 runtime-ethereum-common = { path = "../common" }
 
 ## Ekiden client dependencies
 clap = "2.29.1"
-client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
 ethereum-api = { path = "../api" }
 rand = "0.4"
 
@@ -70,11 +71,11 @@ rustc_version = "0.2"
 
 [dev-dependencies]
 ekiden-grpcio = { version = "0.3.2", features = ["openssl"] }
-ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
 hex = "0.3"
 
 [features]

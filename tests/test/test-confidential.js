@@ -30,7 +30,12 @@ contract("Confidential Contracts", async (accounts) => {
 	let log = receipt.result.logs[0];
 
 	assert.equal(log.topics[0], "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-	assert.equal(log.data, "0x9385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54");
+	// Check the key is there. Expect it to be any (unpredictable) key of the form
+	// "0x9385b8391e06d67c3de1675a58cffc3ad16bcf7cc56ab35d7db1fc03fb227a54";
+	assert.equal(log.data.length, 66);
+	assert.equal(log.data.substr(0, 2), '0x');
+	assert.equal(/0x[a-z0-9]+/.test(log.data), true);
+
 	assert.equal(log.logIndex, "0x0");
   });
 });
