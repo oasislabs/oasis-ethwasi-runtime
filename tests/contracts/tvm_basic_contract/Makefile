@@ -3,7 +3,7 @@
 all: target/tvm_basic_contract.wasm
 
 target/tvm_basic_contract.wasm: target/wasm32-unknown-unknown/release/tvm_basic_contract.wasm
-	wasm-build --target=wasm32-unknown-unknown --max-mem=1048576 /oasis/tvm_basic_contract/target tvm_basic_contract
+	wasm-build --target=wasm32-unknown-unknown --max-mem=1048576 target tvm_basic_contract
 
 target/wasm32-unknown-unknown/release/tvm_basic_contract.wasm: tvm_module/libtest.a
 	cargo build --target=wasm32-unknown-unknown --release

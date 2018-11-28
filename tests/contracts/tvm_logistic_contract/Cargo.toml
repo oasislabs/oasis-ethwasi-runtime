@@ -20,5 +20,5 @@ lto = true
 opt-level = "z"
 
 [patch."https://github.com/oasislabs/ml-reader"]
-ml-reader = { path = "/sterling/ml-reader/ml-reader" }
-tvm-libsvm = { path = "/sterling/ml-reader/tvm-libsvm" }
+ml-reader = { path = "/oasis/ml-reader/ml-reader" }
+tvm-libsvm = { path = "/oasis/ml-reader/tvm-libsvm" }
