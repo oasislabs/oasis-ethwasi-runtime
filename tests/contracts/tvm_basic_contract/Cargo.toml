@@ -1,5 +1,5 @@
 [package]
-name = "tvm_contract"
+name = "tvm_basic_contract"
 version = "0.1.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 

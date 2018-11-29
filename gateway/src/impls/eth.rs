@@ -28,7 +28,7 @@ use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::ids::{BlockId, TransactionId};
 
 use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
+use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
 
 use log;

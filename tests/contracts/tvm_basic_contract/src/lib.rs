@@ -47,7 +47,7 @@ pub fn call() {
     let _result: i32 = call_packed!(add_one, &mut a_dl, &mut b_dl)
         .try_into()
         .unwrap();
-
+    // `debug` can be used display messages in the terminal
     debug(&format!("output: {:?}", b));
     assert!(c.all_close(&b, 1e-8f32));
     pwasm_ethereum::ret(&b"success"[..]);
