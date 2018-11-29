@@ -14,9 +14,14 @@ WORKDIR /workdir
 
 # Take an SSH key as a build argument.
 ARG SSH_PRIVATE_KEY
-
-ENV SGX_MODE=SIM
-ENV INTEL_SGX_SDK=/opt/sgxsdk
+# Take commit SHA as build argument.
+ARG RUNTIME_ETHEREUM_COMMIT_SHA
+# Take SGX mode as build argument.
+ARG SGX_MODE=SIM
+# Take AVR verification as build argument.
+ARG EKIDEN_SKIP_AVR_VERIFY=1
+# Take Intel SGX SDK path as build argument.
+ARG INTEL_SGX_SDK=/opt/sgxsdk
 
 # 1. Create the SSH directory.
 # 2. Populate the private key file.
@@ -40,7 +45,9 @@ RUN mkdir -p /root/.ssh/ && \
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
-    git clone https://github.com/oasislabs/runtime-ethereum
+    git clone https://github.com/oasislabs/runtime-ethereum && \
+    cd runtime-ethereum && \
+    git checkout ${RUNTIME_ETHEREUM_COMMIT_SHA}
 
 # Install ekiden-tools
 #
@@ -74,7 +81,7 @@ RUN eval $(ssh-agent -s) && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
     cd runtime-ethereum/gateway && \
     CARGO_TARGET_DIR=/workdir/runtime-ethereum/target \
-    cargo build --release
+    cargo build -p web3-gateway --release
 
 ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest
 

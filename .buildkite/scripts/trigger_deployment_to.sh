@@ -4,7 +4,7 @@
 # Simple wrapper script to call
 # buildhook-notify.sh
 # with the correct arguments.
-# 
+#
 # This script is intended to have buildkite
 # specific things, like env vars and calling
 # the buildkite-agent binary. Keeping this
@@ -33,19 +33,14 @@ deployment_image_tag=$(buildkite-agent meta-data \
 repository=oasislabs/runtime-ethereum
 private_ops_revision=master
 
-circleci_secret_token=$(cat ~/.circleci/api_token)
+circleci_secret_token=$(cat ~/.circleci/private_ops_api_token)
 
 ########################################
 # Trigger deploy to staging via CircleCI
 ########################################
-
-echo "
-This is the command that would execute:
-
 scripts/buildhook-notify.sh \
   ${environment_to_deploy_to} \
   ${repository} \
   ${deployment_image_tag} \
   ${private_ops_revision} \
   ${circleci_secret_token}
-"

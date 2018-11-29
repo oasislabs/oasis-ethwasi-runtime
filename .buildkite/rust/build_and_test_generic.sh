@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# TODO Update build scripts to be DRY.
-
 ############################################################
 # This script builds a generic rust project and runs
 # the tests for that project.
-# 
+#
 # Usage:
 # build_and_test_generic.sh <src_dir>
 #
@@ -21,35 +19,23 @@ set -euxo pipefail
 # Required args
 ###############
 src_dir=$1
+if [ ! -d $src_dir ]; then
+  echo "ERROR: Invalid source directory specified (${src_dir})."
+  exit 1
+fi
+shift
 
-####################
-# Set up environment
-####################
-export SGX_MODE="SIM"
-export INTEL_SGX_SDK="/opt/sgxsdk"
-export EKIDEN_UNSAFE_SKIP_AVR_VERIFY="1"
-export RUST_BACKTRACE="1"
+#########################################
+# Additional args passed to `cargo build`
+#########################################
+extra_args=$*
 
-########################################
-# Add SSH identity so that `cargo build`
-# can successfully download dependencies
-# from private github repos.
-# TODO kill this process when script exits
-########################################
-eval `ssh-agent -s`
-ssh-add
+source .buildkite/rust/common.sh
 
-#################################
-# Change into the build directory
-#################################
-cd $src_dir
-
-###############
-# Run the build
-###############
-cargo build
-
-###############
-# Run the tests
-###############
-cargo test
+#########################
+# Run the build and tests
+#########################
+pushd $src_dir
+  cargo build $extra_args
+  cargo test $extra_args
+popd

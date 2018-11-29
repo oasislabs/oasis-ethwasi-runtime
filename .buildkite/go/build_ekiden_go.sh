@@ -2,7 +2,7 @@
 
 ################################################################
 # This script builds ekiden-node.
-# 
+#
 # Usage:
 # build_rust_runtime.sh [output_bin_path]
 #
@@ -17,19 +17,6 @@
 set -euxo pipefail
 
 output_bin_path=${1:-NOT_DEFINED}
-
-##################
-# Install protobuf
-##################
-# TODO Check whether this actually needs to happen.
-#      Something similar is already in the base image.
-go get -d github.com/golang/protobuf/protoc-gen-go
-pushd $GOPATH/src/github.com/golang/protobuf
-  git checkout v1.1.0
-  pushd protoc-gen-go
-    go install
-  popd
-popd
 
 ############################
 # Download oasis/ekiden repo

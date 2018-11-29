@@ -1,64 +1,81 @@
+################
+# Build pipeline
+################
 docker_plugin: &docker_plugin_configuration
-  docker#v2.0.0:
-    image: "oasislabs/testing:build-agent-test"
+  oasislabs/docker#v2.1.0-oasis1:
+    image: "oasislabs/testing:0.2.0"
     always_pull: true
     workdir: /workdir
     volumes:
       - .:/workdir
       - /var/lib/buildkite-agent/.ssh:/root/.ssh
       - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
+      - /var/lib/buildkite-agent/.circleci:/root/.circleci
+      # Shared Rust target artifacts cache.
       - /tmp/cargo_target:/cargo_target
+      # Shared Rust package checkouts directory.
+      - /tmp/cargo_pkg/git:/root/.cargo/git
+      - /tmp/cargo_pkg/registry:/root/.cargo/registry
+      # Shared Rust SGX standard library artifacts cache.
+      - /tmp/xargo_cache:/root/.xargo
+      # Shared Go package checkouts directory.
+      - /tmp/go_pkg:/root/go/pkg
     environment:
+      - "LC_ALL=C.UTF-8"
+      - "LANG=C.UTF-8"
       - "CARGO_TARGET_DIR=/cargo_target"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
+    propagate-environment: true
+    unconfined: true
 
 steps:
   - label: Build genesis
-    command: .buildkite/rust/build_generic.sh
-              /workdir/genesis
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_generic.sh /workdir -p genesis
     plugins:
       <<: *docker_plugin_configuration
 
   - label: Build run_contract
-    command: .buildkite/rust/build_generic.sh
-               /workdir/tests/run_contract
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Build runtime benchmark
-    command: .buildkite/rust/build_runtime_benchmark.sh /workdir
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_generic.sh /workdir -p run-contract
     plugins:
       <<: *docker_plugin_configuration
 
   - label: Build and test web3 gateway
     command:
+      - .buildkite/scripts/setup_gitconfig.sh
+
       # Build code and run tests
-      - .buildkite/rust/build_and_test_generic.sh
-          /workdir/gateway
+      - .buildkite/rust/build_generic.sh /workdir -p web3-gateway -Z unstable-options --out-dir /tmp/artifacts
+      - .buildkite/rust/test_generic.sh /workdir -p web3-gateway
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
       # script generic.
-      - cd /cargo_target/debug
+      - cd /tmp/artifacts
       - buildkite-agent artifact upload gateway
     plugins:
       <<: *docker_plugin_configuration
 
   - label: Build and test runtime
     command:
-      - .buildkite/rust/build_and_test_runtime.sh /workdir
-      
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_and_test_runtime.sh /workdir --out-dir /tmp/artifacts
+
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
       # script generic.
-      - cd /cargo_target/enclave
+      - cd /tmp/artifacts
       - buildkite-agent artifact upload runtime-ethereum.so
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
     plugins:
       <<: *docker_plugin_configuration
 
   - label: Build oasislabs/ekiden go
-    command: 
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/go/build_ekiden_go.sh
 
       # Upload artifact required in end-to-end tests.
@@ -92,6 +109,7 @@ steps:
   - label: End-to-end tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_end_to_end_tests.sh
     plugins:
       <<: *docker_plugin_configuration
@@ -99,6 +117,7 @@ steps:
   - label: Ens tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh ens
     plugins:
       <<: *docker_plugin_configuration
@@ -106,6 +125,7 @@ steps:
   - label: Celer tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
     plugins:
       <<: *docker_plugin_configuration
@@ -113,6 +133,7 @@ steps:
   - label: Augur tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh augur
     plugins:
       <<: *docker_plugin_configuration
@@ -121,10 +142,8 @@ steps:
 
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
-
-    # TODO: restrict to master branches before
-    #       merging PR.
-    #branches: "master"
+    async: true
+    branches: "master"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"

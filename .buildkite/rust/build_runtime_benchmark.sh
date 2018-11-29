@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# TODO Update build scripts to be DRY.
-
 #################################################
 # This script builds the runtime benchmark.
-# 
+#
 # Usage:
 # build_runtime_benchmark.sh <src_dir>
 #
@@ -16,64 +14,62 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-###########################################
-# Source utils for get_cargo_install_root()
-###########################################
-source scripts/utils.sh
-
 ###############
 # Required args
 ###############
 src_dir=$1
 
-####################
-# Set up environment
-####################
-export SGX_MODE="SIM"
-export INTEL_SGX_SDK="/opt/sgxsdk"
-export EKIDEN_UNSAFE_SKIP_AVR_VERIFY="1"
-export RUST_BACKTRACE="1"
+source .buildkite/rust/common.sh
 
-########################################
-# Add SSH identity so that `cargo build`
-# can successfully download dependencies
-# from private github repos.
-# TODO kill this process when script exits
-########################################
-eval `ssh-agent -s`
-ssh-add
+# Temporary artifacts directory
+ARTIFACTS_DIR=/tmp/artifacts
 
 #################################
 # Change into the build directory
 #################################
 cd $src_dir
 
-######################################################
-# Only run 'cargo install' if the resulting binaries
-# are not already present. The 'cargo install' command
-# will error out if the binary is already installed.
-# Making this script idempotent is really useful for
-# local development and testing.
-######################################################
-set +u
-cargo_install_root=$(get_cargo_install_root)
-echo "cargo_install_root = $cargo_install_root"
-set -u
-
-if [ ! -e "$cargo_install_root/bin/cargo-ekiden" ]; then
-  echo "Installing ekiden-tools."
-  cargo install \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --debug \
-    ekiden-tools
-fi
+# Install ekiden-tools
+echo "Installing ekiden-tools."
+cargo install \
+  --git https://github.com/oasislabs/ekiden \
+  --branch master \
+  --debug \
+  ekiden-tools
 
 ###############################################
 # Build the benchmarking version of the runtime
 ###############################################
 cargo ekiden build-enclave \
   --output-identity \
+  --release \
   --cargo-addendum feature.benchmark.addendum \
+  --out-dir ${ARTIFACTS_DIR} \
   -- \
   --features "benchmark"
+
+######################################################
+# Taken from docker/benchmarking/build-images-inner.sh
+######################################################
+
+# Build all Ekiden binaries and resources.
+pushd benchmark
+  make
+  cp benchmark ${ARTIFACTS_DIR}
+popd
+
+cargo build -Z unstable-options -p web3-gateway genesis --release --out-dir ${ARTIFACTS_DIR}
+
+# Package all binaries and resources.
+mkdir -p target/docker-benchmarking/context/bin target/docker-benchmarking/context/lib target/docker-benchmarking/context/res
+pushd ${ARTIFACTS_DIR}
+  ln runtime-ethereum.so target/docker-benchmarking/context/lib/runtime-ethereum-benchmarking.so
+  ln runtime-ethereum.mrenclave target/docker-benchmarking/context/res/runtime-ethereum-benchmarking.mrenclave
+  ln benchmark target/docker-benchmarking/context/bin
+  ln gateway target/docker-benchmarking/context/bin
+  ln genesis target/docker-benchmarking/context/bin
+popd
+
+ln docker/benchmarking/Dockerfile target/docker-benchmarking/context/Dockerfile
+tar cvzhf target/docker-benchmarking/context.tar.gz -C target/docker-benchmarking/context .
+rm -rf target/docker-benchmarking/context

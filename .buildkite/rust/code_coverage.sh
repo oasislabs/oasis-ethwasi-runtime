@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# TODO Update build scripts to be DRY.
-
 #################################################
 # This script uses Tarpaulin to calculate test
 # coverage in the code base.
@@ -18,38 +16,17 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-source scripts/utils.sh
-
-# Ensure cleanup on exit.
-# cleanup() is defined in scripts/utils.sh
-trap 'cleanup' EXIT
+source .buildkite/rust/common.sh
 
 ###############
 # Optional args
 ###############
-path_to_coveralls_api_token=${1:-~/.coveralls/api_token}
+path_to_coveralls_api_token=${1:-~/.coveralls/runtime_ethereum_api_token}
 
 ############
 # Local vars
 ############
 coveralls_api_token=$(cat ${path_to_coveralls_api_token})
-
-####################
-# Set up environment
-####################
-export SGX_MODE="SIM"
-export INTEL_SGX_SDK="/opt/sgxsdk"
-export EKIDEN_UNSAFE_SKIP_AVR_VERIFY="1"
-export RUST_BACKTRACE="1"
-
-########################################
-# Add SSH identity so that `cargo build`
-# can successfully download dependencies
-# from private github repos.
-# TODO kill this process when script exits
-########################################
-eval `ssh-agent -s`
-ssh-add
 
 #################################################
 # Add github public key to known_hosts.

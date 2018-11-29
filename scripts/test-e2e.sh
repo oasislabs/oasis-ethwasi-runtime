@@ -47,7 +47,7 @@ run_test() {
     truffle_ret=$?
     if [ $truffle_ret -ne 0 ]; then
         echo "truffle test failed"
-	      exit $truffle_ret
+        exit $truffle_ret
     fi
 
     # Dump the metrics.

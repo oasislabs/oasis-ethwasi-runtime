@@ -1,3 +1,6 @@
+##################################
+# Docker image deployment pipeline
+##################################
 steps:
   - label: Get docker tag and save it as metadata for use later
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
@@ -5,8 +8,7 @@ steps:
   - wait
 
   - label: Deploy to staging (master branches only)
-  # TODO: limit to master branches before merging PR
-  # branches: master
+    branches: master
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
@@ -17,17 +19,16 @@ steps:
     prompt: |
       Clicking "OK" below will unblock this step and
       permit the deployment to production.
-      
+
       NOTE - It is possible to click the "OK" button to
-      unblock this step even if the staging deploy is 
+      unblock this step even if the staging deploy is
       still working. Be sure you tested on staging before
       clicking this button.
 
       - The Friendly Oasis Labs Robot
 
   - label: Deploy to production (master branches only)
-  # TODO: limit to master branches before merging PR
-  # branches: master
+    branches: master
     command:
       - .buildkite/scripts/promote_deployment_image_to.sh latest
       - .buildkite/scripts/trigger_deployment_to.sh production

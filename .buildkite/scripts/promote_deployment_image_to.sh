@@ -4,7 +4,7 @@
 # Gets the deployment image tag from buildkite
 # metadata and promotes the deployment image
 # by retagging it with the provided tag.
-# 
+#
 # This script is intended to have buildkite
 # specific things, like env vars and calling
 # the buildkite-agent binary. Keeping this
@@ -30,11 +30,6 @@ deployment_image_tag=$(buildkite-agent meta-data \
                        get \
                        "deployment_image_tag"
                      )
-
-# Hardcode a test tag name, just to be safe during development.
-# TODO: remove before merging PR
-new_image_tag=ci-test-${new_image_tag}
-deployment_image_tag=ci-test-${deployment_image_tag}
 
 ##############################################
 # Add the provided tag to the deployment image
