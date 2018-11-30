@@ -1,0 +1,34 @@
+##################################
+# Daily buildkite docker pipeline
+##################################
+docker_plugin: &docker_plugin_configuration
+  oasislabs/docker#v2.1.0-oasis1:
+    image: "oasislabs/testing:0.2.0"
+    always_pull: true
+    workdir: /workdir
+    volumes:
+      - .:/workdir
+      - /var/lib/buildkite-agent/.ssh:/root/.ssh
+      - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
+      # Shared Rust target artifacts cache.
+      - /tmp/cargo_target:/cargo_target
+      # Shared Rust package checkouts directory.
+      - /tmp/cargo_pkg/git:/root/.cargo/git
+      - /tmp/cargo_pkg/registry:/root/.cargo/registry
+      # Shared Rust SGX standard library artifacts cache.
+      - /tmp/xargo_cache:/root/.xargo
+      # Shared Go package checkouts directory.
+      - /tmp/go_pkg:/root/go/pkg
+    environment:
+      - "LC_ALL=C.UTF-8"
+      - "LANG=C.UTF-8"
+      - "CARGO_TARGET_DIR=/cargo_target"
+      - "CARGO_INSTALL_ROOT=/root/.cargo"
+    propagate-environment: true
+    unconfined: true
+
+steps:
+  - label: Build runtime benchmark
+    command:
+      - .buildkite/scripts/build_tag_push_benchmark_image.sh
+      - .buildkite/scripts/trigger_benchmark_run.sh

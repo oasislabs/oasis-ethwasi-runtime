@@ -4,10 +4,11 @@ WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
-run_test() {
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
 
+run_test() {
     echo "Building contract."
     pushd ${WORKDIR}/tests/contracts/basic_wasm_contract > /dev/null
     ./build.sh
@@ -32,7 +33,7 @@ run_test() {
     npm install > /dev/null
     npm install > /dev/null # continue installing once secp256k1 fails to install
     echo "Deploying and calling contract."
-    OUTPUT="$(./deploy_contract.js ${WORKDIR}/target/basic_contract.wasm | tail -1)"
+    OUTPUT="$(./deploy_contract.js $CARGO_TARGET_DIR/basic_contract.wasm | tail -1)"
     echo "Contract address: $OUTPUT"
     OUTPUT="$(./call_contract.js $OUTPUT | tail -1)"
     echo "Fetched: $OUTPUT"
@@ -43,10 +44,6 @@ run_test() {
         echo "Incorrect output. Expected 0x726573756c74."
         exit 1
     fi
-
-    # Cleanup.
-    echo "Cleaning up."
-    pkill -P $$
 }
 
 run_test

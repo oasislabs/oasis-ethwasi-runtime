@@ -1,3 +1,6 @@
+# Mac things
+.DS_Store
+
 # Build.
 tests/build
 target/
@@ -30,3 +33,22 @@ truffle.txt
 node_modules
 package-lock.json
 
+# The ekiden-node binary that is present
+# during local dev and testing.
+ekiden-node
+
+# A directory that is typically mounted on
+# a docker container so that we can set
+# CARGO_INSTALL_ROOT and save time
+# by allowing 'cargo install' to reuse
+# binaries that it installed in a previous
+# run in a different docker container.
+cargo_install_root/
+
+# A directory created by scrpits/test-rpc.sh
+# that is useful to keep around to speed up
+# local dev and testing.
+tests/rpc-tests/
+
+# Coverage report from Tarpaulin
+cobertura.xml
