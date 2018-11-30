@@ -25,6 +25,7 @@ const contractFilename = program.args[0] || fs.readdirSync('target').reduce((f, 
 }, undefined);
 
 const contract = fs.readFileSync(contractFilename).toString('hex');
+console.log(contract);
 console.log('contract read');
 
 web3.eth.getTransactionCount(web3.eth.defaultAccount).then(nonce => {
