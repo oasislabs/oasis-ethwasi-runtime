@@ -2,14 +2,19 @@
 
 # Runs the integration tests in the web3c.js repo against a gateway.
 
+# Helpful tips on writing build scripts:
+# https://buildkite.com/docs/pipelines/writing-build-scripts
+set -euxo pipefail
+
 WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
-run_test() {
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
 
+run_test() {
     run_dummy_node_go_tm
     sleep 1
     run_compute_node 1
@@ -25,8 +30,14 @@ run_test() {
     mkdir -p /tmp/testing
 
     cd /tmp/testing
-    git clone https://github.com/oasislabs/web3c.js.git
-    cd /tmp/testing/web3c.js
+    if [ ! -d web3c.js ]; then
+      git clone \
+        https://github.com/oasislabs/web3c.js.git \
+        --depth 1
+    fi
+
+    cd web3c.js
+    git pull
 
     npm install > /dev/null
 
@@ -35,16 +46,7 @@ run_test() {
     export GATEWAY="http://localhost:8545"
 
     echo "Running web3c.js tests against the gateway"
-    npm run test:gateway & test_pid=$!
-
-    wait $test_pid
-    test_ret=$?
-    if [ $test_ret -ne 0 ]; then
-        echo "web3.js test failed"
-    exit $test_ret
-    fi
-
-    pkill -P $$
+    npm run test:gateway
 }
 
 run_test

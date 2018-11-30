@@ -2,6 +2,12 @@
 
 WORKDIR=${1:-$(pwd)}
 
+source scripts/utils.sh
+
+# Ensure cleanup on exit.
+# cleanup() is defined in scripts/utils.sh
+trap 'cleanup' EXIT
+
 run_dummy_node() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
@@ -50,9 +56,6 @@ run_compute_node() {
 run_test() {
     local dummy_node_runner=$1
 
-    # Ensure cleanup on exit.
-    trap 'kill -- -0' EXIT
-
     # Start dummy node.
     $dummy_node_runner
     sleep 1
@@ -84,11 +87,6 @@ run_test() {
 
     # Wait on the benchmark and check its exit status.
     wait ${benchmark_pid}
-
-    # Cleanup.
-    echo "Cleaning up."
-    pkill -P $$
-    wait || true
 }
 
 run_test run_dummy_node
