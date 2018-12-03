@@ -26,7 +26,9 @@ path_to_coveralls_api_token=${1:-~/.coveralls/runtime_ethereum_api_token}
 ############
 # Local vars
 ############
+set +x
 coveralls_api_token=$(cat ${path_to_coveralls_api_token})
+set -x
 
 #################################################
 # Add github public key to known_hosts.
@@ -50,6 +52,7 @@ RUSTFLAGS="--cfg procmacro2_semver_exempt" \
 echo 'fn main() {}' > build.rs
 
 # Calculate coverage
+set +x
 cargo tarpaulin \
   --packages runtime-ethereum \
   --packages runtime-ethereum-common \
@@ -61,3 +64,4 @@ cargo tarpaulin \
   --out Xml \
   --coveralls ${coveralls_api_token} \
   -v
+set -x
