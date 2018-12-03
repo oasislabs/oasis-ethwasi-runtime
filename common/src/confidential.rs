@@ -69,8 +69,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
         ).map_err(|err| err.description().to_string())
     }
 
-    fn create_long_term_pk(&self, contract: Address) -> Result<Vec<u8>, String> {
-        KeyManager::create_long_term_pk(contract)
+    fn create_long_term_public_key(&self, contract: Address) -> Result<Vec<u8>, String> {
+        KeyManager::create_long_term_public_key(contract)
     }
 }
 
@@ -86,7 +86,7 @@ impl KeyManager {
 
     /// Creates and returns the long term public key for the given contract.
     /// If the key already exists, returns the existing key.
-    fn create_long_term_pk(contract: Address) -> Result<Vec<u8>, String> {
+    fn create_long_term_public_key(contract: Address) -> Result<Vec<u8>, String> {
         // if we're not in sgx, then don't try to access or create secret keys
         // this happens when running virtual confidential transactions
         // from the gateway via estimateGas
