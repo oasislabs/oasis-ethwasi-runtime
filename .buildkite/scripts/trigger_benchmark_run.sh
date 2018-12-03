@@ -26,6 +26,7 @@ mr_enclave=$(
         /ekiden/res/runtime-ethereum-benchmarking.mrenclave
 )
 
+set +x
 circleci_secret_token=$(cat ~/.circleci/private_ops_api_token)
 
 curl -f \
@@ -40,3 +41,4 @@ curl -f \
         }
     }' \
     "https://circleci.com/api/v1.1/project/github/oasislabs/private-ops/tree/master?circle-token=${circleci_secret_token}"
+set -x

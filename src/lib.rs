@@ -97,6 +97,8 @@ impl BatchHandler for EthereumBatchHandler {
         // Obtain current root hash from the block header.
         let root_hash = ctx.header.state_root;
 
+        debug!("start_batch, root hash: {:?}", root_hash);
+
         // Create a new storage backend.
         #[cfg(target_env = "sgx")]
         let storage = Arc::new(UntrustedStorageBackend::new());
@@ -108,11 +110,15 @@ impl BatchHandler for EthereumBatchHandler {
         db.set_root_hash(root_hash).unwrap();
 
         ctx.runtime = EthereumContext::new(storage, db);
+
+        debug!("runtime context initialized");
     }
 
     fn end_batch(&self, ctx: RuntimeCallContext) {
         let timestamp = ctx.header.timestamp;
         let mut ectx = *ctx.runtime.downcast::<EthereumContext>().unwrap();
+
+        debug!("end_batch");
 
         // Finalize the block if it contains any transactions.
         if !ectx.block.transactions().is_empty() || ectx.force_emit_block {

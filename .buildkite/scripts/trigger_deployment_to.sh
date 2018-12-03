@@ -33,6 +33,7 @@ deployment_image_tag=$(buildkite-agent meta-data \
 repository=oasislabs/runtime-ethereum
 private_ops_revision=master
 
+set +x
 circleci_secret_token=$(cat ~/.circleci/private_ops_api_token)
 
 ########################################
@@ -44,3 +45,4 @@ scripts/buildhook-notify.sh \
   ${deployment_image_tag} \
   ${private_ops_revision} \
   ${circleci_secret_token}
+set -x
