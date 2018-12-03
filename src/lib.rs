@@ -67,8 +67,8 @@ with_api! {
 }
 
 /// This path must match the path used to generate the key manager
-/// enclave identity file. See build.rs.
-use_key_manager_contract!("/test/runtime-keymanager-enclave.mrenclave");
+/// enclave identity. See build.rs.
+use_key_manager_contract!("generated/ekiden-key-manager.identity");
 
 /// Ethereum-specific batch context.
 pub struct EthereumContext<'a> {
