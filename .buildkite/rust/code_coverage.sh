@@ -40,16 +40,13 @@ set -x
 #################################################
 ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 
-# Instal Tarpaulin
-RUSTFLAGS="--cfg procmacro2_semver_exempt" \
-  cargo install \
-  --git https://github.com/oasislabs/tarpaulin \
-  --branch ekiden \
-  cargo-tarpaulin
-
 # Workaround to avoid linker errors in
 # tarpaulin: disable cargo build script.
 echo 'fn main() {}' > build.rs
+
+# We need to use a separate target dir for tarpaulin as it otherwise clears
+# the build cache.
+export CARGO_TARGET_DIR=/tmp/coverage_target
 
 # Calculate coverage
 set +x
