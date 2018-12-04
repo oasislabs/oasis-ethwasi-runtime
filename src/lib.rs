@@ -33,7 +33,7 @@ pub mod storage; // allow access from tests/run_contract
 #[cfg(not(debug_assertions))]
 mod storage;
 
-use ekiden_keymanager_client::{use_key_manager_contract, KeyManager};
+use ekiden_keymanager_client::use_key_manager_contract;
 
 use std::sync::Arc;
 

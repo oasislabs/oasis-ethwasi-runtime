@@ -14,10 +14,10 @@ fn main() {
 /// The runtime uses this to extract the key manager's MRENCLAVE at compile time
 /// via the use_key_manager_contract! macro.
 fn generate_km_enclave_identity() {
-    let km_id_path = env::var("KM_ENCLAVE_PATH").expect("Please define KM_ENCLAVE_PATH");
+    let km_enclave_path = env::var("KM_ENCLAVE_PATH").expect("Please define KM_ENCLAVE_PATH");
     ekiden_tools::generate_mod("src/generated", &[]);
     ekiden_tools::generate_enclave_identity(
         "src/generated/ekiden-key-manager.identity",
-        &km_id_path,
+        &km_enclave_path,
     );
 }

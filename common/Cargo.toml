@@ -15,7 +15,6 @@ ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ek
 keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
 hashdb = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
 elastic-array = "0.10"
-log = "0.4"
 
 [target.'cfg(not(target_env = "sgx"))'.dependencies]
 rand = "0.4.2"
