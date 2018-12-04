@@ -20,8 +20,12 @@ use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 #[cfg(test)]
 use grpcio;
+use hash::keccak;
 use runtime_ethereum;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
+use parity_rpc::v1::types::Bytes as RpcBytes;
+use std::time::{SystemTime, UNIX_EPOCH};
+use traits::confidential::PublicKeyResult;
 
 use client_utils;
 use client_utils::db::Snapshot;
@@ -43,11 +47,6 @@ use test_helpers::{self, MockDb};
 #[cfg(test)]
 use util;
 use util::from_block_id;
-
-use hash::keccak;
-use parity_rpc::v1::types::Bytes as RpcBytes;
-use std::time::{SystemTime, UNIX_EPOCH};
-use traits::confidential::PublicKeyResult;
 
 /// Record runtime call outcome.
 fn record_runtime_call_result<F, T>(call: &'static str, result: F) -> BoxFuture<T>

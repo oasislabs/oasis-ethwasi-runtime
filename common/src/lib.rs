@@ -12,8 +12,6 @@ extern crate ethcore;
 extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash;
-#[macro_use]
-extern crate log;
 
 #[cfg(not(target_env = "sgx"))]
 extern crate rand;

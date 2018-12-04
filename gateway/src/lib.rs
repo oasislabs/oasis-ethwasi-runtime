@@ -95,6 +95,7 @@ extern crate runtime_ethereum_common;
 
 extern crate ekiden_enclave_common;
 extern crate ekiden_keymanager_client;
+
 use ekiden_enclave_common::quote::MrEnclave;
 use ekiden_keymanager_client::{KeyManager, NetworkRpcClientBackendConfig};
 
