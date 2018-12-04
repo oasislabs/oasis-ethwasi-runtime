@@ -2,6 +2,13 @@
 
 WORKDIR=${1:-$(pwd)}
 
+# Key manager variables shared between the compute node, gateway, and key manager
+KM_CERT="/tmp/km.key"
+KM_HOST="127.0.0.1"
+KM_PORT="9003"
+KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave
+KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
+
 run_dummy_node_go_tm() {
     local datadir=/tmp/ekiden-dummy-data
     rm -rf ${datadir}
@@ -44,7 +51,9 @@ run_compute_node() {
         --storage-multilayer-bottom-backend remote \
         --max-batch-timeout 100 \
         --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --disable-key-manager \
+        --key-manager-cert $KM_CERT \
+        --key-manager-host $KM_HOST \
+        --key-manager-port $KM_PORT \
         --port ${port} \
         ${extra_args} \
         ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
@@ -67,8 +76,21 @@ run_gateway() {
         --http-port ${http_port} \
         --threads 100 \
         --ws-port ${ws_port} \
+        --key-manager-cert $KM_CERT \
+        --key-manager-host $KM_HOST \
+        --key-manager-port  $KM_PORT \
+        --key-manager-mrenclave $(cat ${KM_MRENCLAVE}) \
         --prometheus-metrics-addr 0.0.0.0:${prometheus_port} \
         --prometheus-mode pull &> gateway${id}.log &
+}
+
+run_keymanager_node() {
+    local extra_args=$*
+
+    ekiden-keymanager-node \
+        --enclave $KM_ENCLAVE \
+        --node-key-pair $KM_CERT \
+        ${extra_args} &
 }
 
 ##
@@ -93,7 +115,7 @@ debug() {
 # of the calling process before exiting with
 # the status code of the previous command before
 # this cleanup function was called.
-# 
+#
 # Common use of this function to ensure child
 # processes are terminated is:
 # trap 'cleanup' EXIT
@@ -138,7 +160,7 @@ cleanup() {
 # if the binary is already installed.
 #
 # Making scripts idempotent is really useful for
-# local development and testing. Check the 
+# local development and testing. Check the
 # 'cargo install --help' docs for precedence rules
 # for how installation root is determined.
 ##

@@ -17,7 +17,9 @@ run_test() {
     # Start dummy node.
     run_dummy_node_go_tm
     sleep 1
-
+    # Start keymanager node.
+    run_keymanager_node
+    sleep 1
     # Start compute nodes.
     run_compute_node 1
     sleep 1
