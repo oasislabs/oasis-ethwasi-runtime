@@ -33,6 +33,9 @@ impl ConfidentialCtx {
 
 impl EthConfidentialCtx for ConfidentialCtx {
     fn open(&mut self, encrypted_data: Vec<u8>, contract: Address) -> Result<Vec<u8>, String> {
+        if self.is_open() {
+            return Err("Can't open a confidential context that's already open".to_string());
+        }
         let (contract_pk, contract_sk) = KeyManager::contract_keypair(contract)?;
 
         let decryption = confidential::decrypt(Some(encrypted_data), &contract_sk)
