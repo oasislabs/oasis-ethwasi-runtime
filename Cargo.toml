@@ -42,6 +42,10 @@ benchmark = []
 [profile.release]
 panic = "abort"
 
+# temporary fix for incompatibility between jsonrpc and ws-rs
+[patch."https://github.com/tomusdrw/ws-rs"]
+ws = { git = "https://github.com/oasislabs/ws-rs", branch = "ekiden" }
+
 [patch.crates-io]
 ring = { git = "https://github.com/oasislabs/ring", branch = "0.12.1-ekiden" }
 
