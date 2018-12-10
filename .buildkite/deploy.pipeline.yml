@@ -7,12 +7,23 @@ steps:
 
   - wait
 
-  - label: Deploy to staging (master branches only)
+  - label: Update staging docker image tags (master branches only)
     branches: master
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
-      - .buildkite/scripts/trigger_deployment_to.sh staging
+
+  - wait
+
+  - label: "Trigger staging deployment (master branches only)"
+    trigger: private-ops-deploy-ekiden-staging
+    branches: master
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: HEAD
+      branch: master
+
+  - wait
 
   - block: Human approval required to deploy to production
     branches: "*"
@@ -27,8 +38,17 @@ steps:
 
       - The Friendly Oasis Labs Robot
 
-  - label: Deploy to production (master branches only)
+  - label: Update production docker image tags (master branches only)
     branches: master
     command:
       - .buildkite/scripts/promote_deployment_image_to.sh latest
-      - .buildkite/scripts/trigger_deployment_to.sh production
+
+  - wait
+
+  - label: "Trigger production deployment (master branches only)"
+    trigger: private-ops-deploy-ekiden-production
+    branches: master
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "HEAD"
+      branch: master
