@@ -31,4 +31,12 @@ steps:
   - label: Build runtime benchmark
     command:
       - .buildkite/scripts/build_tag_push_benchmark_image.sh
-      - .buildkite/scripts/trigger_benchmark_run.sh
+
+  - wait
+
+  - label: "Trigger benchmark run"
+    trigger: private-ops-run-benchmarks
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: HEAD
+      branch: master
