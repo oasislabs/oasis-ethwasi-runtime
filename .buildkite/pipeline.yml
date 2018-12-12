@@ -92,6 +92,7 @@ steps:
   - wait
 
   - label: Code coverage
+    branches: master
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/code_coverage.sh

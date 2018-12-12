@@ -26,7 +26,9 @@ path_to_coveralls_api_token=${1:-~/.coveralls/runtime_ethereum_api_token}
 ############
 # Local vars
 ############
+set +x
 coveralls_api_token=$(cat ${path_to_coveralls_api_token})
+set -x
 
 #################################################
 # Add github public key to known_hosts.
@@ -38,18 +40,16 @@ coveralls_api_token=$(cat ${path_to_coveralls_api_token})
 #################################################
 ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 
-# Instal Tarpaulin
-RUSTFLAGS="--cfg procmacro2_semver_exempt" \
-  cargo install \
-  --git https://github.com/oasislabs/tarpaulin \
-  --branch ekiden \
-  cargo-tarpaulin
-
 # Workaround to avoid linker errors in
 # tarpaulin: disable cargo build script.
 echo 'fn main() {}' > build.rs
 
+# We need to use a separate target dir for tarpaulin as it otherwise clears
+# the build cache.
+export CARGO_TARGET_DIR=/tmp/coverage_target
+
 # Calculate coverage
+set +x
 cargo tarpaulin \
   --packages runtime-ethereum \
   --packages runtime-ethereum-common \
@@ -61,3 +61,4 @@ cargo tarpaulin \
   --out Xml \
   --coveralls ${coveralls_api_token} \
   -v
+set -x
