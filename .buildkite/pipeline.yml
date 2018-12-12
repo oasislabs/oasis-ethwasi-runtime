@@ -92,7 +92,6 @@ steps:
   - wait
 
   - label: Code coverage
-    branches: master
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/code_coverage.sh
@@ -108,13 +107,64 @@ steps:
   #       are done running. Don't wait for all other
   #       parallel jobs to finish, just the ones we need
   #       to run the tests...
-  - label: End-to-end tests
+
+    # End-to-end tests
+  - label: RPC test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_end_to_end_tests.sh
+      - .buildkite/rust/run_rpc_test.sh
     plugins:
       <<: *docker_plugin_configuration
+
+  - label: Web3C test
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/run_web3c_test.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Pub-Sub test
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/run_pubsub_test.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Basic WASM test
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/run_basic_wasm_test.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Storage test
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/run_storage_test.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Rust logistic regression test
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/run_rust_logistic_test.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: End-to-end test
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/run_end_to_end_test.sh
+    plugins:
+      <<: *docker_plugin_configuration
+
 
   - label: Ens tests
     command:
