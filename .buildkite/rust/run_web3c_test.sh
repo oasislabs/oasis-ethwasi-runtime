@@ -52,23 +52,6 @@ set -u
 # Run setup script
 ./scripts/setup-e2e.sh
 
-# Run gateway RPC tests
-./scripts/test-rpc.sh
-
 # Run the web3c.js tests
 ./scripts/test-web3cjs.sh
 
-# Run web3.js pubsub test
-./scripts/test-pubsub.sh
-
-# Run the basic wasm contract test
-./scripts/test-basic-wasm.sh
-
-# Run the storage contract test
-./scripts/test-storage.sh
-
-# Run the rust logistic contract test
-./scripts/test_rust_logistic.sh
-
-# Run the end-to-end test
-./scripts/test-e2e.sh
