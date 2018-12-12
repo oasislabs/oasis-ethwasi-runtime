@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #################################################
-# This script runs the end to end tests.
+# This script runs the storage test.
 #
 # Dependencies from other jobs are required to
-# run the tests. The dependencies from other
+# run the test. The dependencies from other
 # jobs are as follows:
 #
 # - job: build-and-test-runtime
@@ -19,7 +19,7 @@
 #     - target/debug/gateway
 #
 # Usage:
-# run_end_to_end_tests.sh
+# run_storage_test.sh
 #################################################
 
 # Helpful tips on writing build scripts:
