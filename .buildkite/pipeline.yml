@@ -30,6 +30,21 @@ docker_plugin: &docker_plugin_configuration
     unconfined: true
 
 steps:
+
+  - label: Build key-manager enclave
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_keymanager_enclave.sh /tmp --out-dir /tmp/artifacts
+      - cd /tmp/artifacts
+      - buildkite-agent artifact upload ekiden-keymanager-trusted.so
+      - buildkite-agent artifact upload ekiden-keymanager-trusted.mrenclave
+    plugins:
+      <<: *docker_plugin_configuration
+
+  # We must wait for the keymanager enclave to finish building before building
+  # the runtime.
+  - wait
+
   - label: Build genesis
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -37,8 +52,14 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  # Internally builds the runtime and so must be run after the keymanager enclave is built
   - label: Build run_contract
     command:
+      # Fetch the ekiden-keymanager-enclave
+      - mkdir -p /workdir/target/enclave
+      - buildkite-agent artifact download ekiden-keymanager-trusted.so /workdir/target/enclave
+      # export path to the enclave so that the runtime can be built in run_contract
+      - export KM_ENCLAVE_PATH="/workdir/target/enclave/ekiden-keymanager-trusted.so"
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_generic.sh /workdir -p run-contract
     plugins:

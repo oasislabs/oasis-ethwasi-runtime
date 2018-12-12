@@ -4,7 +4,7 @@
 # Download common build artifacts and make sure
 # they are in the correct directories for tests
 # to run, etc, etc.
-# 
+#
 # This script is intended to have buildkite
 # specific things, like env vars and calling
 # the buildkite-agent binary. Keeping this
@@ -32,6 +32,17 @@ buildkite-agent artifact download \
     target/enclave
 buildkite-agent artifact download \
     runtime-ethereum.mrenclave \
+    target/enclave
+
+#####################################################
+# Download ekiden-keymanager-trusted(.so|.mrenclave)
+#####################################################
+
+buildkite-agent artifact download \
+    ekiden-keymanager-trusted.so \
+    target/enclave
+buildkite-agent artifact download \
+    ekiden-keymanager-trusted.mrenclave \
     target/enclave
 
 ##################

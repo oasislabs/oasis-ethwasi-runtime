@@ -54,25 +54,10 @@ cargo install \
     --debug \
     ekiden-tools
 
-mkdir -p $src_dir/target/enclave
-
-echo "Fetching the ekiden-keymanager-trusted.so enclave"
-buildkite-agent artifact download \
-    ekiden-keymanager-trusted.so \
-    $src_dir/target/enclave
-
 ###################
-# Build the runtime
+# Build the enclave
 ###################
-export KM_ENCLAVE_PATH="$src_dir/target/enclave/ekiden-keymanager-trusted.so"
+
+git clone https://github.com/oasislabs/ekiden.git
+cd ekiden/key-manager/dummy/enclave
 cargo ekiden build-enclave --output-identity ${extra_args}
-
-######################################
-# Apply the rust code formatting rules
-######################################
-cargo fmt -- --write-mode=check
-
-###############
-# Run the tests
-###############
-cargo test

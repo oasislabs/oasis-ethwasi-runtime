@@ -7,6 +7,10 @@
 # run the test. The dependencies from other
 # jobs are as follows:
 #
+# - job: build-keymanager-enclave
+#   dependencies:
+#     - target/enclave/ekiden-keymanager-trusted.so
+#     - target/enclave/ekiden-keymanager-trusted.mrenclave
 # - job: build-and-test-runtime
 #   dependencies:
 #     - target/enclave/runtime-ethereum.so

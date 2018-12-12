@@ -21,6 +21,9 @@ extern crate protobuf;
 extern crate runtime_ethereum_common;
 extern crate sha3;
 
+extern crate ekiden_keymanager_client;
+extern crate ekiden_keymanager_common;
+
 mod evm;
 #[macro_use]
 mod logger;
@@ -29,6 +32,8 @@ mod state;
 pub mod storage; // allow access from tests/run_contract
 #[cfg(not(debug_assertions))]
 mod storage;
+
+use ekiden_keymanager_client::use_key_manager_contract;
 
 use std::sync::Arc;
 
@@ -60,6 +65,10 @@ enclave_init!();
 with_api! {
     create_runtime!(api);
 }
+
+/// This path must match the path used to generate the key manager
+/// enclave identity. See build.rs.
+use_key_manager_contract!("generated/ekiden-key-manager.identity");
 
 /// Ethereum-specific batch context.
 pub struct EthereumContext<'a> {

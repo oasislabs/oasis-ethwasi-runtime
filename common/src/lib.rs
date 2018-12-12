@@ -2,6 +2,7 @@
 #![feature(int_to_from_bytes)]
 
 extern crate ekiden_core;
+extern crate ekiden_keymanager_client;
 extern crate ekiden_keymanager_common;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_lru;
@@ -11,6 +12,12 @@ extern crate ethcore;
 extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash;
+
+#[cfg(not(target_env = "sgx"))]
+extern crate rand;
+
+#[cfg(target_env = "sgx")]
+extern crate sgx_rand;
 
 pub mod confidential;
 

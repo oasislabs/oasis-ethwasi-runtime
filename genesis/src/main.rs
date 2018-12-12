@@ -218,7 +218,6 @@ fn main() {
         true,                          /* is epoch_begin */
         &mut Vec::new().into_iter(),   /* ancestry */
         None,
-        None,
     ).unwrap();
 
     // Iteratively parse input and import into state.

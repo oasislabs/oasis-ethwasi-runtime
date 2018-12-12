@@ -7,16 +7,18 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-source scripts/utils.sh
+WORKDIR=$(pwd)
+
+source scripts/utils.sh $WORKDIR
 
 # Ensure cleanup on exit.
 # cleanup() is defined in scripts/utils.sh
 trap 'cleanup' EXIT
 
-WORKDIR=$(pwd)
-
 run_test() {
     run_dummy_node_go_tm
+    sleep 1
+    run_keymanager_node
     sleep 1
     run_compute_node 1
     sleep 1
@@ -60,7 +62,7 @@ run_ens() {
 
     cd ens
     git pull
-    
+
     npm install > /dev/null
 
     truffle test --network oasis_test
@@ -76,9 +78,9 @@ run_celer() {
 
     cd cChannel-eth
     git pull
-    
+
     npm install > /dev/null
-    
+
     truffle compile > /dev/null
     truffle migrate --network oasis_test
     truffle test --network oasis_test
@@ -99,7 +101,7 @@ run_augur() {
 
     cd augur-core
     git pull
-    
+
     npm install > /dev/null
 
     pip3 install -r requirements.txt

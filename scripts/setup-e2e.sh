@@ -45,6 +45,13 @@ cargo install \
     --debug \
     ekiden-worker
 
+echo "Installing ekiden-keymanager-node."
+cargo install \
+    --git https://github.com/oasislabs/ekiden \
+    --branch master \
+    --debug \
+    ekiden-keymanager-node
+
 if [ ! -e "$cargo_install_root/bin/wasm-build" ]; then
   echo "Installing wasm-build."
   cargo install \
