@@ -10,20 +10,20 @@ filebuffer = "0.4.0"
 hex = "0.3.1"
 log = "0.4"
 pretty_env_logger = "0.2"
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 
-client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-batch = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-roothash-api = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-storage-batch = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-roothash-api = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
+ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
 
 runtime-ethereum-common = { path = "../common" }

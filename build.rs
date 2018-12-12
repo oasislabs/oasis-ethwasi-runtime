@@ -1,8 +1,6 @@
 extern crate ekiden_edl;
 extern crate ekiden_tools;
 
-// todo: in CI we need to export the right key manager enclave identity
-//       filepath for this to work properly
 use std::env;
 
 fn main() {
