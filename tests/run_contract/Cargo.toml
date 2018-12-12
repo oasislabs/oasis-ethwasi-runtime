@@ -7,13 +7,13 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 [dependencies]
 clap = "2.32.0"
 either = "1.5.0"
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
-ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
-ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "armani/web3c1_keys" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethereum-api = { path = "../../api" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "armani/web3c1_keys" }
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 lazy_static = "1.0.1"
 log = "0.4.5"
 rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
