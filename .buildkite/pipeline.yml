@@ -117,7 +117,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-    label: Web3C test
+  - label: Web3C test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -125,7 +125,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-    label: Pub-Sub test
+  - label: Pub-Sub test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -133,7 +133,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-    label: Basic WASM test
+  - label: Basic WASM test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -141,7 +141,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-    label: Storage test
+  - label: Storage test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -149,7 +149,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-    label: Rust logistic regression test
+  - label: Rust logistic regression test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -157,7 +157,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-    label: End-to-end test
+  - label: End-to-end test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
