@@ -5,6 +5,7 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-lru = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -14,6 +15,9 @@ ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ek
 keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 elastic-array = "0.10"
+
+[target.'cfg(not(target_env = "sgx"))'.dependencies]
+rand = "0.4.2"
 
 [dev-dependencies]
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

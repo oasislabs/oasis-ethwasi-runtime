@@ -6,6 +6,7 @@ use ekiden_common::bytes::H256;
 use ekiden_core::{self, error::Result, futures::prelude::*};
 use ekiden_db_trusted::{Database, DatabaseHandle};
 use ekiden_di::{Component, KnownComponents};
+use ekiden_keymanager_common::StateKeyType;
 use ekiden_registry_client;
 use ekiden_roothash_client;
 use ekiden_scheduler_client;
@@ -393,9 +394,16 @@ impl Database for MockDb {
         self.map.clear()
     }
 
-    fn with_encryption<F>(&mut self, _contract_id: H256, _f: F)
+    fn with_encryption<F, R>(&mut self, _contract_id: H256, _f: F) -> R
     where
-        F: FnOnce(&mut DatabaseHandle) -> (),
+        F: FnOnce(&mut DatabaseHandle) -> R,
+    {
+        unimplemented!();
+    }
+
+    fn with_encryption_key<F, R>(&mut self, key: StateKeyType, _f: F) -> R
+    where
+        F: FnOnce(&mut DatabaseHandle) -> R,
     {
         unimplemented!();
     }

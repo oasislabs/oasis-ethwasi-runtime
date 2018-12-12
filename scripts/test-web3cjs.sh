@@ -17,6 +17,8 @@ trap 'cleanup' EXIT
 run_test() {
     run_dummy_node_go_tm
     sleep 1
+    run_keymanager_node
+    sleep 1
     run_compute_node 1
     sleep 1
     run_compute_node 2
@@ -32,11 +34,13 @@ run_test() {
     cd /tmp/testing
     if [ ! -d web3c.js ]; then
       git clone \
-        https://github.com/oasislabs/web3c.js.git \
-        --depth 1
+        https://github.com/oasislabs/web3c.js.git
+	  # todo: put depth back
     fi
 
     cd web3c.js
+	# todo: remove checkout
+    git checkout armani/web3c1_keys
     git pull
 
     npm install > /dev/null

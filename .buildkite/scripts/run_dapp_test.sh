@@ -66,5 +66,12 @@ cargo install \
     --debug \
     ekiden-worker
 
-# Run the ens tests
+echo "Installing ekiden-keymanager-node."
+cargo install \
+    --git https://github.com/oasislabs/ekiden \
+    --branch master \
+    --debug \
+    ekiden-keymanager-node
+
+# Run the dapp tests
 ./scripts/test-dapp.sh ${test}

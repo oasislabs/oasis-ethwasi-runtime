@@ -9,6 +9,9 @@ runtime-ethereum-common = { path = "./common" }
 common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

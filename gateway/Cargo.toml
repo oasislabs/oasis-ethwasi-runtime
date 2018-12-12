@@ -60,6 +60,7 @@ ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch =
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-api = { path = "../api" }

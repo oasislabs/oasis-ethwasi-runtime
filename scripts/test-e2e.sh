@@ -11,6 +11,9 @@ trap 'cleanup' EXIT
 run_test() {
     local dummy_node_runner=$1
 
+    run_keymanager_node
+    sleep 1
+
     # Run the gateway. We start the gateway first so that we test 1) whether the
     # snapshot manager can recover after initially failing to connect to the
     # root hash stream, and 2) whether the gateway waits for the committee to be
