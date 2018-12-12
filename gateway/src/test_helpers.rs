@@ -393,9 +393,9 @@ impl Database for MockDb {
         self.map.clear()
     }
 
-    fn with_encryption<F>(&mut self, _contract_id: H256, _f: F)
+    fn with_encryption<F, R>(&mut self, _contract_id: H256, _f: F) -> R
     where
-        F: FnOnce(&mut DatabaseHandle) -> (),
+        F: FnOnce(&mut DatabaseHandle) -> R,
     {
         unimplemented!();
     }
