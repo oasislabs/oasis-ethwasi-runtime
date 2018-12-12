@@ -36,6 +36,7 @@ of the Ekiden compute node:
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-worker
+$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-keymanager-node
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
@@ -53,9 +54,17 @@ $ go install
 
 ## Building the runtime
 
-To build the runtime simply run:
+First build the keymanager enclave:
 ```bash
+$ cd /go/src/github.com/oasislabs/ekiden/key-manager/dummy/enclave
 $ cargo ekiden build-enclave --output-identity
+```
+
+This step is needed so that we can compile the keymanager's enclave identity statically into the runtime enclave upon initialization.
+
+Then, to build the runtime run:
+```bash
+$ KM_ENCLAVE_PATH=<ekiden-keymanager-trusted.so path> cargo ekiden build-enclave --output-identity
 ```
 
 The built enclave will be stored under `target/enclave/runtime-ethereum.so`.
@@ -97,6 +106,14 @@ $ ekiden \
     --datadir /tmp/ekiden-dummy-data
 ```
 
+To start the key manager node:
+```bash
+ekiden-keymanager-node -- \
+    --enclave target/enclave/ekiden-keymanager-trusted.so \
+    --storage-backend dummy \
+    --node-key-pair /tmp/keymanager.key
+```
+
 To start the compute node (you need to start at least two, on different ports):
 ```bash
 $ ekiden-compute \
@@ -109,6 +126,9 @@ $ ekiden-compute \
     --max-batch-timeout 100 \
     --entity-ethereum-address 0000000000000000000000000000000000000000 \
     --port <port number> \
+    --key-manager-host <key-manager host> \
+    --key-manager-port <key-manager port> \
+    --key-manager-cert /tmp/keymanager.key
     target/enclave/runtime-ethereum.so
 ```
 
@@ -121,7 +141,11 @@ $ target/debug/gateway \
     --storage-multilayer-local-storage-base /tmp/ekiden-storage-gateway \
     --storage-multilayer-bottom-backend remote \
     --mr-enclave <mr-enclave> \
-    --threads <number of threads for http server>
+    --threads <number of threads for http server> \
+    --key-manager-host <key-manager host> \
+    --key-manager-port <key-manager port> \
+    --key-manager-cert /tmp/keymanager.key \
+    --key-manager-mrenclave $(cat <ekiden-keymanager-trusted.mrenclave path>)
 ```
 
 For `<mr-enclave>` you can use the value reported when starting the compute node.
