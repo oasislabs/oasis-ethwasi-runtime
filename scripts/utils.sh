@@ -90,6 +90,7 @@ run_keymanager_node() {
     ekiden-keymanager-node \
         --enclave $KM_ENCLAVE \
         --node-key-pair $KM_CERT \
+        --storage-backend dummy \
         ${extra_args} &
 }
 
