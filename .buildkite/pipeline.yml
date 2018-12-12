@@ -55,7 +55,7 @@ steps:
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
       # script generic.
-      - cd /tmp/artifacts
+      - cd /tmp/artifacts/debug
       - buildkite-agent artifact upload gateway
     plugins:
       <<: *docker_plugin_configuration
@@ -68,7 +68,7 @@ steps:
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
       # script generic.
-      - cd /tmp/artifacts
+      - cd /tmp/artifacts/enclave
       - buildkite-agent artifact upload runtime-ethereum.so
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
     plugins:
