@@ -65,23 +65,13 @@ RUN eval $(ssh-agent -s) && \
       --branch master \
       ekiden-tools
 
-# Build the keymanager enclave
-RUN eval $(ssh-agent -s) && \
-    ssh-add && \
-    git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
-    cd /workdir && \
-    git clone https://github.com/oasislabs/ekiden && \
-    cd ekiden/key-manager/dummy/enclave && \
-    CARGO_TARGET_DIR=/workdir/ekiden/target \
-    cargo ekiden build-enclave --output-identity --release
-
 # Build the runtime
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
     cd runtime-ethereum && \
     CARGO_TARGET_DIR=/workdir/runtime-ethereum/target \
-    KM_ENCLAVE_PATH=/workdir/ekiden/target/enclave/ekiden-keymanager-trusted.so \
+    KM_ENCLAVE_PATH=/ekiden/lib/ekiden-keymanager-trusted.so \
       cargo ekiden \
       build-enclave --output-identity \
       --release
