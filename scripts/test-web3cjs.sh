@@ -34,13 +34,12 @@ run_test() {
     cd /tmp/testing
     if [ ! -d web3c.js ]; then
       git clone \
-        https://github.com/oasislabs/web3c.js.git
-	  # todo: put depth back
+        https://github.com/oasislabs/web3c.js.git \
+        --depth 1
     fi
 
     cd web3c.js
-	# todo: remove checkout
-    git checkout armani/web3c1_keys
+
     git pull
 
     npm install > /dev/null
