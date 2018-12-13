@@ -139,7 +139,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Web3C test
+  - label: web3c test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -147,7 +147,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Pub-Sub test
+  - label: Pub/sub test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -155,7 +155,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Basic WASM test
+  - label: Basic Wasm test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -188,13 +188,14 @@ steps:
       <<: *docker_plugin_configuration
 
 
-  - label: Ens tests
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/run_dapp_test.sh ens
-    plugins:
-      <<: *docker_plugin_configuration
+  # ENS tests temporarily disabled due to flakiness (#349)
+  #- label: ENS tests
+  #  command:
+  #    - .buildkite/scripts/download_common_artifacts.sh
+  #    - .buildkite/scripts/setup_gitconfig.sh
+  #    - .buildkite/scripts/run_dapp_test.sh ens
+  #  plugins:
+  #    <<: *docker_plugin_configuration
 
   - label: Celer tests
     command:
