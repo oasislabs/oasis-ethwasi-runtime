@@ -66,12 +66,13 @@ RUN eval $(ssh-agent -s) && \
       ekiden-tools
 
 # Build the runtime
+COPY --from=docker.io/oasislabs/testnet:latest /ekiden/lib/ekiden-keymanager-trusted.so /workdir/
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
     cd runtime-ethereum && \
     CARGO_TARGET_DIR=/workdir/runtime-ethereum/target \
-    KM_ENCLAVE_PATH=/ekiden/lib/ekiden-keymanager-trusted.so \
+    KM_ENCLAVE_PATH=/workdir/ekiden-keymanager-trusted.so \
       cargo ekiden \
       build-enclave --output-identity \
       --release
