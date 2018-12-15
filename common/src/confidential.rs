@@ -123,7 +123,5 @@ impl KeyManager {
 
 fn random_nonce() -> Vec<u8> {
     let mut nonce = [0u8; NONCE_SIZE];
-    let mut rng = TheRng::new().unwrap();
-    rng.fill_bytes(&mut nonce);
     nonce.to_vec()
 }
