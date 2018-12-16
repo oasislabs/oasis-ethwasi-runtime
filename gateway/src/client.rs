@@ -791,7 +791,10 @@ impl Client {
             }
         };
 
-        if state.is_confidential(transaction).map_err(|_| CallError::StateCorrupt)? {
+        if state
+            .is_confidential(transaction)
+            .map_err(|_| CallError::StateCorrupt)?
+        {
             self.confidential_estimate_gas(transaction, id)
         } else {
             self._estimate_gas(transaction, id, db, state)
@@ -847,21 +850,22 @@ impl Client {
             gas: Some(transaction.gas),
         };
 
-        let response = self.block_on(
-            record_runtime_call_result(
-                "simulate_transaction",
-                self.client
-                    .simulate_transaction(request)
-            )
-        );
+        let response = self.block_on(record_runtime_call_result(
+            "simulate_transaction",
+            self.client.simulate_transaction(request),
+        ));
         match response {
-            Err(e) => Err(CallError::Execution(ExecutionError::Internal(e.to_string()))),
+            Err(e) => Err(CallError::Execution(ExecutionError::Internal(
+                e.to_string(),
+            ))),
             Ok(response) => {
                 // Must check that the transaction result has not errored. Otherwise, we'll
                 // just report estimateGas == 0 without giving an error.
                 match response.result {
-                    Err(e) => Err(CallError::Execution(ExecutionError::Internal(e.to_string()))),
-                    Ok(_result) => Ok(response.used_gas)
+                    Err(e) => Err(CallError::Execution(
+                        ExecutionError::Internal(e.to_string()),
+                    )),
+                    Ok(_result) => Ok(response.used_gas),
                 }
             }
         }
