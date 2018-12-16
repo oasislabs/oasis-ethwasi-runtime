@@ -6,7 +6,7 @@ use common_types::log_entry::LocalizedLogEntry;
 use ethcore::blockchain::{BlockProvider, TransactionAddress};
 use ethcore::encoded;
 use ethcore::engines::EthEngine;
-use ethcore::error::CallError;
+use ethcore::error::{CallError, ExecutionError};
 use ethcore::executive::{contract_address, Executed, Executive, TransactOptions};
 use ethcore::filter::Filter as EthcoreFilter;
 use ethcore::header::BlockNumber;
@@ -23,6 +23,7 @@ use grpcio;
 use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
+use runtime_ethereum_common::State as EthState;
 use std::time::{SystemTime, UNIX_EPOCH};
 use traits::confidential::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
@@ -790,6 +791,24 @@ impl Client {
             }
         };
 
+        if state.is_confidential(transaction).map_err(|_| CallError::StateCorrupt)? {
+            self.confidential_estimate_gas(transaction, id)
+        } else {
+            self._estimate_gas(transaction, id, db, state)
+        }
+    }
+
+    /// Estimates gas for a transaction calling a regular, non-confidential contract
+    /// by running the transaction locally at the gateway.
+    fn _estimate_gas(
+        &self,
+        transaction: &SignedTransaction,
+        id: BlockId,
+        db: StateDb<Snapshot>,
+        mut state: EthState,
+    ) -> Result<U256, CallError> {
+        info!("estimating gas for a contract");
+
         let env_info = Self::get_env_info(&db);
         let machine = self.engine.machine();
         let options = TransactOptions::with_no_tracing()
@@ -802,6 +821,50 @@ impl Client {
             &*self.storage.read().unwrap(),
         ).transact_virtual(transaction, options)?;
         Ok(ret.gas_used + ret.refunded)
+    }
+
+    /// Estimates gas for a transaction calling a confidential contract by sending
+    /// the transaction through the scheduler to be run by the compute comittee.
+    fn confidential_estimate_gas(
+        &self,
+        transaction: &SignedTransaction,
+        id: BlockId,
+    ) -> Result<U256, CallError> {
+        info!("estimating gas for a confidential contract");
+
+        let to_addr = match transaction.action {
+            Action::Create => None,
+            Action::Call(to_addr) => Some(to_addr),
+        };
+
+        let request = TransactionRequest {
+            nonce: Some(transaction.nonce),
+            caller: Some(transaction.sender()),
+            is_call: to_addr.is_some(),
+            address: to_addr,
+            input: Some(transaction.data.clone()),
+            value: Some(transaction.value),
+            gas: Some(transaction.gas),
+        };
+
+        let response = self.block_on(
+            record_runtime_call_result(
+                "simulate_transaction",
+                self.client
+                    .simulate_transaction(request)
+            )
+        );
+        match response {
+            Err(e) => Err(CallError::Execution(ExecutionError::Internal(e.to_string()))),
+            Ok(response) => {
+                // Must check that the transaction result has not errored. Otherwise, we'll
+                // just report estimateGas == 0 without giving an error.
+                match response.result {
+                    Err(e) => Err(CallError::Execution(ExecutionError::Internal(e.to_string()))),
+                    Ok(_result) => Ok(response.used_gas)
+                }
+            }
+        }
     }
 
     /// Checks whether transaction is well formed and meets min gas price.

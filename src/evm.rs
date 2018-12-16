@@ -34,9 +34,6 @@ fn get_env_info(cache: &Cache) -> vm::EnvInfo {
 
 pub fn simulate_transaction(cache: &Cache, transaction: &SignedTransaction) -> Result<Executed> {
     let mut state = cache.get_state()?;
-    #[cfg(not(feature = "benchmark"))]
-    let options = TransactOptions::with_no_tracing();
-    #[cfg(feature = "benchmark")]
     let options = TransactOptions::with_no_tracing().dont_check_nonce();
     let mut storage = GlobalStorage::new();
     let exec = Executive::new(
