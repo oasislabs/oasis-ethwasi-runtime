@@ -803,11 +803,11 @@ impl Client {
 
     /// Estimates gas for a transaction calling a regular, non-confidential contract
     /// by running the transaction locally at the gateway.
-    fn _estimate_gas(
+    fn _estimate_gas<T: 'static + Database + Send + Sync>(
         &self,
         transaction: &SignedTransaction,
         id: BlockId,
-        db: StateDb<Snapshot>,
+        db: StateDb<T>,
         mut state: EthState,
     ) -> Result<U256, CallError> {
         info!("estimating gas for a contract");
