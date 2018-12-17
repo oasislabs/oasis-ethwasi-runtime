@@ -66,11 +66,13 @@ RUN eval $(ssh-agent -s) && \
       ekiden-tools
 
 # Build the runtime (benchmark version)
+COPY --from=docker.io/oasislabs/testnet:latest /ekiden/lib/ekiden-keymanager-trusted.so /workdir/
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
     cd runtime-ethereum && \
     CARGO_TARGET_DIR=/workdir/runtime-ethereum/target \
+    KM_ENCLAVE_PATH=/workdir/ekiden-keymanager-trusted.so \
       cargo ekiden \
       build-enclave --output-identity \
       --cargo-addendum feature.benchmark.addendum \
@@ -107,4 +109,3 @@ COPY --from=builder /workdir/runtime-ethereum/target/enclave/runtime-ethereum.mr
 COPY --from=builder /workdir/runtime-ethereum/target/release/gateway /ekiden/bin/
 COPY --from=builder /workdir/runtime-ethereum/target/release/genesis /ekiden/bin/
 COPY --from=builder /workdir/runtime-ethereum/benchmark/benchmark /ekiden/bin/
-
