@@ -2,7 +2,7 @@
 # Build pipeline
 ################
 docker_plugin: &docker_plugin_configuration
-  oasislabs/docker#v2.1.0-oasis1:
+  https://github.com/oasislabs/docker-buildkite-plugin#peterjgilbert/bugfix/entrypoint:
     image: "oasislabs/testing:0.2.0"
     always_pull: true
     workdir: /workdir
@@ -29,7 +29,7 @@ docker_plugin: &docker_plugin_configuration
     propagate-environment: true
     unconfined: true
 
-docker_plugin: &docker_plugin_configuration2
+docker_plugin: &docker_plugin_configuration_ekiden
   https://github.com/oasislabs/docker-buildkite-plugin#peterjgilbert/bugfix/entrypoint:
     image: "oasislabs/testnet:latest"
     always_pull: true
@@ -37,26 +37,7 @@ docker_plugin: &docker_plugin_configuration2
     workdir: /workdir
     volumes:
       - .:/workdir
-      - /var/lib/buildkite-agent/.ssh:/root/.ssh
-      - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
-      - /var/lib/buildkite-agent/.circleci:/root/.circleci
-      # Shared Rust artifacts cache.
-      - /tmp/cargo_cache:/cargo_cache
-      # Shared Rust package checkouts directory.
-      - /tmp/cargo_pkg/git:/root/.cargo/git
-      - /tmp/cargo_pkg/registry:/root/.cargo/registry
-      # Shared Rust SGX standard library artifacts cache.
-      - /tmp/xargo_cache:/root/.xargo
-      # Shared Go package checkouts directory.
-      - /tmp/go_pkg:/root/go/pkg
-    environment:
-      - "LC_ALL=C.UTF-8"
-      - "LANG=C.UTF-8"
-      - "CARGO_TARGET_DIR=/tmp/artifacts"
-      - "CARGO_INCREMENTAL=/cargo_cache"
-      - "CARGO_INSTALL_ROOT=/root/.cargo"
     propagate-environment: true
-    unconfined: true
 
 steps:
   - label: Fetch ekiden binaries
@@ -71,7 +52,7 @@ steps:
       - cd /ekiden/res
       - buildkite-agent artifact upload ekiden-keymanager-trusted.mrenclave
     plugins:
-      <<: *docker_plugin_configuration2
+      <<: *docker_plugin_configuration_ekiden
 
   # We need the keymanager enclave to build the runtime.
   - wait
