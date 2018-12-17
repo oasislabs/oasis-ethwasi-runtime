@@ -17,11 +17,17 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-######################
-# Download ekiden-node
-######################
+###########################
+# Download ekiden binaries
+###########################
 buildkite-agent artifact download ekiden-node .
 chmod +x ekiden-node
+buildkite-agent artifact download ekiden-compute .
+chmod +x ekiden-compute
+buildkite-agent artifact download ekiden-worker .
+chmod +x ekiden-worker
+buildkite-agent artifact download ekiden-keymanager-node .
+chmod +x ekiden-keymanager-node
 
 ############################################
 # Download runtime-ethereum(.so|.mrenclave)
