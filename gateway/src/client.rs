@@ -865,7 +865,7 @@ impl Client {
                     Err(e) => Err(CallError::Execution(
                         ExecutionError::Internal(e.to_string()),
                     )),
-                    Ok(_result) => Ok(response.used_gas +  response.refunded_gas),
+                    Ok(_result) => Ok(response.used_gas + response.refunded_gas),
                 }
             }
         }
