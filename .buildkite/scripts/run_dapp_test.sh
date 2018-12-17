@@ -51,27 +51,5 @@ set +u
 export PATH=$CARGO_INSTALL_ROOT/bin/:$PATH
 set -u
 
-# Install ekiden-compute
-echo "Installing ekiden-compute."
-cargo install \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --debug \
-    ekiden-compute
-
-echo "Installing ekiden-worker."
-cargo install \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --debug \
-    ekiden-worker
-
-echo "Installing ekiden-keymanager-node."
-cargo install \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --debug \
-    ekiden-keymanager-node
-
 # Run the dapp tests
 ./scripts/test-dapp.sh ${test}
