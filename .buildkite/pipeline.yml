@@ -202,6 +202,10 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
+    timeout_in_minutes: 20
+    retry:
+      automatic: true
+      limit: 2
     plugins:
       <<: *docker_plugin_configuration
 
