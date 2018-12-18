@@ -51,6 +51,7 @@ $ make
 $ cd ekiden
 $ go install
 ```
+**Note**: You need to be on Go v1.11, and the source must be built outside of the `GOPATH`. 
 
 ## Building the runtime
 
