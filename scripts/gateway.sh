@@ -4,6 +4,11 @@ WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
+# Paths to dummy node and keymanager enclave, assuming they were built according to the README
+DUMMY_NODE=/go/src/github.com/oasislabs/ekiden/go/ekiden/ekiden
+KM_MRENCLAVE=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.mrenclave
+KM_ENCLAVE=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.so
+
 # Ensure cleanup on exit.
 # cleanup() is defined in scripts/utils.sh
 trap 'cleanup' EXIT
@@ -14,7 +19,7 @@ run_dummy_node() {
 
     echo "Starting Go dummy node."
 
-    ekiden \
+    ${DUMMY_NODE} \
         --log.level debug \
         --grpc.port 42261 \
         --epochtime.backend tendermint_mock \
@@ -28,36 +33,12 @@ run_dummy_node() {
         &> dummy.log &
 }
 
-run_compute_node() {
-    local id=$1
-    shift
-    local extra_args=$*
-
-    local cache_dir=/tmp/ekiden-test-worker-cache-$id
-    rm -rf ${cache_dir}
-
-    # Generate port number.
-    let "port=id + 10000"
-
-    echo "Starting compute node ${id} on port ${port}."
-
-    ekiden-compute \
-        --worker-path $(which ekiden-worker) \
-        --worker-cache-dir ${cache_dir} \
-        --no-persist-identity \
-        --storage-backend multilayer \
-        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
-        --storage-multilayer-bottom-backend remote \
-        --max-batch-timeout 100 \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --disable-key-manager \
-        --port ${port} \
-        ${extra_args} \
-        ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
-}
-
 run_test() {
     local dummy_node_runner=$1
+
+    # Start keymanager node
+    run_keymanager_node
+    sleep 1
 
     # Start dummy node.
     $dummy_node_runner
@@ -75,13 +56,7 @@ run_test() {
     # Run the client. We run the client first so that we test whether it waits for the
     # committee to be elected and connects to the leader.
     echo "Starting web3 gateway."
-    target/debug/gateway \
-        --storage-backend multilayer \
-        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway \
-        --storage-multilayer-bottom-backend remote \
-        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
-        --ws-max-connections 10000 \
-        --threads 100 &> gateway.log &
+    run_gateway 1
     gateway_pid=$!
 
     wait ${gateway_pid}
