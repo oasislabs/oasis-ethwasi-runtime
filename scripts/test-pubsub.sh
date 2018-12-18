@@ -16,12 +16,8 @@ run_test() {
     run_keymanager_node
     sleep 1
     # Start compute nodes.
-    run_compute_node 1 --compute-replicas 2
+    run_compute_committee
     sleep 1
-    run_compute_node 2 --compute-replicas 2
-    sleep 1
-    run_compute_node 3 --compute-replicas 2
-
     run_gateway 1
     sleep 10
 
