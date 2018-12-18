@@ -59,6 +59,18 @@ run_compute_node() {
         ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
 }
 
+run_compute_committee() {
+    args="--compute-replicas 2 --compute-backup-replicas 2"
+    run_compute_node 1 $args
+    sleep 1
+    run_compute_node 2 $args
+    sleep 1
+    run_compute_node 3 $args
+    sleep 1
+    run_compute_node 4 $args
+    sleep 1
+}
+
 run_gateway() {
     local id=$1
 
