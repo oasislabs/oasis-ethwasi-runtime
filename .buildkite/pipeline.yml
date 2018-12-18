@@ -204,9 +204,8 @@ steps:
       - .buildkite/scripts/run_dapp_test.sh celer
     timeout_in_minutes: 20
     retry:
-      automatic:
-	    exit_status: "*"
-        limit: 2
+	  # use default: exit-status: "*" and retry limit of 2
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
