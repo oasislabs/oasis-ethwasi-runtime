@@ -19,9 +19,11 @@ run_test() {
     sleep 1
     run_keymanager_node
     sleep 1
-    run_compute_node 1
+    run_compute_node 1 --compute-replicas 2
     sleep 1
-    run_compute_node 2
+    run_compute_node 2 --compute-replicas 2
+    sleep 1
+    run_compute_node 3 --compute-replicas 2
     sleep 1
     run_gateway 1
     sleep 1
