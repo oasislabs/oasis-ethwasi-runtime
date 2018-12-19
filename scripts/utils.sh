@@ -99,10 +99,14 @@ run_gateway() {
 run_keymanager_node() {
     local extra_args=$*
 
+    local storage_dir=/tmp/ekiden-storage-persistent-keymanager
+    rm -rf ${storage_dir}
+
     ekiden-keymanager-node \
         --enclave $KM_ENCLAVE \
         --node-key-pair $KM_CERT \
         --storage-backend dummy \
+        --storage-path ${storage_dir} \
         ${extra_args} &
 }
 
