@@ -186,13 +186,8 @@ impl EthPubSub for EthPubSubClient {
                 return;
             }
             (pubsub::Kind::Logs, _) => errors::invalid_params("logs", "Expected a filter object."),
-            (pubsub::Kind::NewPendingTransactions, None) => {
-                // this is a no-op: we're not mining, so we have no pending transactions
-                return;
-            }
-            (pubsub::Kind::NewPendingTransactions, _) => {
-                errors::invalid_params("newPendingTransactions", "Expected no parameters.")
-            }
+            // we don't track pending transactions currently
+            (pubsub::Kind::NewPendingTransactions, _) => errors::unimplemented(None),
             _ => errors::unimplemented(None),
         };
 
