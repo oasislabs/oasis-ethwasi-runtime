@@ -202,6 +202,11 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
+    # temporary workaround for https://github.com/oasislabs/runtime-ethereum/issues/443
+    timeout_in_minutes: 20
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -210,6 +215,11 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh augur
+    # temporary workaround for https://github.com/oasislabs/runtime-ethereum/issues/443
+    timeout_in_minutes: 20
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
