@@ -136,6 +136,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_rpc_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -144,6 +147,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_web3c_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -152,6 +158,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_pubsub_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -160,6 +169,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_basic_wasm_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -168,6 +180,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_storage_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -176,6 +191,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_rust_logistic_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
@@ -184,6 +202,9 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_end_to_end_test.sh
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     plugins:
       <<: *docker_plugin_configuration
 
