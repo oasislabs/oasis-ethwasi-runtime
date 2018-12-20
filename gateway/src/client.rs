@@ -871,15 +871,24 @@ impl Client {
         }
     }
 
-    /// Checks whether transaction is well formed and meets min gas price.
+    /// Checks that transaction is well formed, meets min gas price, and that signature is valid.
     pub fn precheck_transaction(&self, raw: &Bytes) -> Result<(), String> {
+        // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
             Err(e) => return Err(e.to_string()),
         };
+
+        // check gas price
         let unsigned = decoded.as_unsigned();
         if unsigned.gas_price < self.gas_price() {
             return Err("Insufficient gas price".to_string());
+        }
+
+        // validate signature
+        match decoded.recover_public() {
+            Err(e) => return Err(e.to_string()),
+            _ => (),
         }
 
         Ok(())
