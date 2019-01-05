@@ -910,7 +910,10 @@ impl Client {
                     measure_counter_inc!("contract_created");
                 }
 
-                result.hash.map_err(|error| Error::new(error))
+                result.hash.map_err(|error| {
+                    info!("execute_raw_transaction error: {:?}", error);
+                    Error::new(error)
+                })
             }),
         )
     }

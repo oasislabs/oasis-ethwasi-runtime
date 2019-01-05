@@ -19,7 +19,7 @@ run_test() {
     run_compute_committee
     sleep 1
     run_gateway 1
-    sleep 10
+    sleep 3
 
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 

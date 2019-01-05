@@ -68,7 +68,9 @@ run_compute_committee() {
     run_compute_node 3 $args
     sleep 1
     run_compute_node 4 $args
-    sleep 1
+
+    # Wait for all nodes to register.
+    ${WORKDIR}/ekiden-node debug dummy wait-nodes --nodes 4
 }
 
 run_gateway() {
