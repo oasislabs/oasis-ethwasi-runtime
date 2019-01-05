@@ -23,7 +23,7 @@ run_test() {
     run_compute_committee
     sleep 1
     run_gateway 1
-    sleep 1
+    sleep 3
 
     # Advance epoch to elect a new commitee
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1

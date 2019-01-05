@@ -28,9 +28,9 @@ run_test() {
 
     # Start compute nodes.
     run_compute_committee
-    sleep 1
-    # Advance epoch to elect a new committee.
     sleep 3
+
+    # Advance epoch to elect a new committee.
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     # Run truffle tests against gateway 1 (in background)
