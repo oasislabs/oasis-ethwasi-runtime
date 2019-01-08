@@ -27,5 +27,8 @@ module.exports = {
         path: "./.oasis-build/*.json"
       }]
     }
+  },
+  mocha: {
+    enableTimeouts: false
   }
 };

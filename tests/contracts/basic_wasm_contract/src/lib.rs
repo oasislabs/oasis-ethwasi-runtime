@@ -4,7 +4,7 @@
 trait BasicWasm {
     fn constructor(&mut self) {}
 
-    fn my_method(&mut self) {
-        owasm_ethereum::ret(&b"result"[..]);
+    fn my_method(&mut self) -> Vec<u8> {
+        (b"result"[..]).to_vec()
     }
 }

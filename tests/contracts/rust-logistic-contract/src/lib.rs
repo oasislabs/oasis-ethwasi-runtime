@@ -34,7 +34,7 @@ use rusty_libsvm::Libsvm;
 trait Logistic {
     fn constructor(&mut self) {}
 
-    fn regression(&mut self) {
+    fn regression(&mut self) -> Vec<u8> {
         panic::set_hook(Box::new(|panic_info| {
             if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
                 owasm_std::logger::debug(s);
@@ -187,7 +187,6 @@ trait Logistic {
 
         let result = format!("Matching classes is {}", matching);
         debug(&result);
-
-        owasm_ethereum::ret(result.as_bytes());
+        result.as_bytes().to_vec()
     }
 }

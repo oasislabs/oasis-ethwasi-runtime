@@ -20,4 +20,4 @@ lto = true
 opt-level = "z"
 
 [package.metadata.oasis]
-max-mem = 262144
+max-mem = 4194304

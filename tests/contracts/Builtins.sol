@@ -33,11 +33,7 @@ contract Builtins {
     return ret;
   }
 
-  function _modexpEvent(
-    bytes memory base,
-    bytes memory exp,
-    bytes memory mod
-  ) public {
+  function _modexpEvent(bytes base, bytes exp, bytes mod) public {
     bytes memory ret = _modexp(base, exp, mod);
     emit _ModexpEvent(ret);
   }
@@ -47,11 +43,7 @@ contract Builtins {
 /// See https://github.com/ethereum/EIPs/pull/198 and
 /// https://gist.github.com/axic/6ae83f0ab7ee2e8e69f4c240c5b90de8
 library ModexpPrecompile {
-  function modexp(
-    bytes memory base,
-	bytes memory exponent,
-	bytes memory modulus
-  ) internal returns (bool success, bytes memory output) {
+  function modexp(bytes base, bytes exponent, bytes modulus) internal returns (bool success, bytes output) {
     uint base_length = base.length;
     uint exponent_length = exponent.length;
     uint modulus_length = modulus.length;
@@ -78,9 +70,9 @@ library ModexpPrecompile {
 
 library BytesTool {
   function memcopy(
-    bytes memory src,
+    bytes src,
 	uint srcoffset,
-	bytes memory dst,
+	bytes dst,
 	uint dstoffset,
 	uint len
   ) pure internal {

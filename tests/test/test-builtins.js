@@ -8,7 +8,8 @@ const Builtins = artifacts.require("./Builtins.sol");
 contract("Builtins", async (accounts) => {
 
   let instance;
-  const expectedSha256 = "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  //const expectedSha256 = "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  const expectedSha256 = "0xdbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986";
 
   before(async () => {
     instance = await Builtins.new();
