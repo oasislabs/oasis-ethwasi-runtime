@@ -19,5 +19,16 @@ module.exports = {
       network_id: "*",
       gasPrice: 0
     }
+  },
+  compilers: {
+    external: {
+      command: "./node_modules/.bin/oasis-compile",
+      targets: [{
+        path: "./.oasis-build/*.json"
+      }]
+    }
+  },
+  mocha: {
+    enableTimeouts: false
   }
 };

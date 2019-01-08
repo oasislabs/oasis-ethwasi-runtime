@@ -78,10 +78,7 @@ run_celer() {
     git pull
 
     npm install > /dev/null
-
-    truffle compile > /dev/null
-    truffle migrate --network oasis_test
-    truffle test --network oasis_test
+    npm run test
 }
 
 run_augur() {
