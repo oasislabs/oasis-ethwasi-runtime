@@ -54,12 +54,14 @@ ring = { git = "https://github.com/oasislabs/ring", branch = "0.14.0-ekiden" }
 
 [workspace]
 members = [
-	"api",
-	"common",
-	"gateway",
-	"genesis",
-	"tests/contracts/basic_wasm_contract",
-	"tests/contracts/rust-logistic-contract",
-	"tests/contracts/storage_contract",
-	"tests/run_contract",
+    "api",
+    "common",
+    "gateway",
+    "genesis",
+    "tests/run_contract",
+]
+exclude = [
+    "tests/contracts/basic_wasm",
+    "tests/contracts/rust-logistic",
+    "tests/contracts/storage",
 ]

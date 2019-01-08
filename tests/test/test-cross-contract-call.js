@@ -1,5 +1,5 @@
-const Deployed = artifacts.require("./cross_contract/Deployed.sol")
-const Existing = artifacts.require("./cross_contract/Existing.sol")
+const Deployed = artifacts.require("./cross_contract/solidity/Deployed.sol")
+const Existing = artifacts.require("./cross_contract/solidity/Existing.sol")
 
 contract("CrossContractCall", (accounts) => {
   it("should update value in other contract", async () => {

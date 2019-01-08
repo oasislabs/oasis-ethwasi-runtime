@@ -3,7 +3,7 @@
 ################
 docker_plugin: &docker_plugin_configuration
   oasislabs/docker#v2.1.0-oasis4:
-    image: "oasislabs/testing:0.2.0"
+    image: "oasislabs/testing:latest"
     always_pull: true
     workdir: /workdir
     volumes:
@@ -174,40 +174,6 @@ steps:
       automatic: true
     plugins:
       <<: *docker_plugin_configuration
-
-  - label: Basic Wasm test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_basic_wasm_test.sh
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Storage test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_storage_test.sh
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Rust logistic regression test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_rust_logistic_test.sh
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-
   - label: End-to-end test
     command:
       - .buildkite/scripts/download_common_artifacts.sh

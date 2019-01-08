@@ -71,17 +71,14 @@ run_celer() {
       git clone \
         https://github.com/oasislabs/cChannel-eth.git \
         --depth 1 \
-        --branch ekiden
+        --branch armani/updates # todo: switch back to ekiden before merging
     fi
 
     cd cChannel-eth
     git pull
 
     npm install > /dev/null
-
-    truffle compile > /dev/null
-    truffle migrate --network oasis_test
-    truffle test --network oasis_test
+    npm run test
 }
 
 run_augur() {

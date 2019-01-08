@@ -33,7 +33,8 @@ run_test() {
     if [ ! -d web3c.js ]; then
       git clone \
         https://github.com/oasislabs/web3c.js.git \
-        --depth 1
+        --depth 1 \
+        --branch armani/update_tests # todo: remove me before merging
     fi
 
     cd web3c.js
