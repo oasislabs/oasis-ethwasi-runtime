@@ -36,12 +36,16 @@ run_test() {
     # Run truffle tests against gateway 1 (in background)
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests/ > /dev/null
-    npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
+    # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
+    # correct rust contract artifacts. Can remove this once the following is
+    # addressed: https://github.com/oasislabs/oasis-compile/issues/44
+    unset CARGO_TARGET_DIR
+    npm test & truffle_pid=$!
     popd > /dev/null
 
     # Subscribe to logs from gateway 2, and check that we get a log result
     echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 120 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+    RESULT=`wscat --connect localhost:8556 -w 200 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
 
     # Check truffle test exit code
     wait $truffle_pid

@@ -25,7 +25,11 @@ run_test() {
 
     echo "Running truffle tests."
     pushd ${WORKDIR}/tests > /dev/null
-    npm test > ${WORKDIR}/truffle.txt & truffle_pid=$!
+    # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
+    # correct rust contract artifacts. Can remove this once the following is
+    # addressed: https://github.com/oasislabs/oasis-compile/issues/44
+    unset CARGO_TARGET_DIR
+    npm test & truffle_pid=$!
     popd > /dev/null
 
     echo "Subscribing to pubsub."
