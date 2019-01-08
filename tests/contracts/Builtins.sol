@@ -28,15 +28,15 @@ contract Builtins {
     bytes memory base,
     bytes memory exponent,
     bytes memory modulus
-  ) public returns (bytes memory) {
+  ) public returns (bytes) {
     var (success, ret) = ModexpPrecompile.modexp(base, exponent, modulus);
     return ret;
   }
 
   function _modexpEvent(
-    bytes base,
-	bytes exp,
-	bytes mod
+    bytes memory base,
+	bytes memory exp,
+	bytes memory mod
   ) public {
     bytes memory ret = _modexp(base, exp, mod);
     emit _ModexpEvent(ret);
