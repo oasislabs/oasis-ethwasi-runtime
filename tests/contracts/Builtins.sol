@@ -8,11 +8,11 @@ contract Builtins {
   event _EcrecoverEvent(address addr);
   event _ModexpEvent(bytes modexp);
 
-  function _sha256(bytes memory input) public returns (bytes32) {
+  function _sha256(bytes input) public returns (bytes32) {
     return sha256(input);
   }
 
-  function _sha256Event(bytes memory input) public {
+  function _sha256Event(bytes input) public {
     emit _Sha256Event(sha256(input));
   }
 
@@ -29,11 +29,15 @@ contract Builtins {
     bytes memory exponent,
     bytes memory modulus
   ) public returns (bytes memory) {
-    (bool success, bytes memory ret) = ModexpPrecompile.modexp(base, exponent, modulus);
+    var (success, ret) = ModexpPrecompile.modexp(base, exponent, modulus);
     return ret;
   }
 
-  function _modexpEvent(bytes base, bytes exp, bytes mod) public {
+  function _modexpEvent(
+    bytes base,
+	bytes exp,
+	bytes mod
+  ) public {
     bytes memory ret = _modexp(base, exp, mod);
     emit _ModexpEvent(ret);
   }
@@ -69,13 +73,7 @@ library ModexpPrecompile {
 }
 
 library BytesTool {
-  function memcopy(
-    bytes src,
-	uint srcoffset,
-	bytes dst,
-	uint dstoffset,
-	uint len
-  ) pure internal {
+  function memcopy(bytes src, uint srcoffset, bytes dst, uint dstoffset, uint len) pure internal {
     assembly {
       src := add(src, add(32, srcoffset))
       dst := add(dst, add(32, dstoffset))

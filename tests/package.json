@@ -14,6 +14,7 @@
     "request-promise": "4.2.2",
     "truffle-hdwallet-provider": "^1.0.0-web3one.0",
     "web3": "1.0.0-beta.36",
+	"web3c": "^1.0.2",
     "oasis-compile": "git+https://github.com/oasislabs/oasis-compile.git"
   }
 }
