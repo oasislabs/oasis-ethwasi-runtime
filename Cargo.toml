@@ -58,8 +58,10 @@ members = [
 	"common",
 	"gateway",
 	"genesis",
+   	"tests/run_contract",
+]
+exclude = [
 	"tests/contracts/basic_wasm_contract",
 	"tests/contracts/rust-logistic-contract",
 	"tests/contracts/storage_contract",
-	"tests/run_contract",
 ]

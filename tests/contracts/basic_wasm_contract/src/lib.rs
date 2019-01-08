@@ -1,13 +1,10 @@
-extern crate hex;
-extern crate parity_hash;
-extern crate pwasm_ethereum;
+#![no_std]
 
-use parity_hash::H256;
+#[owasm_abi_derive::contract]
+trait BasicWasm {
+    fn constructor(&mut self) {}
 
-#[no_mangle]
-pub fn deploy() {}
-
-#[no_mangle]
-pub fn call() {
-    pwasm_ethereum::ret(&b"result"[..]);
+    fn my_method(&mut self) {
+        owasm_ethereum::ret(&b"result"[..]);
+    }
 }

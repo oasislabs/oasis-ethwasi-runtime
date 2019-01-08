@@ -8,11 +8,11 @@ contract Builtins {
   event _EcrecoverEvent(address addr);
   event _ModexpEvent(bytes modexp);
 
-  function _sha256(bytes input) public returns (bytes32) {
+  function _sha256(bytes memory input) public returns (bytes32) {
     return sha256(input);
   }
 
-  function _sha256Event(bytes input) public {
+  function _sha256Event(bytes memory input) public {
     emit _Sha256Event(sha256(input));
   }
 
@@ -28,8 +28,8 @@ contract Builtins {
     bytes memory base,
     bytes memory exponent,
     bytes memory modulus
-  ) public returns (bytes) {
-    var (success, ret) = ModexpPrecompile.modexp(base, exponent, modulus);
+  ) public returns (bytes memory) {
+    (bool success, bytes memory ret) = ModexpPrecompile.modexp(base, exponent, modulus);
     return ret;
   }
 
@@ -47,7 +47,11 @@ contract Builtins {
 /// See https://github.com/ethereum/EIPs/pull/198 and
 /// https://gist.github.com/axic/6ae83f0ab7ee2e8e69f4c240c5b90de8
 library ModexpPrecompile {
-  function modexp(bytes base, bytes exponent, bytes modulus) internal returns (bool success, bytes output) {
+  function modexp(
+    bytes memory base,
+	bytes memory exponent,
+	bytes memory modulus
+  ) internal returns (bool success, bytes memory output) {
     uint base_length = base.length;
     uint exponent_length = exponent.length;
     uint modulus_length = modulus.length;
@@ -73,7 +77,13 @@ library ModexpPrecompile {
 }
 
 library BytesTool {
-  function memcopy(bytes src, uint srcoffset, bytes dst, uint dstoffset, uint len) pure internal {
+  function memcopy(
+    bytes memory src,
+	uint srcoffset,
+	bytes memory dst,
+	uint dstoffset,
+	uint len
+  ) pure internal {
     assembly {
       src := add(src, add(32, srcoffset))
       dst := add(dst, add(32, dstoffset))

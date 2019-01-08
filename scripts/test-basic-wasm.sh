@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# todo: delete me
+
 WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh

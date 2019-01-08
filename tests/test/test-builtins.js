@@ -29,7 +29,7 @@ contract("Builtins", async (accounts) => {
   const v = 28;
   const r = "0x65bdcfea25a0222307789118039dbd5f76924c936363c6d5d1bda9e44de4fdb3";
   const s = "0x569dac424272dc3193d9e900bf7f7ea08d4661a476c811b3d6c95affe599d873";
-  const expectedAddress = "0x1e66891ed84cee8af1942387af83319440d82511";
+  const expectedAddress = "0x1E66891Ed84CEE8aF1942387aF83319440d82511";
 
   it("calls ecrecover", async () => {
     const result = await instance._ecrecover.call(digest, v, r, s);

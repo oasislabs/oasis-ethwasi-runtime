@@ -2,6 +2,9 @@
 
 WORKDIR=${1:-$(pwd)}
 
+
+# todo: remove me
+
 source scripts/utils.sh
 
 # Ensure cleanup on exit.

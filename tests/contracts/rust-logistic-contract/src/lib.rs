@@ -1,6 +1,4 @@
 extern crate hex;
-extern crate parity_hash;
-extern crate pwasm_ethereum;
 
 extern crate rand;
 #[macro_use]
@@ -8,11 +6,10 @@ extern crate rulinalg;
 extern crate dpmlrust;
 extern crate ml_reader;
 extern crate num as libnum;
-extern crate pwasm_std;
+extern crate owasm_std;
 extern crate rusty_libsvm;
 extern crate rusty_machine;
 
-use parity_hash::H256;
 use std::panic;
 use std::str;
 
@@ -27,27 +24,27 @@ use std::vec::Vec;
 use dpmlrust::logistic::{accuracy, add_normal_noise, compute_grad, learn, predict, update_model};
 use ml_reader::rusty::Dataset;
 use ml_reader::rusty::Reader;
-use pwasm_std::logger::debug;
+use owasm_std::logger::debug;
 use rulinalg::matrix::{Axes, BaseMatrix, BaseMatrixMut, Matrix, MatrixSlice, MatrixSliceMut};
 use rulinalg::norm;
 use rulinalg::vector::Vector;
 use rusty_libsvm::Libsvm;
 
-#[no_mangle]
-pub fn deploy() {}
+#[owasm_abi_derive::contract]
+trait Logistic {
+    fn constructor(&mut self) {}
 
-#[no_mangle]
-pub fn call() {
-    panic::set_hook(Box::new(|panic_info| {
-        if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
-            pwasm_std::logger::debug(s);
-        }
-    }));
+    fn regression(&mut self) {
+        panic::set_hook(Box::new(|panic_info| {
+            if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+                owasm_std::logger::debug(s);
+            }
+        }));
 
-    debug("In call...");
+        debug("In call...");
 
-    // dataset in a buffer for now
-    let buffer = "0	0:5.1 1:3.5 2:1.4 3:0.2
+        // dataset in a buffer for now
+        let buffer = "0	0:5.1 1:3.5 2:1.4 3:0.2
                           0	0:4.9 1:3.0 2:1.4 3:0.2
                           0	0:4.7 1:3.2 2:1.3 3:0.2
                           0	0:4.6 1:3.1 2:1.5 3:0.2
@@ -149,47 +146,48 @@ pub fn call() {
                           1	0:5.7 1:2.8 2:4.1 3:1.3
                           ";
 
-    debug("About to read from buffer");
+        debug("About to read from buffer");
 
-    let mut dataset = Libsvm::read_from_buffer(&buffer.to_string(), false, 4);
+        let mut dataset = Libsvm::read_from_buffer(&buffer.to_string(), false, 4);
 
-    debug("Done reading from buffer");
+        debug("Done reading from buffer");
 
-    debug(&format!("{}", dataset.data()));
-    debug(&format!("{:?}", dataset.target()));
+        debug(&format!("{}", dataset.data()));
+        debug(&format!("{:?}", dataset.target()));
 
-    let model = learn(&dataset, 1);
+        let model = learn(&dataset, 1);
 
-    let raw_samples = dataset.data();
-    let ones = Matrix::<f64>::ones(raw_samples.rows(), 1);
-    let samples = ones.hcat(raw_samples);
-    let targets = dataset.target();
-    let sample_num = samples.rows();
-    let feature_num = samples.cols();
+        let raw_samples = dataset.data();
+        let ones = Matrix::<f64>::ones(raw_samples.rows(), 1);
+        let samples = ones.hcat(raw_samples);
+        let targets = dataset.target();
+        let sample_num = samples.rows();
+        let feature_num = samples.cols();
 
-    let mut result = predict(model, samples);
+        let mut result = predict(model, samples);
 
-    for i in result.mut_data().into_iter() {
-        debug(&format!("{}", i));
+        for i in result.mut_data().into_iter() {
+            debug(&format!("{}", i));
+        }
+        let classes = result
+            .into_iter()
+            .map(|x| {
+                if x > 0.5 {
+                    return 1.0;
+                } else {
+                    return 0.0;
+                }
+            })
+            .collect::<Vec<_>>();
+        let matching = classes
+            .into_iter()
+            .zip(targets.into_iter())
+            .filter(|(a, b)| a == *b)
+            .count();
+
+        let result = format!("Matching classes is {}", matching);
+        debug(&result);
+
+        owasm_ethereum::ret(result.as_bytes());
     }
-    let classes = result
-        .into_iter()
-        .map(|x| {
-            if x > 0.5 {
-                return 1.0;
-            } else {
-                return 0.0;
-            }
-        })
-        .collect::<Vec<_>>();
-    let matching = classes
-        .into_iter()
-        .zip(targets.into_iter())
-        .filter(|(a, b)| a == *b)
-        .count();
-
-    let result = format!("Matching classes is {}", matching);
-    debug(&result);
-
-    pwasm_ethereum::ret(result.as_bytes());
 }
