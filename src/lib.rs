@@ -105,7 +105,7 @@ impl BatchHandler for EthereumBatchHandler {
     fn start_batch(&self, ctx: &mut RuntimeCallContext) {
         // Set max log level to Info (default: Trace) to reduce logger OCALLs.
         log::set_max_level(log::LevelFilter::Info);
-        
+
         // Obtain current root hash from the block header.
         let root_hash = ctx.header.state_root;
 
