@@ -9,11 +9,11 @@ contract Existing {
         dc = Deployed(_t);
     }
 
-    function getA() public view returns (uint result) {
+    function get_a() public view returns (uint result) {
         return dc.a();
     }
 
-    function setA(uint _val) public returns (uint result) {
+    function set_a(uint _val) public returns (uint result) {
         dc.setA(_val);
         return _val;
     }
