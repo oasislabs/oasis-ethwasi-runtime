@@ -1,3 +1,7 @@
+/// This file was generated with owasm-gen.
+/// See runtime-ethereum/contracts/cross_contract/rust/deployed for the
+/// associated contract.
+
 extern crate owasm_abi;
 extern crate owasm_abi_derive;
 extern crate owasm_ethereum;
