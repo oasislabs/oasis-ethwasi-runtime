@@ -25,8 +25,7 @@ trait ExistingRust {
     }
 
     fn set_a(&mut self, a: U256) {
-        let mut client = deployed_rust_client();
-        client.set_a(a);
+        deployed_rust_client().set_a(a);
     }
 }
 
