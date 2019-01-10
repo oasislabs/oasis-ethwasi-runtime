@@ -15,35 +15,21 @@ contract("CrossContractCall", (accounts) => {
 
   testCases.forEach((test) => {
     it(test[2], async () => {
-      let deployedArtifact = test[0];
-      let existingArtifact = test[1];
+      let deployedArtifact = test[0]
+      let existingArtifact = test[1]
 
-      const deployedContract = new web3.eth.Contract(deployedArtifact.abi);
-      let deployInstance = await deployedContract.deploy({
-        data: deployedArtifact.bytecode
-      }).send({
-        from: accounts[0]
-      });
+      let deployed = await deployedArtifact.new()
+      let prevA = await deployed.a()
+      assert.equal(prevA.toNumber(), 1, "Previous value is incorrect")
 
-      let prevA = await deployInstance.methods.a().call();
-      assert.equal(prevA, 1, "Previous value is incorrect");
+      let existing = await existingArtifact.new(deployed.address)
 
-      const existingContract = new web3.eth.Contract(existingArtifact.abi, undefined, {
-        from: accounts[0]
-      });
-      let existingInstance = await existingContract.deploy({
-        data: existingArtifact.bytecode,
-        arguments: [deployInstance.options.address]
-      }).send();
+	  prevA = await existing.get_a();
+	  assert.equal(prevA.toNumber(), 1, "Previous value is incorrect")
 
-      prevA = await existingInstance.methods.get_a().call();
-      assert.equal(prevA, 1, "Previous value is incorrect");
-
-      // remove gas param oncce this issue is addressed
-      // https://github.com/oasislabs/runtime-ethereum/issues/478
-      await existingInstance.methods.set_a(2).send({gas: '0x100000'});
-      let newA = await deployInstance.methods.a().call();
-      assert.equal(newA, 2, "Contract value was not updated")
-    });
-  });
-});
+      await existing.set_a(2)
+      let newA = await deployed.a()
+      assert.equal(newA.toNumber(), 2, "Contract value was not updated")
+    })
+  })
+})
