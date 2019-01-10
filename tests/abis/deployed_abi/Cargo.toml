@@ -8,6 +8,3 @@ owasm-abi = "0.1"
 owasm-abi-derive = "0.1"
 owasm-ethereum = "0.7"
 owasm-std = "0.13"
-
-[package.metadata.oasis]
-abi = true
