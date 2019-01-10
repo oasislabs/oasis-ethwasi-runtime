@@ -64,6 +64,6 @@ exclude = [
     "tests/contracts/basic_wasm_contract",
     "tests/contracts/rust-logistic-contract",
     "tests/contracts/storage_contract",
-   	"tests/contracts/cross_contract/rust/deployed",
-  	"tests/contracts/cross_contract/rust/existing",
+    "tests/contracts/cross_contract/rust/deployed",
+    "tests/contracts/cross_contract/rust/existing",
 ]
