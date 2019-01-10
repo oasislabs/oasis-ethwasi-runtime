@@ -24,8 +24,8 @@ contract("CrossContractCall", (accounts) => {
 
       let existing = await existingArtifact.new(deployed.address)
 
-	  prevA = await existing.get_a();
-	  assert.equal(prevA.toNumber(), 1, "Previous value is incorrect")
+      prevA = await existing.get_a();
+      assert.equal(prevA.toNumber(), 1, "Previous value is incorrect")
 
       await existing.set_a(2)
       let newA = await deployed.a()
