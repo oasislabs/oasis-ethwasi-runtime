@@ -8,7 +8,6 @@ const Builtins = artifacts.require("./Builtins.sol");
 contract("Builtins", async (accounts) => {
 
   let instance;
-  //const expectedSha256 = "0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
   const expectedSha256 = "0xdbc1b4c900ffe48d575b5da5c638040125f65db0fe3e24494b76ea986457d986";
 
   before(async () => {
@@ -16,12 +15,12 @@ contract("Builtins", async (accounts) => {
   });
 
   it("calls the sha256 method", async () => {
-    const result = await instance._sha256.call("0x2");
+    const result = await instance._sha256.call("0x02");
     assert.equal(result, expectedSha256);
   });
 
   it("calls the sha256 event", async () => {
-    const result = await instance._sha256Event("0x2");
+    const result = await instance._sha256Event("0x02");
     const hashResult = result.logs[0].args.hash;
     assert.equal(hashResult, expectedSha256);
   });

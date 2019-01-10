@@ -1,4 +1,4 @@
-const BasicWasm = artifacts.require("BasicWasm")
+const BasicWasm = artifacts.require("BasicWasm");
 
 const Web3 = require("web3");
 const web3 = new Web3(BasicWasm.web3.currentProvider);
