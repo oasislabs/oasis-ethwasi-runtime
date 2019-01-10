@@ -1,4 +1,4 @@
-//#![no_std]
+#![no_std]
 #![feature(proc_macro_gen)]
 
 extern crate deployed_abi;
