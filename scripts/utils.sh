@@ -42,8 +42,8 @@ run_compute_node() {
 
     echo "Starting compute node ${id} on port ${port}."
 
-    ekiden-compute \
-        --worker-path $(which ekiden-worker) \
+    ${WORKDIR}/ekiden-compute \
+        --worker-path ${WORKDIR}/ekiden-worker \
         --worker-cache-dir ${cache_dir} \
         --no-persist-identity \
         --storage-backend multilayer \
@@ -104,7 +104,7 @@ run_keymanager_node() {
     local storage_dir=/tmp/ekiden-storage-persistent-keymanager
     rm -rf ${storage_dir}
 
-    ekiden-keymanager-node \
+    ${WORKDIR}/ekiden-keymanager-node \
         --enclave $KM_ENCLAVE \
         --node-key-pair $KM_CERT \
         --storage-backend dummy \
