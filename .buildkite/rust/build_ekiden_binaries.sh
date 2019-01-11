@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ############################################################
-# This script builds the ekiden binaries.
+# This script builds the ekiden binaries used in e2e tests.
 #
 # Usage:
 # build_ekiden_binaries.sh <out_dir>
@@ -52,3 +52,10 @@ cargo install \
     --branch master \
     --debug \
     ekiden-keymanager-node
+
+###############################
+# Copy the binaries to out_dir.
+###############################
+cp $CARGO_INSTALL_ROOT/bin/ekiden-compute $out_dir
+cp $CARGO_INSTALL_ROOT/bin/ekiden-worker $out_dir
+cp $CARGO_INSTALL_ROOT/bin/ekiden-keymanager-node $out_dir
