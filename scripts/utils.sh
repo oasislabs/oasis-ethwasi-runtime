@@ -1,66 +1,161 @@
-#!/bin/bash -e
+################################
+# Common functions for E2E tests
+################################
 
-WORKDIR=${1:-$(pwd)}
+# TODO: Share these with ekiden.
+
+# Temporary test base directory.
+TEST_BASE_DIR=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)
 
 # Key manager variables shared between the compute node, gateway, and key manager
-KM_CERT="/tmp/km.key"
+KM_KEY="${WORKDIR}/tests/keymanager/km.key"
+KM_CERT="${WORKDIR}/tests/keymanager/km.pem"
 KM_HOST="127.0.0.1"
 KM_PORT="9003"
 KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave
 KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
 
-run_dummy_node_go_tm() {
-    local datadir=/tmp/ekiden-dummy-data
-    rm -rf ${datadir}
+# Run a Tendermint validator committee and a storage node.
+#
+# Sets EKIDEN_TM_GENESIS_FILE and EKIDEN_STORAGE_PORT.
+run_backend_tendermint_committee() {
+    local base_datadir=${TEST_BASE_DIR}/committee-data
+    local validator_files=""
+    let nodes=3
 
-    echo "Starting Go dummy node."
+    # Provision the validators.
+    for idx in $(seq 1 $nodes); do
+        local datadir=${base_datadir}-${idx}
+        rm -rf ${datadir}
+
+        let port=(idx-1)+26656
+        ${WORKDIR}/ekiden-node \
+            tendermint provision_validator \
+            --datadir ${datadir} \
+            --node_addr 127.0.0.1:${port} \
+            --node_name ekiden-committee-node-${idx} \
+            --validator_file ${datadir}/validator.json
+        validator_files="$validator_files $datadir/validator.json"
+    done
+
+    # Create the genesis document.
+    local genesis_file=${TEST_BASE_DIR}/genesis.json
+    rm -Rf ${genesis_file}
 
     ${WORKDIR}/ekiden-node \
-        --log.level debug \
-        --grpc.port 42261 \
-        --epochtime.backend tendermint_mock \
-        --beacon.backend insecure \
-        --storage.backend memory \
-        --scheduler.backend trivial \
-        --registry.backend tendermint \
-        --roothash.backend tendermint \
-        --tendermint.consensus.timeout_commit 250ms \
-        --datadir ${datadir} \
-        &> dummy-go.log &
+        tendermint init_genesis \
+        --genesis_file ${genesis_file} \
+        ${validator_files}
+
+    # Run the storage node.
+    local storage_datadir=${TEST_BASE_DIR}/storage
+    local storage_port=60000
+    rm -Rf ${storage_datadir}
+
+    ${WORKDIR}/ekiden-node \
+        storage node \
+        --datadir ${storage_datadir} \
+        --grpc.port ${storage_port} \
+        --log.file ${TEST_BASE_DIR}/storage.log \
+        &
+
+    # Run the validator nodes.
+    for idx in $(seq 1 $nodes); do
+        local datadir=${base_datadir}-${idx}
+
+        let grpc_port=(idx-1)+42261
+        let tm_port=(idx-1)+26656
+
+        ${WORKDIR}/ekiden-node \
+            --log.level debug \
+            --log.file ${TEST_BASE_DIR}/validator-${idx}.log \
+            --grpc.port ${grpc_port} \
+            --grpc.log.verbose_debug \
+            --epochtime.backend tendermint_mock \
+            --beacon.backend tendermint \
+            --metrics.mode none \
+            --storage.backend client \
+            --storage.client.address 127.0.0.1:${storage_port} \
+            --scheduler.backend trivial \
+            --registry.backend tendermint \
+            --roothash.backend tendermint \
+            --tendermint.core.genesis_file ${genesis_file} \
+            --tendermint.core.listen_address tcp://0.0.0.0:${tm_port} \
+            --tendermint.consensus.timeout_commit 250ms \
+            --tendermint.log.debug \
+            --datadir ${datadir} \
+            &
+    done
+
+    # Export some variables so compute workers can find them.
+    EKIDEN_STORAGE_PORT=${storage_port}
+    EKIDEN_TM_GENESIS_FILE=${genesis_file}
 }
 
+# Run a compute node.
+#
+# Requires that EKIDEN_TM_GENESIS_FILE and EKIDEN_STORAGE_PORT are
+# set. Exits with an error otherwise.
+#
+# Arguments:
+#   id - compute node index
+#
+# Any additional arguments are passed to the Go node.
 run_compute_node() {
     local id=$1
     shift
     local extra_args=$*
 
-    local cache_dir=/tmp/ekiden-test-worker-cache-$id
+    # Ensure the genesis file and storage port are available.
+    if [[ "${EKIDEN_TM_GENESIS_FILE:-}" == "" || "${EKIDEN_STORAGE_PORT:-}" == "" ]]; then
+        echo "ERROR: Tendermint genesis and/or storage port file not configured. Did you use run_backend_tendermint_committee?"
+        exit 1
+    fi
+
+    local data_dir=${TEST_BASE_DIR}/worker-$id
+    rm -rf ${data_dir}
+    local cache_dir=${TEST_BASE_DIR}/worker-cache-$id
     rm -rf ${cache_dir}
+    local log_file=${TEST_BASE_DIR}/worker-$id.log
 
     # Generate port number.
-    let "port=id + 10000"
+    let grpc_port=id+10000
+    let client_port=id+11000
+    let p2p_port=id+12000
+    let tm_port=id+13000
 
-    echo "Starting compute node ${id} on port ${port}."
-
-    ${WORKDIR}/ekiden-compute \
-        --worker-path ${WORKDIR}/ekiden-worker \
-        --worker-cache-dir ${cache_dir} \
-        --no-persist-identity \
-        --storage-backend multilayer \
-        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent_${id} \
-        --storage-multilayer-bottom-backend remote \
-        --max-batch-timeout 100 \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --key-manager-cert $KM_CERT \
-        --key-manager-host $KM_HOST \
-        --key-manager-port $KM_PORT \
-        --port ${port} \
-        ${extra_args} \
-        ${WORKDIR}/target/enclave/runtime-ethereum.so &> compute${id}.log &
+    ${WORKDIR}/ekiden-node \
+        --log.level debug \
+        --grpc.port ${grpc_port} \
+        --grpc.log.verbose_debug \
+        --storage.backend client \
+        --storage.client.address 127.0.0.1:${EKIDEN_STORAGE_PORT} \
+        --epochtime.backend tendermint_mock \
+        --beacon.backend tendermint \
+        --metrics.mode none \
+        --scheduler.backend trivial \
+        --registry.backend tendermint \
+        --roothash.backend tendermint \
+        --tendermint.core.genesis_file ${EKIDEN_TM_GENESIS_FILE} \
+        --tendermint.core.listen_address tcp://0.0.0.0:${tm_port} \
+        --tendermint.consensus.timeout_commit 250ms \
+        --tendermint.log.debug \
+        --worker.backend sandboxed \
+        --worker.binary ${WORKDIR}/ekiden-worker \
+        --worker.cache_dir ${cache_dir} \
+        --worker.runtime.binary ${WORKDIR}/target/enclave/runtime-ethereum.so \
+        --worker.runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
+        --worker.client.port ${client_port} \
+        --worker.p2p.port ${p2p_port} \
+        --worker.leader.max_batch_timeout 100ms \
+        --worker.key_manager.address ${KM_HOST}:${KM_PORT} \
+        --worker.key_manager.certificate ${KM_CERT} \
+        --datadir ${data_dir} \
+        ${extra_args} 2>&1 | tee ${log_file} | sed "s/^/[compute-node-${id}] /" &
 }
 
 run_compute_committee() {
-    args="--compute-replicas 2 --compute-backup-replicas 2"
+    args="--worker.runtime.replica_group_size 2 --worker.runtime.replica_group_backup_size 2"
     run_compute_node 1 $args
     sleep 1
     run_compute_node 2 $args
@@ -77,36 +172,37 @@ run_gateway() {
     local id=$1
 
     # Generate port numbers.
-    let "http_port=id + 8544"
-    let "ws_port=id + 8554"
-    let "prometheus_port=id + 3000"
+    let http_port=id+8544
+    let ws_port=id+8554
+    let prometheus_port=id+3000
 
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
-    target/debug/gateway \
+    ${WORKDIR}/target/debug/gateway \
         --storage-backend multilayer \
-        --storage-multilayer-local-storage-base /tmp/ekiden-storage-persistent-gateway_${id} \
+        --storage-multilayer-local-storage-base ${TEST_BASE_DIR}/storage-persistent-gateway_${id} \
         --storage-multilayer-bottom-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
+        --test-runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
         --threads 100 \
         --ws-port ${ws_port} \
-        --key-manager-cert $KM_CERT \
+        --key-manager-cert $KM_KEY \
         --key-manager-host $KM_HOST \
         --key-manager-port  $KM_PORT \
         --key-manager-mrenclave $(cat ${KM_MRENCLAVE}) \
         --prometheus-metrics-addr 0.0.0.0:${prometheus_port} \
-        --prometheus-mode pull &> gateway${id}.log &
+        --prometheus-mode pull 2>&1 | tee ${TEST_BASE_DIR}/gateway-$id.log | sed "s/^/[gateway-${id}] /" &
 }
 
 run_keymanager_node() {
     local extra_args=$*
 
-    local storage_dir=/tmp/ekiden-storage-persistent-keymanager
+    local storage_dir=${TEST_BASE_DIR}/storage-persistent-keymanager
     rm -rf ${storage_dir}
 
     ${WORKDIR}/ekiden-keymanager-node \
         --enclave $KM_ENCLAVE \
-        --node-key-pair $KM_CERT \
+        --node-key-pair $KM_KEY \
         --storage-backend dummy \
         --storage-path ${storage_dir} \
         ${extra_args} &
