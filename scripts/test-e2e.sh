@@ -45,7 +45,7 @@ run_test() {
 
     # Subscribe to logs from gateway 2, and check that we get a log result
     echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 300 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+    RESULT=`wscat --connect localhost:8556 -w 200 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
 
     # Check truffle test exit code
     wait $truffle_pid
