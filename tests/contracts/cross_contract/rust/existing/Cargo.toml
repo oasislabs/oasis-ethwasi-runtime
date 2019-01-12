@@ -1,0 +1,19 @@
+[package]
+name = "existing"
+version = "0.1.0"
+authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
+
+[dependencies]
+owasm-ethereum = "0.7"
+owasm-abi = "0.1"
+owasm-abi-derive = "0.1"
+owasm-std = "0.13"
+deployed-abi = { path = "../../../../abis/deployed_abi" }
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+panic = "abort"
+lto = true
+opt-level = "z"
