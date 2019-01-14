@@ -125,3 +125,15 @@ fn random_nonce() -> Vec<u8> {
     let mut nonce = [0u8; NONCE_SIZE];
     nonce.to_vec()
 }
+
+/// 4-byte prefix prepended to all confidential contract bytecode.
+const CONFIDENTIAL_PREFIX: &'static [u8; 4] = b"\0enc";
+
+/// Returns true if the payload has the confidential prefix.
+pub fn has_confidential_prefix(data: &[u8]) -> bool {
+    if data.len() < CONFIDENTIAL_PREFIX.len() {
+        return false;
+    }
+    let prefix = &data[..CONFIDENTIAL_PREFIX.len()];
+    return prefix == CONFIDENTIAL_PREFIX;
+}
