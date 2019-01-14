@@ -27,7 +27,7 @@ build_rpc_trait! {
 pub struct PublicKeyResult {
     /// Public key of the contract
     pub public_key: Bytes,
-    /// Time at which the key was issued
+    /// Time at which the key expires.
     pub timestamp: u64,
     /// Signature from the key manager authenticating the public key,
     /// i.e., Sign(ssk, (pk, t).

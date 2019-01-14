@@ -923,21 +923,15 @@ impl Client {
         let contract_id: ContractId =
             ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
 
-        let public_key = EkidenKeyManager::instance()
+        let public_key_payload = EkidenKeyManager::instance()
             .expect("Should always have an key manager client")
             .get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
-        // TODO: V1 should be issued by the key manager
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
         Ok(PublicKeyResult {
-            public_key: RpcBytes::from(public_key.to_vec()),
-            timestamp: timestamp,
-            signature: RpcBytes::from(B512::from(2).to_vec()), // todo: v1
+            public_key: RpcBytes::from(public_key_payload.public_key.to_vec()),
+            timestamp: public_key_payload.timestamp,
+            signature: RpcBytes::from(public_key_payload.signature.to_vec()),
         })
     }
 }
