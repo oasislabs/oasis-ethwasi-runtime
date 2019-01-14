@@ -70,11 +70,11 @@ impl ChainNotify for MockNotificationHandler {
 pub fn get_test_runtime_client() -> runtime_ethereum::Client {
     let mut known_components = KnownComponents::new();
     ekiden_core::environment::GrpcEnvironment::register(&mut known_components);
+    ekiden_core::remote_node::RemoteNodeInfo::register(&mut known_components);
     ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
     ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
     ekiden_roothash_client::RootHashClient::register(&mut known_components);
     ekiden_storage_frontend::StorageClient::register(&mut known_components);
-
     let args = App::new("testing")
         .arg(
             Arg::with_name("grpc-threads")
