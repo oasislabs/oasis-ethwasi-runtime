@@ -70,24 +70,12 @@ impl ChainNotify for MockNotificationHandler {
 pub fn get_test_runtime_client() -> runtime_ethereum::Client {
     let mut known_components = KnownComponents::new();
     ekiden_core::environment::GrpcEnvironment::register(&mut known_components);
+    ekiden_core::remote_node::RemoteNodeInfo::register(&mut known_components);
     ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
     ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
     ekiden_roothash_client::RootHashClient::register(&mut known_components);
     ekiden_storage_frontend::StorageClient::register(&mut known_components);
-
     let args = App::new("testing")
-        .arg(
-            Arg::with_name("entity-registry-client-host")
-                .long("entity-registry-client-host")
-                .takes_value(true)
-                .default_value("127.0.0.1"),
-        )
-        .arg(
-            Arg::with_name("entity-registry-client-port")
-                .long("entity-registry-client-port")
-                .takes_value(true)
-                .default_value("42261"),
-        )
         .arg(
             Arg::with_name("grpc-threads")
                 .long("grpc-threads")
@@ -101,26 +89,14 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
                 .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
         )
         .arg(
-            Arg::with_name("roothash-client-host")
-                .long("roothash-client-host")
+            Arg::with_name("node-host")
+                .long("node-host")
                 .takes_value(true)
                 .default_value("127.0.0.1"),
         )
         .arg(
-            Arg::with_name("roothash-client-port")
-                .long("roothash-client-port")
-                .takes_value(true)
-                .default_value("42261"),
-        )
-        .arg(
-            Arg::with_name("scheduler-client-host")
-                .long("scheduler-client-host")
-                .takes_value(true)
-                .default_value("127.0.0.1"),
-        )
-        .arg(
-            Arg::with_name("scheduler-client-port")
-                .long("scheduler-client-port")
+            Arg::with_name("node-port")
+                .long("node-port")
                 .takes_value(true)
                 .default_value("42261"),
         )
