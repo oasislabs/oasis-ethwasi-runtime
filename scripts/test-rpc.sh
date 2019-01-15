@@ -9,8 +9,8 @@ source scripts/utils.sh
 trap 'cleanup' EXIT
 
 run_test() {
-    # Start dummy node.
-    run_dummy_node_go_tm
+    # Start validator committee.
+    run_backend_tendermint_committee
     sleep 1
     # Start keymanager node.
     run_keymanager_node

@@ -1,9 +1,9 @@
 #!/bin/bash -eux
 
-source scripts/utils.sh
-
 WORKDIR=${1:-$(pwd)}
 echo ${WORKDIR}
+
+source scripts/utils.sh
 
 echo "Installing test dependencies"
 pushd ${WORKDIR}/tests/ > /dev/null
