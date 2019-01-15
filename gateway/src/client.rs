@@ -14,7 +14,7 @@ use ethcore::ids::{BlockId, TransactionId};
 use ethcore::receipt::LocalizedReceipt;
 use ethcore::rlp;
 use ethcore::spec::Spec;
-use ethcore::transaction::UnverifiedTransaction;
+use ethcore::transaction::{Transaction, UnverifiedTransaction};
 use ethcore::vm::{EnvInfo, LastHashes};
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
@@ -23,6 +23,7 @@ use grpcio;
 use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
+use runtime_ethereum_common::confidential::has_confidential_prefix;
 use runtime_ethereum_common::State as EthState;
 use std::time::{SystemTime, UNIX_EPOCH};
 use traits::confidential::PublicKeyResult;
@@ -783,7 +784,7 @@ impl Client {
                 return Err(CallError::StateCorrupt);
             }
         };
-        let mut state = match db.get_ethstate_at(id) {
+        let state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
                 error!("Could not get state snapshot");
@@ -871,8 +872,9 @@ impl Client {
         }
     }
 
-    /// Checks that transaction is well formed, meets min gas price, and that signature is valid.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<(), String> {
+    /// Checks that transaction is well formed, meets min gas price, and that signature
+    /// is valid. Returns the decoded Transaction, or an error message.
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Transaction, String> {
         // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
@@ -891,7 +893,7 @@ impl Client {
             _ => (),
         }
 
-        Ok(())
+        Ok(unsigned.clone())
     }
 
     /// Submit raw transaction to the current leader.
@@ -899,22 +901,29 @@ impl Client {
     /// This method returns immediately and does not wait for the transaction to
     /// be confirmed.
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
-        if let Err(error) = self.precheck_transaction(&raw) {
-            return future::err(Error::new(error)).into_box();
+        let transaction = match self.precheck_transaction(&raw) {
+            Ok(transaction) => transaction,
+            Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
         record_runtime_call_result(
             "execute_raw_transaction",
-            self.client.execute_raw_transaction(raw).and_then(|result| {
-                if result.created_contract {
-                    measure_counter_inc!("contract_created");
-                }
+            self.client
+                .execute_raw_transaction(raw)
+                .and_then(move |result| {
+                    if result.created_contract {
+                        measure_counter_inc!("contract_created");
 
-                result.hash.map_err(|error| {
-                    info!("execute_raw_transaction error: {:?}", error);
-                    Error::new(error)
-                })
-            }),
+                        if has_confidential_prefix(&transaction.data) {
+                            measure_counter_inc!("confidential_contract_created");
+                        }
+                    }
+
+                    result.hash.map_err(|error| {
+                        info!("execute_raw_transaction error: {:?}", error);
+                        Error::new(error)
+                    })
+                }),
         )
     }
 
