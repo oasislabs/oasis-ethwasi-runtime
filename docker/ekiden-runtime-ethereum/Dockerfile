@@ -1,4 +1,5 @@
-# TODO: add arg to override this default image
+ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest
+
 FROM oasislabs/development:0.2.0 as builder
 
 # Add metadata identifying this image as an
@@ -85,13 +86,7 @@ RUN eval $(ssh-agent -s) && \
     CARGO_TARGET_DIR=/workdir/runtime-ethereum/target \
     cargo build -p web3-gateway --release
 
-ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest
-
-# TODO: Debug why this errored out with message: "invalid reference format"
-# FROM docker.io/oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG}
-
-# TODO: replace hardcoded "latest" tag with an ARG. See previous TODO.
-FROM docker.io/oasislabs/testnet:latest
+FROM docker.io/oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG}
 
 ARG RUNTIME_ETHEREUM_COMMIT_SHA
 ARG RUNTIME_ETHEREUM_BUILD_IMAGE_TAG
