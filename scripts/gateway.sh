@@ -29,7 +29,9 @@ sleep 1
 run_compute_node 1
 sleep 1
 run_compute_node 2
-sleep 2
+
+# Wait for all nodes to register.
+${EKIDEN_NODE} debug dummy wait-nodes --nodes 2
 
 # Advance epoch to elect a new committee.
 ${EKIDEN_NODE} debug dummy set-epoch --epoch 1
