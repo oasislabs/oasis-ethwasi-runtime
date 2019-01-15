@@ -1,4 +1,5 @@
-use ekiden_core::mrae::sivaessha2::{SivAesSha2, KEY_SIZE, NONCE_SIZE};
+use ekiden_core::mrae::{nonce::{Nonce, NONCE_SIZE},
+                        sivaessha2::{SivAesSha2, KEY_SIZE}};
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
 use ekiden_keymanager_common::{confidential, ContractId, ContractKey, PublicKeyType};
 use ethcore::state::ConfidentialCtx as EthConfidentialCtx;
@@ -9,15 +10,24 @@ use keccak_hash::keccak;
 const CONFIDENTIAL_PREFIX: &'static [u8; 4] = b"\0enc";
 
 /// Facade for the underlying confidential contract services to be injected into
-/// the parity state. Manages the current keys to be encrypting under.
+/// the parity state. Manages the confidential state--i.e., encryption keys and
+/// nonce to use--to be encrypting under for a *single* transaction. Each
+/// transaction for a confidential contract should have it's own ConfidentialCtx
+/// that is closed at the end of the transaction's execution.
 pub struct ConfidentialCtx {
-    /// The peer public key used for encryption. This should not change for an open
-    /// confidential context. This is implicitly set by the `open` method.
+    /// The peer public key used for encryption. This should not change for an
+    /// open confidential context. This is implicitly set by the `open` method.
     peer_public_key: Option<PublicKeyType>,
-    /// The contract address and keys used for encryption. These keys may be swapped in
-    /// an open confidential context, facilitating a confidential context switch to
-    /// encrypt for the *same user* but under a different contract.
+    /// The contract address and keys used for encryption. These keys may be
+    /// swapped in an open confidential context, facilitating a confidential
+    /// context switch to encrypt for the *same user* but under a different
+    /// contract.
     contract_key: Option<ContractKey>,
+    /// The next nonce to use when encrypting a message to `peer_public_key`.
+    /// This starts at the nonce+1 given by the `encrypted_tx_data` param in the
+    /// `open_tx_data` fn. Then, throughout the context, is incremented each
+    /// time a message is encrypted to the `peer_public_key`.
+    next_nonce: Option<Nonce>,
 }
 
 impl ConfidentialCtx {
@@ -25,6 +35,7 @@ impl ConfidentialCtx {
         Self {
             peer_public_key: None,
             contract_key: None,
+            next_nonce: None,
         }
     }
 
@@ -37,6 +48,12 @@ impl ConfidentialCtx {
         let decryption = confidential::decrypt(Some(encrypted_tx_data), &contract_secret_key)
             .map_err(|err| err.description().to_string())?;
         self.peer_public_key = Some(decryption.peer_public_key);
+
+        let mut nonce = decryption.nonce;
+        nonce
+            .increment()
+            .map_err(|err| err.description().to_string())?;
+        self.next_nonce = Some(nonce);
 
         Ok(decryption.plaintext)
     }
@@ -72,22 +89,32 @@ impl EthConfidentialCtx for ConfidentialCtx {
         self.contract_key = None;
     }
 
-    fn encrypt(&self, data: Vec<u8>) -> Result<Vec<u8>, String> {
-        if self.peer_public_key.is_none() || self.contract_key.is_none() {
-            return Err("must have key pair of a contract and peer".to_string());
+    fn encrypt(&mut self, data: Vec<u8>) -> Result<Vec<u8>, String> {
+        if self.peer_public_key.is_none() || self.contract_key.is_none()
+            || self.next_nonce.is_none()
+        {
+            return Err("must have key pair of a contract and peer and a next nonce".to_string());
         }
 
         let contract_key = &self.contract_key.as_ref().unwrap();
         let contract_pk = contract_key.input_keypair.get_pk();
         let contract_sk = contract_key.input_keypair.get_sk();
 
-        confidential::encrypt(
+        let encrypted_payload = confidential::encrypt(
             data,
-            random_nonce(),
+            self.next_nonce.clone().unwrap(),
             self.peer_public_key.clone().unwrap(),
             &contract_pk,
             &contract_sk,
-        ).map_err(|err| err.description().to_string())
+        ).map_err(|err| err.description().to_string());
+
+        self.next_nonce
+            .as_mut()
+            .unwrap()
+            .increment()
+            .map_err(|err| err.description().to_string())?;
+
+        encrypted_payload
     }
 
     fn encrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>, String> {
@@ -151,7 +178,8 @@ impl KeyManager {
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
 
         // first create the keys
-        km.get_or_create_secret_keys(contract_id);
+        km.get_or_create_secret_keys(contract_id)
+            .map_err(|err| err.description().to_string())?;
         // then extract the long term key
         km.get_public_key(contract_id)
             .map_err(|err| err.description().to_string())
@@ -173,11 +201,6 @@ impl KeyManager {
             state_key,
         ))
     }
-}
-
-fn random_nonce() -> Vec<u8> {
-    let mut nonce = [0u8; NONCE_SIZE];
-    nonce.to_vec()
 }
 
 /// Returns true if the payload has the confidential prefix.
