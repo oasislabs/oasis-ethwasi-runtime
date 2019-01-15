@@ -2,6 +2,10 @@
 
 WORKDIR=${1:-$(pwd)}
 
+# Helpful tips on writing build scripts:
+# https://buildkite.com/docs/pipelines/writing-build-scripts
+set -euxo pipefail
+
 source scripts/utils.sh
 
 # Ensure cleanup on exit.
@@ -9,8 +13,7 @@ source scripts/utils.sh
 trap 'cleanup' EXIT
 
 run_test() {
-    local dummy_node_runner=$1
-
+    # Start keymanager node.
     run_keymanager_node
     sleep 1
 
@@ -22,20 +25,20 @@ run_test() {
     run_gateway 2
     sleep 3
 
-    # Start dummy node.
-    $dummy_node_runner
+    # Start validator committee.
+    run_backend_tendermint_committee
     sleep 1
 
     # Start compute nodes.
     run_compute_committee
-    sleep 3
+    sleep 1
 
     # Advance epoch to elect a new committee.
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
-    # Run truffle tests against gateway 1 (in background)
+    # Run truffle tests against gateway 1 (in background).
     echo "Running truffle tests."
-    pushd ${WORKDIR}/tests/ > /dev/null
+    pushd ${WORKDIR}/tests > /dev/null
     # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
     # correct rust contract artifacts. Can remove this once the following is
     # addressed: https://github.com/oasislabs/oasis-compile/issues/44
@@ -43,21 +46,25 @@ run_test() {
     npm test & truffle_pid=$!
     popd > /dev/null
 
-    # Subscribe to logs from gateway 2, and check that we get a log result
+    # Subscribe to logs from gateway 2, and check that we get a log result. We run
+    # wscat in the background so that we can check results as soon as the tests
+    # have completed instead of waiting for the fixed timeout to expire.
     echo "Subscribing to log notifications."
-    RESULT=`wscat --connect localhost:8556 -w 200 -x "{\"id\": 1, \"jsonrpc\":\"2.0\", \"method\": \"eth_subscribe\", \"params\": [\"logs\", { \"fromBlock\": \"latest\", \"toBlock\": \"latest\" }]}" | jq -e .params.result.transactionHash` || exit 1
+    wscat \
+        --connect localhost:8556 \
+        -w 300 \
+        -x '{"id": 1, "jsonrpc":"2.0", "method": "eth_subscribe", "params": ["logs", {"fromBlock": "latest", "toBlock": "latest"}]}' \
+        | tee ${TEST_BASE_DIR}/wscat.log &
 
-    # Check truffle test exit code
+    # Wait for truffle tests, ensure they did not fail.
     wait $truffle_pid
-    truffle_ret=$?
-    if [ $truffle_ret -ne 0 ]; then
-        echo "truffle test failed"
-        exit $truffle_ret
-    fi
 
-    # Dump the metrics.
+    # Check that there are transaction hashes in the output log.
+    jq -e .params.result.transactionHash ${TEST_BASE_DIR}/wscat.log
+
+    # Dump the metrics from both gateways.
     curl -v http://localhost:3001/metrics
     curl -v http://localhost:3002/metrics
 }
 
-run_test run_dummy_node_go_tm
+run_test

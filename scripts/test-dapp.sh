@@ -16,7 +16,7 @@ source scripts/utils.sh $WORKDIR
 trap 'cleanup' EXIT
 
 run_test() {
-    run_dummy_node_go_tm
+    run_backend_tendermint_committee
     sleep 1
     run_keymanager_node
     sleep 1

@@ -10,6 +10,9 @@ use rand::{OsRng as TheRng, Rng};
 #[cfg(target_env = "sgx")]
 use sgx_rand::{Rng, SgxRng as TheRng};
 
+/// 4-byte prefix prepended to all confidential contract bytecode.
+const CONFIDENTIAL_PREFIX: &'static [u8; 4] = b"\0enc";
+
 /// Facade for the underlying confidential contract services to be injected into
 /// the parity state. Manages the current keys to be encrypting under.
 pub struct ConfidentialCtx {
@@ -124,4 +127,13 @@ impl KeyManager {
 fn random_nonce() -> Vec<u8> {
     let mut nonce = [0u8; NONCE_SIZE];
     nonce.to_vec()
+}
+
+/// Returns true if the payload has the confidential prefix.
+pub fn has_confidential_prefix(data: &[u8]) -> bool {
+    if data.len() < CONFIDENTIAL_PREFIX.len() {
+        return false;
+    }
+    let prefix = &data[..CONFIDENTIAL_PREFIX.len()];
+    return prefix == CONFIDENTIAL_PREFIX;
 }
