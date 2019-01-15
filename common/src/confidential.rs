@@ -108,7 +108,7 @@ impl KeyManager {
         // then extract the long term key
         km.get_public_key(contract_id)
             .map_err(|err| err.description().to_string())
-            .map(|key| key.to_vec())
+            .map(|key_payload| key_payload.public_key.to_vec())
     }
 
     fn contract_keypair(address: Address) -> Result<(PublicKeyType, PrivateKeyType), String> {
@@ -117,10 +117,10 @@ impl KeyManager {
 
         let (secret_key, _state_key) = km.get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
-        let public_key = km.get_public_key(contract_id)
+        let public_key_payload = km.get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
-        Ok((public_key, secret_key))
+        Ok((public_key_payload.public_key, secret_key))
     }
 }
 
