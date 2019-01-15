@@ -34,14 +34,13 @@ You should install the correct versions (e.g., the same that you build against i
 of the Ekiden compute node:
 ```bash
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
-$ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-compute
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-worker
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-keymanager-node
 ```
 
 If you later need to update them to a new version use the `--force` flag to update.
 
-You also need the Go dummy node:
+You also need the Go node:
 ```bash
 $ mkdir -p /go/src/github.com/oasislabs
 $ cd /go/src/github.com/oasislabs
@@ -80,80 +79,10 @@ $ cargo build
 
 ## Running
 
-*Easy mode*:
-
-To start the shared dummy node, two compute nodes, and a single gateway running on port 8545:
+To start a validator committee, two compute nodes, and a single gateway running on port 8545:
 ```bash
 $ ./scripts/gateway.sh
 ```
-
-*Hard mode*:
-
-You need to run multiple Ekiden services, so it is recommended to run each of these in a
-separate container shell, attached to the same container.
-
-To start the shared dummy node:
-```bash
-$ ekiden \
-    --log.level debug \
-    --grpc.port 42261 \
-    --epochtime.backend tendermint \
-    --epochtime.tendermint.interval 30 \
-    --beacon.backend tendermint \
-    --storage.backend memory \
-    --scheduler.backend trivial \
-    --registry.backend tendermint \
-    --roothash.backend tendermint \
-    --datadir /tmp/ekiden-dummy-data
-```
-
-To start the key manager node:
-```bash
-ekiden-keymanager-node -- \
-    --enclave target/enclave/ekiden-keymanager-trusted.so \
-    --storage-backend dummy \
-    --node-key-pair /tmp/keymanager.key
-```
-
-To start the compute node (you need to start at least two, on different ports):
-```bash
-$ ekiden-compute \
-    --worker-path $(which ekiden-worker) \
-    --worker-cache-dir <cache directory, e.g., /tmp/ekiden-worker-cache-id> \
-    --no-persist-identity \
-    --storage-backend multilayer \
-    --storage-multilayer-local-storage-base <storage directory, e.g., /tmp/ekiden-storage-id> \
-    --storage-multilayer-bottom-backend remote \
-    --max-batch-timeout 100 \
-    --entity-ethereum-address 0000000000000000000000000000000000000000 \
-    --port <port number> \
-    --key-manager-host <key-manager host> \
-    --key-manager-port <key-manager port> \
-    --key-manager-cert /tmp/keymanager.key
-    target/enclave/runtime-ethereum.so
-```
-
-The compute node will listen on `127.0.0.1` (loopback), TCP port `9001` by default.
-
-To start the gateway:
-```bash
-$ target/debug/gateway \
-    --storage-backend multilayer \
-    --storage-multilayer-local-storage-base /tmp/ekiden-storage-gateway \
-    --storage-multilayer-bottom-backend remote \
-    --mr-enclave <mr-enclave> \
-    --threads <number of threads for http server> \
-    --key-manager-host <key-manager host> \
-    --key-manager-port <key-manager port> \
-    --key-manager-cert /tmp/keymanager.key \
-    --key-manager-mrenclave $(cat <ekiden-keymanager-trusted.mrenclave path>)
-```
-
-For `<mr-enclave>` you can use the value reported when starting the compute node.
-
-Development notes:
-
-* If you are changing things, be sure to either use the `--no-persist-identity` flag or remove the referenced enclave identity file (e.g., `/tmp/runtime-ethereum.identity.pb`). Otherwise the compute node will fail to start as it will be impossible to unseal the old identity.
 
 ## Benchmarking
 
