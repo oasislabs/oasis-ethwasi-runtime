@@ -50,7 +50,6 @@ steps:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_ekiden_binaries.sh /tmp/artifacts
       - cd /tmp/artifacts
-      - buildkite-agent artifact upload ekiden-compute
       - buildkite-agent artifact upload ekiden-worker
       - buildkite-agent artifact upload ekiden-keymanager-node
     plugins:

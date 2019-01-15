@@ -22,8 +22,6 @@ set -euxo pipefail
 ######################
 buildkite-agent artifact download ekiden-node .
 chmod +x ekiden-node
-buildkite-agent artifact download ekiden-compute .
-chmod +x ekiden-compute
 buildkite-agent artifact download ekiden-worker .
 chmod +x ekiden-worker
 buildkite-agent artifact download ekiden-keymanager-node .
