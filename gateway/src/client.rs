@@ -655,6 +655,32 @@ impl Client {
         }
     }
 
+    pub fn storage_expiry(&self, address: &Address) -> BoxFuture<u64> {
+        match self.get_db_snapshot() {
+            Some(db) => {
+                if let Some(state) = db.get_ethstate_at(BlockId::Latest) {
+                    match state.storage_expiry(&address) {
+                        Ok(timestamp) => future::ok(timestamp).into_box(),
+                        Err(e) => {
+                            measure_counter_inc!("read_state_failed");
+                            error!("Could not get storage expiry from ethstate: {:?}", e);
+                            future::err(Error::new("Could not get storage expiry")).into_box()
+                        }
+                    }
+                } else {
+                    future::err(Error::new("Unknown block")).into_box()
+                }
+            }
+            None => {
+                // Fall back to runtime call if database has not been initialized.
+                // TODO: runtime call
+                future::err(Error::new(
+                    "oasis_getStorageExpiry runtime call not implemented",
+                )).into_box()
+            }
+        }
+    }
+
     fn last_hashes<T>(db: &StateDb<T>, parent_hash: &H256) -> Arc<LastHashes>
     where
         T: 'static + Database + Send + Sync,
