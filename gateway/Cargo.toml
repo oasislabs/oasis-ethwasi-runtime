@@ -26,24 +26,24 @@ jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
 wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-parity-machine = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-path = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-journaldb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-mem = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-evm = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-vm = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-util-error = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+parity-machine = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+path = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+journaldb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+evm = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+vm = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+util-error = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
 
 ## Common functionality between runtime and gateway
 runtime-ethereum-common = { path = "../common" }
