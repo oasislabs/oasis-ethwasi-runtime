@@ -21,6 +21,7 @@ docker_image_tag=$2
 # Optional args
 ###############
 path_to_ssh_private_key=${3:-~/.ssh/id_rsa}
+base_image_tag=${4:-latest}
 
 #################
 # Local variables
@@ -42,6 +43,7 @@ docker build --pull --rm --force-rm \
   --build-arg EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1 \
   --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=${git_commit_sha} \
   --build-arg RUNTIME_ETHEREUM_BUILD_IMAGE_TAG=${docker_image_tag} \
+  --build-arg OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=${base_image_tag} \
   -t oasislabs/ekiden-runtime-ethereum:${docker_image_tag} \
   docker/benchmarking
 set -x
