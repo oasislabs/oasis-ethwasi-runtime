@@ -4,10 +4,14 @@ WORKDIR=${1:-$(pwd)}
 
 source scripts/utils.sh
 
-# Paths to dummy node and keymanager enclave, assuming they were built according to the README
-DUMMY_NODE=/go/src/github.com/oasislabs/ekiden/go/ekiden/ekiden
+# Paths to Go node and keymanager enclave, assuming they were built according to the README
+EKIDEN_NODE=/go/src/github.com/oasislabs/ekiden/go/ekiden/ekiden
 KM_MRENCLAVE=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.mrenclave
 KM_ENCLAVE=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.so
+
+# Paths to ekiden binaries
+EKIDEN_WORKER=$(which ekiden-worker)
+KM_NODE=$(which ekiden-keymanager-node)
 
 # Ensure cleanup on exit.
 # cleanup() is defined in scripts/utils.sh
@@ -25,10 +29,12 @@ sleep 1
 run_compute_node 1
 sleep 1
 run_compute_node 2
-sleep 2
+
+# Wait for all nodes to register.
+${EKIDEN_NODE} debug dummy wait-nodes --nodes 2
 
 # Advance epoch to elect a new committee.
-ekiden debug dummy set-epoch --epoch 1
+${EKIDEN_NODE} debug dummy set-epoch --epoch 1
 
 # Start the gateway.
 echo "Starting web3 gateway."

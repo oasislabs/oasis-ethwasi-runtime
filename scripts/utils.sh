@@ -15,6 +15,10 @@ KM_PORT="9003"
 KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave
 KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
 
+EKIDEN_NODE=${WORKDIR}/ekiden-node
+EKIDEN_WORKER=${WORKDIR}/ekiden-worker
+KM_NODE=${WORKDIR}/ekiden-keymanager-node
+
 # Run a Tendermint validator committee and a storage node.
 #
 # Sets EKIDEN_TM_GENESIS_FILE and EKIDEN_STORAGE_PORT.
@@ -29,7 +33,7 @@ run_backend_tendermint_committee() {
         rm -rf ${datadir}
 
         let port=(idx-1)+26656
-        ${WORKDIR}/ekiden-node \
+        ${EKIDEN_NODE} \
             tendermint provision_validator \
             --datadir ${datadir} \
             --node_addr 127.0.0.1:${port} \
@@ -42,7 +46,7 @@ run_backend_tendermint_committee() {
     local genesis_file=${TEST_BASE_DIR}/genesis.json
     rm -Rf ${genesis_file}
 
-    ${WORKDIR}/ekiden-node \
+    ${EKIDEN_NODE} \
         tendermint init_genesis \
         --genesis_file ${genesis_file} \
         ${validator_files}
@@ -52,7 +56,7 @@ run_backend_tendermint_committee() {
     local storage_port=60000
     rm -Rf ${storage_datadir}
 
-    ${WORKDIR}/ekiden-node \
+    ${EKIDEN_NODE} \
         storage node \
         --datadir ${storage_datadir} \
         --grpc.port ${storage_port} \
@@ -66,7 +70,7 @@ run_backend_tendermint_committee() {
         let grpc_port=(idx-1)+42261
         let tm_port=(idx-1)+26656
 
-        ${WORKDIR}/ekiden-node \
+        ${EKIDEN_NODE} \
             --log.level debug \
             --log.file ${TEST_BASE_DIR}/validator-${idx}.log \
             --grpc.port ${grpc_port} \
@@ -124,7 +128,7 @@ run_compute_node() {
     let p2p_port=id+12000
     let tm_port=id+13000
 
-    ${WORKDIR}/ekiden-node \
+    ${EKIDEN_NODE} \
         --log.level debug \
         --grpc.port ${grpc_port} \
         --grpc.log.verbose_debug \
@@ -141,7 +145,7 @@ run_compute_node() {
         --tendermint.consensus.timeout_commit 250ms \
         --tendermint.log.debug \
         --worker.backend sandboxed \
-        --worker.binary ${WORKDIR}/ekiden-worker \
+        --worker.binary ${EKIDEN_WORKER} \
         --worker.cache_dir ${cache_dir} \
         --worker.runtime.binary ${WORKDIR}/target/enclave/runtime-ethereum.so \
         --worker.runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
@@ -165,7 +169,7 @@ run_compute_committee() {
     run_compute_node 4 $args
 
     # Wait for all nodes to register.
-    ${WORKDIR}/ekiden-node debug dummy wait-nodes --nodes 4
+    ${EKIDEN_NODE} debug dummy wait-nodes --nodes 4
 }
 
 run_gateway() {
@@ -200,7 +204,7 @@ run_keymanager_node() {
     local storage_dir=${TEST_BASE_DIR}/storage-persistent-keymanager
     rm -rf ${storage_dir}
 
-    ${WORKDIR}/ekiden-keymanager-node \
+    ${KM_NODE} \
         --enclave $KM_ENCLAVE \
         --node-key-pair $KM_KEY \
         --storage-backend dummy \

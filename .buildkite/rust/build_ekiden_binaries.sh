@@ -32,13 +32,6 @@ set +u
 export PATH=$CARGO_INSTALL_ROOT/bin/:$PATH
 set -u
 
-echo "Installing ekiden-compute."
-cargo install \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --debug \
-    ekiden-compute
-
 echo "Installing ekiden-worker."
 cargo install \
     --git https://github.com/oasislabs/ekiden \
@@ -56,6 +49,5 @@ cargo install \
 ###############################
 # Copy the binaries to out_dir.
 ###############################
-cp $CARGO_INSTALL_ROOT/bin/ekiden-compute $out_dir
 cp $CARGO_INSTALL_ROOT/bin/ekiden-worker $out_dir
 cp $CARGO_INSTALL_ROOT/bin/ekiden-keymanager-node $out_dir

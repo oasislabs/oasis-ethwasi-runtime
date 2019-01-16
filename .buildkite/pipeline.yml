@@ -50,7 +50,6 @@ steps:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_ekiden_binaries.sh /tmp/artifacts
       - cd /tmp/artifacts
-      - buildkite-agent artifact upload ekiden-compute
       - buildkite-agent artifact upload ekiden-worker
       - buildkite-agent artifact upload ekiden-keymanager-node
     plugins:
@@ -147,6 +146,7 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_rpc_test.sh
+    timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
@@ -158,6 +158,7 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_web3c_test.sh
+    timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
@@ -169,6 +170,7 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_pubsub_test.sh
+    timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
@@ -179,6 +181,7 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_end_to_end_test.sh
+    timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
@@ -200,7 +203,6 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
-    # temporary workaround for https://github.com/oasislabs/runtime-ethereum/issues/443
     timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
@@ -213,7 +215,6 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh augur
-    # temporary workaround for https://github.com/oasislabs/runtime-ethereum/issues/443
     timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
