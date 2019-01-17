@@ -50,19 +50,19 @@ runtime-ethereum-common = { path = "../common" }
 
 ## Ekiden client dependencies
 clap = "2.29.1"
-client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
 ethereum-api = { path = "../api" }
 rand = "0.4"
 
@@ -71,11 +71,11 @@ rustc_version = "0.2"
 
 [dev-dependencies]
 grpcio = { version = "~0.4.2", features = ["openssl"] }
-ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
+ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "armani/nonce" }
 hex = "0.3"
 
 [features]
