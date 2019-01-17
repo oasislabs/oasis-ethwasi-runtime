@@ -6,12 +6,12 @@ echo ${WORKDIR}
 source scripts/utils.sh
 
 echo "Installing test dependencies"
-pushd ${WORKDIR}/tests/ > /dev/null
+pushd ${WORKDIR}/tests-e2e/ > /dev/null
 npm install
 popd > /dev/null
 
 echo "Installing pubsub dependencies."
-pushd ${WORKDIR}/tests/web3js > /dev/null
+pushd ${WORKDIR}/tests-e2e/web3js > /dev/null
 npm install > /dev/null
 popd
 

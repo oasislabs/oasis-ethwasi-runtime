@@ -75,4 +75,4 @@ cargo fmt -- --write-mode=check
 ###############
 # Run the tests
 ###############
-cargo test
+cargo test --features test

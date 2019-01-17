@@ -60,5 +60,6 @@ cargo tarpaulin \
   --ignore-tests \
   --out Xml \
   --coveralls ${coveralls_api_token} \
+  --features test \
   -v
 set -x
