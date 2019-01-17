@@ -1,14 +1,15 @@
 //! Oasis rpc interface.
 
 use jsonrpc_core::{BoxFuture, Result};
+use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::types::{H160, H256};
+use parity_rpc::v1::types::{BlockNumber, H160, H256};
 
 build_rpc_trait! {
     pub trait Oasis {
         /// Get storage expiration timestamp for an address.
         #[rpc(name = "oasis_getStorageExpiry")]
-        fn get_storage_expiry(&self, H160) -> BoxFuture<u64>;
+        fn get_storage_expiry(&self, H160, Trailing<BlockNumber>) -> BoxFuture<u64>;
 
         /// Request data from storage.
         #[rpc(name = "oasis_fetchBytes")]

@@ -655,10 +655,10 @@ impl Client {
         }
     }
 
-    pub fn storage_expiry(&self, address: &Address) -> BoxFuture<u64> {
+    pub fn storage_expiry(&self, address: &Address, id: BlockId) -> BoxFuture<u64> {
         match self.get_db_snapshot() {
             Some(db) => {
-                if let Some(state) = db.get_ethstate_at(BlockId::Latest) {
+                if let Some(state) = db.get_ethstate_at(id) {
                     match state.storage_expiry(&address) {
                         Ok(timestamp) => future::ok(timestamp).into_box(),
                         Err(e) => {
