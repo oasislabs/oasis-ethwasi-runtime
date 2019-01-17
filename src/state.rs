@@ -1,6 +1,3 @@
-use std::{collections::HashSet,
-          sync::{Arc, Mutex}};
-
 use super::evm::{get_contract_address, GAS_LIMIT, SPEC};
 use ekiden_core::{self, error::Result};
 use ekiden_storage_base::StorageBackend;
@@ -13,7 +10,7 @@ use ethcore::{self,
               filter::Filter as EthcoreFilter,
               header::Header,
               kvdb::{self, KeyValueDB},
-              state::backend::Wrapped as WrappedBackend,
+              state::{backend::Wrapped as WrappedBackend, ConfidentialCtx as EthConfidentialCtx},
               transaction::Action,
               types::{ids::BlockId,
                       log_entry::{LocalizedLogEntry, LogEntry},
@@ -23,6 +20,8 @@ use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
 use runtime_ethereum_common::{confidential::ConfidentialCtx, get_factories, Backend,
                               BlockchainStateDb, State, StorageHashDB};
+use std::{collections::HashSet,
+          sync::{Arc, Mutex}};
 
 lazy_static! {
     static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
@@ -108,7 +107,7 @@ impl Cache {
         )
     }
 
-    pub(crate) fn get_state(&self) -> Result<State> {
+    pub fn get_state(&self) -> Result<State> {
         let root = self.chain.best_block_header().state_root().clone();
         Ok(ethcore::state::State::from_existing(
             self.state_backend.clone(),

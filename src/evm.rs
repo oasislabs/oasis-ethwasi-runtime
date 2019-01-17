@@ -6,6 +6,7 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
               transaction::{LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
+use runtime_ethereum_common::confidential::ConfidentialCtx;
 use runtime_ethereum_common::BLOCK_GAS_LIMIT;
 
 use super::state::Cache;

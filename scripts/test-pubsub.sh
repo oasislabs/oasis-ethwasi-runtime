@@ -24,7 +24,7 @@ run_test() {
     ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
 
     echo "Running truffle tests."
-    pushd ${WORKDIR}/tests > /dev/null
+    pushd ${WORKDIR}/tests-e2e > /dev/null
     # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
     # correct rust contract artifacts. Can remove this once the following is
     # addressed: https://github.com/oasislabs/oasis-compile/issues/44
@@ -33,7 +33,7 @@ run_test() {
     popd > /dev/null
 
     echo "Subscribing to pubsub."
-    ${WORKDIR}/tests/web3js/test_pubsub.js &> pubsub.log
+    ${WORKDIR}/tests-e2e/web3js/test_pubsub.js &> pubsub.log
 
     PUBSUB=`grep 'transactionHash' pubsub.log` || exit 1
 
