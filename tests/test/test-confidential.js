@@ -15,11 +15,13 @@ contract("Confidential Contracts", async (accounts) => {
   // of 2^64-1 and thus conversion into it's less precise double precision.
   const expectedTimestamp = "18446744073709552000";
 
-  let counterContract = new web3c.confidential.Contract(artifact.abi);
+  let counterContract = new web3c.confidential.Contract(artifact.abi, undefined, {
+	from: accounts[0]
+  });
 
   it("stores the long term public key in the deploy logs", async () => {
 	counterContract = await counterContract.deploy({data: artifact.bytecode})
-	  .send({ from: accounts[0] })
+	  .send()
 	  .on('receipt', (receipt) => {
 		assert.equal(Object.keys(receipt.events).length, 1);
 
@@ -47,6 +49,32 @@ contract("Confidential Contracts", async (accounts) => {
 	assert.equal(publicKeyPayload.signature.length, 130);
 	assert.equal(publicKeyPayload.signature.substr(0, 2), '0x');
 	assert.equal(/0x[a-z0-9]+/.test(publicKeyPayload.signature), true);
+  });
+
+  it("uses an auto incrementing nonce when encrypting many logs", async () => {
+	// Ensure we overflow at least one byte in the counter.
+	const numEvents = 256 + 1;
+	// Execute a transaction to trigger a bunch of logs to be encrypted.
+	const decryptedReceipt = await counterContract.methods.incrementCounterManyTimes(numEvents).send();
+	// First check the decrypted data is as expected (web3c will decrypt  automatically).
+	const events = decryptedReceipt.events.Incremented;
+	assert.equal(events.length, numEvents);
+	for (let k = 0; k < numEvents; k += 1) {
+	  assert.equal(events[k].returnValues.newCounter, k+1);
+	}
+	// Now check all nonces are incremented by one.
+	const txHash = decryptedReceipt.transactionHash;
+	const encryptedReceipt = (await utils.makeRpc("eth_getTransactionReceipt", [txHash])).result;
+	let last = undefined;
+	encryptedReceipt.logs.forEach((log) => {
+	  let nonce = utils.fromHexStr(log.data.substr(2, 32));
+	  if (last == undefined) {
+		last = nonce;
+	  } else {
+		let lastPlusOne = utils.incrementByteArray(last);
+		assert.deepEqual(lastPlusOne, nonce);
+	  }
+	});
   });
 
 });

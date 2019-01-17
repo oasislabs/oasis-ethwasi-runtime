@@ -57,10 +57,35 @@ async function makeRpc(method, params) {
   return JSON.parse(await request(options));
 }
 
+function fromHexStr(hexStr) {
+  return new Uint8Array(hexStr.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+}
+
+/**
+ * Adds one to the byteArray, a Uint8Array.
+ */
+function incrementByteArray(byteArray) {
+  let carry = 1;
+  let byteIndex = byteArray.length - 1;
+  while (carry == 1) {
+	carry += byteArray[byteIndex];
+	byteArray[byteIndex] = (carry % 256);
+	carry /= 256;
+	byteIndex -= 1;
+	// We've overflowed and are done (result is all zeroes).
+	if (byteIndex == 0) {
+	  return byteArray;
+	}
+  }
+  return byteArray;
+}
+
 module.exports = {
   readArtifact,
   provider,
   fetchNonce,
+  fromHexStr,
+  incrementByteArray,
   makeRpc,
   makeConfidential,
   GAS_LIMIT,

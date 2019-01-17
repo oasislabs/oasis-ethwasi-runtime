@@ -13,4 +13,11 @@ contract Counter {
 	_counter += 1;
 	emit Incremented(_counter);
   }
+
+  function incrementCounterManyTimes(uint256 count) public {
+	for (uint256 i = 0; i < count; i++) {
+	  _counter += 1;
+	  emit Incremented(_counter);
+	}
+  }
 }
