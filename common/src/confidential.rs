@@ -1,4 +1,4 @@
-use ekiden_core::mrae::sivaessha2::NONCE_SIZE;
+use ekiden_core::mrae::nonce::{Nonce, NONCE_SIZE};
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
 use ekiden_keymanager_common::{confidential, ContractId, PrivateKeyType, PublicKeyType};
 use ethcore::state::ConfidentialCtx as EthConfidentialCtx;
@@ -68,7 +68,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
 
         confidential::encrypt(
             data,
-            random_nonce(),
+            Nonce::new([0u8; NONCE_SIZE]),
             self.peer_public_key.clone().unwrap(),
             &contract_pk,
             &contract_sk,
@@ -122,11 +122,6 @@ impl KeyManager {
 
         Ok((public_key_payload.public_key, secret_key))
     }
-}
-
-fn random_nonce() -> Vec<u8> {
-    let mut nonce = [0u8; NONCE_SIZE];
-    nonce.to_vec()
 }
 
 /// Returns true if the payload has the confidential prefix.
