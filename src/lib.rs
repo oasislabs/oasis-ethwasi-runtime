@@ -120,20 +120,20 @@ impl BatchHandler for EthereumBatchHandler {
         let mut db = DatabaseHandle::new(storage.clone());
         db.set_root_hash(root_hash).unwrap();
 
-        ctx.runtime = EthereumContext::new(storage, db);
+        let mut ectx = EthereumContext::new(storage, db);
+        ectx.block.set_timestamp(ctx.header.timestamp);
+        ctx.runtime = ectx;
 
         info!("runtime context initialized");
     }
 
     fn end_batch(&self, ctx: RuntimeCallContext) {
-        let timestamp = ctx.header.timestamp;
         let mut ectx = *ctx.runtime.downcast::<EthereumContext>().unwrap();
 
         info!("end_batch");
 
         // Finalize the block if it contains any transactions.
         if !ectx.block.transactions().is_empty() || ectx.force_emit_block {
-            ectx.block.set_timestamp(timestamp);
             ectx.cache.add_block(ectx.block.close_and_lock()).unwrap();
         }
 
