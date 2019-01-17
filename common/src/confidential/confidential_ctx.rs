@@ -1,33 +1,30 @@
+use super::key_manager::KeyManagerClient;
 use ekiden_core::mrae::{nonce::{Nonce, NONCE_SIZE},
                         sivaessha2::{SivAesSha2, KEY_SIZE}};
-use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
-use ekiden_keymanager_common::{confidential, ContractId, ContractKey, PublicKeyType};
+use ekiden_keymanager_common::{confidential, ContractKey, PublicKeyType};
 use ethcore::state::ConfidentialCtx as EthConfidentialCtx;
 use ethereum_types::Address;
-use keccak_hash::keccak;
-
-/// 4-byte prefix prepended to all confidential contract bytecode.
-const CONFIDENTIAL_PREFIX: &'static [u8; 4] = b"\0enc";
 
 /// Facade for the underlying confidential contract services to be injected into
 /// the parity state. Manages the confidential state--i.e., encryption keys and
 /// nonce to use--to be encrypting under for a *single* transaction. Each
 /// transaction for a confidential contract should have it's own ConfidentialCtx
 /// that is closed at the end of the transaction's execution.
+#[derive(Clone)]
 pub struct ConfidentialCtx {
     /// The peer public key used for encryption. This should not change for an
     /// open confidential context. This is implicitly set by the `open` method.
-    peer_public_key: Option<PublicKeyType>,
+    pub peer_public_key: Option<PublicKeyType>,
     /// The contract address and keys used for encryption. These keys may be
     /// swapped in an open confidential context, facilitating a confidential
     /// context switch to encrypt for the *same user* but under a different
     /// contract.
-    contract_key: Option<ContractKey>,
+    pub contract_key: Option<ContractKey>,
     /// The next nonce to use when encrypting a message to `peer_public_key`.
     /// This starts at the nonce+1 given by the `encrypted_tx_data` param in the
     /// `open_tx_data` fn. Then, throughout the context, is incremented each
     /// time a message is encrypted to the `peer_public_key`.
-    next_nonce: Option<Nonce>,
+    pub next_nonce: Option<Nonce>,
 }
 
 impl ConfidentialCtx {
@@ -69,7 +66,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
             return Err("Can't open a confidential context that's already open".to_string());
         }
 
-        self.contract_key = Some(KeyManager::contract_key(contract)?);
+        self.contract_key = Some(KeyManagerClient::contract_key(contract)?);
 
         let tx_data = if encrypted_tx_data.is_some() {
             self.open_tx_data(encrypted_tx_data.unwrap())?
@@ -146,68 +143,10 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn create_long_term_public_key(&self, contract: Address) -> Result<Vec<u8>, String> {
-        KeyManager::create_long_term_public_key(contract)
+        KeyManagerClient::create_long_term_public_key(contract)
     }
 
     fn peer(&self) -> Option<Vec<u8>> {
         self.peer_public_key.as_ref().map(|pk| pk.to_vec())
     }
-}
-
-/// Wrapper around the Ekiden key manager client to provide a more convenient
-/// Ethereum address based interface along with runtime-specific utility methods.
-pub struct KeyManager;
-impl KeyManager {
-    /// Returns the contract id for the given contract address. The contract_id
-    /// is used to fetch keys for a contract.
-    fn contract_id(contract: Address) -> ContractId {
-        ContractId::from(&keccak(contract.to_vec())[..])
-    }
-
-    /// Creates and returns the long term public key for the given contract.
-    /// If the key already exists, returns the existing key.
-    fn create_long_term_public_key(contract: Address) -> Result<Vec<u8>, String> {
-        // if we're not in sgx, then don't try to access or create secret keys
-        // this happens when running virtual confidential transactions
-        // from the gateway via estimateGas
-        if cfg!(not(target_env = "sgx")) {
-            return Ok(vec![]);
-        }
-
-        let contract_id = Self::contract_id(contract);
-        let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
-
-        // first create the keys
-        km.get_or_create_secret_keys(contract_id)
-            .map_err(|err| err.description().to_string())?;
-        // then extract the long term key
-        km.get_public_key(contract_id)
-            .map_err(|err| err.description().to_string())
-            .map(|key_payload| key_payload.public_key.to_vec())
-    }
-
-    fn contract_key(address: Address) -> Result<ContractKey, String> {
-        let contract_id = KeyManager::contract_id(address);
-        let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
-
-        let (secret_key, state_key) = km.get_or_create_secret_keys(contract_id)
-            .map_err(|err| err.description().to_string())?;
-        let public_key_payload = km.get_public_key(contract_id)
-            .map_err(|err| err.description().to_string())?;
-
-        Ok(ContractKey::new(
-            public_key_payload.public_key,
-            secret_key,
-            state_key,
-        ))
-    }
-}
-
-/// Returns true if the payload has the confidential prefix.
-pub fn has_confidential_prefix(data: &[u8]) -> bool {
-    if data.len() < CONFIDENTIAL_PREFIX.len() {
-        return false;
-    }
-    let prefix = &data[..CONFIDENTIAL_PREFIX.len()];
-    return prefix == CONFIDENTIAL_PREFIX;
 }

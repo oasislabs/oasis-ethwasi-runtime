@@ -13,6 +13,10 @@ extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash;
 
+#[cfg(feature = "test")]
+#[macro_use]
+extern crate lazy_static;
+
 #[cfg(not(target_env = "sgx"))]
 extern crate rand;
 
