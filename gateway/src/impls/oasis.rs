@@ -25,7 +25,7 @@ impl OasisClient {
     /// Creates new OasisClient.
     pub fn new(client: Arc<Client>, storage: &Arc<StorageBackend>) -> Self {
         OasisClient {
-            client: client.clone(),
+            client: client,
             storage: storage.clone(),
         }
     }
