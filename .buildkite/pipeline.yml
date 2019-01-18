@@ -227,7 +227,7 @@ steps:
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
     async: true
-    branches: "master"
+    branches: "master beta"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
