@@ -13,6 +13,12 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
 
+  - label: Update staging beta docker image tags (beta branch only)
+    branches: beta
+    command:
+      - .buildkite/scripts/build_tag_push_deployment_image.sh
+      - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
+
   - wait
 
   - label: "Trigger staging deployment (master branches only)"
