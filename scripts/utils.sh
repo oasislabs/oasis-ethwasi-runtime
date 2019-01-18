@@ -8,7 +8,7 @@
 TEST_BASE_DIR=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)
 
 # Key manager variables shared between the compute node, gateway, and key manager
-KM_KEY="${WORKDIR}/tests/keymanager/km.key"
+KM_KEY="${WORKDIR}/tests/keymanager/km-key.pem"
 KM_CERT="${WORKDIR}/tests/keymanager/km.pem"
 KM_HOST="127.0.0.1"
 KM_PORT="9003"
@@ -190,7 +190,7 @@ run_gateway() {
         --http-port ${http_port} \
         --threads 100 \
         --ws-port ${ws_port} \
-        --key-manager-cert $KM_KEY \
+        --key-manager-cert $KM_CERT \
         --key-manager-host $KM_HOST \
         --key-manager-port  $KM_PORT \
         --key-manager-mrenclave $(cat ${KM_MRENCLAVE}) \
@@ -206,7 +206,8 @@ run_keymanager_node() {
 
     ${KM_NODE} \
         --enclave $KM_ENCLAVE \
-        --node-key-pair $KM_KEY \
+        --tls-certificate $KM_CERT \
+        --tls-key $KM_KEY \
         --storage-backend dummy \
         --storage-path ${storage_dir} \
         ${extra_args} &

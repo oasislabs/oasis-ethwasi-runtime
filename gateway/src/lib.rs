@@ -122,7 +122,7 @@ use std::time::Duration;
 use clap::ArgMatches;
 use ethereum_types::U256;
 
-use ekiden_core::{environment::Environment, identity::local::load_node_certificate};
+use ekiden_core::{environment::Environment, x509};
 use ekiden_di::Container;
 use ekiden_runtime_client::create_runtime_client;
 use ekiden_storage_base::StorageBackend;
@@ -197,8 +197,10 @@ fn key_manager_backend(
     let timeout = Some(Duration::new(5, 0));
     let host = value_t!(args.value_of("key-manager-host"), String).unwrap_or_else(|e| e.exit());
     let port = value_t!(args.value_of("key-manager-port"), u16).unwrap_or_else(|e| e.exit());
-    let certificate = load_node_certificate(&args.value_of("key-manager-cert").unwrap())
+    let certificate = x509::load_certificate_pem(&args.value_of("key-manager-cert").unwrap())
         .expect("unable to load key manager's certificate");
+    let certificate = x509::Certificate::from_pem(&certificate).unwrap();
+
     NetworkRpcClientBackendConfig {
         environment,
         timeout,
