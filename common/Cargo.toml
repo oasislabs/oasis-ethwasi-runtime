@@ -10,10 +10,10 @@ ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-lru = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/storage_expiry" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
 elastic-array = "0.10"
 
 [target.'cfg(not(target_env = "sgx"))'.dependencies]
