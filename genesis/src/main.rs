@@ -234,10 +234,11 @@ fn main() {
         let nonce = U256::from_str(strip_0x(&account.nonce)).unwrap();
 
         // Inject account.
+        // (storage expiry initialized to 0)
         block
             .block_mut()
             .state_mut()
-            .new_contract(&address, balance, nonce);
+            .new_contract(&address, balance, nonce, 0);
         if let Some(code) = account.code {
             block
                 .block_mut()
