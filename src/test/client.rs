@@ -130,7 +130,7 @@ impl Client {
     }
 
     /// Performs confidential calls, sends, and deploys.
-    pub fn confidential_invocation(
+    fn confidential_invocation(
         &mut self,
         contract: Option<&Address>,
         data: Vec<u8>,
@@ -198,5 +198,32 @@ impl Client {
             contract_key: Some(contract_key),
             next_nonce: Some(nonce),
         }
+    }
+
+    /// Returns the raw underlying storage for the given `contract`--without
+    /// encrypting the key or decrypting the return value.
+    pub fn raw_storage(&self, contract: Address, storage_key: H256) -> Option<Vec<u8>> {
+        with_batch_handler(|ctx| {
+            let ectx = ctx.runtime
+                .downcast_mut::<EthereumContext>()
+                .unwrap();
+            let state = ectx.cache
+                .get_state(ConfidentialCtx::new())
+                .unwrap();
+            state
+                ._storage_at(&contract, &storage_key)
+                .unwrap()
+        })
+    }
+
+    /// Returns the key that actually stores the confidential contract's storage value.
+    /// To be used together with `Client::raw_storage`.
+    pub fn confidential_storage_key(&self, contract: Address, storage_key: H256) -> H256 {
+        let km_confidential_ctx = self.key_manager_confidential_ctx(contract);
+        keccak_hash::keccak(
+            &km_confidential_ctx
+                .encrypt_storage(storage_key.to_vec())
+                .unwrap()
+        )
     }
 }
