@@ -138,7 +138,8 @@ impl Cache {
     }
 
     pub fn get_account_storage(&self, address: Address, key: H256) -> Result<H256> {
-        Ok(self.get_state(ConfidentialCtx::new())?.storage_at(&address, &key)?)
+        Ok(self.get_state(ConfidentialCtx::new())?
+            .storage_at(&address, &key)?)
     }
 
     pub fn get_account_nonce(&self, address: &Address) -> Result<U256> {
@@ -151,7 +152,9 @@ impl Cache {
 
     pub fn get_account_code(&self, address: &Address) -> Result<Option<Vec<u8>>> {
         // convert from Option<Arc<Vec<u8>>> to Option<Vec<u8>>
-        Ok(self.get_state(ConfidentialCtx::new())?.code(&address)?.map(|c| (&*c).clone()))
+        Ok(self.get_state(ConfidentialCtx::new())?
+            .code(&address)?
+            .map(|c| (&*c).clone()))
     }
 
     fn block_number_ref(&self, id: &BlockId) -> Option<BlockNumber> {

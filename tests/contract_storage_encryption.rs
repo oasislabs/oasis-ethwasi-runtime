@@ -113,9 +113,7 @@ fn validate_counter_storage_is_none<'a>(
         let ectx = ctx.runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
-        let state = ectx.cache
-            .get_state(km_confidential_ctx.clone())
-            .unwrap();
+        let state = ectx.cache.get_state(km_confidential_ctx.clone()).unwrap();
 
         // transparently decrypted with the state's injected confidential ctx
         let unencrypted_storage_counter = state.storage_at(&contract, &storage_key).unwrap();
@@ -142,9 +140,7 @@ fn validate_counter_storage_is_encrypted<'a>(
         let ectx = ctx.runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
-        let state = ectx.cache
-            .get_state(km_confidential_ctx.clone())
-            .unwrap();
+        let state = ectx.cache.get_state(km_confidential_ctx.clone()).unwrap();
 
         // First validate the storage from the top level state api.
         // State::storage_at transparently decrypts with the state's injected confidential ctx.
@@ -152,11 +148,9 @@ fn validate_counter_storage_is_encrypted<'a>(
         assert_eq!(unencrypted_storage_counter, expected_counter_value);
 
         // Second, let's peek under the hood to look at the encrypted state.
-        let encrypted_key =  keccak_hash::keccak(
-            &km_confidential_ctx
-                .encrypt_storage(storage_key.to_vec())
-                .unwrap()
-        );
+        let encrypted_key = keccak_hash::keccak(&km_confidential_ctx
+            .encrypt_storage(storage_key.to_vec())
+            .unwrap());
         // State::_storage_at gives the raw underlying storage without decrypting.
         let encrypted_storage_counter = state
             ._storage_at(&contract, &encrypted_key)

@@ -186,7 +186,10 @@ impl Client {
         let (peer_key, contract_key) = if is_key_manager {
             (self.ephemeral_key.input_keypair.get_pk(), contract_key)
         } else {
-            (contract_key.input_keypair.get_pk(), self.ephemeral_key.clone())
+            (
+                contract_key.input_keypair.get_pk(),
+                self.ephemeral_key.clone(),
+            )
         };
         // No need to save the Nonce on the Client (for now).
         let nonce = Nonce::new([0; NONCE_SIZE]);
