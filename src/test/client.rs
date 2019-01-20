@@ -204,15 +204,9 @@ impl Client {
     /// encrypting the key or decrypting the return value.
     pub fn raw_storage(&self, contract: Address, storage_key: H256) -> Option<Vec<u8>> {
         with_batch_handler(|ctx| {
-            let ectx = ctx.runtime
-                .downcast_mut::<EthereumContext>()
-                .unwrap();
-            let state = ectx.cache
-                .get_state(ConfidentialCtx::new())
-                .unwrap();
-            state
-                ._storage_at(&contract, &storage_key)
-                .unwrap()
+            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+            let state = ectx.cache.get_state(ConfidentialCtx::new()).unwrap();
+            state._storage_at(&contract, &storage_key).unwrap()
         })
     }
 
@@ -220,10 +214,8 @@ impl Client {
     /// To be used together with `Client::raw_storage`.
     pub fn confidential_storage_key(&self, contract: Address, storage_key: H256) -> H256 {
         let km_confidential_ctx = self.key_manager_confidential_ctx(contract);
-        keccak_hash::keccak(
-            &km_confidential_ctx
-                .encrypt_storage(storage_key.to_vec())
-                .unwrap()
-        )
+        keccak_hash::keccak(&km_confidential_ctx
+            .encrypt_storage(storage_key.to_vec())
+            .unwrap())
     }
 }
