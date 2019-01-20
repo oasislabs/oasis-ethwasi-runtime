@@ -36,7 +36,7 @@ use std::sync::MutexGuard;
 /// - deploying the contract
 /// - validating storage is None
 /// - incrementing the counter via transaction
-/// - validating the encrypted storage
+/// - validating the encrypted storage.
 ///
 #[test]
 fn test_contract_storage_encryption() {
@@ -200,14 +200,13 @@ fn validate_counter_storage_is_encrypted<'a>(
 /// ------------------------------
 ///
 /// this tests that storage is correctly encrypted when storage
-/// is set in the initcode.
+/// is set in the initcode. It does this by
 ///
 /// - deploying the contract
-/// - validating the encrypted storage is set after deployment
+/// - validating the encrypted storage is set after deployment.
 ///
 #[test]
 fn test_contract_storage_encryption_initcode() {
-    // todo
     let mut client = test::Client::instance();
     let contract = deploy_counter_with_initcode_storage(&mut client);
     validate_counter_storage_is_encrypted(contract, &mut client, H256::from(5));
