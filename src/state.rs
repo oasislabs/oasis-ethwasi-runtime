@@ -108,14 +108,14 @@ impl Cache {
         )
     }
 
-    pub(crate) fn get_state(&self) -> Result<State> {
+    pub fn get_state(&self, ctx: ConfidentialCtx) -> Result<State> {
         let root = self.chain.best_block_header().state_root().clone();
         Ok(ethcore::state::State::from_existing(
             self.state_backend.clone(),
             root,
             U256::zero(), /* account_start_nonce */
             get_factories(),
-            Some(Box::new(ConfidentialCtx::new())),
+            Some(Box::new(ctx)),
         )?)
     }
 
@@ -138,20 +138,20 @@ impl Cache {
     }
 
     pub fn get_account_storage(&self, address: Address, key: H256) -> Result<H256> {
-        Ok(self.get_state()?.storage_at(&address, &key)?)
+        Ok(self.get_state(ConfidentialCtx::new())?.storage_at(&address, &key)?)
     }
 
     pub fn get_account_nonce(&self, address: &Address) -> Result<U256> {
-        Ok(self.get_state()?.nonce(&address)?)
+        Ok(self.get_state(ConfidentialCtx::new())?.nonce(&address)?)
     }
 
     pub fn get_account_balance(&self, address: &Address) -> Result<U256> {
-        Ok(self.get_state()?.balance(&address)?)
+        Ok(self.get_state(ConfidentialCtx::new())?.balance(&address)?)
     }
 
     pub fn get_account_code(&self, address: &Address) -> Result<Option<Vec<u8>>> {
         // convert from Option<Arc<Vec<u8>>> to Option<Vec<u8>>
-        Ok(self.get_state()?.code(&address)?.map(|c| (&*c).clone()))
+        Ok(self.get_state(ConfidentialCtx::new())?.code(&address)?.map(|c| (&*c).clone()))
     }
 
     fn block_number_ref(&self, id: &BlockId) -> Option<BlockNumber> {
