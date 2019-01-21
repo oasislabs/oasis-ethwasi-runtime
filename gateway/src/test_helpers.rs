@@ -89,26 +89,14 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
                 .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
         )
         .arg(
-            Arg::with_name("node-host")
-                .long("node-host")
+            Arg::with_name("node-address")
+                .long("node-address")
                 .takes_value(true)
-                .default_value("127.0.0.1"),
+                .default_value("127.0.0.1:42261"),
         )
         .arg(
             Arg::with_name("node-port")
                 .long("node-port")
-                .takes_value(true)
-                .default_value("42261"),
-        )
-        .arg(
-            Arg::with_name("storage-client-host")
-                .long("storage-client-host")
-                .takes_value(true)
-                .default_value("127.0.0.1"),
-        )
-        .arg(
-            Arg::with_name("storage-client-port")
-                .long("storage-client-port")
                 .takes_value(true)
                 .default_value("42261"),
         )
