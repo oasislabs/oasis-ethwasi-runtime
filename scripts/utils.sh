@@ -118,8 +118,6 @@ run_compute_node() {
 
     local data_dir=${TEST_BASE_DIR}/worker-$id
     rm -rf ${data_dir}
-    local cache_dir=${TEST_BASE_DIR}/worker-cache-$id
-    rm -rf ${cache_dir}
     local log_file=${TEST_BASE_DIR}/worker-$id.log
 
     # Generate port number.
@@ -146,7 +144,6 @@ run_compute_node() {
         --tendermint.log.debug \
         --worker.backend sandboxed \
         --worker.binary ${EKIDEN_WORKER} \
-        --worker.cache_dir ${cache_dir} \
         --worker.runtime.binary ${WORKDIR}/target/enclave/runtime-ethereum.so \
         --worker.runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
         --worker.client.port ${client_port} \
