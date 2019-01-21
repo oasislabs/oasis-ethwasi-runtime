@@ -8,8 +8,8 @@
 TEST_BASE_DIR=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)
 
 # Key manager variables shared between the compute node, gateway, and key manager
-KM_KEY="${WORKDIR}/tests-e2e/keymanager/km-key.pem"
-KM_CERT="${WORKDIR}/tests-e2e/keymanager/km.pem"
+KM_KEY="${WORKDIR}/resources/keymanager/km-key.pem"
+KM_CERT="${WORKDIR}/resources/keymanager/km.pem"
 KM_HOST="127.0.0.1"
 KM_PORT="9003"
 KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave

@@ -180,25 +180,6 @@ fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Cl
     assert_eq!(counter_one, expected_one);
 }
 
-/// Deploys the following contract
-/// -------------------------------
-///   // CounterWithConstructor.sol
-///
-///   pragma solidity ^0.4.0;
-///
-///   contract Counter {
-///     uint256 _counter;
-///
-///     constructor(uint256 counter) {
-///       _counter = counter
-///     }
-///
-///     function getCounter() public view returns (uint256) {
-///       return _counter;
-///     }
-///  }
-///
-/// ------------------------------
 fn deploy_counter_with_constructor<'a>(client: &mut MutexGuard<'a, test::Client>) -> Address {
     let initcode =
         hex::decode("608060405234801561001057600080fd5b506040516020806100ea83398101806040528101908080519060200190929190505050806000819055505060a1806100496000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680638ada066e146044575b600080fd5b348015604f57600080fd5b506056606c565b6040518082815260200191505060405180910390f35b600080549050905600a165627a7a72305820137067541d27b3ea9965691d1cb4585098dddc2cc08809233b6a1df18ddc110300290000000000000000000000000000000000000000000000000000000000000005").unwrap();

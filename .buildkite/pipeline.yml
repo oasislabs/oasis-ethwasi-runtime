@@ -62,19 +62,6 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  # Internally builds the runtime and so must be run after the keymanager enclave is built
-  - label: Build run_contract
-    command:
-      # Fetch the ekiden-keymanager-enclave
-      - mkdir -p /workdir/target/enclave
-      - buildkite-agent artifact download ekiden-keymanager-trusted.so /workdir/target/enclave
-      # export path to the enclave so that the runtime can be built in run_contract
-      - export KM_ENCLAVE_PATH="/workdir/target/enclave/ekiden-keymanager-trusted.so"
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_generic.sh /workdir -p run-contract
-    plugins:
-      <<: *docker_plugin_configuration
-
   - label: Build and test web3 gateway
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -153,29 +140,6 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: web3c test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_web3c_test.sh
-    timeout_in_minutes: 20
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Pub/sub test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_pubsub_test.sh
-    timeout_in_minutes: 20
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
   - label: End-to-end test
     command:
       - .buildkite/scripts/download_common_artifacts.sh
