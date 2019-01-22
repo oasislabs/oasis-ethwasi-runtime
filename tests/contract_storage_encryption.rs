@@ -12,6 +12,7 @@ use std::sync::MutexGuard;
 /// With a contract of the form
 ///
 /// -------------------------------
+///   // CounterNoConstructor.sol
 ///
 ///   pragma solidity ^0.4.0;
 ///
@@ -46,30 +47,9 @@ fn test_deploy_contract_storage_encryption_no_constructor() {
     assert_eq!(encrypted_storage_counter, None);
 }
 
-/// With a contract of the form
-///
-/// -------------------------------
-///
-///   pragma solidity ^0.4.0;
-///
-///   contract Counter {
-///
-///     uint256 _counter;
-///
-///     function getCounter() public view returns (uint256) {
-///       return _counter;
-///     }
-///
-///     function incrementCounter() public {
-///       _counter += 1;
-///     }
-///
-///   }
-/// ------------------------------
-///
-/// tests that storage is correctly encrypted after a transaction
-/// is made that sets the storage.
-///
+/// Tests that storage is correctly encrypted after a transaction
+/// is made that sets the storage. Uses the contract above, i.e.,
+/// `CounterNoConstructor.sol`.
 #[test]
 fn test_tx_contract_storage_encryption_no_constructor() {
     // Given.
@@ -172,10 +152,7 @@ fn deploy_counter_no_constructor<'a>(client: &mut MutexGuard<'a, test::Client>) 
 
     // Sanity check.
     let counter_zero = get_counter(&contract, client);
-    let expected_zero = vec![
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0,
-    ];
+    let expected_zero = [0; 32].to_vec();
     assert_eq!(counter_zero, expected_zero);
 
     contract
@@ -183,6 +160,7 @@ fn deploy_counter_no_constructor<'a>(client: &mut MutexGuard<'a, test::Client>) 
 
 /// Makes a *call* to the `getCounter()` method.
 fn get_counter<'a>(contract: &Address, client: &mut MutexGuard<'a, test::Client>) -> Vec<u8> {
+    // Standard ethereum sighash of the getCounter method, i.e. keccak(getCounter()).
     let sighash_data = hex::decode("8ada066e").unwrap();
     client.confidential_call(contract, sighash_data, &U256::zero())
 }
@@ -204,6 +182,7 @@ fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Cl
 
 /// Deploys the following contract
 /// -------------------------------
+///   // CounterWithConstructor.sol
 ///
 ///   pragma solidity ^0.4.0;
 ///
