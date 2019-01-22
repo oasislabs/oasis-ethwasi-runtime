@@ -29,6 +29,14 @@ steps:
       commit: HEAD
       branch: master
 
+  - label: "Trigger staging beta deployment (beta branch only)"
+    trigger: private-ops-deploy-ekiden-staging-beta
+    branches: beta
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: HEAD
+      branch: master
+
   - wait
 
   - block: Human approval required to deploy to production
