@@ -85,9 +85,9 @@ extern crate ekiden_rpc_client;
 extern crate ekiden_scheduler_client;
 extern crate ekiden_storage_base;
 #[cfg(test)]
-extern crate ekiden_storage_dummy;
+extern crate ekiden_storage_client;
 #[cfg(test)]
-extern crate ekiden_storage_frontend;
+extern crate ekiden_storage_dummy;
 extern crate ethereum_api;
 #[cfg(test)]
 extern crate grpcio;
