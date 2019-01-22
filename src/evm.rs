@@ -6,6 +6,7 @@ use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions
               transaction::{LocalizedTransaction, SignedTransaction},
               vm};
 use ethereum_types::{Address, U256};
+use runtime_ethereum_common::confidential::ConfidentialCtx;
 use runtime_ethereum_common::BLOCK_GAS_LIMIT;
 
 use super::state::Cache;
@@ -33,7 +34,7 @@ fn get_env_info(cache: &Cache) -> vm::EnvInfo {
 }
 
 pub fn simulate_transaction(cache: &Cache, transaction: &SignedTransaction) -> Result<Executed> {
-    let mut state = cache.get_state()?;
+    let mut state = cache.get_state(ConfidentialCtx::new())?;
     let options = TransactOptions::with_no_tracing().dont_check_nonce();
     let mut storage = GlobalStorage::new();
     let exec = Executive::new(

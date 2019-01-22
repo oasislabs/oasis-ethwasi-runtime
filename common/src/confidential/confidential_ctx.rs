@@ -54,6 +54,14 @@ impl ConfidentialCtx {
 
         Ok(decryption.plaintext)
     }
+
+    pub fn decrypt(&self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>, String> {
+        let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
+        let decryption = confidential::decrypt(Some(encrypted_tx_data), &contract_secret_key)
+            .map_err(|err| err.description().to_string())?;
+
+        Ok(decryption.plaintext)
+    }
 }
 
 impl EthConfidentialCtx for ConfidentialCtx {
