@@ -10,13 +10,13 @@ extern crate rlp;
 extern crate serde_derive;
 extern crate serde_json;
 
-extern crate client_utils;
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
 extern crate ekiden_roothash_api;
 extern crate ekiden_roothash_base;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_batch;
+extern crate ekiden_storage_client;
 extern crate ekiden_tracing;
 
 extern crate runtime_ethereum_common;
@@ -38,9 +38,11 @@ use ethereum_types::{Address, H256, U256};
 use log::{debug, info};
 use serde_json::{de::SliceRead, StreamDeserializer};
 
-use ekiden_core::{futures::Future, protobuf::Message};
+use ekiden_core::{environment::{Environment, GrpcEnvironment},
+                  futures::Future,
+                  protobuf::Message};
 use ekiden_db_trusted::DatabaseHandle;
-use ekiden_storage_base::{InsertOptions, StorageBackend};
+use ekiden_storage_base::InsertOptions;
 use runtime_ethereum_common::{get_factories, BlockchainStateDb, StorageHashDB, BLOCK_GAS_LIMIT};
 
 #[derive(Deserialize)]
@@ -154,12 +156,10 @@ fn main() {
     // Initialize logger.
     pretty_env_logger::init();
 
-    let known_components = client_utils::components::create_known_components();
     let args = App::new(concat!(crate_name!(), " client"))
         .about(crate_description!())
         .author(crate_authors!())
         .version(crate_version!())
-        .args(&known_components.get_arguments())
         .arg(
             Arg::with_name("exported_state")
                 .help("Exported Ethereum blockchain state in JSON format")
@@ -172,18 +172,17 @@ fn main() {
                 .takes_value(true)
                 .required(true),
         )
+        .args(&ekiden_core::remote_node::get_arguments())
         .get_matches();
 
     // Initialize tracing.
     ekiden_tracing::report_forever("genesis", &args);
 
-    // Initialize component container.
-    let mut container = known_components
-        .build_with_arguments(&args)
-        .expect("failed to initialize component container");
-
     // Initialize storage and database overlays.
-    let raw_storage = container.inject::<StorageBackend>().unwrap();
+    let environment: Arc<Environment> = Arc::new(GrpcEnvironment::default());
+    let remote_node = ekiden_core::remote_node::RemoteNode::from_args(&args);
+    let channel = remote_node.create_channel(environment);
+    let raw_storage = Arc::new(ekiden_storage_client::StorageClient::new(channel));
     let storage = Arc::new(ekiden_storage_batch::BatchStorageBackend::new(raw_storage));
     let db = DatabaseHandle::new(storage.clone());
     let blockchain_db = Arc::new(BlockchainStateDb::new(db));

@@ -5,7 +5,6 @@ use clap::{App, Arg};
 use ekiden_common::bytes::H256;
 use ekiden_core::{self, error::Result, futures::prelude::*};
 use ekiden_db_trusted::{Database, DatabaseHandle};
-use ekiden_di::{Component, KnownComponents};
 use ekiden_keymanager_common::StateKeyType;
 use ekiden_registry_client;
 use ekiden_roothash_client;
@@ -68,20 +67,7 @@ impl ChainNotify for MockNotificationHandler {
 }
 
 pub fn get_test_runtime_client() -> runtime_ethereum::Client {
-    let mut known_components = KnownComponents::new();
-    ekiden_core::environment::GrpcEnvironment::register(&mut known_components);
-    ekiden_core::remote_node::RemoteNodeInfo::register(&mut known_components);
-    ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
-    ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
-    ekiden_roothash_client::RootHashClient::register(&mut known_components);
-    ekiden_storage_client::StorageClient::register(&mut known_components);
     let args = App::new("testing")
-        .arg(
-            Arg::with_name("grpc-threads")
-                .long("grpc-threads")
-                .takes_value(true)
-                .default_value("4"),
-        )
         .arg(
             Arg::with_name("mr-enclave")
                 .long("mr-enclave")
@@ -94,19 +80,9 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
                 .takes_value(true)
                 .default_value("127.0.0.1:42261"),
         )
-        .arg(
-            Arg::with_name("node-port")
-                .long("node-port")
-                .takes_value(true)
-                .default_value("42261"),
-        )
         .get_matches();
 
-    let mut container = known_components
-        .build_with_arguments(&args)
-        .expect("failed to initialize component container");
-
-    runtime_client!(runtime_ethereum, args, container)
+    runtime_client!(runtime_ethereum, args)
 }
 
 pub struct MockDb {

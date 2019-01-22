@@ -55,7 +55,6 @@ ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master"
 ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-di = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-rpc-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
