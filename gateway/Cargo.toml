@@ -75,7 +75,7 @@ ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch =
 ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-frontend = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 hex = "0.3"
 
 [features]

@@ -31,10 +31,10 @@ sleep 1
 run_compute_node 2
 
 # Wait for all nodes to register.
-${EKIDEN_NODE} debug dummy wait-nodes --nodes 2
+wait_compute_nodes 2
 
 # Advance epoch to elect a new committee.
-${EKIDEN_NODE} debug dummy set-epoch --epoch 1
+set_epoch 1
 
 # Start the gateway.
 echo "Starting web3 gateway."

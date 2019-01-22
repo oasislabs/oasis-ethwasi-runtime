@@ -11,8 +11,8 @@ use ekiden_registry_client;
 use ekiden_roothash_client;
 use ekiden_scheduler_client;
 use ekiden_storage_base::{InsertOptions, StorageBackend};
+use ekiden_storage_client;
 use ekiden_storage_dummy::DummyStorageBackend;
-use ekiden_storage_frontend;
 use ethcore::encoded;
 use ethcore::ids::BlockId;
 use hex;
@@ -74,7 +74,7 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
     ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
     ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
     ekiden_roothash_client::RootHashClient::register(&mut known_components);
-    ekiden_storage_frontend::StorageClient::register(&mut known_components);
+    ekiden_storage_client::StorageClient::register(&mut known_components);
     let args = App::new("testing")
         .arg(
             Arg::with_name("grpc-threads")
@@ -89,26 +89,14 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
                 .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
         )
         .arg(
-            Arg::with_name("node-host")
-                .long("node-host")
+            Arg::with_name("node-address")
+                .long("node-address")
                 .takes_value(true)
-                .default_value("127.0.0.1"),
+                .default_value("127.0.0.1:42261"),
         )
         .arg(
             Arg::with_name("node-port")
                 .long("node-port")
-                .takes_value(true)
-                .default_value("42261"),
-        )
-        .arg(
-            Arg::with_name("storage-client-host")
-                .long("storage-client-host")
-                .takes_value(true)
-                .default_value("127.0.0.1"),
-        )
-        .arg(
-            Arg::with_name("storage-client-port")
-                .long("storage-client-port")
                 .takes_value(true)
                 .default_value("42261"),
         )

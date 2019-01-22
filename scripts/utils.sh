@@ -67,13 +67,11 @@ run_backend_tendermint_committee() {
     for idx in $(seq 1 $nodes); do
         local datadir=${base_datadir}-${idx}
 
-        let grpc_port=(idx-1)+42261
         let tm_port=(idx-1)+26656
 
         ${EKIDEN_NODE} \
             --log.level debug \
             --log.file ${TEST_BASE_DIR}/validator-${idx}.log \
-            --grpc.port ${grpc_port} \
             --grpc.log.verbose_debug \
             --epochtime.backend tendermint_mock \
             --beacon.backend tendermint \
@@ -94,6 +92,7 @@ run_backend_tendermint_committee() {
     # Export some variables so compute workers can find them.
     EKIDEN_STORAGE_PORT=${storage_port}
     EKIDEN_TM_GENESIS_FILE=${genesis_file}
+    EKIDEN_VALIDATOR_SOCKET=${base_datadir}-1/internal.sock
 }
 
 # Run a compute node.
@@ -118,19 +117,15 @@ run_compute_node() {
 
     local data_dir=${TEST_BASE_DIR}/worker-$id
     rm -rf ${data_dir}
-    local cache_dir=${TEST_BASE_DIR}/worker-cache-$id
-    rm -rf ${cache_dir}
     local log_file=${TEST_BASE_DIR}/worker-$id.log
 
     # Generate port number.
-    let grpc_port=id+10000
     let client_port=id+11000
     let p2p_port=id+12000
     let tm_port=id+13000
 
     ${EKIDEN_NODE} \
         --log.level debug \
-        --grpc.port ${grpc_port} \
         --grpc.log.verbose_debug \
         --storage.backend client \
         --storage.client.address 127.0.0.1:${EKIDEN_STORAGE_PORT} \
@@ -146,7 +141,6 @@ run_compute_node() {
         --tendermint.log.debug \
         --worker.backend sandboxed \
         --worker.binary ${EKIDEN_WORKER} \
-        --worker.cache_dir ${cache_dir} \
         --worker.runtime.binary ${WORKDIR}/target/enclave/runtime-ethereum.so \
         --worker.runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
         --worker.client.port ${client_port} \
@@ -169,7 +163,7 @@ run_compute_committee() {
     run_compute_node 4 $args
 
     # Wait for all nodes to register.
-    ${EKIDEN_NODE} debug dummy wait-nodes --nodes 4
+    wait_compute_nodes 4
 }
 
 run_gateway() {
@@ -182,9 +176,8 @@ run_gateway() {
 
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
     ${WORKDIR}/target/debug/gateway \
-        --storage-backend multilayer \
-        --storage-multilayer-local-storage-base ${TEST_BASE_DIR}/storage-persistent-gateway_${id} \
-        --storage-multilayer-bottom-backend remote \
+        --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
+        --storage-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --test-runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
@@ -211,6 +204,30 @@ run_keymanager_node() {
         --storage-backend dummy \
         --storage-path ${storage_dir} \
         ${extra_args} &
+}
+
+# Wait for a number of compute nodes to register.
+#
+# Arguments:
+#   nodes - number of nodes to wait for
+wait_compute_nodes() {
+    local nodes=$1
+
+    ${EKIDEN_NODE} debug dummy wait-nodes \
+        --address unix:${EKIDEN_VALIDATOR_SOCKET} \
+        --nodes $nodes
+}
+
+# Set epoch.
+#
+# Arguments:
+#   epoch - epoch to set
+set_epoch() {
+    local epoch=$1
+
+    ${EKIDEN_NODE} debug dummy set-epoch \
+        --address unix:${EKIDEN_VALIDATOR_SOCKET} \
+        --epoch $epoch
 }
 
 ##
