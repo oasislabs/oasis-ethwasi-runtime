@@ -11,8 +11,8 @@ use ekiden_registry_client;
 use ekiden_roothash_client;
 use ekiden_scheduler_client;
 use ekiden_storage_base::{InsertOptions, StorageBackend};
+use ekiden_storage_client;
 use ekiden_storage_dummy::DummyStorageBackend;
-use ekiden_storage_frontend;
 use ethcore::encoded;
 use ethcore::ids::BlockId;
 use hex;
@@ -74,7 +74,7 @@ pub fn get_test_runtime_client() -> runtime_ethereum::Client {
     ekiden_scheduler_client::SchedulerClient::register(&mut known_components);
     ekiden_registry_client::EntityRegistryClient::register(&mut known_components);
     ekiden_roothash_client::RootHashClient::register(&mut known_components);
-    ekiden_storage_frontend::StorageClient::register(&mut known_components);
+    ekiden_storage_client::StorageClient::register(&mut known_components);
     let args = App::new("testing")
         .arg(
             Arg::with_name("grpc-threads")
