@@ -25,7 +25,7 @@ run_test() {
     sleep 3
 
     # Advance epoch to elect a new commitee
-    ${WORKDIR}/ekiden-node debug dummy set-epoch --epoch 1
+    set_epoch 1
 
     mkdir -p /tmp/testing
 
