@@ -59,12 +59,4 @@ members = [
     "common",
     "gateway",
     "genesis",
-    "tests-e2e/run_contract",
-]
-exclude = [
-    "tests-e2e/contracts/basic_wasm",
-    "tests-e2e/contracts/rust-logistic",
-    "tests-e2e/contracts/storage",
-    "tests-e2e/contracts/cross_contract/rust/deployed",
-    "tests-e2e/contracts/cross_contract/rust/existing",
 ]

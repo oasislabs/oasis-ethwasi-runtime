@@ -5,15 +5,14 @@ echo ${WORKDIR}
 
 source scripts/utils.sh
 
-echo "Installing test dependencies"
-pushd ${WORKDIR}/tests-e2e/ > /dev/null
+echo "Cloning e2e tests"
+if [ ! -d "/e2e-tests" ] ; then
+    git clone https://github.com/oasislabs/e2e-tests /e2e-tests
+fi
+echo "Installing e2e test dependencies"
+pushd /e2e-tests/ > /dev/null
 npm install
 popd > /dev/null
-
-echo "Installing pubsub dependencies."
-pushd ${WORKDIR}/tests-e2e/web3js > /dev/null
-npm install > /dev/null
-popd
 
 echo "Installing wasm32-unknown-unknown target."
 rustup target add wasm32-unknown-unknown

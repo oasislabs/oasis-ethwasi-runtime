@@ -43,29 +43,20 @@ run_test() {
 
     # Run truffle tests against gateway 1 (in background).
     echo "Running truffle tests."
-    pushd ${WORKDIR}/tests-e2e > /dev/null
+    pushd /e2e-tests > /dev/null
     # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
     # correct rust contract artifacts. Can remove this once the following is
     # addressed: https://github.com/oasislabs/oasis-compile/issues/44
     unset CARGO_TARGET_DIR
-    npm test & truffle_pid=$!
+    # Define the environment variables that are required for the e2e tests.
+    export HTTPS_PROVIDER_URL="http://localhost:8545"
+    export WS_PROVIDER_URL="ws://localhost:8555"
+    export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
+    npm run test:development & truffle_pid=$!
     popd > /dev/null
-
-    # Subscribe to logs from gateway 2, and check that we get a log result. We run
-    # wscat in the background so that we can check results as soon as the tests
-    # have completed instead of waiting for the fixed timeout to expire.
-    echo "Subscribing to log notifications."
-    wscat \
-        --connect localhost:8556 \
-        -w 300 \
-        -x '{"id": 1, "jsonrpc":"2.0", "method": "eth_subscribe", "params": ["logs", {"fromBlock": "latest", "toBlock": "latest"}]}' \
-        | tee ${TEST_BASE_DIR}/wscat.log &
 
     # Wait for truffle tests, ensure they did not fail.
     wait $truffle_pid
-
-    # Check that there are transaction hashes in the output log.
-    jq -e .params.result.transactionHash ${TEST_BASE_DIR}/wscat.log
 
     # Dump the metrics from both gateways.
     curl -v http://localhost:3001/metrics
