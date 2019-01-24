@@ -177,7 +177,6 @@ run_gateway() {
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
     ${WORKDIR}/target/debug/gateway \
         --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
-        --storage-backend remote \
         --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
         --test-runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
@@ -201,7 +200,6 @@ run_keymanager_node() {
         --enclave $KM_ENCLAVE \
         --tls-certificate $KM_CERT \
         --tls-key $KM_KEY \
-        --storage-backend dummy \
         --storage-path ${storage_dir} \
         ${extra_args} &
 }
