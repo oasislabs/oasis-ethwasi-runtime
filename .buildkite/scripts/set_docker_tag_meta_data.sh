@@ -27,7 +27,6 @@ set -euxo pipefail
 
 docker_tag=$(scripts/get-docker-tag.sh\
               ${BUILDKITE_BRANCH:-unknown_git_branch} \
-              ${BUILDKITE_COMMIT:-unknown_git_commit} \
               ${BUILDKITE_TAG}
             )
 
