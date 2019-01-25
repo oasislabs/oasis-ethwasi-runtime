@@ -5,7 +5,7 @@ use ekiden_keymanager_common::ContractKey;
 use ethcore::{rlp,
               state::ConfidentialCtx as EthConfidentialCtx,
               transaction::{Action, Transaction as EthcoreTransaction}};
-use ethereum_api::{TransactionRequest, Receipt};
+use ethereum_api::{Receipt, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
 use runtime_ethereum_common::confidential::{key_manager::TestKeyManager, ConfidentialCtx,
@@ -63,8 +63,9 @@ impl Client {
     pub fn confidential_estimate_gas(
         &self,
         contract: Option<&Address>,
-        data: Vec<u8>, value: &U256
-    )-> U256 {
+        data: Vec<u8>,
+        value: &U256,
+    ) -> U256 {
         self.estimate_gas(contract, self.confidential_data(contract, data), value)
     }
 
@@ -95,7 +96,9 @@ impl Client {
     }
 
     pub fn receipt(&self, tx_hash: H256) -> Receipt {
-        with_batch_handler(|ctx| get_receipt(&tx_hash, ctx)).unwrap().unwrap()
+        with_batch_handler(|ctx| get_receipt(&tx_hash, ctx))
+            .unwrap()
+            .unwrap()
     }
 
     /// Returns the transaction hash and address of the confidential contract. The code given

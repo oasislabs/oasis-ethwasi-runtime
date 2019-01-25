@@ -79,12 +79,12 @@ fn estimate_gas_deploy<'a>(data: Vec<u8>, confidential: bool) -> U256 {
     let (estimate, tx_hash) = if confidential {
         (
             client.confidential_estimate_gas(None, data.clone(), &U256::from(0)),
-            client.create_confidential_contract(data, &U256::from(0)).0
+            client.create_confidential_contract(data, &U256::from(0)).0,
         )
     } else {
         (
             client.estimate_gas(None, data.clone(), &U256::from(0)),
-            client.create_contract(data, &U256::from(0)).0
+            client.create_contract(data, &U256::from(0)).0,
         )
     };
 
@@ -105,12 +105,12 @@ fn estimate_gas_tx<'a>(initcode: Vec<u8>, confidential: bool) -> U256 {
         let (_, address) = client.create_confidential_contract(initcode, &U256::from(0));
         (
             client.confidential_data(Some(&address), data.clone()),
-            address
+            address,
         )
     } else {
         (
             data.clone(),
-            client.create_contract(initcode, &U256::from(0)).1
+            client.create_contract(initcode, &U256::from(0)).1,
         )
     };
 
