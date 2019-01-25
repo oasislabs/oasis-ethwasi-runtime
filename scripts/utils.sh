@@ -39,8 +39,25 @@ run_backend_tendermint_committee() {
             --node_addr 127.0.0.1:${port} \
             --node_name ekiden-committee-node-${idx} \
             --validator_file ${datadir}/validator.json
-        validator_files="$validator_files $datadir/validator.json"
+        validator_files="$validator_files --validator=$datadir/validator.json"
     done
+
+    # Provision the entity for all the workers.
+    local entity_dir=${base_datadir}/entity
+    rm -Rf ${entity_dir}
+
+    ${EKIDEN_NODE} \
+        registry entity init \
+        --datadir ${entity_dir}
+
+    # Provision the runtime.
+    ${EKIDEN_NODE} \
+        registry runtime init_genesis \
+        --runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
+        --runtime.replica_group_size 2 \
+        --runtime.replica_group_backup_size 2 \
+        --entity ${entity_dir} \
+        --datadir ${entity_dir}
 
     # Create the genesis document.
     local genesis_file=${TEST_BASE_DIR}/genesis.json
@@ -49,6 +66,8 @@ run_backend_tendermint_committee() {
     ${EKIDEN_NODE} \
         tendermint init_genesis \
         --genesis_file ${genesis_file} \
+        --entity ${entity_dir}/entity_genesis.json \
+        --runtime ${entity_dir}/runtime_genesis.json \
         ${validator_files}
 
     # Run the storage node.
@@ -93,6 +112,7 @@ run_backend_tendermint_committee() {
     EKIDEN_STORAGE_PORT=${storage_port}
     EKIDEN_TM_GENESIS_FILE=${genesis_file}
     EKIDEN_VALIDATOR_SOCKET=${base_datadir}-1/internal.sock
+    EKIDEN_ENTITY_PRIVATE_KEY=${entity_dir}/entity.pem
 }
 
 # Run a compute node.
@@ -148,19 +168,19 @@ run_compute_node() {
         --worker.leader.max_batch_timeout 100ms \
         --worker.key_manager.address ${KM_HOST}:${KM_PORT} \
         --worker.key_manager.certificate ${KM_CERT} \
+        --worker.entity_private_key ${EKIDEN_ENTITY_PRIVATE_KEY} \
         --datadir ${data_dir} \
         ${extra_args} 2>&1 | tee ${log_file} | sed "s/^/[compute-node-${id}] /" &
 }
 
 run_compute_committee() {
-    args="--worker.runtime.replica_group_size 2 --worker.runtime.replica_group_backup_size 2"
-    run_compute_node 1 $args
+    run_compute_node 1
     sleep 1
-    run_compute_node 2 $args
+    run_compute_node 2
     sleep 1
-    run_compute_node 3 $args
+    run_compute_node 3
     sleep 1
-    run_compute_node 4 $args
+    run_compute_node 4
 
     # Wait for all nodes to register.
     wait_compute_nodes 4
