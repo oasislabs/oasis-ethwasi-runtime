@@ -7,7 +7,7 @@ source scripts/utils.sh
 
 echo "Cloning e2e tests"
 if [ ! -d "/e2e-tests" ] ; then
-    git clone https://github.com/oasislabs/e2e-tests --branch beta /e2e-tests
+    git clone https://github.com/oasislabs/e2e-tests --branch armani/lock /e2e-tests
 fi
 echo "Installing e2e test dependencies"
 pushd /e2e-tests/ > /dev/null
