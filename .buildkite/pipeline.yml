@@ -11,6 +11,7 @@ docker_plugin: &docker_plugin_configuration
       - /var/lib/buildkite-agent/.ssh:/root/.ssh
       - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
       - /var/lib/buildkite-agent/.circleci:/root/.circleci
+      - /var/lib/buildkite-agent/.buildkite:/root/.buildkite
       # Shared Rust artifacts cache.
       - /tmp/cargo_cache:/cargo_cache
       # Shared Rust package checkouts directory.
@@ -128,7 +129,7 @@ steps:
   #       to run the tests...
 
     # End-to-end tests
-  - label: RPC test
+  - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -140,7 +141,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: End-to-end test
+  - label: End-to-end tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
