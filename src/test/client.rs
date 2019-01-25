@@ -5,7 +5,7 @@ use ekiden_keymanager_common::ContractKey;
 use ethcore::{rlp,
               state::ConfidentialCtx as EthConfidentialCtx,
               transaction::{Action, Transaction as EthcoreTransaction}};
-use ethereum_api::TransactionRequest;
+use ethereum_api::{Receipt, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
 use runtime_ethereum_common::confidential::{key_manager::TestKeyManager, ConfidentialCtx,
@@ -43,12 +43,62 @@ impl Client {
         CLIENT.lock().unwrap()
     }
 
+    pub fn estimate_gas(&self, contract: Option<&Address>, data: Vec<u8>, value: &U256) -> U256 {
+        let tx = TransactionRequest {
+            caller: Some(self.keypair.address()),
+            is_call: contract.is_some(),
+            address: contract.map(|c| *c),
+            input: Some(data),
+            value: Some(*value),
+            nonce: None,
+            gas: None,
+        };
+
+        with_batch_handler(|ctx| {
+            let response = simulate_transaction(&tx, ctx).unwrap();
+            response.used_gas + response.refunded_gas
+        })
+    }
+
+    pub fn confidential_estimate_gas(
+        &self,
+        contract: Option<&Address>,
+        data: Vec<u8>,
+        value: &U256,
+    ) -> U256 {
+        self.estimate_gas(contract, self.confidential_data(contract, data), value)
+    }
+
+    /// Returns an encrypted form of the data field to be used in a web3c confidential
+    /// transaction
+    pub fn confidential_data(&self, contract: Option<&Address>, data: Vec<u8>) -> Vec<u8> {
+        if contract.is_none() {
+            // Don't encrypt confidential deploys.
+            let mut conf_deploy_data = CONFIDENTIAL_PREFIX.to_vec();
+            conf_deploy_data.append(&mut data.clone());
+            return conf_deploy_data;
+        }
+
+        let contract_addr = contract.unwrap();
+        let enc_data = self.confidential_ctx(contract_addr.clone())
+            .encrypt(data)
+            .unwrap();
+
+        enc_data
+    }
+
     /// Creates a non-confidential contract, return the transaction hash for the deploy
     /// and the address of the contract.
     pub fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
         let hash = self.send(None, code, balance);
         let receipt = with_batch_handler(|ctx| get_receipt(&hash, ctx).unwrap().unwrap());
         (hash, receipt.contract_address.unwrap())
+    }
+
+    pub fn receipt(&self, tx_hash: H256) -> Receipt {
+        with_batch_handler(|ctx| get_receipt(&tx_hash, ctx))
+            .unwrap()
+            .unwrap()
     }
 
     /// Returns the transaction hash and address of the confidential contract. The code given
@@ -137,20 +187,11 @@ impl Client {
         value: &U256,
         is_send: bool,
     ) -> Vec<u8> {
-        if is_send && contract.is_none() {
-            // Don't encrypt confidential deploys.
-            let mut conf_deploy_data = CONFIDENTIAL_PREFIX.to_vec();
-            conf_deploy_data.append(&mut data.clone());
-            return self.send(contract, conf_deploy_data, value).to_vec();
-        }
-
-        let contract_addr = contract.unwrap();
-        let enc_data = self.confidential_ctx(contract_addr.clone())
-            .encrypt(data)
-            .unwrap();
+        let enc_data = self.confidential_data(contract.clone(), data);
         if is_send {
-            self.send(Some(contract_addr), enc_data, value).to_vec()
+            self.send(contract, enc_data, value).to_vec()
         } else {
+            let contract_addr = contract.unwrap();
             let encrypted_result = self.call(contract_addr, enc_data, value);
             self.confidential_ctx(*contract_addr)
                 .decrypt(encrypted_result)
