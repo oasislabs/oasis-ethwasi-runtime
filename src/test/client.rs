@@ -139,7 +139,7 @@ impl Client {
                     Action::Call(*contract.unwrap())
                 },
                 nonce: get_account_nonce(&self.keypair.address(), ctx).unwrap(),
-                gas_price: U256::from(1000000000),
+                gas_price: U256::from(0),
                 gas: U256::from(1000000),
                 value: *value,
                 data: data,
