@@ -27,7 +27,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_TARGET_DIR=/tmp/artifacts"
       - "CARGO_INCREMENTAL=/cargo_cache"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
-      - "EKIDEN_BRANCH=master"
+      - "EKIDEN_BRANCH=armani/km_cleanup"
       - "E2E_TESTS_BRANCH=beta"
     propagate-environment: true
     unconfined: true

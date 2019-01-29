@@ -1,7 +1,6 @@
 use client::Client;
 use ekiden_common::bytes::B512;
 use ekiden_core::futures::FutureExt;
-use ekiden_keymanager_common::confidential;
 use ethereum_api::TransactionRequest;
 use ethereum_types::Address;
 use impls::eth::EthClient;
@@ -16,8 +15,9 @@ use parity_rpc::v1::{
     traits::Eth,
     types::{BlockNumber, Bytes, CallRequest, H256},
 };
+use runtime_ethereum_common::confidential::KeyManagerClient;
 use std::sync::Arc;
-use traits::confidential::{Confidential, PublicKeyResult};
+use traits::confidential::{Confidential, RpcPublicKeyPayload};
 
 pub struct ConfidentialClient {
     client: Arc<Client>,
@@ -35,12 +35,16 @@ impl ConfidentialClient {
 impl Confidential for ConfidentialClient {
     type Metadata = Metadata;
 
-    fn public_key(&self, contract: Address) -> Result<PublicKeyResult> {
+    fn public_key(&self, contract: Address) -> Result<RpcPublicKeyPayload> {
         measure_counter_inc!("confidential_getPublicKey");
         info!("confidential_getPublicKey(contract {:?})", contract);
-        self.client
-            .public_key(contract)
-            .map_err(|_| Error::new(ErrorCode::InternalError))
+        let pk_payload = KeyManagerClient::public_key(contract)
+            .map_err(|err| errors::invalid_params(&contract.to_string(), err))?;
+        Ok(RpcPublicKeyPayload {
+            public_key: Bytes::from(pk_payload.public_key.to_vec()),
+            timestamp: pk_payload.timestamp,
+            signature: Bytes::from(pk_payload.signature.to_vec()),
+        })
     }
 
     fn call_enc(

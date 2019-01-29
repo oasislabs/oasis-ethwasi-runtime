@@ -1,7 +1,7 @@
 #[cfg(feature = "test")]
-use ekiden_core::random;
+use ekiden_core::{bytes::B512, random};
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
-use ekiden_keymanager_common::{ContractId, ContractKey};
+use ekiden_keymanager_common::{ContractId, ContractKey, PublicKeyPayload};
 #[cfg(feature = "test")]
 use ekiden_keymanager_common::{
     PublicKeyType, EMPTY_PRIVATE_KEY, EMPTY_PUBLIC_KEY, EMPTY_STATE_KEY,
@@ -26,18 +26,28 @@ impl KeyManagerClient {
     pub fn contract_key(address: Address) -> Result<ContractKey, String> {
         KeyManager::contract_key(address)
     }
+    pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
+        KeyManager::public_key(contract)
+    }
 }
 #[cfg(feature = "test")]
 impl KeyManagerClient {
     /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
-        TEST_KEY_MANAGER
-            .lock()
-            .unwrap()
-            .create_long_term_public_key(contract)
+        TestKeyManager::create_long_term_public_key(contract)
     }
     pub fn contract_key(address: Address) -> Result<ContractKey, String> {
-        TEST_KEY_MANAGER.lock().unwrap().contract_key(address)
+        TestKeyManager::contract_key(address)
+    }
+    pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
+        let public_key = TestKeyManager::get_public_key(contract);
+        let timestamp = 0;
+        let signature = B512::from(0);
+        Ok(PublicKeyPayload {
+            public_key,
+            timestamp,
+            signature,
+        })
     }
 }
 
@@ -89,6 +99,16 @@ impl KeyManager {
             state_key,
         ))
     }
+
+    pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
+        let contract_id: ContractId =
+            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
+
+        EkidenKeyManager::instance()
+            .expect("Should always have an key manager client")
+            .get_public_key(contract_id)
+            .map_err(|err| err.description().to_string())
+    }
 }
 
 #[cfg(feature = "test")]
@@ -127,21 +147,19 @@ impl TestKeyManager {
     }
 
     /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
-    pub fn create_long_term_public_key(
-        &mut self,
-        contract: Address,
-    ) -> Result<(Vec<u8>, Vec<u8>), String> {
-        let contract_key = self.contract_key(contract)?;
+    pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
+        let contract_key = Self::contract_key(contract)?;
         let public_key = contract_key.input_keypair.get_pk();
         Ok((public_key.to_vec(), vec![]))
     }
 
-    pub fn contract_key(&mut self, contract: Address) -> Result<ContractKey, String> {
-        if self.keys.contains_key(&contract) {
-            Ok(self.keys.get(&contract).unwrap().clone())
+    pub fn contract_key(contract: Address) -> Result<ContractKey, String> {
+        let mut km = TEST_KEY_MANAGER.lock().unwrap();
+        if km.keys.contains_key(&contract) {
+            Ok(km.keys.get(&contract).unwrap().clone())
         } else {
             let contract_key = Self::create_random_key();
-            self.keys.insert(contract, contract_key.clone());
+            km.keys.insert(contract, contract_key.clone());
             Ok(contract_key)
         }
     }

@@ -29,7 +29,6 @@ use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
 use runtime_ethereum_common::{confidential::has_confidential_prefix, State as EthState};
 use std::time::{SystemTime, UNIX_EPOCH};
-use traits::confidential::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils::{self, db::Snapshot};
@@ -37,7 +36,6 @@ use ekiden_common::{bytes::B512, environment::Environment};
 use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
-use ekiden_keymanager_common::ContractId;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
@@ -941,23 +939,6 @@ impl Client {
                     })
                 }),
         )
-    }
-
-    /// Returns the public key for the given contract from the key manager.
-    pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
-        let contract_id: ContractId =
-            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
-
-        let public_key_payload = EkidenKeyManager::instance()
-            .expect("Should always have an key manager client")
-            .get_public_key(contract_id)
-            .map_err(|err| err.description().to_string())?;
-
-        Ok(PublicKeyResult {
-            public_key: RpcBytes::from(public_key_payload.public_key.to_vec()),
-            timestamp: public_key_payload.timestamp,
-            signature: RpcBytes::from(public_key_payload.signature.to_vec()),
-        })
     }
 }
 

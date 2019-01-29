@@ -9,7 +9,7 @@ build_rpc_trait! {
         type Metadata;
         /// Returns the public key of a contract, given its address.
         #[rpc(name = "confidential_getPublicKey")]
-        fn public_key(&self, Address) -> Result<PublicKeyResult>;
+        fn public_key(&self, Address) -> Result<RpcPublicKeyPayload>;
         /// Executes a new message call without creating a transaction on chain.
         /// Returns the return value of the executed contract, encrypted with
         /// the user's public key.
@@ -24,7 +24,7 @@ build_rpc_trait! {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PublicKeyResult {
+pub struct RpcPublicKeyPayload {
     /// Public key of the contract
     pub public_key: Bytes,
     /// Time at which the key expires.
