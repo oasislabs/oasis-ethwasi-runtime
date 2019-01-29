@@ -20,14 +20,14 @@ set -euxo pipefail
 ######################
 # Download ekiden-node
 ######################
-.buildkite/scripts/download_artifact.sh ekiden master "Build Go node" ekiden .
+.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Go node" ekiden .
 mv ekiden ekiden-node
 chmod +x ekiden-node
 
-.buildkite/scripts/download_artifact.sh ekiden master "Build Rust worker, compute node and key manager node" ekiden-worker .
+.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Rust worker, compute node and key manager node" ekiden-worker .
 chmod +x ekiden-worker
 
-.buildkite/scripts/download_artifact.sh ekiden master "Build Rust worker, compute node and key manager node" ekiden-keymanager-node .
+.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Rust worker, compute node and key manager node" ekiden-keymanager-node .
 chmod +x ekiden-keymanager-node
 
 ############################################
@@ -44,8 +44,8 @@ buildkite-agent artifact download \
 #####################################################
 # Download ekiden-keymanager-trusted.mrenclave
 #####################################################
-.buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.mrenclave target/enclave
-.buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.so target/enclave
+.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.mrenclave target/enclave
+.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.so target/enclave
 
 ##################
 # Download gateway

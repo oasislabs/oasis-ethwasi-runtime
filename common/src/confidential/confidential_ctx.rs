@@ -150,7 +150,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(mrae.open(nonce, data, vec![]).unwrap())
     }
 
-    fn create_long_term_public_key(&self, contract: Address) -> Result<Vec<u8>, String> {
+    fn create_long_term_public_key(&self, contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         KeyManagerClient::create_long_term_public_key(contract)
     }
 
