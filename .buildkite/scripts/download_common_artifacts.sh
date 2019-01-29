@@ -20,11 +20,14 @@ set -euxo pipefail
 ######################
 # Download ekiden-node
 ######################
-buildkite-agent artifact download ekiden-node .
+.buildkite/scripts/download_artifact.sh ekiden master "Build Go node" ekiden .
+mv ekiden ekiden-node
 chmod +x ekiden-node
-buildkite-agent artifact download ekiden-worker .
+
+.buildkite/scripts/download_artifact.sh ekiden master "Build Rust worker, compute node and key manager node" ekiden-worker .
 chmod +x ekiden-worker
-buildkite-agent artifact download ekiden-keymanager-node .
+
+.buildkite/scripts/download_artifact.sh ekiden master "Build Rust worker, compute node and key manager node" ekiden-keymanager-node .
 chmod +x ekiden-keymanager-node
 
 ############################################
@@ -39,15 +42,10 @@ buildkite-agent artifact download \
     target/enclave
 
 #####################################################
-# Download ekiden-keymanager-trusted(.so|.mrenclave)
+# Download ekiden-keymanager-trusted.mrenclave
 #####################################################
-
-buildkite-agent artifact download \
-    ekiden-keymanager-trusted.so \
-    target/enclave
-buildkite-agent artifact download \
-    ekiden-keymanager-trusted.mrenclave \
-    target/enclave
+.buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.mrenclave target/enclave
+.buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.so target/enclave
 
 ##################
 # Download gateway

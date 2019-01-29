@@ -56,10 +56,7 @@ cargo install \
 
 mkdir -p $src_dir/target/enclave
 
-echo "Fetching the ekiden-keymanager-trusted.so enclave"
-buildkite-agent artifact download \
-    ekiden-keymanager-trusted.so \
-    $src_dir/target/enclave
+.buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.so $src_dir/target/enclave
 
 ###################
 # Build the runtime
