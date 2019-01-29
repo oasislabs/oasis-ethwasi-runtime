@@ -32,11 +32,19 @@ docker_plugin: &docker_plugin_configuration
 
 steps:
 
-  - label: Build key-manager enclave
+  - label: Download Ekiden binaries
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_keymanager_enclave.sh /tmp --out-dir /tmp/artifacts
+      - mkdir -p /tmp/artifacts
+      - .buildkite/scripts/download_artifact.sh ekiden master "Build Go node" ekiden /tmp/artifacts
+      - .buildkite/scripts/download_artifact.sh ekiden master "Build Rust worker, compute node and key manager node" ekiden-worker /tmp/artifacts
+      - .buildkite/scripts/download_artifact.sh ekiden master "Build Rust worker, compute node and key manager node" ekiden-keymanager-node /tmp/artifacts
+      - .buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.so /tmp/artifacts
+      - .buildkite/scripts/download_artifact.sh ekiden master "Build key manager enclave" ekiden-keymanager-trusted.mrenclave /tmp/artifacts
       - cd /tmp/artifacts
+      - mv ekiden ekiden-node
+      - buildkite-agent artifact upload ekiden-node
+      - buildkite-agent artifact upload ekiden-worker
+      - buildkite-agent artifact upload ekiden-keymanager-node
       - buildkite-agent artifact upload ekiden-keymanager-trusted.so
       - buildkite-agent artifact upload ekiden-keymanager-trusted.mrenclave
     plugins:
@@ -45,16 +53,6 @@ steps:
   # We must wait for the keymanager enclave to finish building before building
   # the runtime.
   - wait
-
-  - label: Build ekiden binaries
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_ekiden_binaries.sh /tmp/artifacts
-      - cd /tmp/artifacts
-      - buildkite-agent artifact upload ekiden-worker
-      - buildkite-agent artifact upload ekiden-keymanager-node
-    plugins:
-      <<: *docker_plugin_configuration
 
   - label: Build genesis
     command:
@@ -90,20 +88,6 @@ steps:
       - cd /tmp/artifacts/enclave
       - buildkite-agent artifact upload runtime-ethereum.so
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Build oasislabs/ekiden go
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/go/build_ekiden_go.sh
-
-      # Upload artifact required in end-to-end tests.
-      # This is done here to keep the build and test
-      # script generic.
-      - cd /go/bin
-      - mv ekiden ekiden-node
-      - buildkite-agent artifact upload ekiden-node
     plugins:
       <<: *docker_plugin_configuration
 
