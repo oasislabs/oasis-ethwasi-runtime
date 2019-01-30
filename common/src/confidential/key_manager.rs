@@ -17,6 +17,7 @@ use std::sync::{Mutex, MutexGuard};
 pub struct KeyManagerClient;
 #[cfg(not(feature = "test"))]
 impl KeyManagerClient {
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         KeyManager::create_long_term_public_key(contract)
     }
@@ -26,6 +27,7 @@ impl KeyManagerClient {
 }
 #[cfg(feature = "test")]
 impl KeyManagerClient {
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         TEST_KEY_MANAGER
             .lock()
@@ -49,6 +51,7 @@ impl KeyManager {
 
     /// Creates and returns the long term public key for the given contract.
     /// If the key already exists, returns the existing key.
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         let contract_id = Self::contract_id(contract);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
@@ -119,6 +122,7 @@ impl TestKeyManager {
             .get_pk()
     }
 
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     pub fn create_long_term_public_key(
         &mut self,
         contract: Address,
