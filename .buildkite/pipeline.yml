@@ -38,6 +38,8 @@ steps:
       - cd /tmp/artifacts
       - buildkite-agent artifact upload ekiden-keymanager-trusted.so
       - buildkite-agent artifact upload ekiden-keymanager-trusted.mrenclave
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -52,6 +54,8 @@ steps:
       - cd /tmp/artifacts
       - buildkite-agent artifact upload ekiden-worker
       - buildkite-agent artifact upload ekiden-keymanager-node
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -59,6 +63,8 @@ steps:
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_generic.sh /workdir -p genesis
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -72,6 +78,8 @@ steps:
       - export KM_ENCLAVE_PATH="/workdir/target/enclave/ekiden-keymanager-trusted.so"
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_generic.sh /workdir -p run-contract
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -88,6 +96,8 @@ steps:
       # script generic.
       - cd /tmp/artifacts/debug
       - buildkite-agent artifact upload gateway
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -102,6 +112,8 @@ steps:
       - cd /tmp/artifacts/enclave
       - buildkite-agent artifact upload runtime-ethereum.so
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -131,6 +143,8 @@ steps:
       # Save the report as a build artifact
       # so it can be easily accessed for debugging.
       - buildkite-agent artifact upload cobertura.xml
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -207,6 +221,8 @@ steps:
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -219,6 +235,8 @@ steps:
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
