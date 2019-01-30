@@ -69,8 +69,3 @@ cargo ekiden build-enclave --output-identity ${extra_args}
 # Apply the rust code formatting rules
 ######################################
 cargo fmt -- --write-mode=check
-
-###############
-# Run the tests
-###############
-cargo test --features test
