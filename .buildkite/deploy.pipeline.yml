@@ -12,6 +12,8 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
+    agents:
+      buildkite_agent_size: large
 
   - wait
 
