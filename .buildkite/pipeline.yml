@@ -39,13 +39,12 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build and test web3 gateway
+  - label: Build web3 gateway
     command:
       - .buildkite/scripts/setup_gitconfig.sh
 
       # Build code and run tests
       - .buildkite/rust/build_generic.sh /workdir -p web3-gateway -Z unstable-options
-      - .buildkite/rust/test_generic.sh /workdir -p web3-gateway
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
@@ -55,10 +54,10 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build and test runtime
+  - label: Build runtime
     command:
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_and_test_runtime.sh /workdir
+      - .buildkite/rust/build_runtime.sh /workdir
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
@@ -73,7 +72,7 @@ steps:
   # to finish running in parallel before continuing.
   - wait
 
-  - label: Code coverage
+  - label: Cargo tests and code coverage
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/code_coverage.sh
