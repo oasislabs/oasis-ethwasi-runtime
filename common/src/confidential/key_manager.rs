@@ -17,7 +17,8 @@ use std::sync::{Mutex, MutexGuard};
 pub struct KeyManagerClient;
 #[cfg(not(feature = "test"))]
 impl KeyManagerClient {
-    pub fn create_long_term_public_key(contract: Address) -> Result<Vec<u8>, String> {
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
+    pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         KeyManager::create_long_term_public_key(contract)
     }
     pub fn contract_key(address: Address) -> Result<ContractKey, String> {
@@ -26,7 +27,8 @@ impl KeyManagerClient {
 }
 #[cfg(feature = "test")]
 impl KeyManagerClient {
-    pub fn create_long_term_public_key(contract: Address) -> Result<Vec<u8>, String> {
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
+    pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         TEST_KEY_MANAGER
             .lock()
             .unwrap()
@@ -49,14 +51,8 @@ impl KeyManager {
 
     /// Creates and returns the long term public key for the given contract.
     /// If the key already exists, returns the existing key.
-    fn create_long_term_public_key(contract: Address) -> Result<Vec<u8>, String> {
-        // if we're not in sgx, then don't try to access or create secret keys
-        // this happens when running virtual confidential transactions
-        // from the gateway via estimateGas
-        if cfg!(not(target_env = "sgx")) {
-            return Ok(vec![]);
-        }
-
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
+    fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         let contract_id = Self::contract_id(contract);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
 
@@ -64,9 +60,14 @@ impl KeyManager {
         km.get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
         // then extract the long term key
-        km.get_public_key(contract_id)
+        km.long_term_public_key(contract_id)
             .map_err(|err| err.description().to_string())
-            .map(|key_payload| key_payload.public_key.to_vec())
+            .map(|pk_payload| {
+                (
+                    pk_payload.public_key.to_vec(),
+                    pk_payload.signature.to_vec(),
+                )
+            })
     }
 
     fn contract_key(address: Address) -> Result<ContractKey, String> {
@@ -121,9 +122,14 @@ impl TestKeyManager {
             .get_pk()
     }
 
-    pub fn create_long_term_public_key(&mut self, contract: Address) -> Result<Vec<u8>, String> {
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
+    pub fn create_long_term_public_key(
+        &mut self,
+        contract: Address,
+    ) -> Result<(Vec<u8>, Vec<u8>), String> {
         let contract_key = self.contract_key(contract)?;
-        Ok(contract_key.input_keypair.get_pk().to_vec())
+        let public_key = contract_key.input_keypair.get_pk();
+        Ok((public_key.to_vec(), vec![]))
     }
 
     pub fn contract_key(&mut self, contract: Address) -> Result<ContractKey, String> {

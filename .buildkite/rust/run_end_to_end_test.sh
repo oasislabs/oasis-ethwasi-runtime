@@ -53,7 +53,7 @@ set -u
 ./scripts/setup-e2e.sh
 
 echo "Downloading compiled contracts from the e2e-tests pipeline"
-.buildkite/scripts/download_artifact.sh e2e-tests beta "Lint and Compile Contracts" build.zip /e2e-tests
+.buildkite/scripts/download_artifact.sh e2e-tests $E2E_TESTS_BRANCH "Lint and Compile Contracts" build.zip /e2e-tests
 
 # Replace the contracts with the prebuilt ones
 pushd /e2e-tests/ > /dev/null
