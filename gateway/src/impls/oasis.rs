@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use ekiden_common::bytes::H256;
 use ekiden_core::futures::Future;
-use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 
 use ethereum_types::Address;
 use jsonrpc_core::futures::future;
@@ -18,15 +17,13 @@ use traits::Oasis;
 /// Eth rpc implementation
 pub struct OasisClient {
     client: Arc<Client>,
-    storage: Arc<StorageBackend>,
 }
 
 impl OasisClient {
     /// Creates new OasisClient.
-    pub fn new(client: Arc<Client>, storage: &Arc<StorageBackend>) -> Self {
+    pub fn new(client: Arc<Client>) -> Self {
         OasisClient {
             client: client,
-            storage: storage.clone(),
         }
     }
 }

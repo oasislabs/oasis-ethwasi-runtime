@@ -93,7 +93,6 @@ pub fn execute(
         client: client.clone(),
         ws_address: ws_conf.address(),
         remote: event_loop.remote(),
-        storage: storage.clone(),
     });
 
     let dependencies = rpc::Dependencies {
