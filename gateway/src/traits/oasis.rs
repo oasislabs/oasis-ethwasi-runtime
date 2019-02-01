@@ -12,13 +12,5 @@ build_rpc_trait! {
         /// that the contract's storage does not expire.
         #[rpc(name = "oasis_getStorageExpiry")]
         fn get_storage_expiry(&self, H160, Trailing<BlockNumber>) -> BoxFuture<u64>;
-
-        /// Request data from storage.
-        #[rpc(name = "oasis_fetchBytes")]
-        fn fetch_bytes(&self, H256) -> Result<Vec<u8>>;
-
-        /// Store data in global storage.
-        #[rpc(name = "oasis_storeBytes")]
-        fn store_bytes(&self, Vec<u8>, u64) -> Result<H256>;
     }
 }
