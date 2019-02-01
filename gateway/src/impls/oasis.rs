@@ -32,13 +32,13 @@ impl OasisClient {
 }
 
 impl Oasis for OasisClient {
-    fn get_storage_expiry(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<u64> {
-        measure_counter_inc!("getStorageExpiry");
+    fn get_expiry(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<u64> {
+        measure_counter_inc!("getExpiry");
         let address: Address = RpcH160::into(address);
         let num = num.unwrap_or_default();
 
         info!(
-            "oasis_getStorageExpiry(contract: {:?}, number: {:?})",
+            "oasis_getExpiry(contract: {:?}, number: {:?})",
             address, num
         );
         Box::new(
