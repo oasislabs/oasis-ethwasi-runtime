@@ -6,8 +6,7 @@ use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 use ekiden_storage_dummy::DummyStorageBackend as StorageBackendImpl;
 #[cfg(target_env = "sgx")]
 use ekiden_trusted::db::untrusted::UntrustedStorageBackend as StorageBackendImpl;
-use ethcore::{storage::Storage,
-              vm::{Error, Result}};
+use ethcore::vm::{Error, Result};
 use ethereum_types::H256;
 
 use std::str::FromStr;
@@ -25,22 +24,13 @@ impl GlobalStorage {
     }
 }
 
-impl Storage for GlobalStorage {
+impl GlobalStorage {
     fn fetch_bytes(&self, key: &H256) -> Result<Vec<u8>> {
-        let result = BACKEND
-            .get(EkidenH256::from_str(&format!("{:x}", key)).unwrap())
-            .wait();
-        result.map_err(|err| Error::Storage(err.description().to_string()))
+        Ok(vec![])
     }
 
     fn store_bytes(&self, bytes: &[u8]) -> Result<H256> {
-        let result = BACKEND
-            .insert(bytes.to_vec(), <u64>::max_value(), InsertOptions::default())
-            .wait();
-        match result {
-            Ok(_) => Ok(H256::from_slice(&hash_storage_key(bytes).0)),
-            Err(err) => Err(Error::Storage(err.description().to_string())),
-        }
+        Ok(H256::from(0))
     }
 }
 

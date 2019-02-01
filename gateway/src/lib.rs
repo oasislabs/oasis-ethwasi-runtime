@@ -109,7 +109,6 @@ mod rpc_apis;
 mod run;
 mod servers;
 mod state;
-mod storage;
 #[cfg(test)]
 mod test_helpers;
 mod traits;
