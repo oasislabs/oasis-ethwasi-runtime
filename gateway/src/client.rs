@@ -43,7 +43,6 @@ use ekiden_storage_base::StorageBackend;
 use ekiden_storage_dummy::DummyStorageBackend;
 use ethereum_api::TransactionRequest;
 use state::{self, StateDb};
-use storage::Web3GlobalStorage;
 #[cfg(test)]
 use test_helpers::{self, MockDb};
 #[cfg(test)]
@@ -91,7 +90,6 @@ pub struct Client {
     eip86_transition: u64,
     environment: Arc<Environment>,
     storage_backend: Arc<StorageBackend>,
-    storage: Arc<RwLock<Web3GlobalStorage>>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
@@ -107,8 +105,6 @@ impl Client {
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
-        let storage = Web3GlobalStorage::new(backend.clone());
-
         // get current block number from db snapshot (or 0)
         let current_block_number = match snapshot_manager {
             Some(ref manager) => match state::StateDb::new(backend.clone(), manager.get_snapshot())
@@ -126,7 +122,6 @@ impl Client {
             eip86_transition: spec.params().eip86_transition,
             environment,
             storage_backend: backend,
-            storage: Arc::new(RwLock::new(storage)),
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
@@ -142,16 +137,13 @@ impl Client {
         let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(
             grpc_environment,
         ));
-        let storage_backend = Arc::new(DummyStorageBackend::new());
-        let storage = Web3GlobalStorage::new(storage_backend.clone());
         Self {
             client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
             snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
-            storage_backend,
-            storage: Arc::new(RwLock::new(storage)),
+            storage_backend: Arc::new(DummyStorageBackend::new()),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
             gas_price: U256::from(1_000_000_000),
@@ -780,12 +772,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret = Executive::new(
-            &mut state,
-            &env_info,
-            machine,
-            &*self.storage.read().unwrap(),
-        ).transact_virtual(transaction, options)?;
+        let ret =
+            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -844,12 +832,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret = Executive::new(
-            &mut state,
-            &env_info,
-            machine,
-            &*self.storage.read().unwrap(),
-        ).transact_virtual(transaction, options)?;
+        let ret =
+            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
         Ok(ret.gas_used + ret.refunded)
     }
 

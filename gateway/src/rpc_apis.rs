@@ -20,7 +20,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use client::Client;
-use ekiden_storage_base::StorageBackend;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
 use parity_rpc::informant::ActivityNotifier;
@@ -152,7 +151,6 @@ pub struct FullDependencies {
     pub client: Arc<Client>,
     pub ws_address: Option<Host>,
     pub remote: parity_reactor::Remote,
-    pub storage: Arc<StorageBackend>,
 }
 
 impl FullDependencies {
@@ -198,9 +196,7 @@ impl FullDependencies {
                     }
                 }
                 Api::Oasis => {
-                    handler.extend_with(
-                        OasisClient::new(self.client.clone(), &self.storage).to_delegate(),
-                    );
+                    handler.extend_with(OasisClient::new(self.client.clone()).to_delegate());
                 }
                 Api::Confidential => {
                     if cfg!(feature = "confidential") {

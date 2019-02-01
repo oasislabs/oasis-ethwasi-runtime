@@ -32,10 +32,6 @@ extern crate ethkey;
 
 mod evm;
 mod state;
-#[cfg(debug_assertions)]
-pub mod storage; // allow access from tests/run_contract
-#[cfg(not(debug_assertions))]
-mod storage;
 #[cfg(feature = "test")]
 pub mod test;
 
@@ -63,7 +59,6 @@ use ethereum_api::{with_api, BlockId, ExecuteTransactionResponse, Filter, Log, R
 use ethereum_types::{Address, H256, U256};
 
 use self::state::Cache;
-use self::storage::GlobalStorage;
 
 enclave_init!();
 
@@ -281,9 +276,7 @@ pub fn execute_raw_transaction(
 
 fn transact(ectx: &mut EthereumContext, transaction: SignedTransaction) -> Result<H256> {
     let tx_hash = transaction.hash();
-    let mut storage = GlobalStorage::new();
-    ectx.block
-        .push_transaction(transaction, None, &mut storage)?;
+    ectx.block.push_transaction(transaction, None)?;
     Ok(tx_hash)
 }
 
