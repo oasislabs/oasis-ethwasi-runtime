@@ -32,8 +32,6 @@ extern crate ethkey;
 
 mod evm;
 mod state;
-#[cfg(not(debug_assertions))]
-mod storage;
 #[cfg(feature = "test")]
 pub mod test;
 
