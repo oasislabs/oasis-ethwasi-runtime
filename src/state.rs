@@ -46,9 +46,12 @@ impl Cache {
         let blockchain_db = Arc::new(BlockchainStateDb::new(db));
         let state_db = StorageHashDB::new(storage, blockchain_db.clone());
         // Initialize Ethereum state with the genesis block in case there is none.
+        info!("initializing ethereum state");
         let state_backend =
             SPEC.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
                 .expect("state to be initialized");
+
+        info!("performing commit after initialization");
         state_db.commit();
 
         Self {
@@ -69,6 +72,8 @@ impl Cache {
             Some(cache) => {
                 if cache.blockchain_db.get_root_hash() != db.get_root_hash() {
                     // Root hash differs, re-create the cache from scratch.
+                    info!("root hash differs, invalidating cache");
+
                     Cache::new(storage, db)
                 } else {
                     cache
@@ -101,6 +106,8 @@ impl Cache {
     }
 
     fn new_chain(blockchain_db: Arc<BlockchainStateDb<DatabaseHandle>>) -> BlockChain {
+        info!("creating new chain");
+
         BlockChain::new(
             Default::default(), /* config */
             &*SPEC.genesis_block(),
