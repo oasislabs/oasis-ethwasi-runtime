@@ -22,9 +22,7 @@ pub struct OasisClient {
 impl OasisClient {
     /// Creates new OasisClient.
     pub fn new(client: Arc<Client>) -> Self {
-        OasisClient {
-            client: client,
-        }
+        OasisClient { client: client }
     }
 }
 

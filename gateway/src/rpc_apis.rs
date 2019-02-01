@@ -196,9 +196,7 @@ impl FullDependencies {
                     }
                 }
                 Api::Oasis => {
-                    handler.extend_with(
-                        OasisClient::new(self.client.clone()).to_delegate(),
-                    );
+                    handler.extend_with(OasisClient::new(self.client.clone()).to_delegate());
                 }
                 Api::Confidential => {
                     if cfg!(feature = "confidential") {
