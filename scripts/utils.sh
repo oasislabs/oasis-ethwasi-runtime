@@ -96,7 +96,7 @@ run_backend_tendermint_committee() {
             --beacon.backend tendermint \
             --metrics.mode none \
             --storage.backend cachingclient \
-            --storage.cachingclient.file ${storage_datadir}/storage-cache \
+            --storage.cachingclient.file ${datadir}/storage-cache \
             --storage.client.address 127.0.0.1:${storage_port} \
             --scheduler.backend trivial \
             --registry.backend tendermint \
