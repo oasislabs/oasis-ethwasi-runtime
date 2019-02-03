@@ -116,6 +116,7 @@ impl Filterable for EthFilterClient {
 
 impl EthFilter for EthFilterClient {
     fn new_filter(&self, filter: Filter) -> Result<RpcU256> {
+        measure_counter_inc!("newFilter");
         let mut polls = self.polls().lock();
         let block_number = self.best_block_number();
         let id = polls.create_poll(PollFilter::Logs(block_number, Default::default(), filter));
@@ -123,6 +124,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn new_block_filter(&self) -> Result<RpcU256> {
+        measure_counter_inc!("newBlockFilter");
         let mut polls = self.polls().lock();
         // +1, since we don't want to include the current block
         let id = polls.create_poll(PollFilter::Block(self.best_block_number() + 1));
@@ -130,6 +132,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn new_pending_transaction_filter(&self) -> Result<RpcU256> {
+        measure_counter_inc!("newPendingTransactionFilter");
         let mut polls = self.polls().lock();
         let pending_transactions = self.pending_transactions_hashes();
         let id = polls.create_poll(PollFilter::PendingTransaction(pending_transactions));
@@ -137,6 +140,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn filter_changes(&self, index: Index) -> BoxFuture<FilterChanges> {
+        measure_counter_inc!("getFilterChanges");
         let mut polls = self.polls().lock();
         Box::new(match polls.poll_mut(&index.value()) {
             None => Either::A(future::err(errors::filter_not_found())),
@@ -225,6 +229,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn filter_logs(&self, index: Index) -> BoxFuture<Vec<Log>> {
+        measure_counter_inc!("getFilterLogs");
         let filter = {
             let mut polls = self.polls().lock();
 
@@ -259,6 +264,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn uninstall_filter(&self, index: Index) -> Result<bool> {
+        measure_counter_inc!("uninstallFilter");
         Ok(self.polls().lock().remove_poll(&index.value()))
     }
 }
