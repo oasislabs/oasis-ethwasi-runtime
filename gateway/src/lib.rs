@@ -114,8 +114,7 @@ mod test_helpers;
 mod traits;
 pub mod util;
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use clap::ArgMatches;
 use ethereum_types::U256;

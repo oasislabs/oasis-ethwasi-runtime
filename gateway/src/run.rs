@@ -14,10 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::any::Any;
-use std::sync::{Arc, Weak};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::{
+    any::Any,
+    sync::{Arc, Weak},
+    thread,
+    time::{Duration, Instant},
+};
 
 use client::Client;
 

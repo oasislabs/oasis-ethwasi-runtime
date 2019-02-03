@@ -9,8 +9,10 @@ use ekiden_core::bytes::H256 as EkidenH256;
 use ekiden_roothash_base::header::Header;
 use ekiden_storage_base::StorageBackend;
 use ekiden_storage_dummy::DummyStorageBackend;
-use ekiden_trusted::{db::{Database, DatabaseHandle},
-                     runtime::dispatcher::{BatchHandler, RuntimeCallContext}};
+use ekiden_trusted::{
+    db::{Database, DatabaseHandle},
+    runtime::dispatcher::{BatchHandler, RuntimeCallContext},
+};
 use std::sync::Arc;
 
 use *;

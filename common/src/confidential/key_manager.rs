@@ -3,7 +3,9 @@ use ekiden_core::random;
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
 use ekiden_keymanager_common::{ContractId, ContractKey};
 #[cfg(feature = "test")]
-use ekiden_keymanager_common::{PublicKeyType, EMPTY_PRIVATE_KEY, EMPTY_PUBLIC_KEY, EMPTY_STATE_KEY};
+use ekiden_keymanager_common::{
+    PublicKeyType, EMPTY_PRIVATE_KEY, EMPTY_PUBLIC_KEY, EMPTY_STATE_KEY,
+};
 use ethereum_types::Address;
 use keccak_hash::keccak;
 #[cfg(feature = "test")]
@@ -74,9 +76,11 @@ impl KeyManager {
         let contract_id = Self::contract_id(address);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
 
-        let (secret_key, state_key) = km.get_or_create_secret_keys(contract_id)
+        let (secret_key, state_key) = km
+            .get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
-        let public_key_payload = km.get_public_key(contract_id)
+        let public_key_payload = km
+            .get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
         Ok(ContractKey::new(

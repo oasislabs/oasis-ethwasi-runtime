@@ -18,23 +18,26 @@
 
 //! Eth PUB-SUB rpc implementation.
 
-use std::collections::BTreeMap;
-use std::sync::{Arc, Weak};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Weak},
+};
 
-use jsonrpc_core::futures::Future;
-use jsonrpc_core::Result;
-use jsonrpc_macros::pubsub::{Sink, Subscriber};
-use jsonrpc_macros::Trailing;
+use jsonrpc_core::{futures::Future, Result};
+use jsonrpc_macros::{
+    pubsub::{Sink, Subscriber},
+    Trailing,
+};
 use jsonrpc_pubsub::SubscriptionId;
 
-use parity_rpc::v1::helpers::{errors, Subscribers};
-use parity_rpc::v1::metadata::Metadata;
-use parity_rpc::v1::traits::EthPubSub;
-use parity_rpc::v1::types::{pubsub, H256, H64, Log, RichHeader};
+use parity_rpc::v1::{
+    helpers::{errors, Subscribers},
+    metadata::Metadata,
+    traits::EthPubSub,
+    types::{pubsub, Log, RichHeader, H256, H64},
+};
 
-use ethcore::encoded;
-use ethcore::filter::Filter as EthFilter;
-use ethcore::ids::BlockId;
+use ethcore::{encoded, filter::Filter as EthFilter, ids::BlockId};
 use parity_reactor::Remote;
 use parking_lot::RwLock;
 
@@ -142,7 +145,8 @@ impl ChainNotify for ChainNotificationHandler {
             let remote = self.remote.clone();
             let subscriber = subscriber.clone();
             self.remote.spawn({
-                let logs = self.client
+                let logs = self
+                    .client
                     .logs(filter)
                     .into_iter()
                     .map(From::from)

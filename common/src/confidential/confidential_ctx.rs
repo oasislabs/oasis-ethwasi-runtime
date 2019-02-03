@@ -1,6 +1,8 @@
 use super::key_manager::KeyManagerClient;
-use ekiden_core::mrae::{nonce::{Nonce, NONCE_SIZE},
-                        sivaessha2::{SivAesSha2, KEY_SIZE}};
+use ekiden_core::mrae::{
+    nonce::{Nonce, NONCE_SIZE},
+    sivaessha2::{SivAesSha2, KEY_SIZE},
+};
 use ekiden_keymanager_common::{confidential, ContractKey, PublicKeyType};
 use ethcore::state::ConfidentialCtx as EthConfidentialCtx;
 use ethereum_types::Address;
@@ -95,7 +97,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn encrypt(&mut self, data: Vec<u8>) -> Result<Vec<u8>, String> {
-        if self.peer_public_key.is_none() || self.contract_key.is_none()
+        if self.peer_public_key.is_none()
+            || self.contract_key.is_none()
             || self.next_nonce.is_none()
         {
             return Err("must have key pair of a contract and peer and a next nonce".to_string());
@@ -111,7 +114,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
             self.peer_public_key.clone().unwrap(),
             &contract_pk,
             &contract_sk,
-        ).map_err(|err| err.description().to_string());
+        )
+        .map_err(|err| err.description().to_string());
 
         self.next_nonce
             .as_mut()
@@ -123,7 +127,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn encrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>, String> {
-        let contract_key = &self.contract_key
+        let contract_key = &self
+            .contract_key
             .as_ref()
             .expect("Should always have a contract key to encrypt storage");
         let state_key = contract_key.state_key;
@@ -137,7 +142,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn decrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>, String> {
-        let contract_key = &self.contract_key
+        let contract_key = &self
+            .contract_key
             .as_ref()
             .expect("Should always have a contract key to decrypt storage");
         let state_key = contract_key.state_key;

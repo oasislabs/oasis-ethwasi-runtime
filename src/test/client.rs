@@ -2,16 +2,21 @@
 
 use ekiden_core::mrae::nonce::{Nonce, NONCE_SIZE};
 use ekiden_keymanager_common::ContractKey;
-use ethcore::{rlp,
-              state::ConfidentialCtx as EthConfidentialCtx,
-              transaction::{Action, Transaction as EthcoreTransaction}};
+use ethcore::{
+    rlp,
+    state::ConfidentialCtx as EthConfidentialCtx,
+    transaction::{Action, Transaction as EthcoreTransaction},
+};
 use ethereum_api::{Receipt, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
-use runtime_ethereum_common::confidential::{key_manager::TestKeyManager, ConfidentialCtx,
-                                            CONFIDENTIAL_PREFIX};
-use std::str::FromStr;
-use std::sync::{Mutex, MutexGuard};
+use runtime_ethereum_common::confidential::{
+    key_manager::TestKeyManager, ConfidentialCtx, CONFIDENTIAL_PREFIX,
+};
+use std::{
+    str::FromStr,
+    sync::{Mutex, MutexGuard},
+};
 use test::*;
 
 lazy_static! {
@@ -32,8 +37,10 @@ impl Client {
             keypair: KeyPair::from_secret(
                 Secret::from_str(
                     "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c",
-                ).unwrap(),
-            ).unwrap(),
+                )
+                .unwrap(),
+            )
+            .unwrap(),
             ephemeral_key: TestKeyManager::create_random_key(),
         }
     }
@@ -80,7 +87,8 @@ impl Client {
         }
 
         let contract_addr = contract.unwrap();
-        let enc_data = self.confidential_ctx(contract_addr.clone())
+        let enc_data = self
+            .confidential_ctx(contract_addr.clone())
             .encrypt(data)
             .unwrap();
 
@@ -143,7 +151,8 @@ impl Client {
                 gas: U256::from(1000000),
                 value: *value,
                 data: data,
-            }.sign(&self.keypair.secret(), None);
+            }
+            .sign(&self.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
             execute_raw_transaction(&raw.into_vec(), ctx)
@@ -255,8 +264,10 @@ impl Client {
     /// To be used together with `Client::raw_storage`.
     pub fn confidential_storage_key(&self, contract: Address, storage_key: H256) -> H256 {
         let km_confidential_ctx = self.key_manager_confidential_ctx(contract);
-        keccak_hash::keccak(&km_confidential_ctx
-            .encrypt_storage(storage_key.to_vec())
-            .unwrap())
+        keccak_hash::keccak(
+            &km_confidential_ctx
+                .encrypt_storage(storage_key.to_vec())
+                .unwrap(),
+        )
     }
 }

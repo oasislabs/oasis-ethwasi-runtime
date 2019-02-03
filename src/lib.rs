@@ -45,17 +45,25 @@ use ekiden_storage_base::StorageBackend;
 use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(target_env = "sgx")]
 use ekiden_trusted::db::untrusted::UntrustedStorageBackend;
-use ekiden_trusted::{db::{Database, DatabaseHandle},
-                     enclave::enclave_init,
-                     runtime::{configure_runtime_dispatch_batch_handler,
-                               create_runtime,
-                               dispatcher::{BatchHandler, RuntimeCallContext}}};
-use ethcore::{block::{IsBlock, OpenBlock},
-              rlp,
-              transaction::{Action, SignedTransaction, Transaction as EthcoreTransaction,
-                            UnverifiedTransaction}};
-use ethereum_api::{with_api, BlockId, ExecuteTransactionResponse, Filter, Log, Receipt,
-                   SimulateTransactionResponse, Transaction, TransactionRequest};
+use ekiden_trusted::{
+    db::{Database, DatabaseHandle},
+    enclave::enclave_init,
+    runtime::{
+        configure_runtime_dispatch_batch_handler, create_runtime,
+        dispatcher::{BatchHandler, RuntimeCallContext},
+    },
+};
+use ethcore::{
+    block::{IsBlock, OpenBlock},
+    rlp,
+    transaction::{
+        Action, SignedTransaction, Transaction as EthcoreTransaction, UnverifiedTransaction,
+    },
+};
+use ethereum_api::{
+    with_api, BlockId, ExecuteTransactionResponse, Filter, Log, Receipt,
+    SimulateTransactionResponse, Transaction, TransactionRequest,
+};
 use ethereum_types::{Address, H256, U256};
 
 use self::state::Cache;
@@ -177,7 +185,8 @@ fn get_block(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<Vec<u8
         BlockId::Hash(hash) => ectx.cache.block_by_hash(hash),
         BlockId::Number(number) => ectx.cache.block_by_number(number.into()),
         BlockId::Earliest => ectx.cache.block_by_number(0),
-        BlockId::Latest => ectx.cache
+        BlockId::Latest => ectx
+            .cache
             .block_by_number(ectx.cache.get_latest_block_number()),
     };
 
@@ -253,7 +262,7 @@ pub fn execute_raw_transaction(
             return Ok(ExecuteTransactionResponse {
                 hash: Err(e.to_string()),
                 created_contract: false,
-            })
+            });
         }
     };
 
@@ -264,7 +273,7 @@ pub fn execute_raw_transaction(
             return Ok(ExecuteTransactionResponse {
                 hash: Err(e.to_string()),
                 created_contract: false,
-            })
+            });
         }
     };
     let result = transact(&mut ectx, signed).map_err(|e| e.to_string());
@@ -297,9 +306,11 @@ fn make_unsigned_transaction(
     };
     let tx = EthcoreTransaction {
         action: if request.is_call {
-            Action::Call(request
-                .address
-                .ok_or(Error::new("Must provide address for call transaction."))?)
+            Action::Call(
+                request
+                    .address
+                    .ok_or(Error::new("Must provide address for call transaction."))?,
+            )
         } else {
             Action::Create
         },
@@ -334,7 +345,7 @@ pub fn simulate_transaction(
                 used_gas: U256::from(0),
                 refunded_gas: U256::from(0),
                 result: Err(e.to_string()),
-            })
+            });
         }
     };
     let exec = match evm::simulate_transaction(&ectx.cache, &tx) {
@@ -344,7 +355,7 @@ pub fn simulate_transaction(
                 used_gas: U256::from(0),
                 refunded_gas: U256::from(0),
                 result: Err(e.to_string()),
-            })
+            });
         }
     };
 

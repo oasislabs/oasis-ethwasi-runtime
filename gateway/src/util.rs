@@ -2,8 +2,7 @@ use std::io::Cursor;
 
 use ethereum_api::BlockId as EkidenBlockId;
 
-use ethcore::ids::BlockId;
-use ethcore::spec::Spec;
+use ethcore::{ids::BlockId, spec::Spec};
 use ethereum_types::U256;
 use jsonrpc_core::{Error, ErrorCode};
 

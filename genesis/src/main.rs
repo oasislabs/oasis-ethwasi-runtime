@@ -21,26 +21,26 @@ extern crate ekiden_tracing;
 
 extern crate runtime_ethereum_common;
 
-use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Cursor;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
 
 use clap::{crate_authors, crate_description, crate_name, crate_version, App, Arg};
-use ethcore::{block::{IsBlock, OpenBlock},
-              blockchain::{BlockChain, ExtrasInsert},
-              engines::ForkChoice,
-              kvdb::{self, KeyValueDB},
-              spec::Spec,
-              state::backend::Wrapped as WrappedBackend};
+use ethcore::{
+    block::{IsBlock, OpenBlock},
+    blockchain::{BlockChain, ExtrasInsert},
+    engines::ForkChoice,
+    kvdb::{self, KeyValueDB},
+    spec::Spec,
+    state::backend::Wrapped as WrappedBackend,
+};
 use ethereum_types::{Address, H256, U256};
 use log::{debug, info};
 use serde_json::{de::SliceRead, StreamDeserializer};
 
-use ekiden_core::{environment::{Environment, GrpcEnvironment},
-                  futures::Future,
-                  protobuf::Message};
+use ekiden_core::{
+    environment::{Environment, GrpcEnvironment},
+    futures::Future,
+    protobuf::Message,
+};
 use ekiden_db_trusted::DatabaseHandle;
 use ekiden_storage_base::InsertOptions;
 use runtime_ethereum_common::{get_factories, BlockchainStateDb, StorageHashDB, BLOCK_GAS_LIMIT};
@@ -192,9 +192,9 @@ fn main() {
     info!("Initializing genesis block");
     let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");
     let spec = Spec::load(Cursor::new(genesis_json)).unwrap();
-    let state_backend =
-        spec.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
-            .expect("state to be initialized");
+    let state_backend = spec
+        .ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
+        .expect("state to be initialized");
     state_db.commit();
 
     // Open a new block.
@@ -217,7 +217,8 @@ fn main() {
         true,                          /* is epoch_begin */
         &mut Vec::new().into_iter(),   /* ancestry */
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Iteratively parse input and import into state.
     info!("Injecting accounts");

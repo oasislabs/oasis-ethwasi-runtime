@@ -14,9 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::collections::HashSet;
-use std::io;
-use std::sync::Arc;
+use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
@@ -27,8 +25,7 @@ use rpc_apis::{self, ApiSet};
 
 use servers;
 
-pub use parity_rpc::ws::Server as WsServer;
-pub use parity_rpc::{HttpServer, RequestMiddleware};
+pub use parity_rpc::{ws::Server as WsServer, HttpServer, RequestMiddleware};
 
 pub const DAPPS_DOMAIN: &'static str = "web3.site";
 
@@ -142,7 +139,8 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
 
     let domain = DAPPS_DOMAIN;
     let url = format!("{}:{}", conf.interface, conf.port);
-    let addr = url.parse()
+    let addr = url
+        .parse()
         .map_err(|_| format!("Invalid WebSockets listen host/port given: {}", url))?;
 
     let handler = {
@@ -194,7 +192,8 @@ pub fn new_http<D: rpc_apis::Dependencies>(
 
     let domain = DAPPS_DOMAIN;
     let url = format!("{}:{}", conf.interface, conf.port);
-    let addr = url.parse()
+    let addr = url
+        .parse()
         .map_err(|_| format!("Invalid {} listen host/port given: {}", id, url))?;
     let handler = setup_apis(conf.apis, deps, conf.max_batch_size);
     let remote = deps.remote.clone();

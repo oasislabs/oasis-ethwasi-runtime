@@ -13,8 +13,10 @@ extern crate runtime_ethereum;
 extern crate runtime_ethereum_common;
 
 use ekiden_trusted::db::{Database, DatabaseHandle};
-use ethcore::{rlp,
-              transaction::{Action, Transaction as EthcoreTransaction}};
+use ethcore::{
+    rlp,
+    transaction::{Action, Transaction as EthcoreTransaction},
+};
 use ethereum_types::{H256, U256};
 use runtime_ethereum::test;
 
@@ -73,9 +75,9 @@ fn test_solidity_blockhash() {
     let (_, contract) = client.create_contract(blockhash_code, &U256::zero());
 
     let mut blockhash = |num: u64| -> Vec<u8> {
-        let mut data = hex::decode(
-            "e432a10e0000000000000000000000000000000000000000000000000000000000000000",
-        ).unwrap();
+        let mut data =
+            hex::decode("e432a10e0000000000000000000000000000000000000000000000000000000000000000")
+                .unwrap();
         let bytes: [u8; 8] = unsafe { transmute(num.to_be()) };
         for i in 0..8 {
             data[28 + i] = bytes[i];
@@ -84,7 +86,8 @@ fn test_solidity_blockhash() {
     };
 
     let block_number = test::with_batch_handler(|ctx| {
-        let ectx = ctx.runtime
+        let ectx = ctx
+            .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
         ectx.cache.get_latest_block_number()
@@ -92,7 +95,8 @@ fn test_solidity_blockhash() {
     let client_blockhash = blockhash(block_number);
 
     test::with_batch_handler(|ctx| {
-        let ectx = ctx.runtime
+        let ectx = ctx
+            .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
         assert_eq!(
@@ -132,7 +136,8 @@ fn test_solidity_x_contract_call() {
         "e3f30055000000000000000000000000{:\
          x}0000000000000000000000000000000000000000000000000000000000000029",
         contract_b
-    )).unwrap();
+    ))
+    .unwrap();
     let output = client.call(&contract_a, data, &U256::zero());
 
     // expected output is 42
@@ -174,33 +179,39 @@ fn test_signature_verification() {
         nonce: runtime_ethereum::get_account_nonce(
             &client.keypair.address(),
             &mut test::dummy_ctx(),
-        ).unwrap(),
+        )
+        .unwrap(),
         gas_price: U256::from(0),
         gas: U256::from(1000000),
         value: U256::from(0),
         data: vec![],
-    }.fake_sign(client.keypair.address());
+    }
+    .fake_sign(client.keypair.address());
     let bad_result = runtime_ethereum::execute_raw_transaction(
         &rlp::encode(&bad_sig).into_vec(),
         &mut test::dummy_ctx(),
-    ).unwrap()
-        .hash;
+    )
+    .unwrap()
+    .hash;
     let good_sig = EthcoreTransaction {
         action: Action::Create,
         nonce: runtime_ethereum::get_account_nonce(
             &client.keypair.address(),
             &mut test::dummy_ctx(),
-        ).unwrap(),
+        )
+        .unwrap(),
         gas_price: U256::from(0),
         gas: U256::from(1000000),
         value: U256::from(0),
         data: vec![],
-    }.sign(client.keypair.secret(), None);
+    }
+    .sign(client.keypair.secret(), None);
     let good_result = runtime_ethereum::execute_raw_transaction(
         &rlp::encode(&good_sig).into_vec(),
         &mut test::dummy_ctx(),
-    ).unwrap()
-        .hash;
+    )
+    .unwrap()
+    .hash;
     assert!(bad_result.is_err());
     assert!(good_result.is_ok());
 }
@@ -216,11 +227,13 @@ fn test_last_hashes() {
 
     // get last_hashes from latest block
     test::with_batch_handler(|ctx| {
-        let ectx = ctx.runtime
+        let ectx = ctx
+            .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
 
-        let last_hashes = ectx.cache
+        let last_hashes = ectx
+            .cache
             .last_hashes(&ectx.cache.best_block_header().hash());
 
         assert_eq!(last_hashes.len(), 256);
@@ -255,7 +268,8 @@ fn test_cache_invalidation() {
             runtime_ethereum::get_account_balance(&address_2, ctx),
             Ok(U256::from(21))
         );
-        let ectx = ctx.runtime
+        let ectx = ctx
+            .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
         ectx.cache.best_block_header().number()
@@ -276,7 +290,8 @@ fn test_cache_invalidation() {
             runtime_ethereum::get_account_balance(&address_2, ctx),
             Ok(U256::zero())
         );
-        let ectx = ctx.runtime
+        let ectx = ctx
+            .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
             .unwrap();
         assert_eq!(best_block, ectx.cache.best_block_header().number() + 1)

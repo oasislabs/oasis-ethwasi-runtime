@@ -1,21 +1,25 @@
-use std::marker::{Send, Sync};
-use std::sync::{Arc, Mutex, RwLock, Weak};
+use std::{
+    marker::{Send, Sync},
+    sync::{Arc, Mutex, RwLock, Weak},
+};
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
-use ethcore::blockchain::{BlockProvider, TransactionAddress};
-use ethcore::encoded;
-use ethcore::engines::EthEngine;
-use ethcore::error::{CallError, ExecutionError};
-use ethcore::executive::{contract_address, Executed, Executive, TransactOptions};
-use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::header::BlockNumber;
-use ethcore::ids::{BlockId, TransactionId};
-use ethcore::receipt::LocalizedReceipt;
-use ethcore::rlp;
-use ethcore::spec::Spec;
-use ethcore::transaction::{Transaction, UnverifiedTransaction};
-use ethcore::vm::{EnvInfo, LastHashes};
+use ethcore::{
+    blockchain::{BlockProvider, TransactionAddress},
+    encoded,
+    engines::EthEngine,
+    error::{CallError, ExecutionError},
+    executive::{contract_address, Executed, Executive, TransactOptions},
+    filter::Filter as EthcoreFilter,
+    header::BlockNumber,
+    ids::{BlockId, TransactionId},
+    receipt::LocalizedReceipt,
+    rlp,
+    spec::Spec,
+    transaction::{Transaction, UnverifiedTransaction},
+    vm::{EnvInfo, LastHashes},
+};
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 #[cfg(test)]
@@ -23,18 +27,14 @@ use grpcio;
 use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
-use runtime_ethereum_common::confidential::has_confidential_prefix;
-use runtime_ethereum_common::State as EthState;
+use runtime_ethereum_common::{confidential::has_confidential_prefix, State as EthState};
 use std::time::{SystemTime, UNIX_EPOCH};
 use traits::confidential::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
-use client_utils;
-use client_utils::db::Snapshot;
-use ekiden_common::bytes::B512;
-use ekiden_common::environment::Environment;
-use ekiden_core::error::Error;
-use ekiden_core::futures::prelude::*;
+use client_utils::{self, db::Snapshot};
+use ekiden_common::{bytes::B512, environment::Environment};
+use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
 use ekiden_keymanager_common::ContractId;
@@ -332,7 +332,8 @@ impl Client {
             self.client
                 .get_block_height(false)
                 .map(|height| height.into()),
-        )).unwrap_or_default()
+        ))
+        .unwrap_or_default()
     }
 
     pub fn block(&self, id: BlockId) -> BoxFuture<Option<encoded::Block>> {
@@ -423,7 +424,8 @@ impl Client {
                             &tx.sender(),
                             &tx.nonce,
                             &tx.data,
-                        ).0,
+                        )
+                        .0,
                     ),
                 },
                 logs: receipt
@@ -668,7 +670,8 @@ impl Client {
                 // TODO: runtime call
                 future::err(Error::new(
                     "oasis_getStorageExpiry runtime call not implemented",
-                )).into_box()
+                ))
+                .into_box()
             }
         }
     }
@@ -709,7 +712,8 @@ impl Client {
             start
         };
 
-        let mut head = db.block_hash(end)
+        let mut head = db
+            .block_hash(end)
             .and_then(|hash| db.block_header_data(&hash))
             .expect("Invalid block number");
 
@@ -720,7 +724,8 @@ impl Client {
             if head.number() <= start {
                 break;
             }
-            head = db.block_header_data(&head.parent_hash())
+            head = db
+                .block_header_data(&head.parent_hash())
                 .expect("Chain is corrupt");
         }
         headers.reverse();
@@ -731,7 +736,8 @@ impl Client {
     where
         T: 'static + Database + Send + Sync,
     {
-        let parent = db.best_block_hash()
+        let parent = db
+            .best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
         EnvInfo {
@@ -772,8 +778,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret =
-            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+        let ret = Executive::new(&mut state, &env_info, machine)
+            .transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -832,8 +838,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret =
-            Executive::new(&mut state, &env_info, machine).transact_virtual(transaction, options)?;
+        let ret = Executive::new(&mut state, &env_info, machine)
+            .transact_virtual(transaction, options)?;
         Ok(ret.gas_used + ret.refunded)
     }
 
@@ -873,9 +879,9 @@ impl Client {
                 // Must check that the transaction result has not errored. Otherwise, we'll
                 // just report estimateGas == 0 without giving an error.
                 match response.result {
-                    Err(e) => Err(CallError::Execution(
-                        ExecutionError::Internal(e.to_string()),
-                    )),
+                    Err(e) => Err(CallError::Execution(ExecutionError::Internal(
+                        e.to_string(),
+                    ))),
                     Ok(_result) => Ok(response.used_gas + response.refunded_gas),
                 }
             }

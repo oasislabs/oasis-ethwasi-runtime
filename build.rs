@@ -4,7 +4,7 @@ extern crate ekiden_tools;
 use std::env;
 
 fn main() {
-    ekiden_tools::build_trusted(ekiden_edl::edl());
+    ekiden_tools::build_trusted(ekiden_edl::get_edls().unwrap());
     generate_km_enclave_identity();
 }
 

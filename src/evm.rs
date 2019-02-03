@@ -1,13 +1,14 @@
 use std::io::Cursor;
 
 use ekiden_core::error::Result;
-use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
-              spec::Spec,
-              transaction::{LocalizedTransaction, SignedTransaction},
-              vm};
+use ethcore::{
+    executive::{contract_address, Executed, Executive, TransactOptions},
+    spec::Spec,
+    transaction::{LocalizedTransaction, SignedTransaction},
+    vm,
+};
 use ethereum_types::{Address, U256};
-use runtime_ethereum_common::confidential::ConfidentialCtx;
-use runtime_ethereum_common::BLOCK_GAS_LIMIT;
+use runtime_ethereum_common::{confidential::ConfidentialCtx, BLOCK_GAS_LIMIT};
 
 use super::state::Cache;
 
@@ -47,5 +48,6 @@ pub fn get_contract_address(sender: &Address, transaction: &LocalizedTransaction
         sender,
         &transaction.nonce,
         &transaction.data,
-    ).0
+    )
+    .0
 }
