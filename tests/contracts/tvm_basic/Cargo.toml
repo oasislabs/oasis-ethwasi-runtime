@@ -2,14 +2,15 @@
 name = "tvm_basic_contract"
 version = "0.1.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
+edition = "2018"
 
 [dependencies]
-ml-reader = { git = "https://github.com/oasislabs/ml-reader" }
-tvm-libsvm = { git = "https://github.com/oasislabs/ml-reader" }
 ndarray = "0.11.2"
-pwasm-ethereum = { git = "https://github.com/oasislabs/pwasm-ethereum-private", branch = "ekiden"}
+owasm-abi = "0.1"
+owasm-abi-derive = "0.1"
+owasm-ethereum = "0.7"
+owasm-std = "0.13"
 tvm = { git = "https://github.com/dmlc/tvm" }
-pwasm-std = "0.10.0"
 
 [lib]
 crate-type = ["cdylib"]
