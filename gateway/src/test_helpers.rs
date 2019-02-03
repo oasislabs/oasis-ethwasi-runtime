@@ -1,5 +1,7 @@
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, Mutex},
+};
 
 use clap::{App, Arg};
 use ekiden_common::bytes::H256;
@@ -12,8 +14,7 @@ use ekiden_scheduler_client;
 use ekiden_storage_base::{InsertOptions, StorageBackend};
 use ekiden_storage_client;
 use ekiden_storage_dummy::DummyStorageBackend;
-use ethcore::encoded;
-use ethcore::ids::BlockId;
+use ethcore::{encoded, ids::BlockId};
 use hex;
 
 use client::ChainNotify;

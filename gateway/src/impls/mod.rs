@@ -31,10 +31,9 @@ pub mod web3;
 
 #[cfg(feature = "confidential")]
 pub use self::confidential::ConfidentialClient;
-pub use self::eth::EthClient;
-pub use self::eth_filter::EthFilterClient;
 #[cfg(feature = "pubsub")]
 pub use self::eth_pubsub::EthPubSubClient;
-pub use self::net::NetClient;
-pub use self::oasis::OasisClient;
-pub use self::web3::Web3Client;
+pub use self::{
+    eth::EthClient, eth_filter::EthFilterClient, net::NetClient, oasis::OasisClient,
+    web3::Web3Client,
+};

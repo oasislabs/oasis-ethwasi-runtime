@@ -1,12 +1,10 @@
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use ekiden_common::bytes::H256;
 use ekiden_core::futures::Future;
 
 use ethereum_types::Address;
-use jsonrpc_core::futures::future;
-use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
+use jsonrpc_core::{futures::future, BoxFuture, Error, ErrorCode, Result};
 use jsonrpc_macros::Trailing;
 use parity_rpc::v1::types::{BlockNumber, H160 as RpcH160, H256 as RpcH256};
 

@@ -18,9 +18,7 @@
 
 //! RPC Requests Statistics
 
-use std::collections::HashMap;
-use std::fmt;
-use std::time;
+use std::{collections::HashMap, fmt, time};
 
 use parity_rpc::v1::types::H256;
 use parking_lot::RwLock;
@@ -130,7 +128,7 @@ impl RpcStats {
 #[cfg(test)]
 mod tests {
 
-    use super::{H256, RateCalculator, RpcStats};
+    use super::{RateCalculator, RpcStats, H256};
 
     #[test]
     fn should_calculate_rate() {

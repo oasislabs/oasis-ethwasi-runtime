@@ -171,7 +171,8 @@ fn main() {
         ws_rate_limit,
         gas_price,
         jsonrpc_max_batch_size,
-    ).unwrap();
+    )
+    .unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
     CtrlC::set_handler({

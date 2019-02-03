@@ -16,24 +16,27 @@
 
 //! Eth Filter RPC implementation
 
-use std::collections::HashSet;
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use client::Client;
 use util::jsonrpc_error;
 
-use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::ids::BlockId;
+use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use ethereum_types::H256;
 use parking_lot::Mutex;
 
-use jsonrpc_core::futures::future::Either;
-use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
-use parity_rpc::v1::helpers::{errors, limit_logs, PollFilter, PollManager};
-use parity_rpc::v1::traits::EthFilter;
-use parity_rpc::v1::types::{BlockNumber, Filter, FilterChanges, H256 as RpcH256, Index, Log,
-                            U256 as RpcU256};
+use jsonrpc_core::{
+    futures::{
+        future::{self, Either},
+        Future,
+    },
+    BoxFuture, Result,
+};
+use parity_rpc::v1::{
+    helpers::{errors, limit_logs, PollFilter, PollManager},
+    traits::EthFilter,
+    types::{BlockNumber, Filter, FilterChanges, Index, Log, H256 as RpcH256, U256 as RpcU256},
+};
 
 /// Something which provides data that can be filtered over.
 pub trait Filterable {
@@ -215,9 +218,12 @@ impl EthFilter for EthFilterClient {
                     let limit = filter.limit;
                     Either::B(
                         self.logs(filter)
-						.map(move |mut logs| { logs.extend(pending); logs }) // append fetched pending logs
-						.map(move |logs| limit_logs(logs, limit)) // limit the logs
-						.map(FilterChanges::Logs),
+                            .map(move |mut logs| {
+                                logs.extend(pending);
+                                logs
+                            }) // append fetched pending logs
+                            .map(move |logs| limit_logs(logs, limit)) // limit the logs
+                            .map(FilterChanges::Logs),
                     )
                 }
             },
@@ -252,10 +258,13 @@ impl EthFilter for EthFilterClient {
         // retrieve logs asynchronously, appending pending logs.
         let limit = filter.limit;
         let logs = self.logs(filter);
-        Box::new(logs.map(move |mut logs| {
-            logs.extend(pending);
-            logs
-        }).map(move |logs| limit_logs(logs, limit)))
+        Box::new(
+            logs.map(move |mut logs| {
+                logs.extend(pending);
+                logs
+            })
+            .map(move |logs| limit_logs(logs, limit)),
+        )
     }
 
     fn uninstall_filter(&self, index: Index) -> Result<bool> {

@@ -5,13 +5,17 @@ use ekiden_keymanager_common::confidential;
 use ethereum_api::TransactionRequest;
 use ethereum_types::Address;
 use impls::eth::EthClient;
-use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
+use jsonrpc_core::{
+    futures::{future, Future},
+    BoxFuture, Error, ErrorCode, Result,
+};
 use jsonrpc_macros::Trailing;
-use parity_rpc::v1::helpers::errors;
-use parity_rpc::v1::metadata::Metadata;
-use parity_rpc::v1::traits::Eth;
-use parity_rpc::v1::types::{BlockNumber, Bytes, CallRequest, H256};
+use parity_rpc::v1::{
+    helpers::errors,
+    metadata::Metadata,
+    traits::Eth,
+    types::{BlockNumber, Bytes, CallRequest, H256},
+};
 use std::sync::Arc;
 use traits::confidential::{Confidential, PublicKeyResult};
 

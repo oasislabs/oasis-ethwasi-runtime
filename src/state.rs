@@ -1,28 +1,35 @@
-use std::{collections::HashSet,
-          sync::{Arc, Mutex}};
+use std::{
+    collections::HashSet,
+    sync::{Arc, Mutex},
+};
 
 use super::evm::{get_contract_address, GAS_LIMIT, SPEC};
 use ekiden_core::{self, error::Result};
 use ekiden_storage_base::StorageBackend;
 use ekiden_trusted::db::{Database, DatabaseHandle};
-use ethcore::{self,
-              block::{IsBlock, LockedBlock, OpenBlock},
-              blockchain::{BlockChain, BlockProvider, ExtrasInsert},
-              encoded::Block,
-              engines::ForkChoice,
-              filter::Filter as EthcoreFilter,
-              header::Header,
-              kvdb::{self, KeyValueDB},
-              state::backend::Wrapped as WrappedBackend,
-              transaction::Action,
-              types::{ids::BlockId,
-                      log_entry::{LocalizedLogEntry, LogEntry},
-                      receipt::TransactionOutcome,
-                      BlockNumber}};
+use ethcore::{
+    self,
+    block::{IsBlock, LockedBlock, OpenBlock},
+    blockchain::{BlockChain, BlockProvider, ExtrasInsert},
+    encoded::Block,
+    engines::ForkChoice,
+    filter::Filter as EthcoreFilter,
+    header::Header,
+    kvdb::{self, KeyValueDB},
+    state::backend::Wrapped as WrappedBackend,
+    transaction::Action,
+    types::{
+        ids::BlockId,
+        log_entry::{LocalizedLogEntry, LogEntry},
+        receipt::TransactionOutcome,
+        BlockNumber,
+    },
+};
 use ethereum_api::{BlockId as EkidenBlockId, Filter, Log, Receipt, Transaction};
 use ethereum_types::{Address, H256, U256};
-use runtime_ethereum_common::{confidential::ConfidentialCtx, get_factories, Backend,
-                              BlockchainStateDb, State, StorageHashDB};
+use runtime_ethereum_common::{
+    confidential::ConfidentialCtx, get_factories, Backend, BlockchainStateDb, State, StorageHashDB,
+};
 
 lazy_static! {
     static ref GLOBAL_CACHE: Mutex<Option<Cache>> = Mutex::new(None);
@@ -47,9 +54,9 @@ impl Cache {
         let state_db = StorageHashDB::new(storage, blockchain_db.clone());
         // Initialize Ethereum state with the genesis block in case there is none.
         info!("initializing ethereum state");
-        let state_backend =
-            SPEC.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
-                .expect("state to be initialized");
+        let state_backend = SPEC
+            .ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
+            .expect("state to be initialized");
 
         info!("performing commit after initialization");
         state_db.commit();
@@ -96,7 +103,8 @@ impl Cache {
         // Commit any pending state updates.
         self.state_db.commit();
         // Commit any blockchain state updates.
-        let root_hash = self.blockchain_db
+        let root_hash = self
+            .blockchain_db
             .commit()
             .expect("commit blockchain state");
 
@@ -145,7 +153,8 @@ impl Cache {
     }
 
     pub fn get_account_storage(&self, address: Address, key: H256) -> Result<H256> {
-        Ok(self.get_state(ConfidentialCtx::new())?
+        Ok(self
+            .get_state(ConfidentialCtx::new())?
             .storage_at(&address, &key)?)
     }
 
@@ -159,7 +168,8 @@ impl Cache {
 
     pub fn get_account_code(&self, address: &Address) -> Result<Option<Vec<u8>>> {
         // convert from Option<Arc<Vec<u8>>> to Option<Vec<u8>>
-        Ok(self.get_state(ConfidentialCtx::new())?
+        Ok(self
+            .get_state(ConfidentialCtx::new())?
             .code(&address)?
             .map(|c| (&*c).clone()))
     }
@@ -195,11 +205,11 @@ impl Cache {
             None => return vec![],
         };
 
-        let blocks = filter.bloom_possibilities().iter()
-            .map(|bloom| {
-                self.chain.blocks_with_bloom(bloom, from, to)
-            })
-        .flat_map(|m| m)
+        let blocks = filter
+            .bloom_possibilities()
+            .iter()
+            .map(|bloom| self.chain.blocks_with_bloom(bloom, from, to))
+            .flat_map(|m| m)
             // remove duplicate elements
             .collect::<HashSet<u64>>()
             .into_iter()
