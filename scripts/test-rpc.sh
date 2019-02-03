@@ -35,6 +35,9 @@ run_test() {
 
     echo "Running RPC tests."
     ./run_tests.sh
+
+    # Dump gateway metrics
+    curl -v http://localhost:3001/metrics
 }
 
 run_test
