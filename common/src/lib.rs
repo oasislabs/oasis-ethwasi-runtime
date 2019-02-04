@@ -1,5 +1,4 @@
 //! Common data structures shared by runtime and gateway.
-#![feature(int_to_from_bytes)]
 
 extern crate ekiden_core;
 extern crate ekiden_keymanager_client;

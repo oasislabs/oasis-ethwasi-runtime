@@ -16,8 +16,6 @@
 
 //! Ethcore client application.
 
-#![feature(int_to_from_bytes)]
-
 #[macro_use]
 extern crate clap;
 extern crate env_logger;

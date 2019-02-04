@@ -1,5 +1,3 @@
-#![feature(int_to_from_bytes)]
-
 extern crate common_types as ethcore_types;
 extern crate ekiden_common;
 extern crate ekiden_core;
