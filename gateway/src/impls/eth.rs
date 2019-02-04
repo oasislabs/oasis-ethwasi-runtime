@@ -536,6 +536,16 @@ impl Eth for EthClient {
             info!("eth_sendRawTransaction(data: ...)");
         }
 
+        measure_configure!(
+            "sendRawTransaction_time",
+            "Latency of sendRawTransaction call.",
+            MetricConfig::Histogram {
+                buckets: vec![
+                    0.25, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 25.0, 50.0
+                ],
+            }
+        );
+
         Box::new(measure_future_histogram_timer!(
             "sendRawTransaction_time",
             self.client
