@@ -135,7 +135,9 @@ impl Cache {
     }
 
     pub(crate) fn new_block(&self) -> Result<OpenBlock<'static>> {
+        info!("fetching best block header");
         let parent = self.chain.best_block_header();
+        info!("creating new open block");
         Ok(OpenBlock::new(
             &*SPEC.engine,
             get_factories(),
@@ -224,6 +226,7 @@ impl Cache {
     }
 
     pub fn last_hashes(&self, parent_hash: &H256) -> Arc<Vec<H256>> {
+        info!("fetching last hashes");
         let mut last_hashes = vec![];
         last_hashes.resize(256, H256::default());
         last_hashes[0] = parent_hash.clone();
@@ -235,6 +238,8 @@ impl Cache {
                 None => break,
             }
         }
+        info!("last hashes fetched");
+
         Arc::new(last_hashes)
     }
 
