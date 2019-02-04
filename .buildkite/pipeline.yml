@@ -83,7 +83,7 @@ steps:
   - label: Cargo tests
     command:
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/test_generic.sh /workdir --features test -p runtime-ethereum -p runtime-ethereum-common -p web3-gateway
+      - .buildkite/rust/test_runtime_and_gateway.sh /workdir
     agents:
       buildkite_agent_size: large
     plugins:
