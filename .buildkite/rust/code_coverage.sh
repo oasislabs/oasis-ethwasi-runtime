@@ -59,6 +59,7 @@ cargo tarpaulin \
   --exclude-files node_modules* \
   --exclude-files gateway/src/informant.rs \
   --exclude-files gateway/src/middleware.rs \
+  --exclude-files gateway/src/rpc.rs \
   --ignore-tests \
   --out Xml \
   --coveralls ${coveralls_api_token} \
