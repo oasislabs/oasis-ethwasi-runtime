@@ -10,37 +10,39 @@ extern crate rlp;
 extern crate serde_derive;
 extern crate serde_json;
 
-extern crate client_utils;
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
 extern crate ekiden_roothash_api;
 extern crate ekiden_roothash_base;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_batch;
+extern crate ekiden_storage_client;
 extern crate ekiden_tracing;
 
 extern crate runtime_ethereum_common;
 
-use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Cursor;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
 
 use clap::{crate_authors, crate_description, crate_name, crate_version, App, Arg};
-use ethcore::{block::{IsBlock, OpenBlock},
-              blockchain::{BlockChain, ExtrasInsert},
-              engines::ForkChoice,
-              kvdb::{self, KeyValueDB},
-              spec::Spec,
-              state::backend::Wrapped as WrappedBackend};
+use ethcore::{
+    block::{IsBlock, OpenBlock},
+    blockchain::{BlockChain, ExtrasInsert},
+    engines::ForkChoice,
+    kvdb::{self, KeyValueDB},
+    spec::Spec,
+    state::backend::Wrapped as WrappedBackend,
+};
 use ethereum_types::{Address, H256, U256};
 use log::{debug, info};
 use serde_json::{de::SliceRead, StreamDeserializer};
 
-use ekiden_core::{futures::Future, protobuf::Message};
+use ekiden_core::{
+    environment::{Environment, GrpcEnvironment},
+    futures::Future,
+    protobuf::Message,
+};
 use ekiden_db_trusted::DatabaseHandle;
-use ekiden_storage_base::{InsertOptions, StorageBackend};
+use ekiden_storage_base::InsertOptions;
 use runtime_ethereum_common::{get_factories, BlockchainStateDb, StorageHashDB, BLOCK_GAS_LIMIT};
 
 #[derive(Deserialize)]
@@ -154,12 +156,10 @@ fn main() {
     // Initialize logger.
     pretty_env_logger::init();
 
-    let known_components = client_utils::components::create_known_components();
     let args = App::new(concat!(crate_name!(), " client"))
         .about(crate_description!())
         .author(crate_authors!())
         .version(crate_version!())
-        .args(&known_components.get_arguments())
         .arg(
             Arg::with_name("exported_state")
                 .help("Exported Ethereum blockchain state in JSON format")
@@ -172,18 +172,17 @@ fn main() {
                 .takes_value(true)
                 .required(true),
         )
+        .args(&ekiden_core::remote_node::get_arguments())
         .get_matches();
 
     // Initialize tracing.
     ekiden_tracing::report_forever("genesis", &args);
 
-    // Initialize component container.
-    let mut container = known_components
-        .build_with_arguments(&args)
-        .expect("failed to initialize component container");
-
     // Initialize storage and database overlays.
-    let raw_storage = container.inject::<StorageBackend>().unwrap();
+    let environment: Arc<Environment> = Arc::new(GrpcEnvironment::default());
+    let remote_node = ekiden_core::remote_node::RemoteNode::from_args(&args);
+    let channel = remote_node.create_channel(environment);
+    let raw_storage = Arc::new(ekiden_storage_client::StorageClient::new(channel));
     let storage = Arc::new(ekiden_storage_batch::BatchStorageBackend::new(raw_storage));
     let db = DatabaseHandle::new(storage.clone());
     let blockchain_db = Arc::new(BlockchainStateDb::new(db));
@@ -193,9 +192,9 @@ fn main() {
     info!("Initializing genesis block");
     let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");
     let spec = Spec::load(Cursor::new(genesis_json)).unwrap();
-    let state_backend =
-        spec.ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
-            .expect("state to be initialized");
+    let state_backend = spec
+        .ensure_db_good(WrappedBackend(Box::new(state_db.clone())), &get_factories())
+        .expect("state to be initialized");
     state_db.commit();
 
     // Open a new block.
@@ -218,7 +217,8 @@ fn main() {
         true,                          /* is epoch_begin */
         &mut Vec::new().into_iter(),   /* ancestry */
         None,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Iteratively parse input and import into state.
     info!("Injecting accounts");
@@ -234,10 +234,11 @@ fn main() {
         let nonce = U256::from_str(strip_0x(&account.nonce)).unwrap();
 
         // Inject account.
+        // (storage expiry initialized to 0)
         block
             .block_mut()
             .state_mut()
-            .new_contract(&address, balance, nonce);
+            .new_contract(&address, balance, nonce, 0);
         if let Some(code) = account.code {
             block
                 .block_mut()

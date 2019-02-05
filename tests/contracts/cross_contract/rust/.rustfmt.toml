@@ -1,3 +1,0 @@
-# Needed because owasm-gen requires the contract use the same rustfmt version.
-# See https://github.com/oasislabs/owasm-abi/issues/21
-required_version = "1.0.1"

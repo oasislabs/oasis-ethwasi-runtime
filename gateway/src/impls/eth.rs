@@ -16,30 +16,36 @@
 
 //! Eth rpc implementation.
 
-use std::collections::BTreeMap;
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use ethereum_types::{Address, H256, H64, U256};
 
 use client::Client;
 use util::jsonrpc_error;
 
-use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::ids::{BlockId, TransactionId};
+use ethcore::{
+    filter::Filter as EthcoreFilter,
+    ids::{BlockId, TransactionId},
+};
 
-use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpc_core::{
+    futures::{future, Future},
+    BoxFuture, Result,
+};
 use jsonrpc_macros::Trailing;
 
 use log;
 
-use parity_rpc::v1::helpers::{errors, fake_sign, limit_logs};
-use parity_rpc::v1::metadata::Metadata;
-use parity_rpc::v1::traits::Eth;
-use parity_rpc::v1::types::{block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes,
-                            CallRequest, Filter, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64,
-                            Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock,
-                            Transaction as RpcTransaction, U256 as RpcU256, Work};
+use parity_rpc::v1::{
+    helpers::{errors, fake_sign, limit_logs},
+    metadata::Metadata,
+    traits::Eth,
+    types::{
+        block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter,
+        Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, Transaction as RpcTransaction,
+        Work, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64, U256 as RpcU256,
+    },
+};
 
 // short for "try_boxfuture"
 // unwrap a result, returning a BoxFuture<_, Err> on failure.
@@ -497,7 +503,8 @@ impl Eth for EthClient {
             )));
         }
 
-        let logs = self.client
+        let logs = self
+            .client
             .logs(filter.clone())
             .into_iter()
             .map(From::from)
@@ -528,6 +535,16 @@ impl Eth for EthClient {
         } else {
             info!("eth_sendRawTransaction(data: ...)");
         }
+
+        measure_configure!(
+            "sendRawTransaction_time",
+            "Latency of sendRawTransaction call.",
+            MetricConfig::Histogram {
+                buckets: vec![
+                    0.25, 0.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 25.0, 50.0
+                ],
+            }
+        );
 
         Box::new(measure_future_histogram_timer!(
             "sendRawTransaction_time",

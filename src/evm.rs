@@ -1,15 +1,16 @@
 use std::io::Cursor;
 
 use ekiden_core::error::Result;
-use ethcore::{executive::{contract_address, Executed, Executive, TransactOptions},
-              spec::Spec,
-              transaction::{LocalizedTransaction, SignedTransaction},
-              vm};
+use ethcore::{
+    executive::{contract_address, Executed, Executive, TransactOptions},
+    spec::Spec,
+    transaction::{LocalizedTransaction, SignedTransaction},
+    vm,
+};
 use ethereum_types::{Address, U256};
-use runtime_ethereum_common::BLOCK_GAS_LIMIT;
+use runtime_ethereum_common::{confidential::ConfidentialCtx, BLOCK_GAS_LIMIT};
 
 use super::state::Cache;
-use super::storage::GlobalStorage;
 
 lazy_static! {
     pub(crate) static ref GAS_LIMIT: U256 = U256::from(BLOCK_GAS_LIMIT);
@@ -33,15 +34,10 @@ fn get_env_info(cache: &Cache) -> vm::EnvInfo {
 }
 
 pub fn simulate_transaction(cache: &Cache, transaction: &SignedTransaction) -> Result<Executed> {
-    let mut state = cache.get_state()?;
+    let mut state = cache.get_state(ConfidentialCtx::new())?;
     let options = TransactOptions::with_no_tracing().dont_check_nonce();
-    let mut storage = GlobalStorage::new();
-    let exec = Executive::new(
-        &mut state,
-        &get_env_info(cache),
-        SPEC.engine.machine(),
-        &mut storage,
-    ).transact_virtual(&transaction, options)?;
+    let exec = Executive::new(&mut state, &get_env_info(cache), SPEC.engine.machine())
+        .transact_virtual(&transaction, options)?;
     Ok(exec)
 }
 
@@ -52,5 +48,6 @@ pub fn get_contract_address(sender: &Address, transaction: &LocalizedTransaction
         sender,
         &transaction.nonce,
         &transaction.data,
-    ).0
+    )
+    .0
 }

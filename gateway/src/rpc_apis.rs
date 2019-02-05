@@ -14,17 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::cmp::PartialEq;
-use std::collections::HashSet;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{cmp::PartialEq, collections::HashSet, str::FromStr, sync::Arc};
 
 use client::Client;
-use ekiden_storage_base::StorageBackend;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
-use parity_rpc::informant::ActivityNotifier;
-use parity_rpc::{Host, Metadata};
+use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
 #[cfg(feature = "confidential")]
 use impls::ConfidentialClient;
@@ -152,7 +147,6 @@ pub struct FullDependencies {
     pub client: Arc<Client>,
     pub ws_address: Option<Host>,
     pub remote: parity_reactor::Remote,
-    pub storage: Arc<StorageBackend>,
 }
 
 impl FullDependencies {
@@ -198,7 +192,7 @@ impl FullDependencies {
                     }
                 }
                 Api::Oasis => {
-                    handler.extend_with(OasisClient::new(&self.storage).to_delegate());
+                    handler.extend_with(OasisClient::new(self.client.clone()).to_delegate());
                 }
                 Api::Confidential => {
                     if cfg!(feature = "confidential") {
@@ -237,9 +231,10 @@ impl ApiSet {
             Api::EthPubSub,
             Api::Oasis,
             Api::Confidential,
-        ].into_iter()
-            .cloned()
-            .collect();
+        ]
+        .into_iter()
+        .cloned()
+        .collect();
 
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
@@ -288,8 +283,9 @@ mod test {
             Api::EthPubSub,
             Api::Oasis,
             Api::Confidential,
-        ].into_iter()
-            .collect();
+        ]
+        .into_iter()
+        .collect();
         assert_eq!(ApiSet::UnsafeContext.list_apis(), expected);
     }
 
@@ -303,8 +299,9 @@ mod test {
             Api::EthPubSub,
             Api::Oasis,
             Api::Confidential,
-        ].into_iter()
-            .collect();
+        ]
+        .into_iter()
+        .collect();
         assert_eq!(ApiSet::SafeContext.list_apis(), expected);
     }
 
@@ -320,8 +317,9 @@ mod test {
                     Api::EthPubSub,
                     Api::Oasis,
                     Api::Confidential,
-                ].into_iter()
-                    .collect()
+                ]
+                .into_iter()
+                .collect()
             )
         );
     }
@@ -338,8 +336,9 @@ mod test {
                     Api::EthPubSub,
                     Api::Oasis,
                     Api::Confidential,
-                ].into_iter()
-                    .collect()
+                ]
+                .into_iter()
+                .collect()
             )
         );
     }

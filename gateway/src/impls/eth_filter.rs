@@ -16,24 +16,27 @@
 
 //! Eth Filter RPC implementation
 
-use std::collections::HashSet;
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use client::Client;
 use util::jsonrpc_error;
 
-use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::ids::BlockId;
+use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use ethereum_types::H256;
 use parking_lot::Mutex;
 
-use jsonrpc_core::futures::future::Either;
-use jsonrpc_core::futures::{future, Future};
-use jsonrpc_core::{BoxFuture, Result};
-use parity_rpc::v1::helpers::{errors, limit_logs, PollFilter, PollManager};
-use parity_rpc::v1::traits::EthFilter;
-use parity_rpc::v1::types::{BlockNumber, Filter, FilterChanges, H256 as RpcH256, Index, Log,
-                            U256 as RpcU256};
+use jsonrpc_core::{
+    futures::{
+        future::{self, Either},
+        Future,
+    },
+    BoxFuture, Result,
+};
+use parity_rpc::v1::{
+    helpers::{errors, limit_logs, PollFilter, PollManager},
+    traits::EthFilter,
+    types::{BlockNumber, Filter, FilterChanges, Index, Log, H256 as RpcH256, U256 as RpcU256},
+};
 
 /// Something which provides data that can be filtered over.
 pub trait Filterable {
@@ -116,6 +119,7 @@ impl Filterable for EthFilterClient {
 
 impl EthFilter for EthFilterClient {
     fn new_filter(&self, filter: Filter) -> Result<RpcU256> {
+        measure_counter_inc!("newFilter");
         let mut polls = self.polls().lock();
         let block_number = self.best_block_number();
         let id = polls.create_poll(PollFilter::Logs(block_number, Default::default(), filter));
@@ -123,6 +127,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn new_block_filter(&self) -> Result<RpcU256> {
+        measure_counter_inc!("newBlockFilter");
         let mut polls = self.polls().lock();
         // +1, since we don't want to include the current block
         let id = polls.create_poll(PollFilter::Block(self.best_block_number() + 1));
@@ -130,6 +135,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn new_pending_transaction_filter(&self) -> Result<RpcU256> {
+        measure_counter_inc!("newPendingTransactionFilter");
         let mut polls = self.polls().lock();
         let pending_transactions = self.pending_transactions_hashes();
         let id = polls.create_poll(PollFilter::PendingTransaction(pending_transactions));
@@ -137,6 +143,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn filter_changes(&self, index: Index) -> BoxFuture<FilterChanges> {
+        measure_counter_inc!("getFilterChanges");
         let mut polls = self.polls().lock();
         Box::new(match polls.poll_mut(&index.value()) {
             None => Either::A(future::err(errors::filter_not_found())),
@@ -215,9 +222,12 @@ impl EthFilter for EthFilterClient {
                     let limit = filter.limit;
                     Either::B(
                         self.logs(filter)
-						.map(move |mut logs| { logs.extend(pending); logs }) // append fetched pending logs
-						.map(move |logs| limit_logs(logs, limit)) // limit the logs
-						.map(FilterChanges::Logs),
+                            .map(move |mut logs| {
+                                logs.extend(pending);
+                                logs
+                            }) // append fetched pending logs
+                            .map(move |logs| limit_logs(logs, limit)) // limit the logs
+                            .map(FilterChanges::Logs),
                     )
                 }
             },
@@ -225,6 +235,7 @@ impl EthFilter for EthFilterClient {
     }
 
     fn filter_logs(&self, index: Index) -> BoxFuture<Vec<Log>> {
+        measure_counter_inc!("getFilterLogs");
         let filter = {
             let mut polls = self.polls().lock();
 
@@ -252,13 +263,17 @@ impl EthFilter for EthFilterClient {
         // retrieve logs asynchronously, appending pending logs.
         let limit = filter.limit;
         let logs = self.logs(filter);
-        Box::new(logs.map(move |mut logs| {
-            logs.extend(pending);
-            logs
-        }).map(move |logs| limit_logs(logs, limit)))
+        Box::new(
+            logs.map(move |mut logs| {
+                logs.extend(pending);
+                logs
+            })
+            .map(move |logs| limit_logs(logs, limit)),
+        )
     }
 
     fn uninstall_filter(&self, index: Index) -> Result<bool> {
+        measure_counter_inc!("uninstallFilter");
         Ok(self.polls().lock().remove_poll(&index.value()))
     }
 }

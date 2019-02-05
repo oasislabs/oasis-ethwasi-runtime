@@ -31,7 +31,7 @@ $ echo "https://<username>:<token>@github.com" > ~/.git-credentials
 *In the future, these will already be part of the development container.*
 
 You should install the correct versions (e.g., the same that you build against in `Cargo.toml`)
-of the Ekiden compute node:
+of the Ekiden binaries:
 ```bash
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-tools
 $ cargo install --git https://github.com/oasislabs/ekiden --branch master ekiden-worker

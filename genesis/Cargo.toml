@@ -20,6 +20,7 @@ client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" 
 ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-storage-batch = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-roothash-api = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

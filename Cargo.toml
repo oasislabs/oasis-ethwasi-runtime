@@ -29,18 +29,19 @@ protobuf = "~2.0"
 sha3 = "0.6"
 sodalite = "0.3.0"
 elastic-array = "0.10"
+ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 [build-dependencies]
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
-[dev-dependencies]
-ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-
 [features]
 default = ["confidential"]
 confidential = []
 benchmark = []
+# Use test feature flag since Rust doesn't support conditional compilation using
+# cfg(test) on dependent crates.
+test = ["runtime-ethereum-common/test"]
 
 [profile.release]
 panic = "abort"
@@ -58,12 +59,4 @@ members = [
     "common",
     "gateway",
     "genesis",
-    "tests/run_contract",
-]
-exclude = [
-    "tests/contracts/basic_wasm",
-    "tests/contracts/rust-logistic",
-    "tests/contracts/storage",
-    "tests/contracts/cross_contract/rust/deployed",
-    "tests/contracts/cross_contract/rust/existing",
 ]

@@ -33,6 +33,9 @@ run_test() {
     cd /tmp/dapps
 
     run_dapp $1
+
+    # Dump gateway metrics
+    curl -v http://localhost:3001/metrics
 }
 
 run_dapp() {

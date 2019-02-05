@@ -1,21 +1,25 @@
-use std::marker::{Send, Sync};
-use std::sync::{Arc, Mutex, RwLock, Weak};
+use std::{
+    marker::{Send, Sync},
+    sync::{Arc, Mutex, RwLock, Weak},
+};
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
-use ethcore::blockchain::{BlockProvider, TransactionAddress};
-use ethcore::encoded;
-use ethcore::engines::EthEngine;
-use ethcore::error::{CallError, ExecutionError};
-use ethcore::executive::{contract_address, Executed, Executive, TransactOptions};
-use ethcore::filter::Filter as EthcoreFilter;
-use ethcore::header::BlockNumber;
-use ethcore::ids::{BlockId, TransactionId};
-use ethcore::receipt::LocalizedReceipt;
-use ethcore::rlp;
-use ethcore::spec::Spec;
-use ethcore::transaction::{Transaction, UnverifiedTransaction};
-use ethcore::vm::{EnvInfo, LastHashes};
+use ethcore::{
+    blockchain::{BlockProvider, TransactionAddress},
+    encoded,
+    engines::EthEngine,
+    error::{CallError, ExecutionError},
+    executive::{contract_address, Executed, Executive, TransactOptions},
+    filter::Filter as EthcoreFilter,
+    header::BlockNumber,
+    ids::{BlockId, TransactionId},
+    receipt::LocalizedReceipt,
+    rlp,
+    spec::Spec,
+    transaction::{Transaction, UnverifiedTransaction},
+    vm::{EnvInfo, LastHashes},
+};
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 #[cfg(test)]
@@ -23,18 +27,14 @@ use grpcio;
 use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
-use runtime_ethereum_common::confidential::has_confidential_prefix;
-use runtime_ethereum_common::State as EthState;
+use runtime_ethereum_common::{confidential::has_confidential_prefix, State as EthState};
 use std::time::{SystemTime, UNIX_EPOCH};
 use traits::confidential::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
-use client_utils;
-use client_utils::db::Snapshot;
-use ekiden_common::bytes::B512;
-use ekiden_common::environment::Environment;
-use ekiden_core::error::Error;
-use ekiden_core::futures::prelude::*;
+use client_utils::{self, db::Snapshot};
+use ekiden_common::{bytes::B512, environment::Environment};
+use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
 use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
 use ekiden_keymanager_common::ContractId;
@@ -43,7 +43,6 @@ use ekiden_storage_base::StorageBackend;
 use ekiden_storage_dummy::DummyStorageBackend;
 use ethereum_api::TransactionRequest;
 use state::{self, StateDb};
-use storage::Web3GlobalStorage;
 #[cfg(test)]
 use test_helpers::{self, MockDb};
 #[cfg(test)]
@@ -91,7 +90,6 @@ pub struct Client {
     eip86_transition: u64,
     environment: Arc<Environment>,
     storage_backend: Arc<StorageBackend>,
-    storage: Arc<RwLock<Web3GlobalStorage>>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
     listeners: RwLock<Vec<Weak<ChainNotify>>>,
@@ -107,8 +105,6 @@ impl Client {
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
-        let storage = Web3GlobalStorage::new(backend.clone());
-
         // get current block number from db snapshot (or 0)
         let current_block_number = match snapshot_manager {
             Some(ref manager) => match state::StateDb::new(backend.clone(), manager.get_snapshot())
@@ -126,7 +122,6 @@ impl Client {
             eip86_transition: spec.params().eip86_transition,
             environment,
             storage_backend: backend,
-            storage: Arc::new(RwLock::new(storage)),
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
             listeners: RwLock::new(vec![]),
@@ -142,16 +137,13 @@ impl Client {
         let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(
             grpc_environment,
         ));
-        let storage_backend = Arc::new(DummyStorageBackend::new());
-        let storage = Web3GlobalStorage::new(storage_backend.clone());
         Self {
             client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
             snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
-            storage_backend,
-            storage: Arc::new(RwLock::new(storage)),
+            storage_backend: Arc::new(DummyStorageBackend::new()),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
             gas_price: U256::from(1_000_000_000),
@@ -340,7 +332,8 @@ impl Client {
             self.client
                 .get_block_height(false)
                 .map(|height| height.into()),
-        )).unwrap_or_default()
+        ))
+        .unwrap_or_default()
     }
 
     pub fn block(&self, id: BlockId) -> BoxFuture<Option<encoded::Block>> {
@@ -431,7 +424,8 @@ impl Client {
                             &tx.sender(),
                             &tx.nonce,
                             &tx.data,
-                        ).0,
+                        )
+                        .0,
                     ),
                 },
                 logs: receipt
@@ -655,6 +649,33 @@ impl Client {
         }
     }
 
+    pub fn storage_expiry(&self, address: &Address, id: BlockId) -> BoxFuture<u64> {
+        match self.get_db_snapshot() {
+            Some(db) => {
+                if let Some(state) = db.get_ethstate_at(id) {
+                    match state.storage_expiry(&address) {
+                        Ok(timestamp) => future::ok(timestamp).into_box(),
+                        Err(e) => {
+                            measure_counter_inc!("read_state_failed");
+                            error!("Could not get storage expiry from ethstate: {:?}", e);
+                            future::err(Error::new("Could not get storage expiry")).into_box()
+                        }
+                    }
+                } else {
+                    future::err(Error::new("Unknown block")).into_box()
+                }
+            }
+            None => {
+                // Fall back to runtime call if database has not been initialized.
+                // TODO: runtime call
+                future::err(Error::new(
+                    "oasis_getStorageExpiry runtime call not implemented",
+                ))
+                .into_box()
+            }
+        }
+    }
+
     fn last_hashes<T>(db: &StateDb<T>, parent_hash: &H256) -> Arc<LastHashes>
     where
         T: 'static + Database + Send + Sync,
@@ -691,7 +712,8 @@ impl Client {
             start
         };
 
-        let mut head = db.block_hash(end)
+        let mut head = db
+            .block_hash(end)
             .and_then(|hash| db.block_header_data(&hash))
             .expect("Invalid block number");
 
@@ -702,7 +724,8 @@ impl Client {
             if head.number() <= start {
                 break;
             }
-            head = db.block_header_data(&head.parent_hash())
+            head = db
+                .block_header_data(&head.parent_hash())
                 .expect("Chain is corrupt");
         }
         headers.reverse();
@@ -713,7 +736,8 @@ impl Client {
     where
         T: 'static + Database + Send + Sync,
     {
-        let parent = db.best_block_hash()
+        let parent = db
+            .best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
         EnvInfo {
@@ -754,12 +778,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret = Executive::new(
-            &mut state,
-            &env_info,
-            machine,
-            &*self.storage.read().unwrap(),
-        ).transact_virtual(transaction, options)?;
+        let ret = Executive::new(&mut state, &env_info, machine)
+            .transact_virtual(transaction, options)?;
         Ok(ret)
     }
 
@@ -818,12 +838,8 @@ impl Client {
         let options = TransactOptions::with_no_tracing()
             .dont_check_nonce()
             .save_output_from_contract();
-        let ret = Executive::new(
-            &mut state,
-            &env_info,
-            machine,
-            &*self.storage.read().unwrap(),
-        ).transact_virtual(transaction, options)?;
+        let ret = Executive::new(&mut state, &env_info, machine)
+            .transact_virtual(transaction, options)?;
         Ok(ret.gas_used + ret.refunded)
     }
 
@@ -863,9 +879,9 @@ impl Client {
                 // Must check that the transaction result has not errored. Otherwise, we'll
                 // just report estimateGas == 0 without giving an error.
                 match response.result {
-                    Err(e) => Err(CallError::Execution(
-                        ExecutionError::Internal(e.to_string()),
-                    )),
+                    Err(e) => Err(CallError::Execution(ExecutionError::Internal(
+                        e.to_string(),
+                    ))),
                     Ok(_result) => Ok(response.used_gas + response.refunded_gas),
                 }
             }

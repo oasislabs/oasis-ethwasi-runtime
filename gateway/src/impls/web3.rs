@@ -17,8 +17,10 @@
 //! Web3 rpc implementation.
 use hash::keccak;
 use jsonrpc_core::Result;
-use parity_rpc::v1::traits::Web3;
-use parity_rpc::v1::types::{Bytes, H256};
+use parity_rpc::v1::{
+    traits::Web3,
+    types::{Bytes, H256},
+};
 
 /// Web3 rpc implementation.
 pub struct Web3Client;

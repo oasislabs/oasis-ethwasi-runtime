@@ -52,6 +52,18 @@ set -u
 # Run setup script
 ./scripts/setup-e2e.sh
 
+echo "Downloading compiled contracts from the e2e-tests pipeline"
+.buildkite/scripts/download_artifact.sh e2e-tests $E2E_TESTS_BRANCH "Lint and Compile Contracts" build.zip /e2e-tests
+
+# Replace the contracts with the prebuilt ones
+pushd /e2e-tests/ > /dev/null
+
+unzip build.zip -d .
+
+popd > /dev/null
+
+# Ensures we don't try to compile the contracts a second time.
+export SKIP_OASIS_COMPILE=true
+
 # Run the end-to-end test
 ./scripts/test-e2e.sh
-

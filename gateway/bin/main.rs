@@ -20,10 +20,6 @@ extern crate ctrlc;
 extern crate fdlimit;
 extern crate log;
 extern crate parking_lot;
-extern crate runtime_ethereum_common;
-extern crate web3_gateway;
-
-// Ekiden client packages
 #[macro_use]
 extern crate clap;
 extern crate rand;
@@ -32,13 +28,18 @@ extern crate rand;
 extern crate client_utils;
 extern crate ekiden_tracing;
 
+extern crate runtime_ethereum_common;
+extern crate web3_gateway;
+
+use std::sync::Arc;
+
 use clap::{App, Arg};
 use ctrlc::CtrlC;
 use fdlimit::raise_fd_limit;
 use log::LevelFilter;
 use parking_lot::{Condvar, Mutex};
+
 use runtime_ethereum_common::MIN_GAS_PRICE_GWEI;
-use std::sync::Arc;
 use web3_gateway::util;
 
 // Run our version of parity.
@@ -49,9 +50,7 @@ fn main() {
 
     let gas_price = MIN_GAS_PRICE_GWEI.to_string();
 
-    let known_components = client_utils::components::create_known_components();
     let args = default_app!()
-        .args(&known_components.get_arguments())
         .arg(
             Arg::with_name("http-port")
                 .long("http-port")
@@ -151,11 +150,6 @@ fn main() {
         _ => LevelFilter::max(),
     });
 
-    // Initialize component container.
-    let container = known_components
-        .build_with_arguments(&args)
-        .expect("failed to initialize component container");
-
     // Initialize tracing.
     ekiden_tracing::report_forever("web3-gateway", &args);
 
@@ -169,7 +163,6 @@ fn main() {
     let jsonrpc_max_batch_size = value_t!(args, "jsonrpc-max-batch", usize).unwrap();
     let client = web3_gateway::start(
         args,
-        container,
         pubsub_interval_secs,
         http_port,
         num_threads,
@@ -178,7 +171,8 @@ fn main() {
         ws_rate_limit,
         gas_price,
         jsonrpc_max_batch_size,
-    ).unwrap();
+    )
+    .unwrap();
 
     let exit = Arc::new((Mutex::new(false), Condvar::new()));
     CtrlC::set_handler({

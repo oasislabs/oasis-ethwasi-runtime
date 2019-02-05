@@ -16,8 +16,6 @@
 
 //! Ethcore client application.
 
-#![feature(int_to_from_bytes)]
-
 #[macro_use]
 extern crate clap;
 extern crate env_logger;
@@ -71,7 +69,6 @@ extern crate client_utils;
 extern crate ekiden_common;
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
-extern crate ekiden_di;
 extern crate ekiden_runtime_client;
 #[macro_use]
 extern crate ekiden_instrumentation;
@@ -110,22 +107,19 @@ mod rpc_apis;
 mod run;
 mod servers;
 mod state;
-mod storage;
 #[cfg(test)]
 mod test_helpers;
 mod traits;
 pub mod util;
 
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use clap::ArgMatches;
 use ethereum_types::U256;
 
 use ekiden_core::{environment::Environment, x509};
-use ekiden_di::Container;
 use ekiden_runtime_client::create_runtime_client;
-use ekiden_storage_base::StorageBackend;
+use ekiden_storage_base::{BackendIdentityMapper, StorageBackend};
 use ethereum_api::with_api;
 
 pub use self::run::RunningClient;
@@ -136,7 +130,6 @@ with_api! {
 
 pub fn start(
     args: ArgMatches,
-    mut container: Container,
     pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
@@ -146,19 +139,20 @@ pub fn start(
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
 ) -> Result<RunningClient, String> {
-    let client = runtime_client!(runtime_ethereum, args, container);
-    let storage: Arc<StorageBackend> = container
-        .inject()
-        .map_err(|err| err.description().to_string())?;
-    let environment: Arc<Environment> = container
-        .inject()
-        .map_err(|err| err.description().to_string())?;
+    let client = runtime_client!(runtime_ethereum, args);
+    let environment = client.get_environment();
+    let storage = client.get_storage();
+    let roothash = client.get_roothash();
 
     let runtime_id = client_utils::args::get_runtime_id(&args);
-    let snapshot_manager =
-        client_utils::db::Manager::new_from_injected(runtime_id, &mut container).unwrap();
+    let snapshot_manager = client_utils::db::Manager::new(
+        environment.clone(),
+        runtime_id,
+        roothash,
+        Arc::new(BackendIdentityMapper::new(storage.clone())),
+    );
 
-    setup_key_manager(&args, &mut container);
+    setup_key_manager(&args, environment.clone());
 
     run::execute(
         client,
@@ -178,10 +172,10 @@ pub fn start(
 
 /// Configures the global KeyManager instance with the MRENCLAVE and
 /// NetworkRpcClientBackendConfig specified by the cli args.
-fn setup_key_manager(args: &ArgMatches, container: &mut Container) {
+fn setup_key_manager(args: &ArgMatches, environment: Arc<Environment>) {
     let mut key_manager = KeyManager::instance().expect("Should always have a key manager");
 
-    let backend = key_manager_backend(&args, container);
+    let backend = key_manager_backend(&args, environment);
     let mrenclave =
         value_t!(args.value_of("key-manager-mrenclave"), MrEnclave).unwrap_or_else(|e| e.exit());
 
@@ -191,9 +185,8 @@ fn setup_key_manager(args: &ArgMatches, container: &mut Container) {
 
 fn key_manager_backend(
     args: &ArgMatches,
-    container: &mut Container,
+    environment: Arc<Environment>,
 ) -> NetworkRpcClientBackendConfig {
-    let environment = container.inject::<Environment>().unwrap().clone();
     let timeout = Some(Duration::new(5, 0));
     let host = value_t!(args.value_of("key-manager-host"), String).unwrap_or_else(|e| e.exit());
     let port = value_t!(args.value_of("key-manager-port"), u16).unwrap_or_else(|e| e.exit());

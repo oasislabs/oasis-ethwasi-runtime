@@ -1,13 +1,12 @@
 //! Periodically calls the Client pub/sub notifier routine.
 
-use std::process::abort;
-use std::sync::Arc;
-use std::time::Duration;
+use std::{process::abort, sync::Arc, time::Duration};
 
-use ekiden_common::futures::{killable, KillHandle};
-use ekiden_common::tokio::timer::Interval;
-use ekiden_core::environment::Environment;
-use ekiden_core::futures::FutureExt;
+use ekiden_common::{
+    futures::{killable, KillHandle},
+    tokio::timer::Interval,
+};
+use ekiden_core::{environment::Environment, futures::FutureExt};
 use futures::{Future, Stream};
 
 use client::Client;

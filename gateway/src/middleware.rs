@@ -3,9 +3,7 @@
 use informant::RpcStats;
 use jsonrpc_core as rpc;
 use jsonrpc_ws_server as ws;
-use parity_rpc::informant::ActivityNotifier;
-use parity_rpc::v1::types::H256;
-use parity_rpc::{Metadata, Origin};
+use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
 use std::sync::Arc;
 
 /// Custom JSON-RPC error codes

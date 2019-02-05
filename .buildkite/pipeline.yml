@@ -11,6 +11,7 @@ docker_plugin: &docker_plugin_configuration
       - /var/lib/buildkite-agent/.ssh:/root/.ssh
       - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
       - /var/lib/buildkite-agent/.circleci:/root/.circleci
+      - /var/lib/buildkite-agent/.buildkite:/root/.buildkite
       # Shared Rust artifacts cache.
       - /tmp/cargo_cache:/cargo_cache
       # Shared Rust package checkouts directory.
@@ -26,75 +27,43 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_TARGET_DIR=/tmp/artifacts"
       - "CARGO_INCREMENTAL=/cargo_cache"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
+      - "EKIDEN_BRANCH=master"
+      - "E2E_TESTS_BRANCH=beta"
     propagate-environment: true
     unconfined: true
 
 steps:
 
-  - label: Build key-manager enclave
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_keymanager_enclave.sh /tmp --out-dir /tmp/artifacts
-      - cd /tmp/artifacts
-      - buildkite-agent artifact upload ekiden-keymanager-trusted.so
-      - buildkite-agent artifact upload ekiden-keymanager-trusted.mrenclave
-    plugins:
-      <<: *docker_plugin_configuration
-
-  # We must wait for the keymanager enclave to finish building before building
-  # the runtime.
-  - wait
-
-  - label: Build ekiden binaries
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_ekiden_binaries.sh /tmp/artifacts
-      - cd /tmp/artifacts
-      - buildkite-agent artifact upload ekiden-worker
-      - buildkite-agent artifact upload ekiden-keymanager-node
-    plugins:
-      <<: *docker_plugin_configuration
-
   - label: Build genesis
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_generic.sh /workdir -p genesis
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
-  # Internally builds the runtime and so must be run after the keymanager enclave is built
-  - label: Build run_contract
-    command:
-      # Fetch the ekiden-keymanager-enclave
-      - mkdir -p /workdir/target/enclave
-      - buildkite-agent artifact download ekiden-keymanager-trusted.so /workdir/target/enclave
-      # export path to the enclave so that the runtime can be built in run_contract
-      - export KM_ENCLAVE_PATH="/workdir/target/enclave/ekiden-keymanager-trusted.so"
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_generic.sh /workdir -p run-contract
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Build and test web3 gateway
+  - label: Build web3 gateway
     command:
       - .buildkite/scripts/setup_gitconfig.sh
 
       # Build code and run tests
       - .buildkite/rust/build_generic.sh /workdir -p web3-gateway -Z unstable-options
-      - .buildkite/rust/test_generic.sh /workdir -p web3-gateway
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
       # script generic.
       - cd /tmp/artifacts/debug
       - buildkite-agent artifact upload gateway
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build and test runtime
+  - label: Build runtime
     command:
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_and_test_runtime.sh /workdir
+      - .buildkite/rust/build_runtime.sh /workdir
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
@@ -102,26 +71,23 @@ steps:
       - cd /tmp/artifacts/enclave
       - buildkite-agent artifact upload runtime-ethereum.so
       - buildkite-agent artifact upload runtime-ethereum.mrenclave
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Build oasislabs/ekiden go
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/go/build_ekiden_go.sh
-
-      # Upload artifact required in end-to-end tests.
-      # This is done here to keep the build and test
-      # script generic.
-      - cd /go/bin
-      - mv ekiden ekiden-node
-      - buildkite-agent artifact upload ekiden-node
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
   # Wait for all jobs defined before this point
   # to finish running in parallel before continuing.
   - wait
+
+  - label: Cargo tests
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/test_runtime_and_gateway.sh /workdir
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
 
   - label: Code coverage
     command:
@@ -131,6 +97,8 @@ steps:
       # Save the report as a build artifact
       # so it can be easily accessed for debugging.
       - buildkite-agent artifact upload cobertura.xml
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -141,7 +109,7 @@ steps:
   #       to run the tests...
 
     # End-to-end tests
-  - label: RPC test
+  - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
@@ -153,38 +121,17 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: web3c test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_web3c_test.sh
-    timeout_in_minutes: 20
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Pub/sub test
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_pubsub_test.sh
-    timeout_in_minutes: 20
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-  - label: End-to-end test
+  - label: End-to-end tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_end_to_end_test.sh
-    timeout_in_minutes: 20
+    timeout_in_minutes: 25
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -203,10 +150,12 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
-    timeout_in_minutes: 20
+    timeout_in_minutes: 25
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -219,6 +168,8 @@ steps:
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
+    agents:
+      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
@@ -227,7 +178,7 @@ steps:
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
     async: true
-    branches: "master"
+    branches: "master beta"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"

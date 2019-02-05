@@ -1,5 +1,4 @@
 //! Common data structures shared by runtime and gateway.
-#![feature(int_to_from_bytes)]
 
 extern crate ekiden_core;
 extern crate ekiden_keymanager_client;
@@ -13,6 +12,10 @@ extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash;
 
+#[cfg(feature = "test")]
+#[macro_use]
+extern crate lazy_static;
+
 #[cfg(not(target_env = "sgx"))]
 extern crate rand;
 
@@ -21,19 +24,23 @@ extern crate sgx_rand;
 
 pub mod confidential;
 
-use std::{collections::{hash_map::Entry, HashMap},
-          sync::{Arc, Mutex}};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    sync::{Arc, Mutex},
+};
 
 use ekiden_core::{error::Result, futures::prelude::*};
 use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
 use ekiden_storage_lru::LruCacheStorageBackend;
 use ekiden_trusted::db::Database;
 use elastic_array::ElasticArray128;
-use ethcore::{account_db::Factory as AccountFactory,
-              factory::Factories,
-              kvdb::{self, KeyValueDB},
-              rlp::NULL_RLP,
-              state::backend::Wrapped as WrappedBackend};
+use ethcore::{
+    account_db::Factory as AccountFactory,
+    factory::Factories,
+    kvdb::{self, KeyValueDB},
+    rlp::NULL_RLP,
+    state::backend::Wrapped as WrappedBackend,
+};
 use ethereum_types::H256;
 use hashdb::{DBValue, HashDB};
 use keccak_hash::KECCAK_NULL_RLP;
