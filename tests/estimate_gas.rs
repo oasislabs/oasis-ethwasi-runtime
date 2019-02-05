@@ -67,7 +67,6 @@ fn estimate_gas_wasm_scaling() {
     assert_eq!(receipt.cumulative_gas_used, estimate_gas);
 }
 
-
 /// Tests that estimate gas for a deployed transaction is the same as the gas
 /// actually used. Runs the test several times to make sure that estimate_gas
 /// and gas_used don't change for the same transaction.
