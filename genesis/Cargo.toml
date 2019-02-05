@@ -10,8 +10,8 @@ filebuffer = "0.4.0"
 hex = "0.3.1"
 log = "0.4"
 pretty_env_logger = "0.2"
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

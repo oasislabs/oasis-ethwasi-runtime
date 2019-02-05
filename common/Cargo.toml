@@ -11,10 +11,10 @@ ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "m
 ekiden-storage-lru = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 elastic-array = "0.10"
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 lazy_static = { version = "1.1.0", features = ["spin_no_std"] }
 sodalite = "0.3.0"
 
