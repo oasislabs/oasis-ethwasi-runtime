@@ -12,6 +12,8 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
+    agents:
+      buildkite_agent_size: large
 
   - label: Update staging beta docker image tags (beta branch only)
     branches: beta
@@ -29,6 +31,8 @@ steps:
     env:
       SGX_MODE: HW
       DEPLOYMENT_VARIANT: hw
+    agents:
+      buildkite_agent_size: large
 
   - wait
 
