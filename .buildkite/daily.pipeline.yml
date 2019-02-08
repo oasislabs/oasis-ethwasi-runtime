@@ -10,6 +10,7 @@ docker_plugin: &docker_plugin_configuration
       - .:/workdir
       - /var/lib/buildkite-agent/.ssh:/root/.ssh
       - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
+      - /var/lib/buildkite-agent/.buildkite:/root/.buildkite
       # Shared Rust target artifacts cache.
       - /tmp/cargo_target:/cargo_target
       # Shared Rust package checkouts directory.
@@ -33,6 +34,32 @@ steps:
       - .buildkite/scripts/build_tag_push_benchmark_image.sh
     agents:
       buildkite_agent_size: large
+
+  - label: Celer tests
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/scripts/run_dapp_test.sh celer
+    timeout_in_minutes: 25
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Augur tests
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/scripts/run_dapp_test.sh augur
+    timeout_in_minutes: 20
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
 
   - wait
 

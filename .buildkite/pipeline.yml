@@ -135,44 +135,6 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-
-  # ENS tests temporarily disabled due to flakiness (#349)
-  #- label: ENS tests
-  #  command:
-  #    - .buildkite/scripts/download_common_artifacts.sh
-  #    - .buildkite/scripts/setup_gitconfig.sh
-  #    - .buildkite/scripts/run_dapp_test.sh ens
-  #  plugins:
-  #    <<: *docker_plugin_configuration
-
-  - label: Celer tests
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/run_dapp_test.sh celer
-    timeout_in_minutes: 25
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Augur tests
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/run_dapp_test.sh augur
-    timeout_in_minutes: 20
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
   - wait
 
   - label: ":rocket: Deploy"
