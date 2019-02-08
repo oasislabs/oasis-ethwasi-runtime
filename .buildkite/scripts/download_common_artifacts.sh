@@ -19,6 +19,9 @@ set -euxo pipefail
 
 source .buildkite/scripts/download_utils.sh
 
+# Create directory to put enclave artifacts into.
+mkdir -p target/enclave
+
 ###########################################
 # Download artifacts from other pipelines
 ###########################################
@@ -31,7 +34,6 @@ download_keymanager_mrenclave target/enclave
 ############################################
 # Download runtime-ethereum(.so|.mrenclave)
 ############################################
-mkdir -p target/enclave
 buildkite-agent artifact download \
     runtime-ethereum.so \
     target/enclave

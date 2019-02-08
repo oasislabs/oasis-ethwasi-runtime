@@ -23,7 +23,7 @@ RUNTIME_ENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.so
 RUNTIME_MRENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave
 
 run_test_network() {
-	# Start keymanager node.
+    # Start keymanager node.
     run_keymanager_node
     sleep 1
 

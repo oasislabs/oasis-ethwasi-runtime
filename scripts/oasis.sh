@@ -6,7 +6,7 @@
 # Steps to run:
 #
 # - define your BUILDKITE_ACCESS_TOKEN environment variable. You can get one
-#   of these from your personal buildkite account throught the web ui.
+#   of these from your personal buildkite account through the web ui.
 # - apt-get install jq
 # - ./scripts/oasis.sh
 #

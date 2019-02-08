@@ -19,12 +19,12 @@ download_keymanager_node() {
 
 download_keymanager_enclave() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.mrenclave $out_dir
+	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.so $out_dir
 }
 
 download_keymanager_mrenclave() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.so $out_dir
+	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.mrenclave $out_dir
 }
 
 download_gateway() {
