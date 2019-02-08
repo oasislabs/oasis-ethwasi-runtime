@@ -51,6 +51,22 @@ fn estimate_gas_rust_tx_confidential() {
     estimate_gas_tx_test(contracts::counter::rust_initcode(), true);
 }
 
+/// Regression test for a contract that receives an incorrect estimate gas
+/// when it's wasm gas cost is incorrectly scaled.
+/// See https://github.com/oasislabs/runtime-ethereum/issues/547
+#[test]
+fn estimate_gas_wasm_scaling() {
+    // Given
+    let mut client = test::Client::instance();
+    let data = contracts::bulk_storage::initcode();
+    // When
+    let estimate_gas = client.estimate_gas(None, data.clone(), &U256::from(0));
+    let (tx_hash, addr) = client.create_contract(data, &U256::from(0));
+    // Then
+    let receipt = client.receipt(tx_hash);
+    assert_eq!(receipt.cumulative_gas_used, estimate_gas);
+}
+
 /// Tests that estimate gas for a deployed transaction is the same as the gas
 /// actually used. Runs the test several times to make sure that estimate_gas
 /// and gas_used don't change for the same transaction.

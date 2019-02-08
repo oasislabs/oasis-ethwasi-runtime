@@ -104,6 +104,7 @@ run_backend_tendermint_committee() {
             --tendermint.core.genesis_file ${genesis_file} \
             --tendermint.core.listen_address tcp://0.0.0.0:${tm_port} \
             --tendermint.consensus.timeout_commit 250ms \
+            --tendermint.debug.addr_book_lenient \
             --tendermint.log.debug \
             --datadir ${datadir} \
             &
@@ -159,6 +160,7 @@ run_compute_node() {
         --tendermint.core.genesis_file ${EKIDEN_TM_GENESIS_FILE} \
         --tendermint.core.listen_address tcp://0.0.0.0:${tm_port} \
         --tendermint.consensus.timeout_commit 250ms \
+        --tendermint.debug.addr_book_lenient \
         --tendermint.log.debug \
         --worker.backend sandboxed \
         --worker.binary ${EKIDEN_WORKER} \
