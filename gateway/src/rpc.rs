@@ -18,7 +18,7 @@ use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
-use middleware::{Middleware, WsDispatcher, WsStats};
+use middleware::{Middleware, WsDispatcher, WsStats, RequestLogger};
 use parity_reactor::TokioRemote;
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
@@ -146,6 +146,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
             WsDispatcher::new(deps.stats.clone(), conf.max_req_per_sec),
+            RequestLogger::new(),
             Middleware::new(deps.apis.activity_notifier(), conf.max_batch_size),
         ));
         let apis = conf.apis.list_apis();
@@ -262,14 +263,15 @@ pub fn setup_apis<D>(
     apis: ApiSet,
     deps: &Dependencies<D>,
     max_batch_size: usize,
-) -> MetaIoHandler<Metadata, Middleware<D::Notifier>>
+) -> MetaIoHandler<Metadata, (Middleware<D::Notifier>, RequestLogger)>
 where
     D: rpc_apis::Dependencies,
 {
-    let mut handler = MetaIoHandler::with_middleware(Middleware::new(
-        deps.apis.activity_notifier(),
-        max_batch_size,
-    ));
+    let mut handler = MetaIoHandler::with_middleware((
+        Middleware::new(
+            deps.apis.activity_notifier(),
+            max_batch_size,
+        ), RequestLogger::new()));
     let apis = apis.list_apis();
     deps.apis.extend_with_set(&mut handler, &apis);
 
