@@ -338,7 +338,8 @@ impl Client {
 
     pub fn block(&self, id: BlockId) -> BoxFuture<Option<encoded::Block>> {
         if let Some(db) = self.get_db_snapshot() {
-            return future::ok(self.block_hash(id).and_then(|h| db.block(&h))).into_box();
+            return future::ok(Self::id_to_block_hash(&db, id).and_then(|h| db.block(&h)))
+                .into_box();
         }
 
         // Fall back to runtime call if database has not been initialized.
