@@ -9,7 +9,7 @@ RUNTIME_BRANCH="master"
 
 if [ ! -d "$OASIS_ARTIFACTS_DIR" ]; then
 	mkdir -p $OASIS_ARTIFACTS_DIR
-	export BUILDKITE_ACCESS_TOKEN=""
+	export BUILDKITE_ACCESS_TOKEN="e6dc7081e8629fe309040995d3ca0de11c9d0a96"
 	source .buildkite/scripts/download_utils.sh
 
 	download_ekiden_node $OASIS_ARTIFACTS_DIR
@@ -22,10 +22,13 @@ if [ ! -d "$OASIS_ARTIFACTS_DIR" ]; then
 fi
 
 export EKIDEN_NODE=$OASIS_ARTIFACTS_DIR/ekiden-node
-export KM_MRENCLAVE=$OASIS_ARTIFACTS_DIR/ekiden-keymanager-trusted.mrenclave
-export KM_ENCLAVE=$OASIS_ARTIFACTS_DIR/ekiden-keymanager-trusted.so
 export EKIDEN_WORKER=$OASIS_ARTIFACTS_DIR/ekiden-worker
+export KM_ENCLAVE=$OASIS_ARTIFACTS_DIR/ekiden-keymanager-trusted.so
+export KM_MRENCLAVE=$OASIS_ARTIFACTS_DIR/ekiden-keymanager-trusted.mrenclave
 export KM_NODE=$OASIS_ARTIFACTS_DIR/ekiden-keymanager-node
+export GATEWAY=$OASIS_ARTIFACTS_DIR/gateway
+export RUNTIME_ENCLAVE=$OASIS_ARTIFACTS_DIR/runtime-ethereum.so
+export RUNTIME_MRENCLAVE=$OASIS_ARTIFACTS_DIR/runtime-ethereum.mrenclave
 
 source scripts/utils.sh
 

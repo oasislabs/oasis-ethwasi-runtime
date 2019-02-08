@@ -50,6 +50,7 @@ OUTPUT_DIR=$5
 STATE="passed"
 # Query request to be issued.
 BUILDS_QUERY="https://api.buildkite.com/v2/organizations/$ORGANIZATION/pipelines/$PIPELINE/builds?state=$STATE&branch=$BRANCH&access_token=$BUILDKITE_ACCESS_TOKEN"
+
 # All recent builds passing our query.
 BUILDS_ARRAY=$(curl $BUILDS_QUERY)
 # Take the first build given (since it's the latest).

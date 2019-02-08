@@ -29,15 +29,16 @@ download_keymanager_mrenclave() {
 
 download_gateway() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.mrenclave $out_dir
+	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build web3 gateway" gateway $out_dir
 }
 
 download_runtime_enclave() {
+	echo "downloading enclave"
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $RUNTIME_BRANCH "Build runtime" runtime-ethereum.so $out_dir
+	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build runtime" runtime-ethereum.so $out_dir
 }
 
 download_runtime_mrenclave() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $RUNTIME_BRANCH "Build runtime" runtime-ethereum.mrenclave $out_dir
+	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build runtime" runtime-ethereum.mrenclave $out_dir
 }
