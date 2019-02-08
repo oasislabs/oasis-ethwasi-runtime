@@ -22,6 +22,36 @@ GATEWAY=${WORKDIR}/target/debug/gateway
 RUNTIME_ENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.so
 RUNTIME_MRENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave
 
+run_test_network() {
+	# Start keymanager node.
+    run_keymanager_node
+    sleep 1
+
+    # Since we run the gateway first, we need the socket path to connect to. This
+    # should be synced with how 'run_backend_tendermint_committee' generates the
+    # socket path.
+    export EKIDEN_VALIDATOR_SOCKET=${TEST_BASE_DIR}/committee-data-1/internal.sock
+
+    # Run the gateway. We start the gateway first so that we test 1) whether the
+    # snapshot manager can recover after initially failing to connect to the
+    # root hash stream, and 2) whether the gateway waits for the committee to be
+    # elected and connects to the leader.
+    run_gateway 1
+    run_gateway 2
+    sleep 3
+
+    # Start validator committee.
+    run_backend_tendermint_committee
+    sleep 1
+
+    # Start compute nodes.
+    run_compute_committee
+    sleep 1
+
+    # Advance epoch to elect a new committee.
+    set_epoch 1
+}
+
 # Run a Tendermint validator committee and a storage node.
 #
 # Sets EKIDEN_TM_GENESIS_FILE and EKIDEN_STORAGE_PORT.

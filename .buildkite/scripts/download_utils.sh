@@ -30,10 +30,10 @@ download_keymanager_mrenclave() {
 download_gateway() {
 	local out_dir=$1
 	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build web3 gateway" gateway $out_dir
+	chmod +x $out_dir/gateway
 }
 
 download_runtime_enclave() {
-	echo "downloading enclave"
 	local out_dir=$1
 	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build runtime" runtime-ethereum.so $out_dir
 }
