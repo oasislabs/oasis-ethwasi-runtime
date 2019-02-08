@@ -1,9 +1,26 @@
-# apt-get install jq
+#!/bin/bash
+
+################################################################################
+# Runs a local testnetwork with the latest build artifacts from CI.
+#
+# Steps to run:
+#
+# - define your BUILDKITE_ACCESS_TOKEN environment variable. You can get one
+#   of these from your personal buildkite account throught the web3 ui.
+# - apt-get install jq
+# - ./scripts/oasis.sh
+#
+# You now have a local network running.
+#
+# To force download the artifacts, make sure to wipe the OASIS_HOME_DIR.
+################################################################################
 
 WORKDIR=${1:-$(pwd)}
 
+# Directory we want to save the build artifacts in.
 OASIS_HOME_DIR="/tmp/oasis"
 OASIS_ARTIFACTS_DIR="${OASIS_HOME_DIR}/artifacts"
+# Branches we want to download the artifacts from.
 EKIDEN_BRANCH="master"
 RUNTIME_BRANCH="master"
 
