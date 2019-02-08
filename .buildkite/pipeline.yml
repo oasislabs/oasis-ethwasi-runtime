@@ -150,7 +150,7 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
-    timeout_in_minutes: 45
+    timeout_in_minutes: 25
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
