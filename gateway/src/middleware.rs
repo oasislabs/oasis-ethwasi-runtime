@@ -4,9 +4,11 @@ use informant::RpcStats;
 use jsonrpc_core as rpc;
 use jsonrpc_ws_server as ws;
 use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use std::vec::Vec;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+    vec::Vec,
+};
 
 /// Custom JSON-RPC error codes
 const ERROR_BATCH_SIZE: i64 = -32099;
