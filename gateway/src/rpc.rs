@@ -18,7 +18,7 @@ use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
-use middleware::{Middleware, WsDispatcher, WsStats, RequestLogger};
+use middleware::{Middleware, RequestLogger, WsDispatcher, WsStats};
 use parity_reactor::TokioRemote;
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
@@ -268,10 +268,9 @@ where
     D: rpc_apis::Dependencies,
 {
     let mut handler = MetaIoHandler::with_middleware((
-        Middleware::new(
-            deps.apis.activity_notifier(),
-            max_batch_size,
-        ), RequestLogger::new()));
+        Middleware::new(deps.apis.activity_notifier(), max_batch_size),
+        RequestLogger::new(),
+    ));
     let apis = apis.list_apis();
     deps.apis.extend_with_set(&mut handler, &apis);
 

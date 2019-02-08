@@ -4,8 +4,8 @@ use informant::RpcStats;
 use jsonrpc_core as rpc;
 use jsonrpc_ws_server as ws;
 use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
-use std::time::{Duration, Instant};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use std::vec::Vec;
 
 /// Custom JSON-RPC error codes
@@ -90,12 +90,12 @@ pub struct Invalid {
 pub enum RequestType {
     Method(Method),
     Notification(Notification),
-    Invalid(Invalid)
+    Invalid(Invalid),
 }
 
 pub enum RequestData {
     Single(RequestType),
-    Batch(Vec<RequestType>)
+    Batch(Vec<RequestType>),
 }
 
 impl RequestData {
@@ -103,9 +103,11 @@ impl RequestData {
         match request {
             rpc::Request::Single(call) => RequestData::Single(RequestType::from_call(&call)),
             rpc::Request::Batch(calls) => RequestData::Batch(
-                calls.iter().map(|ref call| {
-                    RequestType::from_call(&call)
-                }).collect::<Vec<_>>()),
+                calls
+                    .iter()
+                    .map(|ref call| RequestType::from_call(&call))
+                    .collect::<Vec<_>>(),
+            ),
         }
     }
 }
@@ -115,30 +117,35 @@ impl RequestType {
         match id {
             rpc::Id::Null => String::from("null"),
             rpc::Id::Str(s) => s.clone(),
-            rpc::Id::Num(n) => n.to_string()
+            rpc::Id::Num(n) => n.to_string(),
         }
     }
 
     pub fn from_call(call: &rpc::Call) -> RequestType {
         match call {
-            rpc::Call::MethodCall(method) => RequestType::Method(Method{
+            rpc::Call::MethodCall(method) => RequestType::Method(Method {
                 method: method.method.clone(),
-                id: RequestType::id_to_string(&method.id)
+                id: RequestType::id_to_string(&method.id),
             }),
-            rpc::Call::Notification(notification) => RequestType::Notification(Notification{
-                method: notification.method.clone()
+            rpc::Call::Notification(notification) => RequestType::Notification(Notification {
+                method: notification.method.clone(),
             }),
-            rpc::Call::Invalid(id) => RequestType::Invalid(Invalid{
-                id: RequestType::id_to_string(id)
-            })
+            rpc::Call::Invalid(id) => RequestType::Invalid(Invalid {
+                id: RequestType::id_to_string(id),
+            }),
         }
     }
 
     pub fn to_string(&self) -> String {
         match self {
-            RequestType::Method(method) => format!("method: {:?}, type: method, id: {:?}", method.method, method.id),
-            RequestType::Notification(notification) => format!("method: {:?}, type: notification", notification.method),
-            RequestType::Invalid(invalid) => format!("type: invalid, id: {:?}", invalid.id)
+            RequestType::Method(method) => format!(
+                "method: {:?}, type: method, id: {:?}",
+                method.method, method.id
+            ),
+            RequestType::Notification(notification) => {
+                format!("method: {:?}, type: notification", notification.method)
+            }
+            RequestType::Invalid(invalid) => format!("type: invalid, id: {:?}", invalid.id),
         }
     }
 }
@@ -160,8 +167,12 @@ impl RequestLogger {
             rpc::Output::Failure(_) => false,
         };
 
-
-        info!("callType: HandleRequest, duration: {:?}, success: {:?}, {:?}", duration, ok, rt.to_string());
+        info!(
+            "callType: HandleRequest, duration: {:?}, success: {:?}, {:?}",
+            duration,
+            ok,
+            rt.to_string()
+        );
     }
 
     pub fn log_calls(rts: &Vec<RequestType>, response: &rpc::Response, start: std::time::Instant) {
@@ -177,20 +188,22 @@ impl RequestLogger {
 
     pub fn log_ok(data: &RequestData, response: &rpc::Response, start: std::time::Instant) {
         match data {
-            RequestData::Single(rt) => {
-                match response {
-                    rpc::Response::Single(output)=> RequestLogger::log_call(&rt, &output, start),
-                    rpc::Response::Batch(output)=> panic!("single call with batch response")
-                }
+            RequestData::Single(rt) => match response {
+                rpc::Response::Single(output) => RequestLogger::log_call(&rt, &output, start),
+                rpc::Response::Batch(output) => panic!("single call with batch response"),
             },
-            RequestData::Batch(rts) => RequestLogger::log_calls(rts, response, start)
+            RequestData::Batch(rts) => RequestLogger::log_calls(rts, response, start),
         }
     }
 
     pub fn log_empty_call(rt: &RequestType, start: std::time::Instant, result: &str) {
         let duration = start.elapsed().as_millis();
 
-        info!("callType: HandleRequest, duration: {:?}, {:?}", duration, rt.to_string());
+        info!(
+            "callType: HandleRequest, duration: {:?}, {:?}",
+            duration,
+            rt.to_string()
+        );
     }
 
     pub fn log_empty_calls(rts: &Vec<RequestType>, start: std::time::Instant, result: &str) {
@@ -202,17 +215,16 @@ impl RequestLogger {
     pub fn log_empty(data: &RequestData, start: std::time::Instant) {
         match data {
             RequestData::Single(rt) => RequestLogger::log_empty_call(rt, start, "null"),
-            RequestData::Batch(rts) => RequestLogger::log_empty_calls(rts, start, "null")
+            RequestData::Batch(rts) => RequestLogger::log_empty_calls(rts, start, "null"),
         }
     }
 
     pub fn log_error(data: &RequestData, start: std::time::Instant) {
         match data {
             RequestData::Single(rt) => RequestLogger::log_empty_call(rt, start, "error"),
-            RequestData::Batch(rts) => RequestLogger::log_empty_calls(rts, start, "error")
+            RequestData::Batch(rts) => RequestLogger::log_empty_calls(rts, start, "error"),
         }
     }
-
 }
 
 impl rpc::Middleware<Metadata> for RequestLogger {
@@ -227,22 +239,20 @@ impl rpc::Middleware<Metadata> for RequestLogger {
         let now = Instant::now();
         let future = process(request, meta);
 
-        Box::new(future.then(move |result| {
-            match result {
-                Ok(opt) => match opt {
-                    Some(response) => {
-                        RequestLogger::log_ok(&data, &response, now);
-                        Ok(Some(response))
-                    },
-                    None => {
-                        RequestLogger::log_empty(&data, now);
-                        Ok(None)
-                    },
-                },
-                Err(_) => {
-                    RequestLogger::log_error(&data, now);
-                    Err(())
+        Box::new(future.then(move |result| match result {
+            Ok(opt) => match opt {
+                Some(response) => {
+                    RequestLogger::log_ok(&data, &response, now);
+                    Ok(Some(response))
                 }
+                None => {
+                    RequestLogger::log_empty(&data, now);
+                    Ok(None)
+                }
+            },
+            Err(_) => {
+                RequestLogger::log_error(&data, now);
+                Err(())
             }
         }))
     }
@@ -488,4 +498,3 @@ mod tests {
         };
     }
 }
-
