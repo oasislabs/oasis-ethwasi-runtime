@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Runs a local testnetwork with the latest build artifacts from CI.
+# Runs a local testnet with the latest build artifacts from CI.
 #
 # Steps to run:
 #
