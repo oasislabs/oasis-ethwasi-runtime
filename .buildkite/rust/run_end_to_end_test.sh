@@ -65,5 +65,9 @@ popd > /dev/null
 # Ensures we don't try to compile the contracts a second time.
 export SKIP_OASIS_COMPILE=true
 
+# Re-export parallelism parameters so that they can be read by the e2e-tests.
+export E2E_PARALLELISM=${BUILDKITE_PARALLEL_JOB_COUNT}
+export E2E_PARALLELISM_BUCKET=${BUILDKITE_PARALLEL_JOB}
+
 # Run the end-to-end test
 ./scripts/test-e2e.sh
