@@ -7,7 +7,7 @@
 #
 # - export BUILDKITE_ACCESS_TOKEN=[YOUR_ACCESS_TOKEN]
 #   You can get one of these from your personal buildkite account through the
-#   web ui.
+#   web ui. See https://buildkite.com/user/api-access-tokens.
 # - apt-get install jq
 # - ./scripts/oasis.sh
 #
