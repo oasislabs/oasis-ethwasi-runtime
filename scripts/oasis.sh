@@ -5,17 +5,28 @@
 #
 # Steps to run:
 #
-# - define your BUILDKITE_ACCESS_TOKEN environment variable. You can get one
-#   of these from your personal buildkite account through the web ui.
+# - export BUILDKITE_ACCESS_TOKEN=[YOUR_ACCESS_TOKEN]
+#   You can get one of these from your personal buildkite account through the
+#   web ui. See https://buildkite.com/user/api-access-tokens.
 # - apt-get install jq
 # - ./scripts/oasis.sh
 #
 # You now have a local network running.
 #
 # To force download the artifacts, make sure to wipe the OASIS_HOME_DIR.
+#
+# Usage:
+# ./scripts/oasis.sh [RUN_TESTNET]
+#
+# Optional Args:
+# - RUN_TESTNET: True by default. If true, then the script will block and start
+#                the network. If false, will just download the Oasis binaries
+#                into the OASIS_HOME_DIR.
+#
 ################################################################################
 
-WORKDIR=${1:-$(pwd)}
+RUN_TESTNET=${1:-true}
+WORKDIR=$(pwd)
 
 # Directory we want to save the build artifacts in.
 OASIS_HOME_DIR="/tmp/oasis"
@@ -28,17 +39,8 @@ RUNTIME_BRANCH="master"
 # if they don't already exist.
 if [ ! -d "$OASIS_ARTIFACTS_DIR" ]; then
 	mkdir -p $OASIS_ARTIFACTS_DIR
-	export BUILDKITE_ACCESS_TOKEN=${BUILDKITE_ACCESS_TOKEN:-""}
 	source .buildkite/scripts/download_utils.sh
-
-	download_ekiden_node $OASIS_ARTIFACTS_DIR
-	download_ekiden_worker $OASIS_ARTIFACTS_DIR
-	download_keymanager_node $OASIS_ARTIFACTS_DIR
-	download_keymanager_enclave $OASIS_ARTIFACTS_DIR
-	download_keymanager_mrenclave $OASIS_ARTIFACTS_DIR
-	download_runtime_enclave $OASIS_ARTIFACTS_DIR
-	download_runtime_mrenclave $OASIS_ARTIFACTS_DIR
-	download_gateway $OASIS_ARTIFACTS_DIR
+	download_oasis_binaries $OASIS_ARTIFACTS_DIR
 fi
 
 source scripts/utils.sh
@@ -54,5 +56,8 @@ export RUNTIME_ENCLAVE=$OASIS_ARTIFACTS_DIR/runtime-ethereum.so
 export RUNTIME_MRENCLAVE=$OASIS_ARTIFACTS_DIR/runtime-ethereum.mrenclave
 
 trap 'cleanup' EXIT
-run_test_network
-wait
+
+if [ $RUN_TESTNET = "true" ]; then
+	run_test_network
+	wait
+fi

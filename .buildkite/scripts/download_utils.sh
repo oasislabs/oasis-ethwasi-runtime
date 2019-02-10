@@ -1,3 +1,14 @@
+download_oasis_binaries() {
+	local out_dir=$1
+	download_ekiden_node $out_dir
+	download_ekiden_worker $out_dir
+	download_keymanager_node $out_dir
+	download_keymanager_enclave $out_dir
+	download_keymanager_mrenclave $out_dir
+	download_runtime_enclave $out_dir
+	download_runtime_mrenclave $out_dir
+	download_gateway $out_dir
+}
 download_ekiden_node() {
 	local out_dir=$1
 	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Go node" ekiden $out_dir
