@@ -121,7 +121,8 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: End-to-end tests
+  - label: End-to-end tests (%n)
+    parallelism: 5
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
