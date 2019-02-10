@@ -18,6 +18,39 @@ KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
 EKIDEN_NODE=${WORKDIR}/ekiden-node
 EKIDEN_WORKER=${WORKDIR}/ekiden-worker
 KM_NODE=${WORKDIR}/ekiden-keymanager-node
+GATEWAY=${WORKDIR}/target/debug/gateway
+RUNTIME_ENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.so
+RUNTIME_MRENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave
+
+run_test_network() {
+    # Start keymanager node.
+    run_keymanager_node
+    sleep 1
+
+    # Since we run the gateway first, we need the socket path to connect to. This
+    # should be synced with how 'run_backend_tendermint_committee' generates the
+    # socket path.
+    export EKIDEN_VALIDATOR_SOCKET=${TEST_BASE_DIR}/committee-data-1/internal.sock
+
+    # Run the gateway. We start the gateway first so that we test 1) whether the
+    # snapshot manager can recover after initially failing to connect to the
+    # root hash stream, and 2) whether the gateway waits for the committee to be
+    # elected and connects to the leader.
+    run_gateway 1
+    run_gateway 2
+    sleep 3
+
+    # Start validator committee.
+    run_backend_tendermint_committee
+    sleep 1
+
+    # Start compute nodes.
+    run_compute_committee
+    sleep 1
+
+    # Advance epoch to elect a new committee.
+    set_epoch 1
+}
 
 # Run a Tendermint validator committee and a storage node.
 #
@@ -164,7 +197,7 @@ run_compute_node() {
         --tendermint.log.debug \
         --worker.backend sandboxed \
         --worker.binary ${EKIDEN_WORKER} \
-        --worker.runtime.binary ${WORKDIR}/target/enclave/runtime-ethereum.so \
+        --worker.runtime.binary ${RUNTIME_ENCLAVE} \
         --worker.runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
         --worker.client.port ${client_port} \
         --worker.p2p.port ${p2p_port} \
@@ -198,9 +231,9 @@ run_gateway() {
     let prometheus_port=id+3000
 
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
-    ${WORKDIR}/target/debug/gateway \
+    ${GATEWAY} \
         --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
-        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
+        --mr-enclave $(cat $RUNTIME_MRENCLAVE) \
         --test-runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
         --threads 100 \
