@@ -35,6 +35,8 @@ steps:
     agents:
       buildkite_agent_size: large
 
+  - wait
+
   - label: Celer tests
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -62,6 +64,10 @@ steps:
       <<: *docker_plugin_configuration
 
   - wait
+
+  - label: "Ping 'dapp-tests' dead-man-snitch endpoint"
+    branches: "master"
+    command: curl https://nosnch.in/325145bfae
 
   - label: "Trigger benchmark run"
     trigger: private-ops-run-benchmarks
