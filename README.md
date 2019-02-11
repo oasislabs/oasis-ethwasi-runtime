@@ -48,7 +48,7 @@ $ git clone https://github.com/oasislabs/ekiden
 $ cd ekiden/go
 $ make
 $ cd ekiden
-$ go install
+$ cp ekiden /go/bin/
 ```
 **Note**: You need to be on Go v1.11 since this project uses [modules](https://github.com/golang/go/wiki/Modules), and the source must be built outside of the `GOPATH`. 
 
