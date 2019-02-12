@@ -18,7 +18,10 @@ use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
-use middleware::{Middleware, RequestLogger, WsDispatcher, WsStats};
+use middleware::request_logger::RequestLogger;
+use middleware::rate_limit::WsDispatcher;
+use middleware::rate_limit::WsStats;
+use middleware::rate_limit::Middleware;
 use parity_reactor::TokioRemote;
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
@@ -40,6 +43,7 @@ pub struct HttpConfiguration {
     pub server_threads: usize,
     pub processing_threads: usize,
     pub max_batch_size: usize,
+    pub request_logger_enabled: bool,
 }
 
 impl HttpConfiguration {
@@ -60,6 +64,7 @@ impl Default for HttpConfiguration {
             server_threads: 1,
             processing_threads: 4,
             max_batch_size: 10,
+            request_logger_enabled: false,
         }
     }
 }
@@ -77,6 +82,7 @@ pub struct WsConfiguration {
     pub dapps_address: Option<rpc::Host>,
     pub max_batch_size: usize,
     pub max_req_per_sec: usize,
+    pub request_logger_enabled: bool,
 }
 
 impl Default for WsConfiguration {
@@ -97,6 +103,7 @@ impl Default for WsConfiguration {
             dapps_address: Some("127.0.0.1:8545".into()),
             max_batch_size: 10,
             max_req_per_sec: 50,
+            request_logger_enabled: false,
         }
     }
 }
@@ -146,7 +153,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     let handler = {
         let mut handler = MetaIoHandler::with_middleware((
             WsDispatcher::new(deps.stats.clone(), conf.max_req_per_sec),
-            RequestLogger::new(),
+            RequestLogger::new(conf.request_logger_enabled),
             Middleware::new(deps.apis.activity_notifier(), conf.max_batch_size),
         ));
         let apis = conf.apis.list_apis();
@@ -196,7 +203,7 @@ pub fn new_http<D: rpc_apis::Dependencies>(
     let addr = url
         .parse()
         .map_err(|_| format!("Invalid {} listen host/port given: {}", id, url))?;
-    let handler = setup_apis(conf.apis, deps, conf.max_batch_size);
+    let handler = setup_apis(conf.apis, deps, conf.max_batch_size, conf.request_logger_enabled);
     let remote = deps.remote.clone();
 
     let cors_domains = into_domains(conf.cors);
@@ -263,13 +270,14 @@ pub fn setup_apis<D>(
     apis: ApiSet,
     deps: &Dependencies<D>,
     max_batch_size: usize,
+    request_logger_enabled: bool,
 ) -> MetaIoHandler<Metadata, (Middleware<D::Notifier>, RequestLogger)>
 where
     D: rpc_apis::Dependencies,
 {
     let mut handler = MetaIoHandler::with_middleware((
         Middleware::new(deps.apis.activity_notifier(), max_batch_size),
-        RequestLogger::new(),
+        RequestLogger::new(request_logger_enabled),
     ));
     let apis = apis.list_apis();
     deps.apis.extend_with_set(&mut handler, &apis);
