@@ -20,6 +20,12 @@ extern crate ekiden_roothash_base;
 #[cfg(feature = "test")]
 extern crate ethkey;
 
+#[cfg(feature = "test")]
+extern crate byteorder;
+#[cfg(feature = "test")]
+#[macro_use]
+extern crate serde_json;
+
 mod evm;
 mod state;
 #[cfg(feature = "test")]

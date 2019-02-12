@@ -2,6 +2,7 @@
 
 use ekiden_core::mrae::nonce::{Nonce, NONCE_SIZE};
 use ekiden_keymanager_common::ContractKey;
+use elastic_array::ElasticArray128;
 use ethcore::{
     rlp,
     state::ConfidentialCtx as EthConfidentialCtx,
@@ -18,6 +19,11 @@ use std::{
     sync::{Mutex, MutexGuard},
 };
 use test::*;
+
+use byteorder::{BigEndian, ByteOrder};
+use serde_json::{map::Map, Value};
+
+const HEADER_PREFIX: &'static [u8; 4] = b"\0sis";
 
 lazy_static! {
     static ref CLIENT: Mutex<Client> = Mutex::new(Client::new());
@@ -106,6 +112,24 @@ impl Client {
     /// and the address of the contract.
     pub fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
         let hash = self.send(None, code, balance);
+        let receipt = with_batch_handler(self.timestamp, |ctx| {
+            get_receipt(&hash, ctx).unwrap().unwrap()
+        });
+        (hash, receipt.contract_address.unwrap())
+    }
+
+    /// Creates a contract with specified expiry and confidentiality, returns the
+    /// transaction hash for the deploy and the address of the contract.
+    pub fn create_contract_with_header(
+        &mut self,
+        code: Vec<u8>,
+        balance: &U256,
+        expiry: Option<u64>,
+        confidentiality: Option<bool>,
+    ) -> (H256, Address) {
+        let mut data = Self::make_header(expiry, confidentiality);
+        data.extend(code);
+        let hash = self.send(None, data, balance);
         let receipt = with_batch_handler(self.timestamp, |ctx| {
             get_receipt(&hash, ctx).unwrap().unwrap()
         });
@@ -286,5 +310,32 @@ impl Client {
 
     pub fn storage_expiry(&self, contract: Address) -> u64 {
         with_batch_handler(self.timestamp, |ctx| get_storage_expiry(&contract, ctx)).unwrap()
+    }
+
+    fn make_header(expiry: Option<u64>, confidential: Option<bool>) -> Vec<u8> {
+        // start with header prefix
+        let mut data = ElasticArray128::from_slice(&HEADER_PREFIX[..]);
+
+        // contents (JSON)
+        let mut map = Map::new();
+        confidential
+            .map(|confidential| map.insert("confidential".to_string(), confidential.into()));
+        expiry.map(|expiry| map.insert("expiry".to_string(), expiry.into()));
+        let contents = json!(map).to_string().into_bytes();
+
+        // header length (version + contents)
+        let mut length = [0u8; 2];
+        BigEndian::write_u16(&mut length, (contents.len() + 2) as u16);
+
+        // header version
+        let mut version = [0u8; 2];
+        BigEndian::write_u16(&mut version, 1 as u16);
+
+        // append header length, version and contents
+        data.append_slice(&length);
+        data.append_slice(&version);
+        data.append_slice(&contents);
+
+        data.into_vec()
     }
 }
