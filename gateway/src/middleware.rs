@@ -4,7 +4,7 @@ use informant::RpcStats;
 use jsonrpc_core as rpc;
 use jsonrpc_ws_server as ws;
 use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
-use std::sync::Arc;
+use std::{sync::Arc, vec::Vec};
 
 /// Custom JSON-RPC error codes
 const ERROR_BATCH_SIZE: i64 = -32099;
@@ -26,6 +26,56 @@ fn error_rate_limited() -> rpc::Error {
         message: "Too many requests".into(),
         data: None,
     }
+}
+
+trait ErrGen {
+    fn generate(&self) -> rpc::Error;
+}
+
+struct BatchSizeErrGen {}
+
+impl ErrGen for BatchSizeErrGen {
+    fn generate(&self) -> rpc::Error {
+        return error_batch_size();
+    }
+}
+
+struct RateLimitedErrGen {}
+
+impl ErrGen for RateLimitedErrGen {
+    fn generate(&self) -> rpc::Error {
+        return error_rate_limited();
+    }
+}
+
+fn generate_error_response_call(call: &rpc::Call, gen: &ErrGen) -> rpc::Output {
+    match call {
+        rpc::Call::MethodCall(method) => {
+            rpc::Output::from(Err(gen.generate()), method.id.clone(), method.jsonrpc)
+        }
+        rpc::Call::Notification(notification) => {
+            rpc::Output::from(Err(gen.generate()), rpc::Id::Null, notification.jsonrpc)
+        }
+        rpc::Call::Invalid(id) => rpc::Output::from(Err(gen.generate()), rpc::Id::Null, None),
+    }
+}
+
+fn generate_error_response_calls(calls: &Vec<rpc::Call>, gen: &ErrGen) -> Vec<rpc::Output> {
+    calls
+        .iter()
+        .map(|ref call| generate_error_response_call(&call, gen))
+        .collect::<Vec<_>>()
+}
+
+fn generate_error_response(request: rpc::Request, gen: &ErrGen) -> rpc::FutureResponse {
+    Box::new(rpc::futures::finished(Some(match request {
+        rpc::Request::Single(call) => {
+            rpc::Response::Single(generate_error_response_call(&call, gen))
+        }
+        rpc::Request::Batch(calls) => {
+            rpc::Response::Batch(generate_error_response_calls(&calls, gen))
+        }
+    })))
 }
 
 /// RPC middleware that enforces batch size limits.
@@ -61,9 +111,8 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
             // If it exceeds the limit, respond with a custom application error.
             if batch_size > self.max_batch_size {
                 error!("Rejecting JSON-RPC batch: {:?} requests", batch_size);
-                return Box::new(rpc::futures::finished(Some(rpc::Response::from(
-                    error_batch_size(),
-                    None,
+                return Box::new(rpc::futures::finished(Some(rpc::Response::Batch(
+                    generate_error_response_calls(calls, &BatchSizeErrGen {}),
                 ))));
             }
         }
@@ -105,10 +154,7 @@ impl rpc::Middleware<Metadata> for WsDispatcher {
                 if self.stats.count_request(session) as usize > self.max_req_per_sec {
                     measure_counter_inc!("ws_rate_limited");
                     error!("Rejecting WS request");
-                    return Box::new(rpc::futures::finished(Some(rpc::Response::from(
-                        error_rate_limited(),
-                        None,
-                    ))));
+                    return generate_error_response(request, &RateLimitedErrGen {});
                 }
             }
             _ => (),
