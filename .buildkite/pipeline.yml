@@ -43,6 +43,15 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  - label: Build inspector
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_generic.sh /workdir -p inspector
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
   - label: Build web3 gateway
     command:
       - .buildkite/scripts/setup_gitconfig.sh

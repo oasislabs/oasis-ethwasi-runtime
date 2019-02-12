@@ -59,4 +59,5 @@ members = [
     "common",
     "gateway",
     "genesis",
+    "inspector",
 ]
