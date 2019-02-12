@@ -43,13 +43,13 @@ pub fn dummy_ctx() -> RuntimeCallContext {
     ctx
 }
 
-pub fn with_batch_handler<F, R>(f: F) -> R
+pub fn with_batch_handler<F, R>(timestamp: u64, f: F) -> R
 where
     F: FnOnce(&mut RuntimeCallContext) -> R,
 {
     let root_hash = DatabaseHandle::instance().get_root_hash();
     let mut ctx = RuntimeCallContext::new(Header {
-        timestamp: 0xcafedeadbeefc0de,
+        timestamp: timestamp,
         state_root: root_hash,
         ..Default::default()
     });

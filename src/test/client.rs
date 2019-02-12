@@ -28,6 +28,7 @@ pub struct Client {
     pub keypair: KeyPair,
     /// Contract key used for encrypting web3c transactions.
     pub ephemeral_key: ContractKey,
+    pub timestamp: u64,
 }
 
 impl Client {
@@ -42,12 +43,18 @@ impl Client {
             )
             .unwrap(),
             ephemeral_key: TestKeyManager::create_random_key(),
+            timestamp: 0xcafedeadbeefc0de,
         }
     }
 
     /// Returns a handle to the client to interact with the blockchain.
     pub fn instance<'a>() -> MutexGuard<'a, Self> {
         CLIENT.lock().unwrap()
+    }
+
+    /// Sets the timestamp passed to the runtime via RuntimeCallContext.
+    pub fn set_timestamp(&mut self, timestamp: u64) {
+        self.timestamp = timestamp;
     }
 
     pub fn estimate_gas(&self, contract: Option<&Address>, data: Vec<u8>, value: &U256) -> U256 {
@@ -61,7 +68,7 @@ impl Client {
             gas: None,
         };
 
-        with_batch_handler(|ctx| {
+        with_batch_handler(self.timestamp, |ctx| {
             let response = simulate_transaction(&tx, ctx).unwrap();
             response.used_gas + response.refunded_gas
         })
@@ -99,12 +106,14 @@ impl Client {
     /// and the address of the contract.
     pub fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
         let hash = self.send(None, code, balance);
-        let receipt = with_batch_handler(|ctx| get_receipt(&hash, ctx).unwrap().unwrap());
+        let receipt = with_batch_handler(self.timestamp, |ctx| {
+            get_receipt(&hash, ctx).unwrap().unwrap()
+        });
         (hash, receipt.contract_address.unwrap())
     }
 
     pub fn receipt(&self, tx_hash: H256) -> Receipt {
-        with_batch_handler(|ctx| get_receipt(&tx_hash, ctx))
+        with_batch_handler(self.timestamp, |ctx| get_receipt(&tx_hash, ctx))
             .unwrap()
             .unwrap()
     }
@@ -117,7 +126,9 @@ impl Client {
         balance: &U256,
     ) -> (H256, Address) {
         let hash = self.confidential_send(None, code, balance);
-        let receipt = with_batch_handler(|ctx| get_receipt(&hash, ctx).unwrap().unwrap());
+        let receipt = with_batch_handler(self.timestamp, |ctx| {
+            get_receipt(&hash, ctx).unwrap().unwrap()
+        });
         (hash, receipt.contract_address.unwrap())
     }
 
@@ -134,12 +145,14 @@ impl Client {
             gas: None,
         };
 
-        with_batch_handler(|ctx| simulate_transaction(&tx, ctx).unwrap().result.unwrap())
+        with_batch_handler(self.timestamp, |ctx| {
+            simulate_transaction(&tx, ctx).unwrap().result.unwrap()
+        })
     }
 
     /// Sends a transaction onchain that updates the blockchain, analagous to the web3.js send().
     pub fn send(&mut self, contract: Option<&Address>, data: Vec<u8>, value: &U256) -> H256 {
-        with_batch_handler(|ctx| {
+        with_batch_handler(self.timestamp, |ctx| {
             let tx = EthcoreTransaction {
                 action: if contract == None {
                     Action::Create
@@ -253,7 +266,7 @@ impl Client {
     /// Returns the raw underlying storage for the given `contract`--without
     /// encrypting the key or decrypting the return value.
     pub fn raw_storage(&self, contract: Address, storage_key: H256) -> Option<Vec<u8>> {
-        with_batch_handler(|ctx| {
+        with_batch_handler(self.timestamp, |ctx| {
             let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
             let state = ectx.cache.get_state(ConfidentialCtx::new()).unwrap();
             state._storage_at(&contract, &storage_key).unwrap()
@@ -269,5 +282,9 @@ impl Client {
                 .encrypt_storage(storage_key.to_vec())
                 .unwrap(),
         )
+    }
+
+    pub fn storage_expiry(&self, contract: Address) -> u64 {
+        with_batch_handler(self.timestamp, |ctx| get_storage_expiry(&contract, ctx)).unwrap()
     }
 }

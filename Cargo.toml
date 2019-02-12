@@ -35,6 +35,9 @@ ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "
 ekiden-edl = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
+[dev-dependencies]
+time = "0.1"
+
 [features]
 default = ["confidential"]
 confidential = []
