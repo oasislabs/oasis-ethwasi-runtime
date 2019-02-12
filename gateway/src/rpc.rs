@@ -18,10 +18,10 @@ use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
-use middleware::request_logger::RequestLogger;
-use middleware::rate_limit::WsDispatcher;
-use middleware::rate_limit::WsStats;
-use middleware::rate_limit::Middleware;
+use middleware::{
+    rate_limit::{Middleware, WsDispatcher, WsStats},
+    request_logger::RequestLogger,
+};
 use parity_reactor::TokioRemote;
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
@@ -203,7 +203,12 @@ pub fn new_http<D: rpc_apis::Dependencies>(
     let addr = url
         .parse()
         .map_err(|_| format!("Invalid {} listen host/port given: {}", id, url))?;
-    let handler = setup_apis(conf.apis, deps, conf.max_batch_size, conf.request_logger_enabled);
+    let handler = setup_apis(
+        conf.apis,
+        deps,
+        conf.max_batch_size,
+        conf.request_logger_enabled,
+    );
     let remote = deps.remote.clone();
 
     let cors_domains = into_domains(conf.cors);

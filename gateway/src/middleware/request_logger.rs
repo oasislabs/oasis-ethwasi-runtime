@@ -1,7 +1,5 @@
 //! RPC Middleware
 
-use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
 use jsonrpc_core as rpc;
 use jsonrpc_ws_server as ws;
 use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
@@ -95,7 +93,7 @@ pub struct RequestLogger {
 
 impl RequestLogger {
     pub fn new(enabled: bool) -> Self {
-        return RequestLogger {enabled: enabled};
+        return RequestLogger { enabled: enabled };
     }
 
     pub fn log_call(rt: &RequestType, out: &rpc::Output, start: std::time::Instant) {
