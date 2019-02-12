@@ -176,6 +176,12 @@ impl Cache {
             .map(|c| (&*c).clone()))
     }
 
+    pub fn get_storage_expiry(&self, address: &Address) -> Result<u64> {
+        Ok(self
+            .get_state(ConfidentialCtx::new())?
+            .storage_expiry(&address)?)
+    }
+
     fn block_number_ref(&self, id: &BlockId) -> Option<BlockNumber> {
         match *id {
             BlockId::Number(number) => Some(number),

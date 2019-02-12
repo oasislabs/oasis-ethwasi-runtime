@@ -669,11 +669,10 @@ impl Client {
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
-                // TODO: runtime call
-                future::err(Error::new(
-                    "oasis_getStorageExpiry runtime call not implemented",
-                ))
-                .into_box()
+                record_runtime_call_result(
+                    "get_storage_expiry",
+                    self.client.get_storage_expiry(*address),
+                )
             }
         }
     }

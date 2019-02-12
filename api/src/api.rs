@@ -23,5 +23,7 @@ runtime_api! {
 
     pub fn get_storage_at((Address, H256)) -> H256;
 
+    pub fn get_storage_expiry(Address) -> u64;
+
     pub fn get_logs(Filter) -> Vec<Log>;
 }
