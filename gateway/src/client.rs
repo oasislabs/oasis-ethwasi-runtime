@@ -27,7 +27,7 @@ use grpcio;
 use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
-use runtime_ethereum_common::{confidential::has_confidential_prefix, State as EthState};
+use runtime_ethereum_common::State as EthState;
 use traits::confidential::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
@@ -929,9 +929,10 @@ impl Client {
                     if result.created_contract {
                         measure_counter_inc!("contract_created");
 
-                        if has_confidential_prefix(&transaction.data) {
-                            measure_counter_inc!("confidential_contract_created");
-                        }
+                        // TODO: re-enable this metric
+                        //if has_confidential_prefix(&transaction.data) {
+                        //    measure_counter_inc!("confidential_contract_created");
+                        //}
                     }
 
                     result.hash.map_err(|error| {

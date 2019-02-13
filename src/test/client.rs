@@ -11,9 +11,7 @@ use ethcore::{
 use ethereum_api::{Receipt, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
-use runtime_ethereum_common::confidential::{
-    key_manager::TestKeyManager, ConfidentialCtx, CONFIDENTIAL_PREFIX,
-};
+use runtime_ethereum_common::confidential::{key_manager::TestKeyManager, ConfidentialCtx};
 use std::{
     str::FromStr,
     sync::{Mutex, MutexGuard},
@@ -94,7 +92,7 @@ impl Client {
     pub fn confidential_data(&self, contract: Option<&Address>, data: Vec<u8>) -> Vec<u8> {
         if contract.is_none() {
             // Don't encrypt confidential deploys.
-            let mut conf_deploy_data = CONFIDENTIAL_PREFIX.to_vec();
+            let mut conf_deploy_data = Self::make_header(None, Some(true));
             conf_deploy_data.append(&mut data.clone());
             return conf_deploy_data;
         }
