@@ -200,6 +200,19 @@ mod tests {
         fn active(&self) {}
     }
 
+    fn validate_error_output(output: rpc::Output, id: jsonrpc_core::Id) {
+        match output {
+            rpc::Output::Failure(failure) => {
+                assert_eq!(
+                    failure.error.code,
+                    rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE)
+                );
+                assert_eq!(failure.id, id);
+            }
+            _ => assert!(false, "Did not enforce batch size limit in single request"),
+        };
+    }
+
     fn make_request(id: u64) -> rpc::Request {
         rpc::Request::Single(rpc::Call::MethodCall(rpc::MethodCall {
             jsonrpc: Some(rpc::Version::V2),
@@ -287,6 +300,7 @@ mod tests {
                     failure.error.code,
                     rpc::ErrorCode::ServerError(ERROR_RATE_LIMITED)
                 );
+                assert_eq!(failure.id, jsonrpc_core::Id::Num(2));
             }
             _ => assert!(false, "Did not enforce rate limit"),
         };
@@ -348,13 +362,12 @@ mod tests {
 
         // should respond with a Failure for batch size of 2
         match response_2 {
-            Some(rpc::Response::Single(rpc::Output::Failure(failure))) => {
-                assert_eq!(
-                    failure.error.code,
-                    rpc::ErrorCode::ServerError(ERROR_BATCH_SIZE)
-                );
+            Some(rpc::Response::Batch(mut outputs)) => {
+                assert_eq!(outputs.len(), 2);
+                validate_error_output(outputs.remove(0), jsonrpc_core::Id::Num(2));
+                validate_error_output(outputs.remove(0), jsonrpc_core::Id::Null);
             }
-            _ => assert!(false, "Did not enforce batch size limit"),
+            _ => assert!(false, "Did not enforce batch size limit in batch"),
         };
     }
 }
