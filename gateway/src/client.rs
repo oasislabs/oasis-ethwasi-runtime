@@ -813,10 +813,13 @@ impl Client {
             }
         };
 
-        if state
-            .is_confidential(transaction)
-            .map_err(|_| CallError::StateCorrupt)?
-        {
+        // Extract contract deployment header
+        let header = state
+            .extract_header(transaction)
+            .map_err(|e| ExecutionError::TransactionMalformed(e))?;
+
+        let confidential = header.as_ref().map_or(false, |h| h.confidential);
+        if confidential {
             self.confidential_estimate_gas(transaction)
         } else {
             self._estimate_gas(transaction, db, state)
