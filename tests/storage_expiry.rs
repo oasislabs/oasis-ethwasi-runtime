@@ -27,10 +27,10 @@ fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Cl
 
 #[test]
 fn test_default_expiry() {
+    let mut client = test::Client::instance();
+
     // get current time
     let now = time::get_time().sec as u64;
-
-    let mut client = test::Client::instance();
     client.set_timestamp(now);
 
     // deploy counter contract without header
@@ -43,11 +43,33 @@ fn test_default_expiry() {
 }
 
 #[test]
-fn test_expiry() {
+fn test_invalid_expiry() {
+    let mut client = test::Client::instance();
+
     // get current time
     let now = time::get_time().sec as u64;
+    client.set_timestamp(now);
 
+    // attempt to deploy counter contract with invalid expiry
+    let deploy_expiry = now - 1;
+    let (tx_hash, contract) = client.create_contract_with_header(
+        contracts::counter::solidity_initcode(),
+        &U256::zero(),
+        Some(deploy_expiry),
+        None,
+    );
+
+    // check that deploy failed (0 status code)
+    let status = client.receipt(tx_hash).status_code.unwrap();
+    assert_eq!(status, 0);
+}
+
+#[test]
+fn test_expiry() {
     let mut client = test::Client::instance();
+
+    // get current time
+    let now = time::get_time().sec as u64;
     client.set_timestamp(now);
 
     // deploy counter contract with expiry
