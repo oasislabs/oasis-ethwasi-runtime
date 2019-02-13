@@ -321,17 +321,17 @@ impl Client {
         expiry.map(|expiry| map.insert("expiry".to_string(), expiry.into()));
         let contents = json!(map).to_string().into_bytes();
 
-        // header length (version + contents)
-        let mut length = [0u8; 2];
-        BigEndian::write_u16(&mut length, (contents.len() + 2) as u16);
-
         // header version
         let mut version = [0u8; 2];
         BigEndian::write_u16(&mut version, 1 as u16);
 
+        // header contents length
+        let mut length = [0u8; 2];
+        BigEndian::write_u16(&mut length, contents.len() as u16);
+
         // append header length, version and contents
-        data.append_slice(&length);
         data.append_slice(&version);
+        data.append_slice(&length);
         data.append_slice(&contents);
 
         data.into_vec()
