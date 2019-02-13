@@ -12,7 +12,6 @@ extern crate serde_json;
 
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
-extern crate ekiden_roothash_api;
 extern crate ekiden_roothash_base;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_batch;
@@ -39,7 +38,6 @@ use serde_json::{de::SliceRead, StreamDeserializer};
 use ekiden_core::{
     environment::{Environment, GrpcEnvironment},
     futures::Future,
-    protobuf::Message,
 };
 use ekiden_db_trusted::DatabaseHandle;
 use ekiden_storage_base::InsertOptions;
@@ -311,16 +309,12 @@ fn main() {
         .unwrap();
 
     // Generate genesis roothash block file.
-    let mut genesis_blocks = ekiden_roothash_api::GenesisBlocks::new();
-    let mut genesis_block = ekiden_roothash_api::GenesisBlock::new();
     let mut block = ekiden_roothash_base::Block::default();
     block.header.state_root = state_root;
     // TODO: Take runtime identifier as an argument.
-    genesis_block.set_runtime_id(block.header.namespace.to_vec());
-    genesis_block.set_block(block.into());
-    genesis_blocks.mut_genesis_blocks().push(genesis_block);
+    let blocks = vec![block];
 
     // Save to file.
     let mut file = File::create(args.value_of("output_file").unwrap()).unwrap();
-    genesis_blocks.write_to_writer(&mut file).unwrap();
+    serde_json::to_writer(&mut file, &blocks).unwrap();
 }

@@ -23,7 +23,6 @@ ekiden-storage-batch = { git = "https://github.com/oasislabs/ekiden", branch = "
 ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-roothash-api = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
