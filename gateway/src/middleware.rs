@@ -48,6 +48,8 @@ impl ErrGen for RateLimitedErrGen {
     }
 }
 
+/// given a single call it generates an error response
+/// from the error generator
 fn generate_error_response_call(call: &rpc::Call, gen: &ErrGen) -> rpc::Output {
     match call {
         rpc::Call::MethodCall(method) => {
@@ -56,10 +58,12 @@ fn generate_error_response_call(call: &rpc::Call, gen: &ErrGen) -> rpc::Output {
         rpc::Call::Notification(notification) => {
             rpc::Output::from(Err(gen.generate()), rpc::Id::Null, notification.jsonrpc)
         }
-        rpc::Call::Invalid(id) => rpc::Output::from(Err(gen.generate()), rpc::Id::Null, None),
+        rpc::Call::Invalid(id) => rpc::Output::from(Err(gen.generate()), invalid.id.clone(), None),
     }
 }
 
+/// given a batch of rpc calls it generates the appropriate
+/// error for each of the calls
 fn generate_error_response_calls(calls: &Vec<rpc::Call>, gen: &ErrGen) -> Vec<rpc::Output> {
     calls
         .iter()
@@ -67,6 +71,7 @@ fn generate_error_response_calls(calls: &Vec<rpc::Call>, gen: &ErrGen) -> Vec<rp
         .collect::<Vec<_>>()
 }
 
+/// given a request it generates an error response for that request
 fn generate_error_response(request: rpc::Request, gen: &ErrGen) -> rpc::FutureResponse {
     Box::new(rpc::futures::finished(Some(match request {
         rpc::Request::Single(call) => {
