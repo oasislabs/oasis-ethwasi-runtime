@@ -1,11 +1,13 @@
 #[cfg(feature = "test")]
 use ekiden_core::random;
-use ekiden_keymanager_common::ContractKey;
+use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
+use ekiden_keymanager_common::{ContractId, ContractKey};
 #[cfg(feature = "test")]
 use ekiden_keymanager_common::{
     PublicKeyType, EMPTY_PRIVATE_KEY, EMPTY_PUBLIC_KEY, EMPTY_STATE_KEY,
 };
 use ethereum_types::Address;
+use keccak_hash::keccak;
 #[cfg(feature = "test")]
 use std::collections::HashMap;
 #[cfg(feature = "test")]
@@ -36,6 +38,56 @@ impl KeyManagerClient {
     }
     pub fn contract_key(address: Address) -> Result<ContractKey, String> {
         TEST_KEY_MANAGER.lock().unwrap().contract_key(address)
+    }
+}
+
+/// Wrapper around the Ekiden key manager client to provide a more convenient
+/// Ethereum address based interface along with runtime-specific utility methods.
+struct KeyManager;
+impl KeyManager {
+    /// Returns the contract id for the given contract address. The contract_id
+    /// is used to fetch keys for a contract.
+    fn contract_id(contract: Address) -> ContractId {
+        ContractId::from(&keccak(contract.to_vec())[..])
+    }
+
+    /// Creates and returns the long term public key for the given contract.
+    /// If the key already exists, returns the existing key.
+    /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
+    fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
+        let contract_id = Self::contract_id(contract);
+        let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
+
+        // first create the keys
+        km.get_or_create_secret_keys(contract_id)
+            .map_err(|err| err.description().to_string())?;
+        // then extract the long term key
+        km.long_term_public_key(contract_id)
+            .map_err(|err| err.description().to_string())
+            .map(|pk_payload| {
+                (
+                    pk_payload.public_key.to_vec(),
+                    pk_payload.signature.to_vec(),
+                )
+            })
+    }
+
+    fn contract_key(address: Address) -> Result<ContractKey, String> {
+        let contract_id = Self::contract_id(address);
+        let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
+
+        let (secret_key, state_key) = km
+            .get_or_create_secret_keys(contract_id)
+            .map_err(|err| err.description().to_string())?;
+        let public_key_payload = km
+            .get_public_key(contract_id)
+            .map_err(|err| err.description().to_string())?;
+
+        Ok(ContractKey::new(
+            public_key_payload.public_key,
+            secret_key,
+            state_key,
+        ))
     }
 }
 

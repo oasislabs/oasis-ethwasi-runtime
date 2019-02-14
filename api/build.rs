@@ -1,3 +1,5 @@
+//! build crate for the ekiden api
+
 extern crate ekiden_tools;
 
 fn main() {

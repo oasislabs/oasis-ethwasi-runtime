@@ -1,3 +1,5 @@
+//! build crate for the ekiden runtime based enclave
+
 extern crate ekiden_edl;
 extern crate ekiden_tools;
 
