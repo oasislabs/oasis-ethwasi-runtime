@@ -109,6 +109,24 @@ impl RpcStats {
             .map(|calc| calc.write().tick())
             .unwrap_or(0)
     }
+
+    // used for tests
+    #[allow(dead_code)]
+    /// Returns number of open sessions
+    pub fn sessions(&self) -> usize {
+        self.sessions.read().len()
+    }
+
+    // used for tests
+    #[allow(dead_code)]
+    /// Returns requests rate
+    pub fn requests_rate(&self, id: &H256) -> usize {
+        self.sessions
+            .read()
+            .get(id)
+            .map(|calc| calc.read().rate())
+            .unwrap_or(0)
+    }
 }
 
 #[cfg(test)]

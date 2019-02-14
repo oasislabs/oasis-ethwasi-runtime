@@ -17,7 +17,7 @@ export RUST_BACKTRACE="1"
 ##################################
 if [ -v RUSTLINT ]; then
     RUSTLINT=""
-    for opt in $(cat .buildkite/rust/lint.sh); do
+    for opt in $(cat .buildkite/rust/lint.txt); do
         RUSTLINT=$RUSTLINT" -D "$opt
     done
 
@@ -27,6 +27,8 @@ if [ -v RUSTLINT ]; then
     else
         export RUSTFLAGS=$RUSTFLAGS" "$RUSTLINT
     fi
+
+    echo "Using RUSTFLAGS="$RUSTFLAGS
 fi
 
 ####################################################

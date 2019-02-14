@@ -16,9 +16,6 @@ extern crate keccak_hash;
 #[macro_use]
 extern crate lazy_static;
 
-#[cfg(not(target_env = "sgx"))]
-extern crate rand;
-
 #[cfg(target_env = "sgx")]
 extern crate sgx_rand;
 
@@ -318,6 +315,7 @@ where
     }
 }
 
+#[derive(Debug)]
 /// Blockchain state database.
 pub struct BlockchainStateDb<T: Database + Send + Sync> {
     db: Mutex<T>,

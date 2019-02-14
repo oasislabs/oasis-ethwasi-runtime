@@ -63,6 +63,10 @@ impl FromStr for Api {
 
 #[derive(Debug, Clone)]
 pub enum ApiSet {
+    // Used in tests.
+    #[allow(dead_code)]
+    // Safe context (like token-protected WS interface)
+    SafeContext,
     // Unsafe context (like jsonrpc over http)
     UnsafeContext,
     // All possible APIs

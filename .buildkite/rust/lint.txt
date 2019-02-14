@@ -22,11 +22,8 @@ unused-allocation
 unused-comparisons
 unused-parens
 while-true
-missing-debug-implementations
-missing-docs
 trivial-casts
 trivial-numeric-casts
 unused-extern-crates
 unused-import-braces
 unused-qualifications
-unused-results
