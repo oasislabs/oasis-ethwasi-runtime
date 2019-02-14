@@ -1,6 +1,5 @@
 //! Common data structures shared by runtime and gateway.
 
-#![deny(warnings)]
 extern crate ekiden_core;
 extern crate ekiden_keymanager_client;
 extern crate ekiden_keymanager_common;

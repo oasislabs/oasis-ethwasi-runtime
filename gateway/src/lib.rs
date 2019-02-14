@@ -15,7 +15,6 @@
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Ethcore client application.
-#![deny(warnings)]
 
 #[macro_use]
 extern crate clap;

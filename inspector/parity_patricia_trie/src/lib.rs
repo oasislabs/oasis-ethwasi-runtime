@@ -16,7 +16,6 @@
 
 //! Trie interface and implementation.
 // extern crate rand;
-#![deny(warnings)]
 extern crate elastic_array;
 extern crate ethcore_bytes as bytes;
 extern crate ethereum_types;

@@ -1,7 +1,7 @@
 # Mac things
 .DS_Store
 
-n# Build.
+# Build.
 tests/build
 target/
 **/*.rs.bk
