@@ -118,7 +118,7 @@ use ethereum_types::U256;
 
 use ekiden_core::{environment::Environment, x509};
 use ekiden_runtime_client::create_runtime_client;
-use ekiden_storage_base::{BackendIdentityMapper};
+use ekiden_storage_base::BackendIdentityMapper;
 use ethereum_api::with_api;
 
 pub use self::run::RunningClient;

@@ -1,6 +1,6 @@
 //! Oasis rpc interface.
 
-use jsonrpc_core::{BoxFuture};
+use jsonrpc_core::BoxFuture;
 use jsonrpc_macros::Trailing;
 
 use parity_rpc::v1::types::{BlockNumber, H160};

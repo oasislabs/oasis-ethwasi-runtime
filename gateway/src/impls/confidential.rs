@@ -2,10 +2,7 @@ use client::Client;
 use ethereum_api::TransactionRequest;
 use ethereum_types::Address;
 use impls::eth::EthClient;
-use jsonrpc_core::{
-    futures::{Future},
-    BoxFuture, Error, ErrorCode, Result,
-};
+use jsonrpc_core::{futures::{Future}, BoxFuture, Error, ErrorCode, Result};
 use jsonrpc_macros::Trailing;
 use parity_rpc::v1::{
     helpers::errors,
