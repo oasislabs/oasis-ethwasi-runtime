@@ -109,7 +109,6 @@ impl RpcStats {
             .map(|calc| calc.write().tick())
             .unwrap_or(0)
     }
-
 }
 
 #[cfg(test)]

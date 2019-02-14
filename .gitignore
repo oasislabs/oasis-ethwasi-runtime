@@ -1,7 +1,7 @@
 # Mac things
 .DS_Store
 
-# Build.
+n# Build.
 tests/build
 target/
 **/*.rs.bk
@@ -52,3 +52,7 @@ tests/rpc-tests/
 
 # Coverage report from Tarpaulin
 cobertura.xml
+
+# in case credentials are put in the repo for using
+# inside the docker container
+.git-credentials
