@@ -15,13 +15,18 @@ export RUST_BACKTRACE="1"
 ##################################
 # Set up RUSTFLAGS for the build #
 ##################################
-if [ -z $(echo $RUSTLINT | awk '{print $1}') ]; then
+if [ -v RUSTLINT ]; then
     RUSTLINT=""
-    for opt in $(cat lint.sh); do
+    for opt in $(cat .buildkite/rust/lint.sh); do
         RUSTLINT=$RUSTLINT" -D "$opt
     done
+
     export RUSTLINT
-    export RUSTFLAGS=$RUSTFLAGS" "$RUSTLINT
+    if [ -v RUSTFLAG ]; then
+        export RUSTFLAGS=$RUSTLINT
+    else
+        export RUSTFLAGS=$RUSTFLAGS" "$RUSTLINT
+    fi
 fi
 
 ####################################################
