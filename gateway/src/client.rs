@@ -85,9 +85,11 @@ pub trait ChainNotify: Send + Sync {
 pub struct Client {
     client: runtime_ethereum::Client,
     engine: Arc<EthEngine>,
+    #[allow(dead_code)]
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
     environment: Arc<Environment>,
+    #[allow(dead_code)]
     storage_backend: Arc<StorageBackend>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,

@@ -1,7 +1,10 @@
+#
+# list of lints that will be used to compile the code
+# elements after a '#' will be ignored
+#
 bad-style
 const-err
 dead-code
-extra-requirement-in-impl
 improper-ctypes
 legacy-directory-ownership
 non-shorthand-field-patterns
@@ -11,19 +14,19 @@ path-statements
 patterns-in-fns-without-body
 plugin-as-library
 private-in-public
-private-no-mangle-fns
-private-no-mangle-statics
-raw-pointer-derive
 safe-extern-statics
 unconditional-recursion
 unions-with-drop-fields
-unused
+# unused
 unused-allocation
 unused-comparisons
 unused-parens
 while-true
-trivial-casts
-trivial-numeric-casts
-unused-extern-crates
-unused-import-braces
-unused-qualifications
+# missing-debug-implementations
+# missing-docs
+# trivial-casts
+# trivial-numeric-casts
+# unused-extern-crates
+# unused-import-braces
+# unused-qualifications
+# unused-results

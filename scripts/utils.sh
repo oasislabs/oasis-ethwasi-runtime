@@ -182,7 +182,8 @@ run_compute_node() {
     ${EKIDEN_NODE} \
         --log.level debug \
         --grpc.log.verbose_debug \
-        --storage.backend client \
+        --storage.backend cachingclient \
+        --storage.cachingclient.file ${data_dir}/storage-cache \
         --storage.client.address 127.0.0.1:${EKIDEN_STORAGE_PORT} \
         --epochtime.backend tendermint_mock \
         --beacon.backend tendermint \

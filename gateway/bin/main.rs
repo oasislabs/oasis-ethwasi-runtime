@@ -23,7 +23,6 @@ extern crate log;
 extern crate parking_lot;
 #[macro_use]
 extern crate clap;
-extern crate rand;
 
 #[macro_use]
 extern crate client_utils;

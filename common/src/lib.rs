@@ -16,9 +16,6 @@ extern crate keccak_hash;
 #[macro_use]
 extern crate lazy_static;
 
-#[cfg(target_env = "sgx")]
-extern crate sgx_rand;
-
 pub mod confidential;
 
 use std::{

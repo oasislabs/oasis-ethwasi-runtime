@@ -18,28 +18,20 @@
 
 #[macro_use]
 extern crate clap;
-extern crate env_logger;
 extern crate futures;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate parking_lot;
-extern crate path;
 extern crate rayon;
-extern crate regex;
-extern crate rustc_hex;
-extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate toml;
 
 extern crate jsonrpc_core;
 #[macro_use]
 extern crate jsonrpc_macros;
 extern crate jsonrpc_http_server;
-extern crate jsonrpc_ipc_server;
 extern crate jsonrpc_pubsub;
 extern crate jsonrpc_ws_server;
 
@@ -48,19 +40,13 @@ extern crate ethcore;
 extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
-extern crate evm;
 #[cfg(test)]
 extern crate hex;
-extern crate journaldb;
 extern crate keccak_hash as hash;
 extern crate kvdb;
-extern crate parity_machine;
 extern crate parity_reactor;
 extern crate parity_rpc;
-extern crate rlp;
 extern crate rlp_compress;
-extern crate util_error;
-extern crate vm;
 
 #[macro_use]
 extern crate client_utils;
@@ -75,7 +61,6 @@ extern crate ekiden_keymanager_common;
 extern crate ekiden_registry_client;
 #[cfg(test)]
 extern crate ekiden_roothash_client;
-extern crate ekiden_rpc_client;
 #[cfg(test)]
 extern crate ekiden_scheduler_client;
 extern crate ekiden_storage_base;

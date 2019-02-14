@@ -241,6 +241,7 @@ impl ApiSet {
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
             ApiSet::UnsafeContext => public_list,
+            ApiSet::SafeContext => public_list,
             ApiSet::All => public_list,
         }
     }

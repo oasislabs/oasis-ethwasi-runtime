@@ -13,7 +13,7 @@ use ethereum_types::Address;
 /// nonce to use--to be encrypting under for a *single* transaction. Each
 /// transaction for a confidential contract should have it's own ConfidentialCtx
 /// that is closed at the end of the transaction's execution.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct ConfidentialCtx {
     /// The peer public key used for encryption. This should not change for an
     /// open confidential context. This is implicitly set by the `open` method.
