@@ -1,3 +1,4 @@
+#![deny(warnings)]
 extern crate clap;
 extern crate ethcore;
 extern crate ethereum_types;

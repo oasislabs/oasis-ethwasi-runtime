@@ -1,9 +1,9 @@
 //! Oasis rpc interface.
 
-use jsonrpc_core::{BoxFuture, Result};
+use jsonrpc_core::{BoxFuture};
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::types::{BlockNumber, H160, H256};
+use parity_rpc::v1::types::{BlockNumber, H160};
 
 build_rpc_trait! {
     pub trait Oasis {

@@ -1,3 +1,4 @@
+#![deny(warnings)]
 extern crate protobuf;
 extern crate serde;
 

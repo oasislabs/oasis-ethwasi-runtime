@@ -15,11 +15,11 @@
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
 //! Ethcore client application.
+#![deny(warnings)]
 
 #[macro_use]
 extern crate clap;
 extern crate env_logger;
-#[macro_use]
 extern crate futures;
 #[macro_use]
 extern crate lazy_static;
@@ -45,7 +45,6 @@ extern crate jsonrpc_pubsub;
 extern crate jsonrpc_ws_server;
 
 extern crate common_types;
-#[macro_use]
 extern crate ethcore;
 extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
@@ -119,7 +118,7 @@ use ethereum_types::U256;
 
 use ekiden_core::{environment::Environment, x509};
 use ekiden_runtime_client::create_runtime_client;
-use ekiden_storage_base::{BackendIdentityMapper, StorageBackend};
+use ekiden_storage_base::{BackendIdentityMapper};
 use ethereum_api::with_api;
 
 pub use self::run::RunningClient;

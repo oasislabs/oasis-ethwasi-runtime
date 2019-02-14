@@ -16,6 +16,7 @@
 
 //! web3 gateway for Oasis Ethereum runtime.
 
+#![deny(warnings)]
 extern crate ctrlc;
 extern crate fdlimit;
 extern crate log;
