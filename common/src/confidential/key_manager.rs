@@ -41,21 +41,20 @@ impl KeyManagerClient {
     }
 }
 
-#[allow(dead_code)]
+#[cfg(not(feature = "test"))]
 #[derive(Debug)]
 /// Wrapper around the Ekiden key manager client to provide a more convenient
 /// Ethereum address based interface along with runtime-specific utility methods.
 struct KeyManager;
 
+#[cfg(not(feature = "test"))]
 impl KeyManager {
-    #[allow(dead_code)]
     /// Returns the contract id for the given contract address. The contract_id
     /// is used to fetch keys for a contract.
     fn contract_id(contract: Address) -> ContractId {
         ContractId::from(&keccak(contract.to_vec())[..])
     }
 
-    #[allow(dead_code)]
     /// Creates and returns the long term public key for the given contract.
     /// If the key already exists, returns the existing key.
     /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
@@ -77,7 +76,6 @@ impl KeyManager {
             })
     }
 
-    #[allow(dead_code)]
     fn contract_key(address: Address) -> Result<ContractKey, String> {
         let contract_id = Self::contract_id(address);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
