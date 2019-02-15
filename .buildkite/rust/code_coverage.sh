@@ -56,6 +56,7 @@ cargo tarpaulin \
   --packages web3-gateway \
   --exclude-files *generated* \
   --exclude-files genesis* \
+  --exclude-files inspector* \
   --exclude-files node_modules* \
   --exclude-files gateway/src/informant.rs \
   --exclude-files gateway/src/middleware.rs \
