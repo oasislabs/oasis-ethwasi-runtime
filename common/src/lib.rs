@@ -11,6 +11,7 @@ extern crate ethcore;
 extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash;
+extern crate storagestudy;
 
 #[cfg(feature = "test")]
 #[macro_use]
@@ -252,6 +253,7 @@ where
                 }
             }
             Entry::Vacant(entry) => {
+                storagestudy::dump("sh-set");
                 entry.insert(PendingItem::Storage(1, value.to_vec()));
             }
         }
@@ -282,6 +284,7 @@ where
                 }
             }
             Entry::Vacant(entry) => {
+                storagestudy::dump("sh-set");
                 entry.insert(PendingItem::State(1, value.to_vec()));
             }
         }
@@ -304,6 +307,7 @@ where
                 }
             }
             Entry::Vacant(entry) => {
+                storagestudy::dump("sh-set");
                 // We assume state items are only used for storing contract code and
                 // those are never removed, so we assume storage here.
                 entry.insert(PendingItem::Storage(-1, vec![]));

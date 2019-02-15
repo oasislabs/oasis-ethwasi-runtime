@@ -179,28 +179,18 @@ impl Client {
         })
     }
 
-    /// Sends a transaction onchain that updates the blockchain, analagous to the web3.js send().
+    /// Runs a batch with a single transaction, analagous to the web3.js send().
     pub fn send(&mut self, contract: Option<&Address>, data: Vec<u8>, value: &U256) -> H256 {
         with_batch_handler(self.timestamp, |ctx| {
-            let tx = EthcoreTransaction {
-                action: if contract == None {
-                    Action::Create
-                } else {
-                    Action::Call(*contract.unwrap())
-                },
-                nonce: get_account_nonce(&self.keypair.address(), ctx).unwrap(),
-                gas_price: self.gas_price,
-                gas: self.gas_limit,
-                value: *value,
-                data: data,
-            }
-            .sign(&self.keypair.secret(), None);
-
-            let raw = rlp::encode(&tx);
-            execute_raw_transaction(&raw.into_vec(), ctx)
-                .unwrap()
-                .hash
-                .unwrap()
+            send_in_batch_keypair(
+                ctx,
+                &self.keypair,
+                self.gas_price,
+                self.gas_limit,
+                contract,
+                data,
+                value,
+            )
         })
     }
 
