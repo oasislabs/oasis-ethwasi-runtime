@@ -13,6 +13,7 @@ extern crate log;
 extern crate ekiden_keymanager_client;
 extern crate ekiden_keymanager_common;
 extern crate runtime_ethereum_common;
+extern crate storagestudy;
 
 #[cfg(feature = "test")]
 extern crate ekiden_roothash_base;

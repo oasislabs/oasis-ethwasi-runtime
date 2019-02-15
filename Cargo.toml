@@ -7,12 +7,14 @@ build = "build.rs"
 [dependencies]
 ethereum-api = { path = "./api" }
 runtime-ethereum-common = { path = "./common" }
+storagestudy = { path = "storagestudy" }
 
 common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -42,6 +44,7 @@ ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" 
 
 [dev-dependencies]
 time = "0.1"
+ethabi = "5.1"
 
 [features]
 default = ["confidential"]
@@ -49,7 +52,7 @@ confidential = []
 benchmark = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
-test = ["runtime-ethereum-common/test"]
+test = ["runtime-ethereum-common/test", "ethkey/test"]
 production-genesis = []
 
 [profile.release]
@@ -68,5 +71,149 @@ members = [
     "common",
     "gateway",
     "genesis",
-    "inspector",
+    "storagestudy",
 ]
+
+[patch.'https://github.com/oasislabs/parity']
+parity = { path = "parity" }
+parity-whisper = { path = "parity/whisper" }
+whisper-cli = { path = "parity/whisper/cli" }
+transaction-pool = { path = "parity/transaction-pool" }
+ethash = { path = "parity/ethash" }
+parity-clib = { path = "parity/parity-clib" }
+ethcore-miner = { path = "parity/miner" }
+hardware-wallet = { path = "parity/hw" }
+ethkey = { path = "parity/ethkey" }
+ethkey-cli = { path = "parity/ethkey/cli" }
+parity-hash-fetch = { path = "parity/hash-fetch" }
+parity-rpc = { path = "parity/rpc" }
+ethstore = { path = "parity/ethstore" }
+ethstore-cli = { path = "parity/ethstore/cli" }
+evmbin = { path = "parity/evmbin" }
+ethcore = { path = "parity/ethcore" }
+evm = { path = "parity/ethcore/evm" }
+wasm = { path = "parity/ethcore/wasm" }
+pwasm-run-test = { path = "parity/ethcore/wasm/run" }
+vm = { path = "parity/ethcore/vm" }
+ethcore-private-tx = { path = "parity/ethcore/private-tx" }
+ethcore-sync = { path = "parity/ethcore/sync" }
+ethcore-transaction = { path = "parity/ethcore/transaction" }
+ethcore-light = { path = "parity/ethcore/light" }
+node-filter = { path = "parity/ethcore/node_filter" }
+common-types = { path = "parity/ethcore/types" }
+ethcore-service = { path = "parity/ethcore/service" }
+ethcore-crypto = { path = "parity/ethcore/crypto" }
+ethcore-stratum = { path = "parity/ethcore/stratum" }
+rpc-cli = { path = "parity/rpc_cli" }
+parity-ipfs-api = { path = "parity/ipfs" }
+parity-updater = { path = "parity/updater" }
+parity-local-store = { path = "parity/local-store" }
+ethcore-devtools = { path = "parity/devtools" }
+registrar = { path = "parity/registrar" }
+ethjson = { path = "parity/json" }
+chainspec = { path = "parity/chainspec" }
+parity-dapps = { path = "parity/dapps" }
+parity-dapps-glue = { path = "parity/dapps/js-glue" }
+node-health = { path = "parity/dapps/node-health" }
+parity-rpc-client = { path = "parity/rpc_client" }
+ethcore-logger = { path = "parity/logger" }
+ethcore-secretstore = { path = "parity/secret_store" }
+parity-machine = { path = "parity/machine" }
+price-info = { path = "parity/price-info" }
+patricia-trie = { path = "parity/util/patricia_trie" }
+keccak-hash = { path = "parity/util/hash" }
+util-error = { path = "parity/util/error" }
+path = { path = "parity/util/path" }
+memorydb = { path = "parity/util/memorydb" }
+kvdb-rocksdb = { path = "parity/util/kvdb-rocksdb" }
+macros = { path = "parity/util/macros" }
+fake-fetch = { path = "parity/util/fake-fetch" }
+kvdb-memorydb = { path = "parity/util/kvdb-memorydb" }
+dir = { path = "parity/util/dir" }
+journaldb = { path = "parity/util/journaldb" }
+ethcore-bloom-journal = { path = "parity/util/bloom" }
+parity-reactor = { path = "parity/util/reactor" }
+migration-rocksdb = { path = "parity/util/migration-rocksdb" }
+unexpected = { path = "parity/util/unexpected" }
+parity-version = { path = "parity/util/version" }
+trie-standardmap = { path = "parity/util/trie-standardmap" }
+kvdb = { path = "parity/util/kvdb" }
+trace-time = { path = "parity/util/trace-time" }
+ethcore-io = { path = "parity/util/io" }
+rlp_compress = { path = "parity/util/rlp_compress" }
+ethcore-network = { path = "parity/util/network" }
+memory-cache = { path = "parity/util/memory_cache" }
+plain_hasher = { path = "parity/util/plain_hasher" }
+fetch = { path = "parity/util/fetch" }
+rlp_derive = { path = "parity/util/rlp_derive" }
+using_queue = { path = "parity/util/using_queue" }
+ethcore-network-devp2p = { path = "parity/util/network-devp2p" }
+triehash = { path = "parity/util/triehash" }
+ethcore-bytes = { path = "parity/util/bytes" }
+stats = { path = "parity/util/stats" }
+panic_hook = { path = "parity/util/panic_hook" }
+bloomchain = { path = "parity/util/bloomchain" }
+hashdb = { path = "parity/util/hashdb" }
+mem = { path = "parity/util/mem" }
+stop-guard = { path = "parity/util/stop-guard" }
+rlp = { path = "parity/util/rlp" }
+
+[patch."https://github.com/oasislabs/ekiden"]
+ekiden-tools = { path = "ekiden/tools" }
+ekiden-instrumentation = { path = "ekiden/instrumentation" }
+ekiden-instrumentation-prometheus = { path = "ekiden/instrumentation/prometheus" }
+ekiden-tracing = { path = "ekiden/tracing" }
+ekiden-common = { path = "ekiden/common" }
+ekiden-common-api = { path = "ekiden/common/api" }
+ekiden-roothash-api = { path = "ekiden/roothash/api" }
+ekiden-roothash-base = { path = "ekiden/roothash/base" }
+ekiden-roothash-client = { path = "ekiden/roothash/client" }
+ekiden-storage-base = { path = "ekiden/storage/base" }
+ekiden-storage-dummy = { path = "ekiden/storage/dummy" }
+ekiden-storage-client = { path = "ekiden/storage/client" }
+ekiden-storage-persistent = { path = "ekiden/storage/persistent" }
+ekiden-storage-lru = { path = "ekiden/storage/lru_cache" }
+ekiden-storage-batch = { path = "ekiden/storage/batch" }
+ekiden-enclave-common = { path = "ekiden/enclave/common" }
+ekiden-enclave-untrusted = { path = "ekiden/enclave/untrusted" }
+ekiden-enclave-trusted = { path = "ekiden/enclave/trusted" }
+ekiden-rpc-api = { path = "ekiden/rpc/api" }
+ekiden-rpc-common = { path = "ekiden/rpc/common" }
+ekiden-rpc-client = { path = "ekiden/rpc/client" }
+ekiden-rpc-untrusted = { path = "ekiden/rpc/untrusted" }
+ekiden-rpc-trusted = { path = "ekiden/rpc/trusted" }
+ekiden-rpc-edl = { path = "ekiden/rpc/edl" }
+ekiden-db-untrusted = { path = "ekiden/db/untrusted" }
+ekiden-db-trusted = { path = "ekiden/db/trusted" }
+ekiden-db-edl = { path = "ekiden/db/edl" }
+ekiden-runtime-common = { path = "ekiden/runtime/common" }
+ekiden-runtime-client = { path = "ekiden/runtime/client" }
+ekiden-runtime-untrusted = { path = "ekiden/runtime/untrusted" }
+ekiden-runtime-trusted = { path = "ekiden/runtime/trusted" }
+ekiden-runtime-edl = { path = "ekiden/runtime/edl" }
+ekiden-core = { path = "ekiden/core/common" }
+ekiden-untrusted = { path = "ekiden/core/untrusted" }
+ekiden-trusted = { path = "ekiden/core/trusted" }
+ekiden-edl = { path = "ekiden/core/edl" }
+ekiden-worker = { path = "ekiden/worker" }
+simple-keyvalue = { path = "ekiden/tests/runtimes/simple-keyvalue" }
+test-db-encryption = { path = "ekiden/tests/runtimes/test-db-encryption" }
+test-logger = { path = "ekiden/tests/runtimes/test-logger" }
+simple-keyvalue-client = { path = "ekiden/tests/clients/simple-keyvalue" }
+test-db-encryption-client = { path = "ekiden/tests/clients/test-db-encryption" }
+test-logger-client = { path = "ekiden/tests/clients/test-logger" }
+test-long-term-client = { path = "ekiden/tests/clients/test-long-term" }
+ekiden-registry-api = { path = "ekiden/registry/api" }
+ekiden-registry-base = { path = "ekiden/registry/base" }
+ekiden-registry-client = { path = "ekiden/registry/client" }
+ekiden-scheduler-api = { path = "ekiden/scheduler/api" }
+ekiden-scheduler-base = { path = "ekiden/scheduler/base" }
+ekiden-scheduler-client = { path = "ekiden/scheduler/client" }
+ekiden-keymanager-api = { path = "ekiden/key-manager/api" }
+ekiden-keymanager-common = { path = "ekiden/key-manager/common" }
+ekiden-keymanager-client = { path = "ekiden/key-manager/client" }
+ekiden-keymanager-edl = { path = "ekiden/key-manager/dummy/edl" }
+ekiden-keymanager-trusted = { path = "ekiden/key-manager/dummy/enclave" }
+ekiden-keymanager-keygen = { path = "ekiden/key-manager/dummy/keygen" }
+ekiden-keymanager-untrusted = { path = "ekiden/key-manager/dummy/untrusted" }
+ekiden-keymanager-node = { path = "ekiden/key-manager/node" }

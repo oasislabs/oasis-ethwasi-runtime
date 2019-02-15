@@ -5,6 +5,7 @@ extern crate ekiden_roothash_base;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
 extern crate ekiden_trusted;
+extern crate ethabi;
 extern crate ethcore;
 extern crate ethereum_types;
 extern crate ethkey;
@@ -18,7 +19,10 @@ use ethcore::{
     transaction::{Action, Transaction as EthcoreTransaction},
 };
 use ethereum_types::{H256, U256};
-use runtime_ethereum::test;
+use ethkey::Generator;
+use runtime_ethereum::test::{self, with_batch_handler};
+
+mod contracts;
 
 #[test]
 fn test_create_balance() {
@@ -68,6 +72,101 @@ fn test_create_balance() {
             .unwrap(),
         H256::from(init_bal - contract_bal - client.gas_limit * client.gas_price)
     );
+}
+
+const NUM_TRANSFERS: usize = 100;
+
+#[test]
+fn test_storagestudy() {
+    let mut client = test::Client::instance();
+    let amount = U256::from(1);
+
+    eprintln!("Generating accounts %%%");
+    let mut senders = Vec::with_capacity(NUM_TRANSFERS);
+    let mut receivers = Vec::with_capacity(NUM_TRANSFERS);
+    for _ in 0..NUM_TRANSFERS {
+        senders.push(ethkey::Random.generate().unwrap());
+        receivers.push(ethkey::Random.generate().unwrap().address());
+    }
+
+    // Fund the senders
+    eprintln!("Funding senders %%%");
+    storagestudy::era("fund-senders");
+    for i in 0..NUM_TRANSFERS {
+        client.send(Some(&senders[i].address()), vec![], &amount);
+    }
+
+    // Send in one batch
+    eprintln!("Sending %%%");
+    storagestudy::era("batch-send");
+    with_batch_handler(client.timestamp, |ctx| {
+        for i in 0..NUM_TRANSFERS {
+            test::send_in_batch_keypair(
+                ctx,
+                &senders[i],
+                0.into(),
+                1000000.into(),
+                Some(&receivers[i]),
+                vec![],
+                &amount,
+            );
+        }
+    });
+}
+
+#[test]
+fn test_storagestudy_storage() {
+    let mut client = test::Client::instance();
+
+    let m_set_bulk_storage = ethabi::Function {
+        name: "set_bulk_storage".to_owned(),
+        inputs: vec![
+            ethabi::Param {
+                name: "storage_key".to_owned(),
+                kind: ethabi::ParamType::Uint(256),
+            },
+            ethabi::Param {
+                name: "storage_value".to_owned(),
+                kind: ethabi::ParamType::Bytes,
+            },
+        ],
+        outputs: vec![],
+        constant: false,
+    };
+
+    eprintln!("Creating contract %%%");
+    storagestudy::era("create-contract");
+    let (tx_hash, contract_addr) =
+        client.create_contract(contracts::bulk_storage::initcode(), &U256::from(0));
+
+    eprintln!("Accessing bulk storage %%%");
+    storagestudy::era("bulk-storage");
+    let dummy_value = ethabi::Token::Bytes(vec![1]);
+    // works up to 55 transactions now
+    // 275297 gas <- one byte
+    // 281246 gas <- ten bytes
+    with_batch_handler(client.timestamp, |ctx| {
+        for i in 0..2 {
+            eprintln!("  storing into storage_key {}", i);
+            let params = [ethabi::Token::Uint(i.into()), dummy_value.clone()];
+            let data = m_set_bulk_storage.encode_input(&params).unwrap();
+            test::send_in_batch_keypair(
+                ctx,
+                &client.keypair,
+                0.into(),
+                1000000.into(),
+                Some(&contract_addr),
+                data,
+                &0.into(),
+            );
+        }
+    });
+
+//    let params = [ethabi::Token::Uint(0.into()), dummy_value.clone()];
+//    let data = m_set_bulk_storage.encode_input(&params).unwrap();
+//    let tx_hash2 = client.send(Some(&contract_addr), data, &0.into());
+//    let receipt = client.receipt(tx_hash2);
+//    eprintln!("Used {} gas", receipt.gas_used.unwrap());
 }
 
 #[test]
