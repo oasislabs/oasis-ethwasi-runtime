@@ -5,22 +5,22 @@
 # TODO: Share these with ekiden.
 
 # Temporary test base directory.
-TEST_BASE_DIR=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)
+: ${TEST_BASE_DIR:=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)}
 
 # Key manager variables shared between the compute node, gateway, and key manager
-KM_KEY="${WORKDIR}/resources/keymanager/km-key.pem"
-KM_CERT="${WORKDIR}/resources/keymanager/km.pem"
-KM_HOST="127.0.0.1"
-KM_PORT="9003"
-KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave
-KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
+: ${KM_KEY:="${WORKDIR}/resources/keymanager/km-key.pem"}
+: ${KM_CERT:="${WORKDIR}/resources/keymanager/km.pem"}
+: ${KM_HOST:="127.0.0.1"}
+: ${KM_PORT:="9003"}
+: ${KM_MRENCLAVE:=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave}
+: ${KM_ENCLAVE:=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so}
 
-EKIDEN_NODE=${WORKDIR}/ekiden-node
-EKIDEN_WORKER=${WORKDIR}/ekiden-worker
-KM_NODE=${WORKDIR}/ekiden-keymanager-node
-GATEWAY=${WORKDIR}/target/debug/gateway
-RUNTIME_ENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.so
-RUNTIME_MRENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave
+: ${EKIDEN_NODE:=${WORKDIR}/ekiden-node}
+: ${EKIDEN_WORKER:=${WORKDIR}/ekiden-worker}
+: ${KM_NODE:=${WORKDIR}/ekiden-keymanager-node}
+: ${GATEWAY:=${WORKDIR}/target/debug/gateway}
+: ${RUNTIME_ENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.so}
+: ${RUNTIME_MRENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave}
 
 run_test_network() {
     # Start keymanager node.
