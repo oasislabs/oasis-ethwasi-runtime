@@ -814,11 +814,11 @@ impl Client {
         };
 
         // Extract contract deployment header
-        let header = state
-            .extract_header(transaction)
+        let oasis_contract = state
+            .oasis_contract(transaction)
             .map_err(|e| ExecutionError::TransactionMalformed(e))?;
 
-        let confidential = header.as_ref().map_or(false, |h| h.confidential);
+        let confidential = oasis_contract.as_ref().map_or(false, |c| c.confidential);
         if confidential {
             self.confidential_estimate_gas(transaction)
         } else {
