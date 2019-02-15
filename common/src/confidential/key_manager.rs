@@ -41,7 +41,7 @@ impl KeyManagerClient {
     }
 }
 
-#[cfg(not(test))]
+#[allow(dead_code)]
 #[derive(Debug)]
 /// Wrapper around the Ekiden key manager client to provide a more convenient
 /// Ethereum address based interface along with runtime-specific utility methods.
