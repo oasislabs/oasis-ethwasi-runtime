@@ -400,9 +400,6 @@ mod tests {
 
     use self::ekiden_storage_dummy::DummyStorageBackend;
 
-    #[allow(dead_code)]
-    use lazy_static;
-
     use super::*;
 
     #[test]

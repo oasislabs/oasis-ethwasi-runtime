@@ -252,7 +252,7 @@ mod tests {
         let request_1 = make_request(1);
 
         let response = dispatcher
-            .on_request(request_1, metadata.clone(), |request, meta| {
+            .on_request(request_1, metadata.clone(), |_request, _meta| {
                 Box::new(rpc::futures::finished(None))
             })
             .wait()
@@ -284,15 +284,15 @@ mod tests {
         let request_1 = make_request(1);
         let request_2 = make_request(2);
 
-        let response = dispatcher
-            .on_request(request_1, metadata.clone(), |request, meta| {
+        let _response = dispatcher
+            .on_request(request_1, metadata.clone(), |_request, _meta| {
                 Box::new(rpc::futures::finished(None))
             })
             .wait()
             .unwrap();
 
         let response = dispatcher
-            .on_request(request_2, metadata.clone(), |request, meta| {
+            .on_request(request_2, metadata.clone(), |_request, _meta| {
                 Box::new(rpc::futures::finished(None))
             })
             .wait()
@@ -348,7 +348,7 @@ mod tests {
 
         // batch size: 1 (should pass)
         let response_1 = middleware
-            .on_request(batch_1, (), |request, meta| {
+            .on_request(batch_1, (), |_request, _meta| {
                 Box::new(rpc::futures::finished(None))
             })
             .wait()
@@ -359,7 +359,7 @@ mod tests {
 
         // batch size: 2 (should fail)
         let response_2 = middleware
-            .on_request(batch_2, (), |request, meta| {
+            .on_request(batch_2, (), |_request, _meta| {
                 Box::new(rpc::futures::finished(None))
             })
             .wait()

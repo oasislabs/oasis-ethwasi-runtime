@@ -85,11 +85,11 @@ pub trait ChainNotify: Send + Sync {
 pub struct Client {
     client: runtime_ethereum::Client,
     engine: Arc<EthEngine>,
-    #[allow(dead_code)]
+    #[cfg(not(test))]
     snapshot_manager: Option<client_utils::db::Manager>,
     eip86_transition: u64,
     environment: Arc<Environment>,
-    #[allow(dead_code)]
+    #[cfg(not(test))]
     storage_backend: Arc<StorageBackend>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
@@ -119,9 +119,11 @@ impl Client {
         Self {
             client: client,
             engine: spec.engine.clone(),
+            #[cfg(not(test))]
             snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
             environment,
+            #[cfg(not(test))]
             storage_backend: backend,
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
@@ -141,10 +143,8 @@ impl Client {
         Self {
             client: test_helpers::get_test_runtime_client(),
             engine: spec.engine.clone(),
-            snapshot_manager: None,
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
-            storage_backend: Arc::new(DummyStorageBackend::new()),
             notified_block_number: Mutex::new(0),
             listeners: RwLock::new(vec![]),
             gas_price: U256::from(1_000_000_000),

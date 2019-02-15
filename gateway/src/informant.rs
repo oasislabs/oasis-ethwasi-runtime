@@ -110,15 +110,13 @@ impl RpcStats {
             .unwrap_or(0)
     }
 
-    // used for tests
-    #[allow(dead_code)]
+    #[cfg(test)]
     /// Returns number of open sessions
     pub fn sessions(&self) -> usize {
         self.sessions.read().len()
     }
 
-    // used for tests
-    #[allow(dead_code)]
+    #[cfg(test)]
     /// Returns requests rate
     pub fn requests_rate(&self, id: &H256) -> usize {
         self.sessions

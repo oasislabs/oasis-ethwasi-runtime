@@ -32,7 +32,7 @@ use std::sync::Arc;
 use ekiden_core::error::{Error, Result};
 use ekiden_storage_base::StorageBackend;
 #[cfg(not(target_env = "sgx"))]
-#[allow(dead_code)]
+#[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(target_env = "sgx")]
 use ekiden_trusted::db::untrusted::UntrustedStorageBackend;
@@ -155,7 +155,8 @@ pub fn get_block_height(_request: &bool, ctx: &mut RuntimeCallContext) -> Result
     Ok(ectx.cache.get_latest_block_number().into())
 }
 
-#[allow(dead_code)]
+#[cfg(not(feature = "test"))]
+#[cfg(not(test))]
 fn get_block_hash(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<H256>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -168,7 +169,8 @@ fn get_block_hash(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<H
     Ok(hash)
 }
 
-#[allow(dead_code)]
+#[cfg(not(feature = "test"))]
+#[cfg(not(test))]
 fn get_block(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<Vec<u8>>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -189,7 +191,8 @@ fn get_block(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<Vec<u8
     }
 }
 
-#[allow(dead_code)]
+#[cfg(not(feature = "test"))]
+#[cfg(not(test))]
 fn get_logs(filter: &Filter, ctx: &mut RuntimeCallContext) -> Result<Vec<Log>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
