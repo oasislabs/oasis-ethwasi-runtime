@@ -1,4 +1,4 @@
-//! build crate for the ekiden api
+//! Build crate for the ekiden api.
 
 extern crate ekiden_tools;
 
