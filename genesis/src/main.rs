@@ -1,3 +1,4 @@
+#![deny(warnings)]
 extern crate clap;
 extern crate ethcore;
 extern crate ethereum_types;
@@ -5,7 +6,6 @@ extern crate filebuffer;
 extern crate hex;
 extern crate log;
 extern crate pretty_env_logger;
-extern crate rlp;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;

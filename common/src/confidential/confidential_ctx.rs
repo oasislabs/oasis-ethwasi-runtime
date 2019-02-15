@@ -1,3 +1,4 @@
+#![deny(warnings)]
 use super::key_manager::KeyManagerClient;
 use ekiden_core::mrae::{
     nonce::{Nonce, NONCE_SIZE},

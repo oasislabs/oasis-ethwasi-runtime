@@ -342,7 +342,7 @@ impl Database for MockDb {
         unimplemented!();
     }
 
-    fn with_encryption_key<F, R>(&mut self, key: StateKeyType, _f: F) -> R
+    fn with_encryption_key<F, R>(&mut self, _key: StateKeyType, _f: F) -> R
     where
         F: FnOnce(&mut DatabaseHandle) -> R,
     {

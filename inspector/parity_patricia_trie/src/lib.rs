@@ -21,14 +21,11 @@ extern crate ethcore_bytes as bytes;
 extern crate ethereum_types;
 extern crate hashdb;
 extern crate keccak_hash as keccak;
-extern crate memorydb;
 extern crate rlp;
 // extern crate ethcore_logger;
 
 #[cfg(test)]
 extern crate trie_standardmap as standardmap;
-
-extern crate log;
 
 use ethereum_types::H256;
 use hashdb::DBValue;

@@ -41,9 +41,13 @@ impl KeyManagerClient {
     }
 }
 
+#[cfg(not(feature = "test"))]
+#[derive(Debug)]
 /// Wrapper around the Ekiden key manager client to provide a more convenient
 /// Ethereum address based interface along with runtime-specific utility methods.
 struct KeyManager;
+
+#[cfg(not(feature = "test"))]
 impl KeyManager {
     /// Returns the contract id for the given contract address. The contract_id
     /// is used to fetch keys for a contract.

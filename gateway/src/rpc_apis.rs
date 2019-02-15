@@ -63,6 +63,8 @@ impl FromStr for Api {
 
 #[derive(Debug, Clone)]
 pub enum ApiSet {
+    // Used in tests.
+    #[cfg(test)]
     // Safe context (like token-protected WS interface)
     SafeContext,
     // Unsafe context (like jsonrpc over http)
@@ -239,6 +241,7 @@ impl ApiSet {
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
             ApiSet::UnsafeContext => public_list,
+            #[cfg(test)]
             ApiSet::SafeContext => public_list,
             ApiSet::All => public_list,
         }
