@@ -252,7 +252,7 @@ where
                 }
             }
             Entry::Vacant(entry) => {
-                entry.insert(PendingItem::Storage(1, value.to_vec()));
+                let _ = entry.insert(PendingItem::Storage(1, value.to_vec()))?;
             }
         }
 
@@ -282,7 +282,7 @@ where
                 }
             }
             Entry::Vacant(entry) => {
-                entry.insert(PendingItem::State(1, value.to_vec()));
+                let _ = entry.insert(PendingItem::State(1, value.to_vec()))?;
             }
         }
     }
@@ -306,7 +306,7 @@ where
             Entry::Vacant(entry) => {
                 // We assume state items are only used for storing contract code and
                 // those are never removed, so we assume storage here.
-                entry.insert(PendingItem::Storage(-1, vec![]));
+                let _ = entry.insert(PendingItem::Storage(-1, vec![]))?;
             }
         }
     }
@@ -375,7 +375,7 @@ where
                 ref value,
                 col,
             } => {
-                db.insert(&get_key(col, key), value.to_vec().as_slice());
+                let _ = db.insert(&get_key(col, key), value.to_vec().as_slice())?;
             }
             &kvdb::DBOp::Delete { .. } => {
                 // This is a no-op for us. Parity cleans up old state (anything

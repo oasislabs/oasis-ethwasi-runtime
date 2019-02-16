@@ -63,7 +63,7 @@ impl KeyManager {
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
 
         // first create the keys
-        km.get_or_create_secret_keys(contract_id)
+        let _ = km.get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
         // then extract the long term key
         km.long_term_public_key(contract_id)
