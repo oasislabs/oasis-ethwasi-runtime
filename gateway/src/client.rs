@@ -17,8 +17,8 @@ use ethcore::{
     receipt::LocalizedReceipt,
     rlp,
     spec::Spec,
-    transaction::{Transaction, UnverifiedTransaction},
-    vm::{EnvInfo, LastHashes},
+    transaction::UnverifiedTransaction,
+    vm::{EnvInfo, LastHashes, OasisContract},
 };
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
@@ -890,28 +890,47 @@ impl Client {
         }
     }
 
-    /// Checks that transaction is well formed, meets min gas price, and that signature
-    /// is valid. Returns the decoded Transaction, or an error message.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Transaction, String> {
+    /// Checks that transaction is well formed, meets min gas price, has a valid signature,
+    /// and that the contract header, if present, is valid. Returns the OasisContract (or None
+    /// if no header is present), or an error message if any check fails.
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Option<OasisContract>, String> {
         // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
             Err(e) => return Err(e.to_string()),
         };
 
+        // validate signature
+        if decoded.is_unsigned() {
+            return Err("Transaction is not signed".to_string());
+        }
+        let signed_transaction = match SignedTransaction::new(decoded) {
+            Ok(t) => t,
+            Err(e) => return Err(e.to_string()),
+        };
+
         // check gas price
-        let unsigned = decoded.as_unsigned();
-        if unsigned.gas_price < self.gas_price() {
+        if signed_transaction.gas_price < self.gas_price() {
             return Err("Insufficient gas price".to_string());
         }
 
-        // validate signature
-        match decoded.recover_public() {
-            Err(e) => return Err(e.to_string()),
-            _ => (),
-        }
-
-        Ok(unsigned.clone())
+        // validate contract deployment header (if present)
+        let db = match self.get_db_snapshot() {
+            Some(db) => db,
+            None => {
+                error!("Could not get db snapshot");
+                return Err("Could not parse header".to_string());
+            }
+        };
+        let state = match db.get_ethstate_at(BlockId::Latest) {
+            Some(state) => state,
+            None => {
+                error!("Could not get state snapshot");
+                return Err("Could not parse header".to_string());
+            }
+        };
+        let oasis_contract = state.oasis_contract(&signed_transaction)?;
+        Ok(oasis_contract)
     }
 
     /// Submit raw transaction to the current leader.
@@ -919,8 +938,8 @@ impl Client {
     /// This method returns immediately and does not wait for the transaction to
     /// be confirmed.
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
-        let transaction = match self.precheck_transaction(&raw) {
-            Ok(transaction) => transaction,
+        let oasis_contract = match self.precheck_transaction(&raw) {
+            Ok(contract) => contract,
             Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
@@ -932,10 +951,11 @@ impl Client {
                     if result.created_contract {
                         measure_counter_inc!("contract_created");
 
-                        // TODO: re-enable this metric
-                        //if has_confidential_prefix(&transaction.data) {
-                        //    measure_counter_inc!("confidential_contract_created");
-                        //}
+                        let confidential =
+                            oasis_contract.as_ref().map_or(false, |c| c.confidential);
+                        if confidential {
+                            measure_counter_inc!("confidential_contract_created");
+                        }
                     }
 
                     result.hash.map_err(|error| {
