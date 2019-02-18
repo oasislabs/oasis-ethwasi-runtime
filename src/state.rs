@@ -399,7 +399,6 @@ mod tests {
     extern crate ekiden_storage_dummy;
 
     use self::ekiden_storage_dummy::DummyStorageBackend;
-    use lazy_static;
 
     use super::*;
 

@@ -12,6 +12,25 @@ export INTEL_SGX_SDK="/opt/sgxsdk"
 export EKIDEN_UNSAFE_SKIP_AVR_VERIFY="1"
 export RUST_BACKTRACE="1"
 
+##################################
+# Set up RUSTFLAGS for the build #
+##################################
+if [ -z ${RUSTLINT+x} ]; then
+    RUSTLINT=""
+    for opt in $(cat .buildkite/rust/lint.txt | grep -v '#'); do
+        RUSTLINT=$RUSTLINT" -D "$opt
+    done
+
+    export RUSTLINT
+    if [ -z ${RUSTFLAGS+x} ]; then
+        export RUSTFLAGS=$RUSTLINT
+    else
+        export RUSTFLAGS=$RUSTFLAGS" "$RUSTLINT
+    fi
+
+    echo "Using RUSTFLAGS="$RUSTFLAGS
+fi
+
 ####################################################
 # By default, .bashrc will quit if the shell
 # is not interactive. It checks whether $PS1 is

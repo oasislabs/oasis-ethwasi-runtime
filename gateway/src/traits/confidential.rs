@@ -1,8 +1,7 @@
-use ekiden_common::bytes::B512;
 use ethereum_types::Address;
 use jsonrpc_core::{BoxFuture, Result};
 use jsonrpc_macros::Trailing;
-use parity_rpc::v1::types::{BlockNumber, Bytes, CallRequest, H256};
+use parity_rpc::v1::types::{BlockNumber, Bytes, CallRequest};
 
 build_rpc_trait! {
     pub trait Confidential {

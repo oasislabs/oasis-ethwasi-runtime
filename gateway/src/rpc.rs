@@ -42,12 +42,6 @@ pub struct HttpConfiguration {
     pub max_batch_size: usize,
 }
 
-impl HttpConfiguration {
-    pub fn address(&self) -> Option<rpc::Host> {
-        address(self.enabled, &self.interface, self.port, &self.hosts)
-    }
-}
-
 impl Default for HttpConfiguration {
     fn default() -> Self {
         HttpConfiguration {
