@@ -1,9 +1,11 @@
+extern crate ethereum_api;
 extern crate ethereum_types;
 extern crate runtime_ethereum;
 extern crate time;
 
 mod contracts;
 
+use ethereum_api::Receipt;
 use ethereum_types::{Address, U256};
 use runtime_ethereum::test;
 use std::sync::MutexGuard;
@@ -18,11 +20,11 @@ fn get_counter<'a>(contract: &Address, client: &mut MutexGuard<'a, test::Client>
     )
 }
 
-/// Invokes the `incrementCounter` method on the contract, returns the status code.
-fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Client>) -> u64 {
+/// Invokes the `incrementCounter` method on the contract, returns the receipt.
+fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Client>) -> Receipt {
     let sighash_data = contracts::counter::increment_counter_sighash();
     let tx_hash = client.send(Some(&contract), sighash_data, &U256::zero());
-    client.receipt(tx_hash).status_code.unwrap()
+    client.receipt(tx_hash)
 }
 
 #[test]
@@ -52,7 +54,7 @@ fn test_invalid_expiry() {
 
     // attempt to deploy counter contract with invalid expiry
     let deploy_expiry = now - 1;
-    let (tx_hash, contract) = client.create_contract_with_header(
+    let (tx_hash, _) = client.create_contract_with_header(
         contracts::counter::solidity_initcode(),
         &U256::zero(),
         Some(deploy_expiry),
@@ -69,34 +71,45 @@ fn test_expiry() {
     let mut client = test::Client::instance();
 
     // get current time
-    let now = time::get_time().sec as u64;
-    client.set_timestamp(now);
+    let deploy_time = time::get_time().sec as u64;
+    client.set_timestamp(deploy_time);
 
     // deploy counter contract with expiry
-    let deploy_expiry = now + 3600;
+    let duration = 31557600;
     let (_, contract) = client.create_contract_with_header(
         contracts::counter::solidity_initcode(),
         &U256::zero(),
-        Some(deploy_expiry),
+        Some(deploy_time + duration),
         None,
     );
 
     // check expiry
     let expiry = client.storage_expiry(contract);
-    assert_eq!(expiry, deploy_expiry);
+    assert_eq!(expiry, deploy_time + duration);
 
-    // increment counter (not expired)
+    // increment counter twice
     let counter_pre = get_counter(&contract, &mut client);
-    increment_counter(contract.clone(), &mut client);
+    let _ = increment_counter(contract.clone(), &mut client);
+    let receipt_1 = increment_counter(contract.clone(), &mut client);
+    let counter_post = get_counter(&contract, &mut client);
+    assert_eq!(counter_post, counter_pre + U256::from(2));
+
+    // increment counter (later)
+    client.set_timestamp(deploy_time + duration / 2);
+    let counter_pre = get_counter(&contract, &mut client);
+    let receipt_2 = increment_counter(contract.clone(), &mut client);
     let counter_post = get_counter(&contract, &mut client);
     assert_eq!(counter_post, counter_pre + U256::from(1));
 
+    // check that gas cost is cheaper
+    assert!(receipt_2.gas_used.unwrap() < receipt_1.gas_used.unwrap());
+
     // increment counter (expired)
-    client.set_timestamp(deploy_expiry + 1);
-    let status = increment_counter(contract.clone(), &mut client);
+    client.set_timestamp(deploy_time + duration + 1);
+    let receipt_3 = increment_counter(contract.clone(), &mut client);
 
     // check that transaction failed (0 status code)
-    assert_eq!(status, 0);
+    assert_eq!(receipt_3.status_code.unwrap(), 0);
 
     let expired_counter = get_counter(&contract, &mut client);
     assert_eq!(expired_counter, U256::from(0));

@@ -314,16 +314,16 @@ impl Client {
         // start with header prefix
         let mut data = ElasticArray128::from_slice(&HEADER_PREFIX[..]);
 
+        // header version 1
+        let mut version = [0u8; 2];
+        BigEndian::write_u16(&mut version, 1 as u16);
+
         // contents (JSON)
         let mut map = Map::new();
         confidential
             .map(|confidential| map.insert("confidential".to_string(), confidential.into()));
         expiry.map(|expiry| map.insert("expiry".to_string(), expiry.into()));
         let contents = json!(map).to_string().into_bytes();
-
-        // header version
-        let mut version = [0u8; 2];
-        BigEndian::write_u16(&mut version, 1 as u16);
 
         // header contents length
         let mut length = [0u8; 2];
