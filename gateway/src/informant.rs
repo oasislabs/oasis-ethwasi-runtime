@@ -110,7 +110,6 @@ impl RpcStats {
             .unwrap_or(0)
     }
 
-    #[cfg(test)]
     /// Returns number of open sessions
     pub fn sessions(&self) -> usize {
         self.sessions.read().len()
