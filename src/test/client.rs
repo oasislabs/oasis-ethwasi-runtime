@@ -134,6 +134,7 @@ impl Client {
         (hash, receipt.contract_address.unwrap())
     }
 
+    /// Returns the receipt for the given transaction hash.
     pub fn receipt(&self, tx_hash: H256) -> Receipt {
         with_batch_handler(self.timestamp, |ctx| get_receipt(&tx_hash, ctx))
             .unwrap()
@@ -306,10 +307,12 @@ impl Client {
         )
     }
 
+    /// Returns the storage expiry timestamp for a contract.
     pub fn storage_expiry(&self, contract: Address) -> u64 {
         with_batch_handler(self.timestamp, |ctx| get_storage_expiry(&contract, ctx)).unwrap()
     }
 
+    /// Returns a valid contract deployment header with specified expiry and confidentiality.
     fn make_header(expiry: Option<u64>, confidential: Option<bool>) -> Vec<u8> {
         // start with header prefix
         let mut data = ElasticArray128::from_slice(&HEADER_PREFIX[..]);
@@ -325,11 +328,11 @@ impl Client {
         expiry.map(|expiry| map.insert("expiry".to_string(), expiry.into()));
         let contents = json!(map).to_string().into_bytes();
 
-        // header contents length
+        // contents length
         let mut length = [0u8; 2];
         BigEndian::write_u16(&mut length, contents.len() as u16);
 
-        // append header length, version and contents
+        // append header version, length and contents
         data.append_slice(&version);
         data.append_slice(&length);
         data.append_slice(&contents);
