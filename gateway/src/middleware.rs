@@ -183,12 +183,12 @@ impl WsStats {
 
 impl ws::SessionStats for WsStats {
     fn open_session(&self, id: ws::SessionId) {
-        measure_counter_inc!("ws_session_open");
+        measure_gauge!("ws_sessions", self.stats.sessions());
         self.stats.open_session(H256::from(id))
     }
 
     fn close_session(&self, id: ws::SessionId) {
-        measure_counter_inc!("ws_session_close");
+        measure_gauge!("ws_sessions", self.stats.sessions());
         self.stats.close_session(&H256::from(id))
     }
 }
