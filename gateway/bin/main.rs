@@ -76,7 +76,7 @@ fn main() {
             Arg::with_name("ws-max-connections")
                 .long("ws-max-connections")
                 .help("Max number of concurrent WebSocket connections.")
-                .default_value("1000")
+                .default_value("10000")
                 .takes_value(true),
         )
         .arg(
