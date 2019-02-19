@@ -211,13 +211,13 @@ run_compute_node() {
 }
 
 run_compute_committee() {
-    run_compute_node 1
+    run_compute_node 1 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 2
+    run_compute_node 2 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 3
+    run_compute_node 3 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 4
+    run_compute_node 4 ${UTILS_COMPUTE_EXTRA_ARGS}
 
     # Wait for all nodes to register.
     wait_compute_nodes 4
