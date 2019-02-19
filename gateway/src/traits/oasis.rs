@@ -23,8 +23,7 @@ build_rpc_trait! {
             Trailing<BlockNumber>
         ) -> BoxFuture<Bytes>;
         /// Get expiration timestamp for a contract.
-        /// The value is a Unix timestamp (seconds since the epoch). A special value of 0 indicates
-        /// that the contract's storage does not expire.
+        /// The value is a Unix timestamp (seconds since the epoch).
         #[rpc(name = "oasis_getExpiry")]
         fn get_expiry(&self, H160, Trailing<BlockNumber>) -> BoxFuture<u64>;
     }
