@@ -8,7 +8,7 @@ build_rpc_trait! {
         type Metadata;
         /// Returns the public key of a contract, given its address.
         #[rpc(name = "confidential_getPublicKey")]
-        fn public_key(&self, Address) -> Result<PublicKeyResult>;
+        fn public_key(&self, Address) -> Result<Option<PublicKeyResult>>;
         /// Executes a new message call without creating a transaction on chain.
         /// Returns the return value of the executed contract, encrypted with
         /// the user's public key.

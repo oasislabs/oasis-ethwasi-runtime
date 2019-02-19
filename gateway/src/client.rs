@@ -944,7 +944,7 @@ impl Client {
     }
 
     /// Returns the public key for the given contract from the key manager.
-    pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
+    pub fn public_key(&self, contract: Address) -> Result<Option<PublicKeyResult>, String> {
         let contract_id: ContractId =
             ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
 
@@ -953,11 +953,11 @@ impl Client {
             .get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
-        Ok(PublicKeyResult {
-            public_key: RpcBytes::from(public_key_payload.public_key.to_vec()),
-            timestamp: public_key_payload.timestamp,
-            signature: RpcBytes::from(public_key_payload.signature.to_vec()),
-        })
+        Ok(public_key_payload.map(|payload| PublicKeyResult {
+            public_key: RpcBytes::from(payload.public_key.to_vec()),
+            timestamp: payload.timestamp,
+            signature: RpcBytes::from(payload.signature.to_vec()),
+        }))
     }
 }
 
