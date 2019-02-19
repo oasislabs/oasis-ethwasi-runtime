@@ -36,7 +36,7 @@ impl KeyManagerClient {
             .unwrap()
             .create_long_term_public_key(contract)
     }
-    pub fn contract_key(address: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         TEST_KEY_MANAGER.lock().unwrap().contract_key(address)
     }
 }
@@ -132,17 +132,20 @@ impl TestKeyManager {
         contract: Address,
     ) -> Result<(Vec<u8>, Vec<u8>), String> {
         let contract_key = self.contract_key(contract)?;
-        let public_key = contract_key.input_keypair.get_pk();
+        let public_key = match contract_key {
+            Some(ck) => ck.input_keypair.get_pk(),
+            None => return Err("Could not create long term public key".to_string()),
+        };
         Ok((public_key.to_vec(), vec![]))
     }
 
-    pub fn contract_key(&mut self, contract: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(&mut self, contract: Address) -> Result<Option<ContractKey>, String> {
         if self.keys.contains_key(&contract) {
-            Ok(self.keys.get(&contract).unwrap().clone())
+            Ok(Some(self.keys.get(&contract).unwrap().clone()))
         } else {
             let contract_key = Self::create_random_key();
             self.keys.insert(contract, contract_key.clone());
-            Ok(contract_key)
+            Ok(Some(contract_key))
         }
     }
 
