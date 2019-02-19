@@ -7,6 +7,7 @@ use ethcore::{
     rlp,
     state::ConfidentialCtx as EthConfidentialCtx,
     transaction::{Action, Transaction as EthcoreTransaction},
+    vm::OASIS_HEADER_PREFIX,
 };
 use ethereum_api::{Receipt, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
@@ -20,8 +21,6 @@ use test::*;
 
 use byteorder::{BigEndian, ByteOrder};
 use serde_json::{map::Map, Value};
-
-const HEADER_PREFIX: &'static [u8; 4] = b"\0sis";
 
 lazy_static! {
     static ref CLIENT: Mutex<Client> = Mutex::new(Client::new());
@@ -318,7 +317,7 @@ impl Client {
     /// Returns a valid contract deployment header with specified expiry and confidentiality.
     fn make_header(expiry: Option<u64>, confidential: Option<bool>) -> Vec<u8> {
         // start with header prefix
-        let mut data = ElasticArray128::from_slice(&HEADER_PREFIX[..]);
+        let mut data = ElasticArray128::from_slice(&OASIS_HEADER_PREFIX[..]);
 
         // header version 1
         let mut version = [0u8; 2];
