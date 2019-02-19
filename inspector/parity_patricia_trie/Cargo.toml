@@ -18,4 +18,4 @@ triehash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 memorydb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 
 [dev-dependencies]
-trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/ekiden" }
+trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
