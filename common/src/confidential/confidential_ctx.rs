@@ -77,7 +77,11 @@ impl EthConfidentialCtx for ConfidentialCtx {
             return Err("Can't open a confidential context that's already open".to_string());
         }
 
-        self.contract_key = Some(KeyManagerClient::contract_key(contract)?);
+        let contract_key = KeyManagerClient::contract_key(contract)?;
+        if contract_key.is_none() {
+            return Err("Could not fetch contract key".to_string());
+        }
+        self.contract_key = contract_key;
 
         let tx_data = if encrypted_tx_data.is_some() {
             self.open_tx_data(encrypted_tx_data.unwrap())?

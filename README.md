@@ -74,8 +74,10 @@ The built enclave will be stored under `target/enclave/runtime-ethereum.so`.
 The web3 gateway is located under `gateway` and it may be built using:
 ```bash
 $ cd gateway
-$ cargo build
+$ CARGO_TARGET_DIR=target-dir cargo build
 ```
+
+Note: the environment variable `CARGO_TARGET_DIR` is not necessary in order to compile the project, but when using docker as a build environment, pointing target-dir to a path that is not shared with a mounted volume improves significantly the build times. For example if the path `/code` is mounted on docker, setting `CARGO_TARGET_DIR=/target` should do the trick.
 
 ## Running
 
