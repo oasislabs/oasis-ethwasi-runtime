@@ -31,7 +31,7 @@ impl OasisClient {
 impl Oasis for OasisClient {
     type Metadata = Metadata;
 
-    fn public_key(&self, contract: Address) -> Result<PublicKeyResult> {
+    fn public_key(&self, contract: Address) -> Result<Option<PublicKeyResult>> {
         measure_counter_inc!("oasis_getPublicKey");
         info!("oasis_getPublicKey(contract {:?})", contract);
         self.client
