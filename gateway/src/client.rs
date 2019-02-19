@@ -28,7 +28,7 @@ use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
 use runtime_ethereum_common::State as EthState;
-use traits::confidential::PublicKeyResult;
+use traits::oasis::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils::{self, db::Snapshot};
