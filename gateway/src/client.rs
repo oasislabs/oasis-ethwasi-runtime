@@ -813,7 +813,7 @@ impl Client {
             }
         };
 
-        // Extract contract deployment header
+        // Extract contract deployment header.
         let oasis_contract = state
             .oasis_contract(transaction)
             .map_err(|e| ExecutionError::TransactionMalformed(e))?;
@@ -909,12 +909,12 @@ impl Client {
             Err(e) => return Err(e.to_string()),
         };
 
-        // check gas price
+        // Check gas price.
         if signed_transaction.gas_price < self.gas_price() {
             return Err("Insufficient gas price".to_string());
         }
 
-        // validate contract deployment header (if present)
+        // Validate contract deployment header (if present).
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
