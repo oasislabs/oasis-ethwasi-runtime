@@ -26,7 +26,7 @@ impl ConfidentialClient {
 impl Confidential for ConfidentialClient {
     type Metadata = Metadata;
 
-    fn public_key(&self, contract: Address) -> Result<PublicKeyResult> {
+    fn public_key(&self, contract: Address) -> Result<Option<PublicKeyResult>> {
         measure_counter_inc!("confidential_getPublicKey");
         info!("confidential_getPublicKey(contract {:?})", contract);
         self.client
