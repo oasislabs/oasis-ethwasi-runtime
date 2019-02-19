@@ -66,9 +66,8 @@ ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = 
 hex = "0.3"
 
 [features]
-default = ["confidential", "pubsub"]
+default = ["pubsub"]
 pubsub = []
-confidential = []
 
 [[bin]]
 name = "gateway"
