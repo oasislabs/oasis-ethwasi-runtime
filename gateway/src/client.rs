@@ -411,13 +411,22 @@ impl Client {
             let block_number = tx.block_number;
             let transaction_index = tx.transaction_index;
 
+            // Cumulative gas used by previous transactions in block.
+            let prev_gas_used = if transaction_index > 0 {
+                db.block_receipts(&block_hash)
+                    .and_then(|br| br.receipts.into_iter().nth(transaction_index - 1))
+                    .map_or(U256::from(0), |r| r.gas_used)
+            } else {
+                U256::from(0)
+            };
+
             Some(LocalizedReceipt {
                 transaction_hash: transaction_hash,
                 transaction_index: transaction_index,
                 block_hash: block_hash,
                 block_number: block_number,
                 cumulative_gas_used: receipt.gas_used,
-                gas_used: receipt.gas_used,
+                gas_used: receipt.gas_used - prev_gas_used,
                 contract_address: match tx.action {
                     Action::Call(_) => None,
                     Action::Create => Some(
