@@ -22,6 +22,9 @@
 : ${RUNTIME_ENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.so}
 : ${RUNTIME_MRENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave}
 
+: ${UTILS_RUNTIME_INIT_EXTRA_ARGS:=}
+: ${UTILS_COMPUTE_EXTRA_ARGS:=}
+
 run_test_network() {
     # Start keymanager node.
     run_keymanager_node
