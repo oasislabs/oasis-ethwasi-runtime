@@ -90,7 +90,8 @@ run_backend_tendermint_committee() {
         --runtime.replica_group_size 2 \
         --runtime.replica_group_backup_size 2 \
         --entity ${entity_dir} \
-        --datadir ${entity_dir}
+        --datadir ${entity_dir} \
+        ${UTILS_RUNTIME_INIT_EXTRA_ARGS}
 
     # Create the genesis document.
     local genesis_file=${TEST_BASE_DIR}/genesis.json
