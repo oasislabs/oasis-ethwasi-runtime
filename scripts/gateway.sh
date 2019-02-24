@@ -5,9 +5,10 @@ WORKDIR=${1:-$(pwd)}
 source scripts/utils.sh
 
 # Paths to Go node and keymanager enclave, assuming they were built according to the README
-EKIDEN_NODE=/go/src/github.com/oasislabs/ekiden/go/ekiden/ekiden
-KM_MRENCLAVE=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.mrenclave
-KM_ENCLAVE=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.so
+EKIDEN_HOME=${EKIDEN_HOME:-/go/src/github.com/oasislabs/ekiden}
+EKIDEN_NODE=$EKIDEN_HOME/go/ekiden/ekiden
+KM_MRENCLAVE=$EKIDEN_HOME/target/enclave/ekiden-keymanager-trusted.mrenclave
+KM_ENCLAVE=$EKIDEN_HOME/target/enclave/ekiden-keymanager-trusted.so
 
 # Paths to ekiden binaries
 EKIDEN_WORKER=$(which ekiden-worker)
