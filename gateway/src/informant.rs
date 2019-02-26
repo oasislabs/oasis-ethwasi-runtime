@@ -91,7 +91,8 @@ pub struct RpcStats {
 impl RpcStats {
     /// Start tracking a session
     pub fn open_session(&self, id: H256) {
-        let _ = self.sessions
+        let _ = self
+            .sessions
             .write()
             .insert(id, RwLock::new(RateCalculator::default()));
     }
