@@ -110,8 +110,8 @@ impl ChainNotify for ChainNotificationHandler {
                 //  * https://github.com/ethereum/go-ethereum/issues/3230
                 //  * https://github.com/paritytech/parity-ethereum/issues/8841
                 let mut extra_info: BTreeMap<String, String> = BTreeMap::new();
-                extra_info.insert("mixHash".to_string(), format!("0x{:?}", H256::default()));
-                extra_info.insert("nonce".to_string(), format!("0x{:?}", H64::default()));
+                let _ = extra_info.insert("mixHash".to_string(), format!("0x{:?}", H256::default()));
+                let _ = extra_info.insert("nonce".to_string(), format!("0x{:?}", H64::default()));
 
                 Self::notify(
                     &self.remote,

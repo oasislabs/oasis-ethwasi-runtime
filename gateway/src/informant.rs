@@ -91,14 +91,14 @@ pub struct RpcStats {
 impl RpcStats {
     /// Start tracking a session
     pub fn open_session(&self, id: H256) {
-        self.sessions
+        let _ = self.sessions
             .write()
             .insert(id, RwLock::new(RateCalculator::default()));
     }
 
     /// Stop tracking a session
     pub fn close_session(&self, id: &H256) {
-        self.sessions.write().remove(id);
+        let _ = self.sessions.write().remove(id);
     }
 
     /// Count request. Returns number of requests in current second.
