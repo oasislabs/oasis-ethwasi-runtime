@@ -439,7 +439,7 @@ impl<'a> Iterator for TrieDBIterator<'a> {
                                 self.key_nibbles.truncate(l - n.len());
                             }
                             OwnedNode::Branch(_, _) => {
-                                self.key_nibbles.pop();
+                                let _ = self.key_nibbles.pop();
                             }
                             _ => {}
                         }
@@ -478,7 +478,7 @@ impl<'a> Iterator for TrieDBIterator<'a> {
 
             match iter_step {
                 IterStep::PopTrail => {
-                    self.trail.pop();
+                    let _ = self.trail.pop();
                 }
                 IterStep::Descend(Ok(d)) => self.descend_into_node(TrieDB::decode_node(&d).into()),
                 IterStep::Descend(Err(e)) => return Some(Err(e)),

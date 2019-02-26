@@ -237,11 +237,11 @@ fn with_domain(
         {
             let mut add_hosts = |address: &Option<rpc::Host>| {
                 if let Some(host) = address.clone() {
-                    items.insert(host.to_string());
-                    items.insert(host.replace("127.0.0.1", "localhost"));
-                    items.insert(format!("http://*.{}", domain)); //proxypac
+                    let _ = items.insert(host.to_string());
+                    let _ = items.insert(host.replace("127.0.0.1", "localhost"));
+                    let _ = items.insert(format!("http://*.{}", domain)); //proxypac
                     if let Some(port) = extract_port(&*host) {
-                        items.insert(format!("http://*.{}:{}", domain, port));
+                        let _ = items.insert(format!("http://*.{}:{}", domain, port));
                     }
                 }
             };

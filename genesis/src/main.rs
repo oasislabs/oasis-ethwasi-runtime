@@ -272,7 +272,7 @@ fn main() {
     // Queue the db operations necessary to insert this block.
     info!("Block sealed, generating storage transactions for commit");
     let mut db_tx = kvdb::DBTransaction::default();
-    chain.insert_block(
+    let _ = chain.insert_block(
         &mut db_tx,
         &block.rlp_bytes(),
         block.receipts().to_owned(),

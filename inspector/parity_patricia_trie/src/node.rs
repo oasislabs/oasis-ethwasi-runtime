@@ -82,34 +82,34 @@ impl<'a> Node<'a> {
         match *self {
             Node::Leaf(ref slice, ref value) => {
                 let mut stream = RlpStream::new_list(2);
-                stream.append(&&*slice.encoded(true));
-                stream.append(value);
+                let _ = stream.append(&&*slice.encoded(true));
+                let _ = stream.append(value);
                 stream.out()
             }
             Node::Extension(ref slice, ref raw_rlp) => {
                 let mut stream = RlpStream::new_list(2);
-                stream.append(&&*slice.encoded(false));
-                stream.append_raw(raw_rlp, 1);
+                let _ = stream.append(&&*slice.encoded(false));
+                let _ = stream.append_raw(raw_rlp, 1);
                 stream.out()
             }
             Node::Branch(ref nodes, ref value) => {
                 let mut stream = RlpStream::new_list(17);
                 for i in 0..16 {
-                    stream.append_raw(nodes[i], 1);
+                    let _ = stream.append_raw(nodes[i], 1);
                 }
                 match *value {
                     Some(ref n) => {
-                        stream.append(n);
+                        let _ = stream.append(n);
                     }
                     None => {
-                        stream.append_empty_data();
+                        let _ = stream.append_empty_data();
                     }
                 }
                 stream.out()
             }
             Node::Empty => {
                 let mut stream = RlpStream::new();
-                stream.append_empty_data();
+                let _ = stream.append_empty_data();
                 stream.out()
             }
         }

@@ -100,11 +100,11 @@ impl FromStr for ApiSet {
                 // Remove the API
                 api if api.starts_with("-") => {
                     let api = api[1..].parse()?;
-                    apis.remove(&api);
+                    let _ = apis.remove(&api);
                 }
                 api => {
                     let api = api.parse()?;
-                    apis.insert(api);
+                    let _ = apis.insert(api);
                 }
             }
         }
