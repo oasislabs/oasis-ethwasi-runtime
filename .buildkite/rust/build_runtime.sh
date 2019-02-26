@@ -31,6 +31,10 @@ extra_args=$*
 
 source .buildkite/rust/common.sh
 
+# RUSTFLAGS are not used in this build because ekiden may not
+# compile denying the required warnings
+export RUSTFLAGS=""
+
 #################################
 # Change into the build directory
 #################################
