@@ -23,7 +23,7 @@ impl KeyManagerClient {
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         KeyManager::create_long_term_public_key(contract)
     }
-    pub fn contract_key(address: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         KeyManager::contract_key(address)
     }
 }
@@ -36,7 +36,7 @@ impl KeyManagerClient {
             .unwrap()
             .create_long_term_public_key(contract)
     }
-    pub fn contract_key(address: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         TEST_KEY_MANAGER.lock().unwrap().contract_key(address)
     }
 }
@@ -66,17 +66,16 @@ impl KeyManager {
         let _ = km.get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
         // then extract the long term key
-        km.long_term_public_key(contract_id)
-            .map_err(|err| err.description().to_string())
-            .map(|pk_payload| {
-                (
-                    pk_payload.public_key.to_vec(),
-                    pk_payload.signature.to_vec(),
-                )
-            })
+        let pk_payload = km
+            .long_term_public_key(contract_id)
+            .map_err(|err| err.description().to_string())?;
+        match pk_payload {
+            Some(payload) => Ok((payload.public_key.to_vec(), payload.signature.to_vec())),
+            None => Err("Failed to create key".to_string()),
+        }
     }
 
-    fn contract_key(address: Address) -> Result<ContractKey, String> {
+    fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         let contract_id = Self::contract_id(address);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
 
@@ -87,11 +86,8 @@ impl KeyManager {
             .get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
-        Ok(ContractKey::new(
-            public_key_payload.public_key,
-            secret_key,
-            state_key,
-        ))
+        Ok(public_key_payload
+            .map(|payload| ContractKey::new(payload.public_key, secret_key, state_key)))
     }
 }
 
@@ -136,17 +132,20 @@ impl TestKeyManager {
         contract: Address,
     ) -> Result<(Vec<u8>, Vec<u8>), String> {
         let contract_key = self.contract_key(contract)?;
-        let public_key = contract_key.input_keypair.get_pk();
+        let public_key = match contract_key {
+            Some(ck) => ck.input_keypair.get_pk(),
+            None => return Err("Could not create long term public key".to_string()),
+        };
         Ok((public_key.to_vec(), vec![]))
     }
 
-    pub fn contract_key(&mut self, contract: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(&mut self, contract: Address) -> Result<Option<ContractKey>, String> {
         if self.keys.contains_key(&contract) {
-            Ok(self.keys.get(&contract).unwrap().clone())
+            Ok(Some(self.keys.get(&contract).unwrap().clone()))
         } else {
             let contract_key = Self::create_random_key();
             self.keys.insert(contract, contract_key.clone());
-            Ok(contract_key)
+            Ok(Some(contract_key))
         }
     }
 

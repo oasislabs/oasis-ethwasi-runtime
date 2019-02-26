@@ -20,6 +20,14 @@ extern crate ekiden_roothash_base;
 #[cfg(feature = "test")]
 extern crate ethkey;
 
+#[cfg(feature = "test")]
+extern crate byteorder;
+#[cfg(feature = "test")]
+extern crate elastic_array;
+#[cfg(feature = "test")]
+#[macro_use]
+extern crate serde_json;
+
 mod evm;
 mod state;
 #[cfg(feature = "test")]
@@ -236,6 +244,13 @@ pub fn get_account_code(
 
     info!("get_account_code, address: {:?}", address);
     ectx.cache.get_account_code(address)
+}
+
+pub fn get_storage_expiry(address: &Address, ctx: &mut RuntimeCallContext) -> Result<u64> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
+    info!("get_storage_expiry, address: {:?}", address);
+    ectx.cache.get_storage_expiry(address)
 }
 
 pub fn get_storage_at(pair: &(Address, H256), ctx: &mut RuntimeCallContext) -> Result<H256> {

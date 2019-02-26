@@ -17,8 +17,8 @@ use ethcore::{
     receipt::LocalizedReceipt,
     rlp,
     spec::Spec,
-    transaction::{Transaction, UnverifiedTransaction},
-    vm::{EnvInfo, LastHashes},
+    transaction::UnverifiedTransaction,
+    vm::{EnvInfo, LastHashes, OasisContract},
 };
 use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
@@ -27,8 +27,8 @@ use grpcio;
 use hash::keccak;
 use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
-use runtime_ethereum_common::{confidential::has_confidential_prefix, State as EthState};
-use traits::confidential::PublicKeyResult;
+use runtime_ethereum_common::State as EthState;
+use traits::oasis::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
 use client_utils::{self, db::Snapshot};
@@ -411,13 +411,22 @@ impl Client {
             let block_number = tx.block_number;
             let transaction_index = tx.transaction_index;
 
+            // Cumulative gas used by previous transactions in block.
+            let prev_gas_used = if transaction_index > 0 {
+                db.block_receipts(&block_hash)
+                    .and_then(|br| br.receipts.into_iter().nth(transaction_index - 1))
+                    .map_or(U256::from(0), |r| r.gas_used)
+            } else {
+                U256::from(0)
+            };
+
             Some(LocalizedReceipt {
                 transaction_hash: transaction_hash,
                 transaction_index: transaction_index,
                 block_hash: block_hash,
                 block_number: block_number,
                 cumulative_gas_used: receipt.gas_used,
-                gas_used: receipt.gas_used,
+                gas_used: receipt.gas_used - prev_gas_used,
                 contract_address: match tx.action {
                     Action::Call(_) => None,
                     Action::Create => Some(
@@ -669,11 +678,10 @@ impl Client {
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
-                // TODO: runtime call
-                future::err(Error::new(
-                    "oasis_getStorageExpiry runtime call not implemented",
-                ))
-                .into_box()
+                record_runtime_call_result(
+                    "get_storage_expiry",
+                    self.client.get_storage_expiry(*address),
+                )
             }
         }
     }
@@ -814,10 +822,13 @@ impl Client {
             }
         };
 
-        if state
-            .is_confidential(transaction)
-            .map_err(|_| CallError::StateCorrupt)?
-        {
+        // Extract contract deployment header.
+        let oasis_contract = state
+            .oasis_contract(transaction)
+            .map_err(|e| ExecutionError::TransactionMalformed(e))?;
+
+        let confidential = oasis_contract.as_ref().map_or(false, |c| c.confidential);
+        if confidential {
             self.confidential_estimate_gas(transaction)
         } else {
             self._estimate_gas(transaction, db, state)
@@ -888,28 +899,47 @@ impl Client {
         }
     }
 
-    /// Checks that transaction is well formed, meets min gas price, and that signature
-    /// is valid. Returns the decoded Transaction, or an error message.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Transaction, String> {
+    /// Checks that transaction is well formed, meets min gas price, has a valid signature,
+    /// and that the contract header, if present, is valid. Returns the OasisContract (or None
+    /// if no header is present), or an error message if any check fails.
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Option<OasisContract>, String> {
         // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
             Err(e) => return Err(e.to_string()),
         };
 
-        // check gas price
-        let unsigned = decoded.as_unsigned();
-        if unsigned.gas_price < self.gas_price() {
+        // validate signature
+        if decoded.is_unsigned() {
+            return Err("Transaction is not signed".to_string());
+        }
+        let signed_transaction = match SignedTransaction::new(decoded) {
+            Ok(t) => t,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        // Check gas price.
+        if signed_transaction.gas_price < self.gas_price() {
             return Err("Insufficient gas price".to_string());
         }
 
-        // validate signature
-        match decoded.recover_public() {
-            Err(e) => return Err(e.to_string()),
-            _ => (),
-        }
-
-        Ok(unsigned.clone())
+        // Validate contract deployment header (if present).
+        let db = match self.get_db_snapshot() {
+            Some(db) => db,
+            None => {
+                error!("Could not get db snapshot");
+                return Err("Could not parse header".to_string());
+            }
+        };
+        let state = match db.get_ethstate_at(BlockId::Latest) {
+            Some(state) => state,
+            None => {
+                error!("Could not get state snapshot");
+                return Err("Could not parse header".to_string());
+            }
+        };
+        let oasis_contract = state.oasis_contract(&signed_transaction)?;
+        Ok(oasis_contract)
     }
 
     /// Submit raw transaction to the current leader.
@@ -917,8 +947,8 @@ impl Client {
     /// This method returns immediately and does not wait for the transaction to
     /// be confirmed.
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
-        let transaction = match self.precheck_transaction(&raw) {
-            Ok(transaction) => transaction,
+        let oasis_contract = match self.precheck_transaction(&raw) {
+            Ok(contract) => contract,
             Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
@@ -930,7 +960,9 @@ impl Client {
                     if result.created_contract {
                         measure_counter_inc!("contract_created");
 
-                        if has_confidential_prefix(&transaction.data) {
+                        let confidential =
+                            oasis_contract.as_ref().map_or(false, |c| c.confidential);
+                        if confidential {
                             measure_counter_inc!("confidential_contract_created");
                         }
                     }
@@ -944,7 +976,7 @@ impl Client {
     }
 
     /// Returns the public key for the given contract from the key manager.
-    pub fn public_key(&self, contract: Address) -> Result<PublicKeyResult, String> {
+    pub fn public_key(&self, contract: Address) -> Result<Option<PublicKeyResult>, String> {
         let contract_id: ContractId =
             ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
 
@@ -953,11 +985,11 @@ impl Client {
             .get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
-        Ok(PublicKeyResult {
-            public_key: RpcBytes::from(public_key_payload.public_key.to_vec()),
-            timestamp: public_key_payload.timestamp,
-            signature: RpcBytes::from(public_key_payload.signature.to_vec()),
-        })
+        Ok(public_key_payload.map(|payload| PublicKeyResult {
+            public_key: RpcBytes::from(payload.public_key.to_vec()),
+            timestamp: payload.timestamp,
+            signature: RpcBytes::from(payload.signature.to_vec()),
+        }))
     }
 }
 
