@@ -1,24 +1,16 @@
-extern crate common_types as ethcore_types;
 extern crate ekiden_common;
 extern crate ekiden_core;
 extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
-extern crate ekiden_storage_lru;
 extern crate ekiden_trusted;
-extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_api;
 extern crate ethereum_types;
-extern crate hashdb;
-extern crate hex;
-extern crate keccak_hash;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate protobuf;
 extern crate runtime_ethereum_common;
-extern crate sha3;
 
 extern crate ekiden_keymanager_client;
 extern crate ekiden_keymanager_common;
@@ -27,6 +19,14 @@ extern crate ekiden_keymanager_common;
 extern crate ekiden_roothash_base;
 #[cfg(feature = "test")]
 extern crate ethkey;
+
+#[cfg(feature = "test")]
+extern crate byteorder;
+#[cfg(feature = "test")]
+extern crate elastic_array;
+#[cfg(feature = "test")]
+#[macro_use]
+extern crate serde_json;
 
 mod evm;
 mod state;
@@ -40,6 +40,7 @@ use std::sync::Arc;
 use ekiden_core::error::{Error, Result};
 use ekiden_storage_base::StorageBackend;
 #[cfg(not(target_env = "sgx"))]
+#[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;
 #[cfg(target_env = "sgx")]
 use ekiden_trusted::db::untrusted::UntrustedStorageBackend;
@@ -162,6 +163,8 @@ pub fn get_block_height(_request: &bool, ctx: &mut RuntimeCallContext) -> Result
     Ok(ectx.cache.get_latest_block_number().into())
 }
 
+#[cfg(not(feature = "test"))]
+#[cfg(not(test))]
 fn get_block_hash(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<H256>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -174,6 +177,8 @@ fn get_block_hash(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<H
     Ok(hash)
 }
 
+#[cfg(not(feature = "test"))]
+#[cfg(not(test))]
 fn get_block(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<Vec<u8>>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -194,6 +199,8 @@ fn get_block(id: &BlockId, ctx: &mut RuntimeCallContext) -> Result<Option<Vec<u8
     }
 }
 
+#[cfg(not(feature = "test"))]
+#[cfg(not(test))]
 fn get_logs(filter: &Filter, ctx: &mut RuntimeCallContext) -> Result<Vec<Log>> {
     let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
 
@@ -237,6 +244,13 @@ pub fn get_account_code(
 
     info!("get_account_code, address: {:?}", address);
     ectx.cache.get_account_code(address)
+}
+
+pub fn get_storage_expiry(address: &Address, ctx: &mut RuntimeCallContext) -> Result<u64> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
+    info!("get_storage_expiry, address: {:?}", address);
+    ectx.cache.get_storage_expiry(address)
 }
 
 pub fn get_storage_at(pair: &(Address, H256), ctx: &mut RuntimeCallContext) -> Result<H256> {

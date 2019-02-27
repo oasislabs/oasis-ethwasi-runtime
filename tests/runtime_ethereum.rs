@@ -85,7 +85,7 @@ fn test_solidity_blockhash() {
         client.call(&contract, data, &U256::zero())
     };
 
-    let block_number = test::with_batch_handler(|ctx| {
+    let block_number = test::with_batch_handler(0, |ctx| {
         let ectx = ctx
             .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
@@ -94,7 +94,7 @@ fn test_solidity_blockhash() {
     });
     let client_blockhash = blockhash(block_number);
 
-    test::with_batch_handler(|ctx| {
+    test::with_batch_handler(0, |ctx| {
         let ectx = ctx
             .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
@@ -226,7 +226,7 @@ fn test_last_hashes() {
     }
 
     // get last_hashes from latest block
-    test::with_batch_handler(|ctx| {
+    test::with_batch_handler(0, |ctx| {
         let ectx = ctx
             .runtime
             .downcast_mut::<runtime_ethereum::EthereumContext>()
@@ -259,7 +259,7 @@ fn test_cache_invalidation() {
     let (_, address_2) = client.create_contract(code, &U256::from(21));
 
     // Ensure both contracts exist.
-    let best_block = test::with_batch_handler(|ctx| {
+    let best_block = test::with_batch_handler(0, |ctx| {
         assert_eq!(
             runtime_ethereum::get_account_balance(&address_1, ctx),
             Ok(U256::from(42))
@@ -281,7 +281,7 @@ fn test_cache_invalidation() {
         .unwrap();
 
     // Ensure cache is invalidated correctly.
-    test::with_batch_handler(|ctx| {
+    test::with_batch_handler(0, |ctx| {
         assert_eq!(
             runtime_ethereum::get_account_balance(&address_1, ctx),
             Ok(U256::from(42))

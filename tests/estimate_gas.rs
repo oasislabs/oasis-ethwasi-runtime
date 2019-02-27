@@ -61,7 +61,7 @@ fn estimate_gas_wasm_scaling() {
     let data = contracts::bulk_storage::initcode();
     // When
     let estimate_gas = client.estimate_gas(None, data.clone(), &U256::from(0));
-    let (tx_hash, addr) = client.create_contract(data, &U256::from(0));
+    let (tx_hash, _addr) = client.create_contract(data, &U256::from(0));
     // Then
     let receipt = client.receipt(tx_hash);
     assert_eq!(receipt.cumulative_gas_used, estimate_gas);

@@ -1,16 +1,12 @@
+#![deny(warnings)]
 extern crate clap;
 extern crate ethcore;
-extern crate ethereum_types;
-extern crate filebuffer;
-extern crate hex;
 extern crate log;
 extern crate patricia_trie as parity_patricia_trie;
 extern crate pretty_env_logger;
-extern crate rlp;
 
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
-extern crate ekiden_roothash_api;
 extern crate ekiden_roothash_base;
 extern crate ekiden_roothash_client;
 extern crate ekiden_storage_base;

@@ -21,8 +21,6 @@ use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
 use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
-#[cfg(feature = "confidential")]
-use impls::ConfidentialClient;
 #[cfg(feature = "pubsub")]
 use impls::EthPubSubClient;
 use impls::{EthClient, EthFilterClient, NetClient, OasisClient, Web3Client};
@@ -39,8 +37,6 @@ pub enum Api {
     EthPubSub,
     /// Oasis (Safe)
     Oasis,
-    /// Confidential (Safe)
-    Confidential,
 }
 
 impl FromStr for Api {
@@ -55,7 +51,6 @@ impl FromStr for Api {
             "eth" => Ok(Eth),
             "pubsub" => Ok(EthPubSub),
             "oasis" => Ok(Oasis),
-            "confidential" => Ok(Confidential),
             api => Err(format!("Unknown api: {}", api)),
         }
     }
@@ -63,6 +58,8 @@ impl FromStr for Api {
 
 #[derive(Debug, Clone)]
 pub enum ApiSet {
+    // Used in tests.
+    #[cfg(test)]
     // Safe context (like token-protected WS interface)
     SafeContext,
     // Unsafe context (like jsonrpc over http)
@@ -159,8 +156,6 @@ impl FullDependencies {
         S: core::Middleware<Metadata>,
     {
         use parity_rpc::v1::{Eth, EthFilter, EthPubSub, Net, Web3};
-        #[cfg(feature = "confidential")]
-        use traits::Confidential;
         use traits::Oasis;
 
         for api in apis {
@@ -194,12 +189,6 @@ impl FullDependencies {
                 Api::Oasis => {
                     handler.extend_with(OasisClient::new(self.client.clone()).to_delegate());
                 }
-                Api::Confidential => {
-                    if cfg!(feature = "confidential") {
-                        let con_client = ConfidentialClient::new(self.client.clone());
-                        handler.extend_with(con_client.to_delegate());
-                    }
-                }
             }
         }
     }
@@ -224,21 +213,15 @@ impl Dependencies for FullDependencies {
 
 impl ApiSet {
     pub fn list_apis(&self) -> HashSet<Api> {
-        let public_list: HashSet<Api> = [
-            Api::Web3,
-            Api::Net,
-            Api::Eth,
-            Api::EthPubSub,
-            Api::Oasis,
-            Api::Confidential,
-        ]
-        .into_iter()
-        .cloned()
-        .collect();
+        let public_list: HashSet<Api> = [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis]
+            .into_iter()
+            .cloned()
+            .collect();
 
         match *self {
             ApiSet::List(ref apis) => apis.clone(),
             ApiSet::UnsafeContext => public_list,
+            #[cfg(test)]
             ApiSet::SafeContext => public_list,
             ApiSet::All => public_list,
         }
@@ -256,7 +239,6 @@ mod test {
         assert_eq!(Api::Eth, "eth".parse().unwrap());
         assert_eq!(Api::EthPubSub, "pubsub".parse().unwrap());
         assert_eq!(Api::Oasis, "oasis".parse().unwrap());
-        assert_eq!(Api::Confidential, "confidential".parse().unwrap());
         assert!("rp".parse::<Api>().is_err());
     }
 
@@ -282,7 +264,6 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Oasis,
-            Api::Confidential,
         ]
         .into_iter()
         .collect();
@@ -298,7 +279,6 @@ mod test {
             Api::Eth,
             Api::EthPubSub,
             Api::Oasis,
-            Api::Confidential,
         ]
         .into_iter()
         .collect();
@@ -310,16 +290,9 @@ mod test {
         assert_eq!(
             "all".parse::<ApiSet>().unwrap(),
             ApiSet::List(
-                vec![
-                    Api::Web3,
-                    Api::Net,
-                    Api::Eth,
-                    Api::EthPubSub,
-                    Api::Oasis,
-                    Api::Confidential,
-                ]
-                .into_iter()
-                .collect()
+                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis,]
+                    .into_iter()
+                    .collect()
             )
         );
     }
@@ -329,16 +302,9 @@ mod test {
         assert_eq!(
             "safe".parse::<ApiSet>().unwrap(),
             ApiSet::List(
-                vec![
-                    Api::Web3,
-                    Api::Net,
-                    Api::Eth,
-                    Api::EthPubSub,
-                    Api::Oasis,
-                    Api::Confidential,
-                ]
-                .into_iter()
-                .collect()
+                vec![Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis,]
+                    .into_iter()
+                    .collect()
             )
         );
     }
