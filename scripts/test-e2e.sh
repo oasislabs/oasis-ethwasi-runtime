@@ -19,10 +19,6 @@ run_test() {
     # Run truffle tests against gateway 1 (in background).
     echo "Running truffle tests."
     pushd /e2e-tests > /dev/null
-    # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
-    # correct rust contract artifacts. Can remove this once the following is
-    # addressed: https://github.com/oasislabs/oasis-compile/issues/44
-    unset CARGO_TARGET_DIR
     # Define the environment variables that are required for the e2e tests.
     export HTTPS_PROVIDER_URL="http://localhost:8545"
     export WS_PROVIDER_URL="ws://localhost:8555"
