@@ -68,6 +68,7 @@ hex = "0.3"
 [features]
 default = ["pubsub"]
 pubsub = []
+production-genesis = []
 
 [[bin]]
 name = "gateway"

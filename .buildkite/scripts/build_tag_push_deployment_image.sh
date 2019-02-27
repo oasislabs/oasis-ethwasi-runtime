@@ -22,6 +22,8 @@ deployment_image_tag=$(buildkite-agent meta-data \
                        "deployment_image_tag"
                      )
 tag_suffix=${DEPLOYMENT_VARIANT:+-$DEPLOYMENT_VARIANT}
+export RUNTIME_BUILD_EXTRA_ARGS='--cargo-addendum feature.production-genesis.addendum -- --features production-genesis'
+export GATEWAY_BUILD_EXTRA_ARGS='--features production-genesis'
 
 docker/ekiden-runtime-ethereum/docker_build_and_push.sh \
   ${BUILDKITE_COMMIT} \

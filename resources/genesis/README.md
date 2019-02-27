@@ -5,6 +5,9 @@ during compilation.
 
 ## `genesis.json` - Production genesis block
 
+*NOTE: This genesis block is only used when the runtime or gateway is compiled
+with the `production-genesis` feature enabled.*
+
 The genesis block contains the following accounts:
 
 * `abc6fdb3c0e53552acf5eb4061b54e4e38962dc6` is the account for the private faucet
@@ -12,9 +15,6 @@ The genesis block contains the following accounts:
   is only available to the [private faucet application](https://github.com/oasislabs/private-faucet).
 
 ## `genesis_testing.json` - Testing-only genesis block
-
-*NOTE: This genesis block is only used when the runtime is compiled either in
-debug mode or with the `benchmark` feature enabled.*
 
 The genesis block contains the following accounts:
 

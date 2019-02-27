@@ -23,6 +23,10 @@ ARG SGX_MODE=SIM
 ARG EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1
 # Take Intel SGX SDK path as build argument.
 ARG INTEL_SGX_SDK=/opt/sgxsdk
+# Take extra runtime build arguments as a build argument.
+ARG RUNTIME_BUILD_EXTRA_ARGS=
+# Take extra gateway build arguments as a build argument.
+ARG GATEWAY_BUILD_EXTRA_ARGS=
 
 # 1. Create the SSH directory.
 # 2. Populate the private key file.
@@ -76,7 +80,8 @@ RUN eval $(ssh-agent -s) && \
     KM_ENCLAVE_PATH=/workdir/ekiden-keymanager-trusted.so \
       cargo ekiden \
       build-enclave --output-identity \
-      --release
+      --release \
+      ${RUNTIME_BUILD_EXTRA_ARGS}
 
 # Build the gateway
 RUN eval $(ssh-agent -s) && \
@@ -84,7 +89,8 @@ RUN eval $(ssh-agent -s) && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
     cd runtime-ethereum/gateway && \
     CARGO_TARGET_DIR=/workdir/runtime-ethereum/target \
-    cargo build -p web3-gateway --release
+    cargo build -p web3-gateway --release \
+    ${GATEWAY_BUILD_EXTRA_ARGS}
 
 FROM docker.io/oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG}
 
