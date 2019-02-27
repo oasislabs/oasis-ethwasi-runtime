@@ -27,6 +27,7 @@ run_test() {
     export HTTPS_PROVIDER_URL="http://localhost:8545"
     export WS_PROVIDER_URL="ws://localhost:8555"
     export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
+    # See https://github.com/oasislabs/ekiden/blob/master/key-manager/dummy/enclave/src/lib.rs
     export KEY_MANAGER_PUBLIC_KEY="0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f"
     npm run test:development & truffle_pid=$!
     popd > /dev/null
