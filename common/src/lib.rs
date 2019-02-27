@@ -445,10 +445,10 @@ mod tests {
         hash_db.remove(&hw_key);
         assert_eq!(hash_db.get(&hw_key), None);
         // Insert key to db, reference count should be 0, value overwritten.
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(hash_db.get(&hw_key), None);
         // Insert key to db, reference count should be 1, value overwritten.
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(
             hash_db.get(&hw_key),
             Some(DBValue::from_slice(b"hello world"))
@@ -468,8 +468,8 @@ mod tests {
             hash_db.get(&hw_key),
             Some(DBValue::from_slice(b"hello world"))
         );
-        hash_db.insert(b"hello world");
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(
             hash_db.get(&hw_key),
             Some(DBValue::from_slice(b"hello world"))
@@ -488,16 +488,16 @@ mod tests {
         assert_eq!(hash_db.get(&hw_key), None);
 
         hash_db.remove(&hw_key);
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(hash_db.get(&hw_key), None);
 
         hash_db.remove(&hw_key);
         hash_db.remove(&hw_key);
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(hash_db.get(&hw_key), None);
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(hash_db.get(&hw_key), None);
-        hash_db.insert(b"hello world");
+        let _ = hash_db.insert(b"hello world");
         assert_eq!(
             hash_db.get(&hw_key),
             Some(DBValue::from_slice(b"hello world"))

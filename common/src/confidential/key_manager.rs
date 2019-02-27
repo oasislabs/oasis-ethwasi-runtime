@@ -145,7 +145,7 @@ impl TestKeyManager {
             Ok(Some(self.keys.get(&contract).unwrap().clone()))
         } else {
             let contract_key = Self::create_random_key();
-            self.keys.insert(contract, contract_key.clone());
+            let _ = self.keys.insert(contract, contract_key.clone());
             Ok(Some(contract_key))
         }
     }
