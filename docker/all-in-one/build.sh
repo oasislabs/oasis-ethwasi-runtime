@@ -9,5 +9,5 @@ tar -c \
     docker/all-in-one/Dockerfile \
 | docker build \
     --file=docker/all-in-one/Dockerfile \
-    --tag=oasislabs/gateway-all-in-one:staging-hw \
+    --tag=oasislabs/gateway-all-in-one:testing-hw \
     -

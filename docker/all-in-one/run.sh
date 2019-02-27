@@ -10,4 +10,4 @@ docker run \
     --device=/dev/isgx \
     --publish=127.0.0.1:8545:8545/tcp \
     --publish=127.0.0.1:8555:8555/tcp \
-    oasislabs/gateway-all-in-one:staging-hw
+    oasislabs/gateway-all-in-one:testing-hw
