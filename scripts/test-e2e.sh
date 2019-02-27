@@ -13,8 +13,8 @@ source scripts/utils.sh
 trap 'cleanup' EXIT
 
 run_test() {
-	# Spin up the local testnet.
-	run_test_network
+    # Spin up the local testnet.
+    run_test_network
 
     # Run truffle tests against gateway 1 (in background).
     echo "Running truffle tests."
@@ -27,6 +27,7 @@ run_test() {
     export HTTPS_PROVIDER_URL="http://localhost:8545"
     export WS_PROVIDER_URL="ws://localhost:8555"
     export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
+    export KEY_MANAGER_PUBLIC_KEY="0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f"
     npm run test:development & truffle_pid=$!
     popd > /dev/null
 
