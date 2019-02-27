@@ -325,9 +325,9 @@ impl Client {
 
         // contents (JSON)
         let mut map = Map::new();
-        confidential
+        let _ = confidential
             .map(|confidential| map.insert("confidential".to_string(), confidential.into()));
-        expiry.map(|expiry| map.insert("expiry".to_string(), expiry.into()));
+        let _ = expiry.map(|expiry| map.insert("expiry".to_string(), expiry.into()));
         let contents = json!(map).to_string().into_bytes();
 
         // contents length

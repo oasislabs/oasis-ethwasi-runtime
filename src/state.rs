@@ -254,7 +254,7 @@ impl Cache {
 
         // Queue the db operations necessary to insert this block.
         let mut db_tx = kvdb::DBTransaction::default();
-        self.chain.insert_block(
+        let _ = self.chain.insert_block(
             &mut db_tx,
             &block.rlp_bytes(),
             block.receipts().to_owned(),
@@ -412,6 +412,6 @@ mod tests {
     fn test_create_chain() {
         let storage = Arc::new(DummyStorageBackend::new());
 
-        Cache::new(storage.clone(), DatabaseHandle::new(storage));
+        let _ = Cache::new(storage.clone(), DatabaseHandle::new(storage));
     }
 }

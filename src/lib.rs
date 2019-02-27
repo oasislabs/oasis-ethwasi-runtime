@@ -297,7 +297,7 @@ pub fn execute_raw_transaction(
 
 fn transact(ectx: &mut EthereumContext, transaction: SignedTransaction) -> Result<H256> {
     let tx_hash = transaction.hash();
-    ectx.block.push_transaction(transaction, None)?;
+    let _ = ectx.block.push_transaction(transaction, None)?;
     Ok(tx_hash)
 }
 
