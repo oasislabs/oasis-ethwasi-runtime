@@ -24,10 +24,11 @@
 
 : ${UTILS_RUNTIME_INIT_EXTRA_ARGS:=}
 : ${UTILS_COMPUTE_EXTRA_ARGS:=}
+: ${UTILS_KEYMANAGER_EXTRA_ARGS:=}
 
 run_test_network() {
     # Start keymanager node.
-    run_keymanager_node
+    run_keymanager_node ${UTILS_KEYMANAGER_EXTRA_ARGS}
     sleep 1
 
     # Since we run the gateway first, we need the socket path to connect to. This
