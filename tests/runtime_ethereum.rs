@@ -222,7 +222,7 @@ fn test_last_hashes() {
 
     // ensure that we have >256 blocks
     for _i in 0..260 {
-        client.create_contract(vec![], &U256::zero());
+        let (_, _) = client.create_contract(vec![], &U256::zero());
     }
 
     // get last_hashes from latest block
