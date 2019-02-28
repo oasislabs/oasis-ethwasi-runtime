@@ -16,14 +16,14 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 
-client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-storage-batch = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
-ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
+client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-batch = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-roothash-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 runtime-ethereum-common = { path = "../common" }
