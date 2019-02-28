@@ -26,7 +26,7 @@ impl KeyManagerClient {
     pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         KeyManager::contract_key(address)
     }
-    pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
+    pub fn public_key(contract: Address) -> Result<Option<PublicKeyPayload>, String> {
         KeyManager::public_key(contract)
     }
 }
@@ -39,15 +39,15 @@ impl KeyManagerClient {
     pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         TestKeyManager::contract_key(address)
     }
-    pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
+    pub fn public_key(contract: Address) -> Result<Option<PublicKeyPayload>, String> {
         let public_key = TestKeyManager::get_public_key(contract);
         let timestamp = 0;
         let signature = B512::from(0);
-        Ok(PublicKeyPayload {
+        Ok(Some(PublicKeyPayload {
             public_key,
             timestamp,
             signature,
-        })
+        }))
     }
 }
 
@@ -100,7 +100,7 @@ impl KeyManager {
             .map(|payload| ContractKey::new(payload.public_key, secret_key, state_key)))
     }
 
-    pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
+    pub fn public_key(contract: Address) -> Result<Option<PublicKeyPayload>, String> {
         let contract_id: ContractId =
             ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
 

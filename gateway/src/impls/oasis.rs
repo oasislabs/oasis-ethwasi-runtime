@@ -34,13 +34,15 @@ impl Oasis for OasisClient {
     fn public_key(&self, contract: Address) -> Result<Option<RpcPublicKeyPayload>> {
         measure_counter_inc!("oasis_getPublicKey");
         info!("oasis_getPublicKey(contract {:?})", contract);
-        let pk_payload = KeyManagerClient::public_key(contract)
-            .map_err(|err| errors::invalid_params(&contract.to_string(), err))?;
-        Ok(RpcPublicKeyPayload {
-            public_key: Bytes::from(pk_payload.public_key.to_vec()),
-            timestamp: pk_payload.timestamp,
-            signature: Bytes::from(pk_payload.signature.to_vec()),
-        })
+
+        let pk = KeyManagerClient::public_key(contract)
+            .map_err(|err| errors::invalid_params(&contract.to_string(), err))?
+            .map(|pk_payload| RpcPublicKeyPayload {
+                public_key: Bytes::from(pk_payload.public_key.to_vec()),
+                timestamp: pk_payload.timestamp,
+                signature: Bytes::from(pk_payload.signature.to_vec()),
+            });
+        Ok(pk)
     }
 
     fn call_enc(
