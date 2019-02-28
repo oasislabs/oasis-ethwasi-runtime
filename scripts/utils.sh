@@ -5,26 +5,30 @@
 # TODO: Share these with ekiden.
 
 # Temporary test base directory.
-TEST_BASE_DIR=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)
+: ${TEST_BASE_DIR:=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)}
 
 # Key manager variables shared between the compute node, gateway, and key manager
-KM_KEY="${WORKDIR}/resources/keymanager/km-key.pem"
-KM_CERT="${WORKDIR}/resources/keymanager/km.pem"
-KM_HOST="127.0.0.1"
-KM_PORT="9003"
-KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave
-KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
+: ${KM_KEY:="${WORKDIR}/resources/keymanager/km-key.pem"}
+: ${KM_CERT:="${WORKDIR}/resources/keymanager/km.pem"}
+: ${KM_HOST:="127.0.0.1"}
+: ${KM_PORT:="9003"}
+: ${KM_MRENCLAVE:=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave}
+: ${KM_ENCLAVE:=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so}
 
-EKIDEN_NODE=${WORKDIR}/ekiden-node
-EKIDEN_WORKER=${WORKDIR}/ekiden-worker
-KM_NODE=${WORKDIR}/ekiden-keymanager-node
-GATEWAY=${WORKDIR}/target/debug/gateway
-RUNTIME_ENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.so
-RUNTIME_MRENCLAVE=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave
+: ${EKIDEN_NODE:=${WORKDIR}/ekiden-node}
+: ${EKIDEN_WORKER:=${WORKDIR}/ekiden-worker}
+: ${KM_NODE:=${WORKDIR}/ekiden-keymanager-node}
+: ${GATEWAY:=${WORKDIR}/target/debug/gateway}
+: ${RUNTIME_ENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.so}
+: ${RUNTIME_MRENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave}
+
+: ${UTILS_RUNTIME_INIT_EXTRA_ARGS:=}
+: ${UTILS_COMPUTE_EXTRA_ARGS:=}
+: ${UTILS_KEYMANAGER_EXTRA_ARGS:=}
 
 run_test_network() {
     # Start keymanager node.
-    run_keymanager_node
+    run_keymanager_node ${UTILS_KEYMANAGER_EXTRA_ARGS}
     sleep 1
 
     # Since we run the gateway first, we need the socket path to connect to. This
@@ -90,7 +94,8 @@ run_backend_tendermint_committee() {
         --runtime.replica_group_size 2 \
         --runtime.replica_group_backup_size 2 \
         --entity ${entity_dir} \
-        --datadir ${entity_dir}
+        --datadir ${entity_dir} \
+        ${UTILS_RUNTIME_INIT_EXTRA_ARGS}
 
     # Create the genesis document.
     local genesis_file=${TEST_BASE_DIR}/genesis.json
@@ -113,6 +118,7 @@ run_backend_tendermint_committee() {
         --datadir ${storage_datadir} \
         --grpc.port ${storage_port} \
         --log.file ${TEST_BASE_DIR}/storage.log \
+        --metrics.mode none \
         &
 
     # Run the validator nodes.
@@ -211,13 +217,13 @@ run_compute_node() {
 }
 
 run_compute_committee() {
-    run_compute_node 1
+    run_compute_node 1 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 2
+    run_compute_node 2 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 3
+    run_compute_node 3 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 4
+    run_compute_node 4 ${UTILS_COMPUTE_EXTRA_ARGS}
 
     # Wait for all nodes to register.
     wait_compute_nodes 4
