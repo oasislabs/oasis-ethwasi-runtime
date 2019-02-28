@@ -12,6 +12,8 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
       - .buildkite/scripts/promote_deployment_image_to.sh staging
+    agents:
+      buildkite_agent_size: large
 
   - label: Update staging beta docker image tags (beta branch only)
     branches: beta
@@ -21,14 +23,16 @@ steps:
     agents:
       buildkite_agent_size: large
 
-  - label: Update hardware staging beta docker image tags (beta branch only)
-    branches: beta
+  - label: Update hardware staging docker image tags (master branches only)
+    branches: master
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh
-      - .buildkite/scripts/promote_deployment_image_to.sh staging-beta-hw
+      - .buildkite/scripts/promote_deployment_image_to.sh staging-hw
     env:
       SGX_MODE: HW
       DEPLOYMENT_VARIANT: hw
+    agents:
+      buildkite_agent_size: large
 
   - wait
 
@@ -48,9 +52,9 @@ steps:
       commit: HEAD
       branch: master
 
-  - label: "Trigger hardware staging beta deployment (beta branch only)"
-    trigger: private-ops-deploy-ekiden-hardware-staging-beta
-    branches: beta
+  - label: "Trigger hardware staging deployment (master branches only)"
+    trigger: private-ops-deploy-ekiden-hardware-staging
+    branches: master
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: HEAD

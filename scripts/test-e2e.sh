@@ -13,33 +13,8 @@ source scripts/utils.sh
 trap 'cleanup' EXIT
 
 run_test() {
-    # Start keymanager node.
-    run_keymanager_node
-    sleep 1
-
-    # Since we run the gateway first, we need the socket path to connect to. This
-    # should be synced with how 'run_backend_tendermint_committee' generates the
-    # socket path.
-    export EKIDEN_VALIDATOR_SOCKET=${TEST_BASE_DIR}/committee-data-1/internal.sock
-
-    # Run the gateway. We start the gateway first so that we test 1) whether the
-    # snapshot manager can recover after initially failing to connect to the
-    # root hash stream, and 2) whether the gateway waits for the committee to be
-    # elected and connects to the leader.
-    run_gateway 1
-    run_gateway 2
-    sleep 3
-
-    # Start validator committee.
-    run_backend_tendermint_committee
-    sleep 1
-
-    # Start compute nodes.
-    run_compute_committee
-    sleep 1
-
-    # Advance epoch to elect a new committee.
-    set_epoch 1
+    # Spin up the local testnet.
+    run_test_network
 
     # Run truffle tests against gateway 1 (in background).
     echo "Running truffle tests."
@@ -52,6 +27,8 @@ run_test() {
     export HTTPS_PROVIDER_URL="http://localhost:8545"
     export WS_PROVIDER_URL="ws://localhost:8555"
     export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
+    # See https://github.com/oasislabs/ekiden/blob/master/key-manager/dummy/enclave/src/lib.rs
+    export KEY_MANAGER_PUBLIC_KEY="0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f"
     npm run test:development & truffle_pid=$!
     popd > /dev/null
 

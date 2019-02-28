@@ -28,7 +28,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_INCREMENTAL=/cargo_cache"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "EKIDEN_BRANCH=armani/km_cleanup"
-      - "E2E_TESTS_BRANCH=beta"
+      - "E2E_TESTS_BRANCH=master"
     propagate-environment: true
     unconfined: true
 
@@ -38,6 +38,15 @@ steps:
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_generic.sh /workdir -p genesis
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build inspector
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_generic.sh /workdir -p inspector
     agents:
       buildkite_agent_size: large
     plugins:
@@ -121,50 +130,13 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: End-to-end tests
+  - label: End-to-end tests (%n)
+    parallelism: 5
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/run_end_to_end_test.sh
     timeout_in_minutes: 25
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
-
-  # ENS tests temporarily disabled due to flakiness (#349)
-  #- label: ENS tests
-  #  command:
-  #    - .buildkite/scripts/download_common_artifacts.sh
-  #    - .buildkite/scripts/setup_gitconfig.sh
-  #    - .buildkite/scripts/run_dapp_test.sh ens
-  #  plugins:
-  #    <<: *docker_plugin_configuration
-
-  - label: Celer tests
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/run_dapp_test.sh celer
-    timeout_in_minutes: 25
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Augur tests
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/run_dapp_test.sh augur
-    timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true

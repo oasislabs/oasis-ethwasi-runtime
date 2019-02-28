@@ -17,35 +17,29 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-######################
-# Download ekiden-node
-######################
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Go node" ekiden .
-mv ekiden ekiden-node
-chmod +x ekiden-node
+source .buildkite/scripts/download_utils.sh
 
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Rust worker, compute node and key manager node" ekiden-worker .
-chmod +x ekiden-worker
+# Create directory to put enclave artifacts into.
+mkdir -p target/enclave
 
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Rust worker, compute node and key manager node" ekiden-keymanager-node .
-chmod +x ekiden-keymanager-node
+###########################################
+# Download artifacts from other pipelines
+###########################################
+download_ekiden_node .
+download_ekiden_worker .
+download_keymanager_node .
+download_keymanager_enclave target/enclave
+download_keymanager_mrenclave target/enclave
 
 ############################################
 # Download runtime-ethereum(.so|.mrenclave)
 ############################################
-mkdir -p target/enclave
 buildkite-agent artifact download \
     runtime-ethereum.so \
     target/enclave
 buildkite-agent artifact download \
     runtime-ethereum.mrenclave \
     target/enclave
-
-#####################################################
-# Download ekiden-keymanager-trusted.mrenclave
-#####################################################
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.mrenclave target/enclave
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.so target/enclave
 
 ##################
 # Download gateway

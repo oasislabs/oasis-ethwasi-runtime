@@ -5,19 +5,56 @@
 # TODO: Share these with ekiden.
 
 # Temporary test base directory.
-TEST_BASE_DIR=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)
+: ${TEST_BASE_DIR:=$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)}
 
 # Key manager variables shared between the compute node, gateway, and key manager
-KM_KEY="${WORKDIR}/resources/keymanager/km-key.pem"
-KM_CERT="${WORKDIR}/resources/keymanager/km.pem"
-KM_HOST="127.0.0.1"
-KM_PORT="9003"
-KM_MRENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave
-KM_ENCLAVE=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so
+: ${KM_KEY:="${WORKDIR}/resources/keymanager/km-key.pem"}
+: ${KM_CERT:="${WORKDIR}/resources/keymanager/km.pem"}
+: ${KM_HOST:="127.0.0.1"}
+: ${KM_PORT:="9003"}
+: ${KM_MRENCLAVE:=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.mrenclave}
+: ${KM_ENCLAVE:=${WORKDIR}/target/enclave/ekiden-keymanager-trusted.so}
 
-EKIDEN_NODE=${WORKDIR}/ekiden-node
-EKIDEN_WORKER=${WORKDIR}/ekiden-worker
-KM_NODE=${WORKDIR}/ekiden-keymanager-node
+: ${EKIDEN_NODE:=${WORKDIR}/ekiden-node}
+: ${EKIDEN_WORKER:=${WORKDIR}/ekiden-worker}
+: ${KM_NODE:=${WORKDIR}/ekiden-keymanager-node}
+: ${GATEWAY:=${WORKDIR}/target/debug/gateway}
+: ${RUNTIME_ENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.so}
+: ${RUNTIME_MRENCLAVE:=${WORKDIR}/target/enclave/runtime-ethereum.mrenclave}
+
+: ${UTILS_RUNTIME_INIT_EXTRA_ARGS:=}
+: ${UTILS_COMPUTE_EXTRA_ARGS:=}
+: ${UTILS_KEYMANAGER_EXTRA_ARGS:=}
+
+run_test_network() {
+    # Start keymanager node.
+    run_keymanager_node ${UTILS_KEYMANAGER_EXTRA_ARGS}
+    sleep 1
+
+    # Since we run the gateway first, we need the socket path to connect to. This
+    # should be synced with how 'run_backend_tendermint_committee' generates the
+    # socket path.
+    export EKIDEN_VALIDATOR_SOCKET=${TEST_BASE_DIR}/committee-data-1/internal.sock
+
+    # Run the gateway. We start the gateway first so that we test 1) whether the
+    # snapshot manager can recover after initially failing to connect to the
+    # root hash stream, and 2) whether the gateway waits for the committee to be
+    # elected and connects to the leader.
+    run_gateway 1
+    run_gateway 2
+    sleep 3
+
+    # Start validator committee.
+    run_backend_tendermint_committee
+    sleep 1
+
+    # Start compute nodes.
+    run_compute_committee
+    sleep 1
+
+    # Advance epoch to elect a new committee.
+    set_epoch 1
+}
 
 # Run a Tendermint validator committee and a storage node.
 #
@@ -57,7 +94,8 @@ run_backend_tendermint_committee() {
         --runtime.replica_group_size 2 \
         --runtime.replica_group_backup_size 2 \
         --entity ${entity_dir} \
-        --datadir ${entity_dir}
+        --datadir ${entity_dir} \
+        ${UTILS_RUNTIME_INIT_EXTRA_ARGS}
 
     # Create the genesis document.
     local genesis_file=${TEST_BASE_DIR}/genesis.json
@@ -80,6 +118,7 @@ run_backend_tendermint_committee() {
         --datadir ${storage_datadir} \
         --grpc.port ${storage_port} \
         --log.file ${TEST_BASE_DIR}/storage.log \
+        --metrics.mode none \
         &
 
     # Run the validator nodes.
@@ -95,7 +134,8 @@ run_backend_tendermint_committee() {
             --epochtime.backend tendermint_mock \
             --beacon.backend tendermint \
             --metrics.mode none \
-            --storage.backend client \
+            --storage.backend cachingclient \
+            --storage.cachingclient.file ${datadir}/storage-cache \
             --storage.client.address 127.0.0.1:${storage_port} \
             --scheduler.backend trivial \
             --registry.backend tendermint \
@@ -148,7 +188,8 @@ run_compute_node() {
     ${EKIDEN_NODE} \
         --log.level debug \
         --grpc.log.verbose_debug \
-        --storage.backend client \
+        --storage.backend cachingclient \
+        --storage.cachingclient.file ${data_dir}/storage-cache \
         --storage.client.address 127.0.0.1:${EKIDEN_STORAGE_PORT} \
         --epochtime.backend tendermint_mock \
         --beacon.backend tendermint \
@@ -163,7 +204,7 @@ run_compute_node() {
         --tendermint.log.debug \
         --worker.backend sandboxed \
         --worker.binary ${EKIDEN_WORKER} \
-        --worker.runtime.binary ${WORKDIR}/target/enclave/runtime-ethereum.so \
+        --worker.runtime.binary ${RUNTIME_ENCLAVE} \
         --worker.runtime.id 0000000000000000000000000000000000000000000000000000000000000000 \
         --worker.client.port ${client_port} \
         --worker.p2p.port ${p2p_port} \
@@ -176,13 +217,13 @@ run_compute_node() {
 }
 
 run_compute_committee() {
-    run_compute_node 1
+    run_compute_node 1 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 2
+    run_compute_node 2 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 3
+    run_compute_node 3 ${UTILS_COMPUTE_EXTRA_ARGS}
     sleep 1
-    run_compute_node 4
+    run_compute_node 4 ${UTILS_COMPUTE_EXTRA_ARGS}
 
     # Wait for all nodes to register.
     wait_compute_nodes 4
@@ -197,9 +238,9 @@ run_gateway() {
     let prometheus_port=id+3000
 
     echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
-    ${WORKDIR}/target/debug/gateway \
+    ${GATEWAY} \
         --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
-        --mr-enclave $(cat $WORKDIR/target/enclave/runtime-ethereum.mrenclave) \
+        --mr-enclave $(cat $RUNTIME_MRENCLAVE) \
         --test-runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
         --threads 100 \

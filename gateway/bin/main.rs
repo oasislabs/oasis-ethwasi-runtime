@@ -16,13 +16,13 @@
 
 //! web3 gateway for Oasis Ethereum runtime.
 
+#![deny(warnings)]
 extern crate ctrlc;
 extern crate fdlimit;
 extern crate log;
 extern crate parking_lot;
 #[macro_use]
 extern crate clap;
-extern crate rand;
 
 #[macro_use]
 extern crate client_utils;
@@ -76,7 +76,7 @@ fn main() {
             Arg::with_name("ws-max-connections")
                 .long("ws-max-connections")
                 .help("Max number of concurrent WebSocket connections.")
-                .default_value("1000")
+                .default_value("10000")
                 .takes_value(true),
         )
         .arg(

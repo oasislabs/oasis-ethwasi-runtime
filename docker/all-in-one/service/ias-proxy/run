@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+exec /ekiden/bin/ekiden-node ias proxy \
+    --auth_cert /mnt/ias-creds/tls-cert.pem \
+    --auth_key /mnt/ias-creds/tls-key.pem \
+    --quote_signature_type linkable \
+    --spid "$(cat /mnt/ias-creds/spid.txt)" \
+    --metrics.mode none \
+    2>&1

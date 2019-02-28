@@ -115,6 +115,7 @@ impl RpcStats {
         self.sessions.read().len()
     }
 
+    #[cfg(test)]
     /// Returns requests rate
     pub fn requests_rate(&self, id: &H256) -> usize {
         self.sessions

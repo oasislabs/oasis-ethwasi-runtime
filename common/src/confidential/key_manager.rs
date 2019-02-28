@@ -23,7 +23,7 @@ impl KeyManagerClient {
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         KeyManager::create_long_term_public_key(contract)
     }
-    pub fn contract_key(address: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         KeyManager::contract_key(address)
     }
     pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
@@ -36,7 +36,7 @@ impl KeyManagerClient {
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         TestKeyManager::create_long_term_public_key(contract)
     }
-    pub fn contract_key(address: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         TestKeyManager::contract_key(address)
     }
     pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
@@ -51,9 +51,13 @@ impl KeyManagerClient {
     }
 }
 
+#[cfg(not(feature = "test"))]
+#[derive(Debug)]
 /// Wrapper around the Ekiden key manager client to provide a more convenient
 /// Ethereum address based interface along with runtime-specific utility methods.
 struct KeyManager;
+
+#[cfg(not(feature = "test"))]
 impl KeyManager {
     /// Returns the contract id for the given contract address. The contract_id
     /// is used to fetch keys for a contract.
@@ -72,17 +76,16 @@ impl KeyManager {
         km.get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
         // then extract the long term key
-        km.long_term_public_key(contract_id)
-            .map_err(|err| err.description().to_string())
-            .map(|pk_payload| {
-                (
-                    pk_payload.public_key.to_vec(),
-                    pk_payload.signature.to_vec(),
-                )
-            })
+        let pk_payload = km
+            .long_term_public_key(contract_id)
+            .map_err(|err| err.description().to_string())?;
+        match pk_payload {
+            Some(payload) => Ok((payload.public_key.to_vec(), payload.signature.to_vec())),
+            None => Err("Failed to create key".to_string()),
+        }
     }
 
-    fn contract_key(address: Address) -> Result<ContractKey, String> {
+    fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
         let contract_id = Self::contract_id(address);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
 
@@ -93,11 +96,8 @@ impl KeyManager {
             .get_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
 
-        Ok(ContractKey::new(
-            public_key_payload.public_key,
-            secret_key,
-            state_key,
-        ))
+        Ok(public_key_payload
+            .map(|payload| ContractKey::new(payload.public_key, secret_key, state_key)))
     }
 
     pub fn public_key(contract: Address) -> Result<PublicKeyPayload, String> {
@@ -153,14 +153,14 @@ impl TestKeyManager {
         Ok((public_key.to_vec(), vec![]))
     }
 
-    pub fn contract_key(contract: Address) -> Result<ContractKey, String> {
+    pub fn contract_key(contract: Address) -> Result<Option<ContractKey>, String> {
         let mut km = TEST_KEY_MANAGER.lock().unwrap();
         if km.keys.contains_key(&contract) {
-            Ok(km.keys.get(&contract).unwrap().clone())
+            Ok(Some(km.keys.get(&contract).unwrap().clone()))
         } else {
             let contract_key = Self::create_random_key();
             km.keys.insert(contract, contract_key.clone());
-            Ok(contract_key)
+            Ok(Some(contract_key))
         }
     }
 

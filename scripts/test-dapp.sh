@@ -16,18 +16,8 @@ source scripts/utils.sh $WORKDIR
 trap 'cleanup' EXIT
 
 run_test() {
-    run_backend_tendermint_committee
-    sleep 1
-    run_keymanager_node
-    sleep 1
-    run_compute_committee
-    sleep 1
-    run_gateway 1
-    sleep 3
-
-    # Advance epoch to elect a new commitee
-    set_epoch 1
-
+	source ./scripts/oasis.sh false
+	run_test_network
     # Location for all the dapp repos
     mkdir -p /tmp/dapps
     cd /tmp/dapps
@@ -47,8 +37,7 @@ run_dapp() {
             run_celer
             ;;
         "ens")
-            #run_ens
-            :
+            run_ens
             ;;
     esac
 }
@@ -65,8 +54,7 @@ run_ens() {
     git pull
 
     npm install > /dev/null
-
-    truffle test --network oasis_test
+    npm run test
 }
 
 run_celer() {

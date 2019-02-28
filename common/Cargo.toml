@@ -18,9 +18,6 @@ keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 lazy_static = { version = "1.1.0", features = ["spin_no_std"] }
 sodalite = "0.3.0"
 
-[target.'cfg(not(target_env = "sgx"))'.dependencies]
-rand = "0.4.2"
-
 [dev-dependencies]
 ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "armani/km_cleanup" }
 

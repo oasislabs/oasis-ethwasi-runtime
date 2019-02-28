@@ -24,7 +24,7 @@ set -euo pipefail
 
 ORGANIZATION="oasislabs"
 
-BUILDKITE_ACCESS_TOKEN=$(cat ~/.buildkite/read_only_buildkite_api_access_token)
+BUILDKITE_ACCESS_TOKEN=${BUILDKITE_ACCESS_TOKEN:-$(cat ~/.buildkite/read_only_buildkite_api_access_token)}
 
 ################################################################################
 # Required arguments.
