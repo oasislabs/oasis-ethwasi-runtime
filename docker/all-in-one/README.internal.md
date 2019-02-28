@@ -4,7 +4,8 @@ SGX_MODE=HW \
 ./docker/ekiden-runtime-ethereum/docker_build_and_push.sh \
 master \
 testing-hw \
-../docker-build-key latest-hw
+"" \
+latest-hw
 ```
 
 Then, to build the `all-in-one:testing-hw` image, run:
