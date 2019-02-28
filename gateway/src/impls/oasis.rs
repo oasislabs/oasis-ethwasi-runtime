@@ -2,8 +2,10 @@ use std::sync::Arc;
 
 use ekiden_core::futures::Future;
 
+use client::Client;
 use ethereum_api::TransactionRequest;
 use ethereum_types::Address;
+use impls::eth::EthClient;
 use jsonrpc_core::{BoxFuture, Error, ErrorCode, Result};
 use jsonrpc_macros::Trailing;
 use parity_rpc::v1::{
@@ -12,8 +14,6 @@ use parity_rpc::v1::{
     types::{BlockNumber, Bytes, CallRequest, H160 as RpcH160},
 };
 use runtime_ethereum_common::confidential::KeyManagerClient;
-use client::Client;
-use impls::eth::EthClient;
 use traits::oasis::{Oasis, RpcPublicKeyPayload};
 
 /// Eth rpc implementation
@@ -35,11 +35,12 @@ impl Oasis for OasisClient {
         measure_counter_inc!("oasis_getPublicKey");
         info!("oasis_getPublicKey(contract {:?})", contract);
         let pk_payload = KeyManagerClient::public_key(contract)
-	        .map_err(|err| errors::invalid_params(&contract.to_string(), err))?;
-	    Ok(RpcPublicKeyPayload {
-	        public_key: Bytes::from(pk_payload.public_key.to_vec()),
-	        timestamp: pk_payload.timestamp,
-	        signature: Bytes::from(pk_payload.signature.to_vec()),
+            .map_err(|err| errors::invalid_params(&contract.to_string(), err))?;
+        Ok(RpcPublicKeyPayload {
+            public_key: Bytes::from(pk_payload.public_key.to_vec()),
+            timestamp: pk_payload.timestamp,
+            signature: Bytes::from(pk_payload.signature.to_vec()),
+        })
     }
 
     fn call_enc(
