@@ -24,8 +24,6 @@ use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 #[cfg(test)]
 use grpcio;
-use hash::keccak;
-use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
 use runtime_ethereum_common::State as EthState;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};

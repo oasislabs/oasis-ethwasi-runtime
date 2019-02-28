@@ -11,7 +11,7 @@ build_rpc_trait! {
         type Metadata;
         /// Returns the public key of a contract, given its address.
         #[rpc(name = "oasis_getPublicKey")]
-        fn public_key(&self, Address) -> Result<Option<PublicKeyResult>>;
+        fn public_key(&self, Address) -> Result<Option<RpcPublicKeyPayload>>;
         /// Executes a new message call without creating a transaction on chain.
         /// Returns the return value of the executed contract, encrypted with
         /// the user's public key.
