@@ -29,4 +29,3 @@ ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch =
 
 runtime-ethereum-common = { path = "../common" }
 patricia-trie = { path = "./parity_patricia_trie" }
-

@@ -1,10 +1,10 @@
 #![deny(warnings)]
-use super::key_manager::KeyManagerClient;
+use super::{crypto, key_manager::KeyManagerClient};
 use ekiden_core::mrae::{
     nonce::{Nonce, NONCE_SIZE},
     sivaessha2::{SivAesSha2, KEY_SIZE},
 };
-use ekiden_keymanager_common::{confidential, ContractKey, PublicKeyType};
+use ekiden_keymanager_common::{ContractKey, PublicKeyType};
 use ethcore::state::ConfidentialCtx as EthConfidentialCtx;
 use ethereum_types::Address;
 
@@ -45,7 +45,7 @@ impl ConfidentialCtx {
 
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
 
-        let decryption = confidential::decrypt(Some(encrypted_tx_data), &contract_secret_key)
+        let decryption = crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key)
             .map_err(|err| err.description().to_string())?;
         self.peer_public_key = Some(decryption.peer_public_key);
 
@@ -60,7 +60,7 @@ impl ConfidentialCtx {
 
     pub fn decrypt(&self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>, String> {
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
-        let decryption = confidential::decrypt(Some(encrypted_tx_data), &contract_secret_key)
+        let decryption = crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key)
             .map_err(|err| err.description().to_string())?;
 
         Ok(decryption.plaintext)
@@ -113,7 +113,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         let contract_pk = contract_key.input_keypair.get_pk();
         let contract_sk = contract_key.input_keypair.get_sk();
 
-        let encrypted_payload = confidential::encrypt(
+        let encrypted_payload = crypto::encrypt(
             data,
             self.next_nonce.clone().unwrap(),
             self.peer_public_key.clone().unwrap(),
