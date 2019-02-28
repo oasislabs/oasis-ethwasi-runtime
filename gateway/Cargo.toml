@@ -39,17 +39,16 @@ runtime-ethereum-common = { path = "../common" }
 
 ## Ekiden client dependencies
 clap = "2.29.1"
-client-utils = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-runtime-client = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-db-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-instrumentation = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-tracing = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
 ethereum-api = { path = "../api" }
 rand = "0.4"
 
@@ -58,7 +57,11 @@ rustc_version = "0.2"
 
 [dev-dependencies]
 grpcio = { version = "~0.4.2", features = ["openssl"] }
-ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-registry-client = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-roothash-client = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-scheduler-client = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
+ekiden-storage-client = { git = "https://github.com/oasislabs/ekiden", branch = "jberci/feature/move-rust-client-utils" }
 hex = "0.3"
 
 [features]

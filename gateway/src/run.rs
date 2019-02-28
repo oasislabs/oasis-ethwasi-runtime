@@ -23,8 +23,8 @@ use std::{
 
 use client::Client;
 
-use client_utils;
 use ekiden_core::environment::Environment;
+use ekiden_runtime_client::helpers as client_utils;
 use ekiden_storage_base::StorageBackend;
 use ethereum_types::U256;
 use informant;

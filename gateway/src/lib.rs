@@ -48,11 +48,10 @@ extern crate parity_reactor;
 extern crate parity_rpc;
 extern crate rlp_compress;
 
-#[macro_use]
-extern crate client_utils;
 extern crate ekiden_common;
 extern crate ekiden_core;
 extern crate ekiden_db_trusted;
+#[macro_use]
 extern crate ekiden_runtime_client;
 #[macro_use]
 extern crate ekiden_instrumentation;
@@ -119,8 +118,8 @@ pub fn start(
     let storage = client.get_storage();
     let roothash = client.get_roothash();
 
-    let runtime_id = client_utils::args::get_runtime_id(&args);
-    let snapshot_manager = client_utils::db::Manager::new(
+    let runtime_id = ekiden_runtime_client::helpers::args::get_runtime_id(&args);
+    let snapshot_manager = ekiden_runtime_client::helpers::db::Manager::new(
         environment.clone(),
         runtime_id,
         roothash,

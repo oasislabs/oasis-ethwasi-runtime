@@ -25,7 +25,7 @@ extern crate parking_lot;
 extern crate clap;
 
 #[macro_use]
-extern crate client_utils;
+extern crate ekiden_runtime_client;
 extern crate ekiden_tracing;
 
 extern crate runtime_ethereum_common;

@@ -28,12 +28,10 @@ use runtime_ethereum;
 use runtime_ethereum_common::State as EthState;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
-use client_utils;
-#[cfg(not(test))]
-use client_utils::db::Snapshot;
 use ekiden_common::environment::Environment;
 use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
+use ekiden_runtime_client::helpers::{self as client_utils, db::Snapshot};
 use ekiden_storage_base::StorageBackend;
 use ethereum_api::TransactionRequest;
 use state::{self, StateDb};
