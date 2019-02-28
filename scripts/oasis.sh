@@ -9,7 +9,7 @@
 #   You can get one of these from your personal buildkite account through the
 #   web ui. See https://buildkite.com/user/api-access-tokens.
 # - apt-get install jq
-# - ./scripts/oasis.sh
+# - ./scripts/oasis.sh [--download]
 #
 # You now have a local network running.
 #
@@ -37,7 +37,7 @@ RUNTIME_BRANCH="master"
 
 # Download all the artifacts that we need to run a local network,
 # if they don't already exist.
-if [ ! -d "$OASIS_ARTIFACTS_DIR" ]; then
+if [ ! -d "$OASIS_ARTIFACTS_DIR" ] || [ "$1" == "--download" ]; then
 	mkdir -p $OASIS_ARTIFACTS_DIR
 	source .buildkite/scripts/download_utils.sh
 	download_oasis_binaries $OASIS_ARTIFACTS_DIR
