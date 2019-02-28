@@ -11,10 +11,10 @@ use parity_rpc::v1::{
     metadata::Metadata,
     types::{BlockNumber, Bytes, CallRequest, H160 as RpcH160},
 };
-
+use runtime_ethereum_common::confidential::KeyManagerClient;
 use client::Client;
 use impls::eth::EthClient;
-use traits::oasis::{Oasis, PublicKeyResult};
+use traits::oasis::{Oasis, RpcPublicKeyPayload};
 
 /// Eth rpc implementation
 pub struct OasisClient {
@@ -31,12 +31,15 @@ impl OasisClient {
 impl Oasis for OasisClient {
     type Metadata = Metadata;
 
-    fn public_key(&self, contract: Address) -> Result<Option<PublicKeyResult>> {
+    fn public_key(&self, contract: Address) -> Result<Option<RpcPublicKeyPayload>> {
         measure_counter_inc!("oasis_getPublicKey");
         info!("oasis_getPublicKey(contract {:?})", contract);
-        self.client
-            .public_key(contract)
-            .map_err(|_| Error::new(ErrorCode::InternalError))
+        let pk_payload = KeyManagerClient::public_key(contract)
+	        .map_err(|err| errors::invalid_params(&contract.to_string(), err))?;
+	    Ok(RpcPublicKeyPayload {
+	        public_key: Bytes::from(pk_payload.public_key.to_vec()),
+	        timestamp: pk_payload.timestamp,
+	        signature: Bytes::from(pk_payload.signature.to_vec()),
     }
 
     fn call_enc(

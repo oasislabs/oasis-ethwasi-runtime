@@ -34,7 +34,6 @@ use client_utils::{self, db::Snapshot};
 use ekiden_common::environment::Environment;
 use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
-use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
 use ekiden_storage_base::StorageBackend;
 #[cfg(test)]
 use ekiden_storage_dummy::DummyStorageBackend;

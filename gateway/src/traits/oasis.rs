@@ -30,7 +30,7 @@ build_rpc_trait! {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PublicKeyResult {
+pub struct RpcPublicKeyPayload {
     /// Public key of the contract
     pub public_key: Bytes,
     /// Time at which the key expires.
