@@ -67,7 +67,7 @@ curl -s \
   "id": 1,
   "method": "eth_getBalance",
   "params": [
-    "0xf026EAcc1130978E4ec0785Ca6CE99b99a96B0a8",
+    "0x1cca28600d7491365520b31b466f88647b9839ec",
     "latest"
   ]
 }
@@ -76,8 +76,17 @@ EOF
 
 Should give a result like
 ```
-{"jsonrpc":"2.0","result":"0x0","id":1}
+{"jsonrpc":"2.0","result":"0x56bc75e2d63100000","id":1}
 ```
+
+### Spend DEV
+The genesis block contains the following accounts:
+
+* `7110316b618d20d0c44728ac2a3d683536ea682b` is a test account with the following
+  private key: `533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c`.
+
+* `1cca28600d7491365520b31b466f88647b9839ec` is a test account with the following
+  private key: `c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179`.
 
 ### Stop the container
 Run
