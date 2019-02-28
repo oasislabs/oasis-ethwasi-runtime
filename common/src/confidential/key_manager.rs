@@ -148,7 +148,7 @@ impl TestKeyManager {
 
     /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     pub fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
-        let contract_key = Self::contract_key(contract)?;
+        let contract_key = Self::contract_key(contract)?.unwrap();
         let public_key = contract_key.input_keypair.get_pk();
         Ok((public_key.to_vec(), vec![]))
     }

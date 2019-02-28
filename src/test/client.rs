@@ -267,7 +267,7 @@ impl Client {
     /// to web3c. The latter can be used to encrypt/decrypt inside web3c (just as a compute node
     /// would).
     fn make_ctx(&self, contract: Address, is_key_manager: bool) -> ConfidentialCtx {
-        let contract_key = KeyManagerClient::contract_key(contract).unwrap();
+        let contract_key = KeyManagerClient::contract_key(contract).unwrap().unwrap();
         // Note that what key is used as the "peer" switches depending upon `is_key_manager`.
         // From the perspective of the client, the "peer" is the contract (i.e. the key
         // manager), and vice versa. This is a result of our mrae's symmetric key derivation.
