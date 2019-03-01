@@ -88,6 +88,14 @@ The genesis block contains the following accounts:
 * `1cca28600d7491365520b31b466f88647b9839ec` is a test account with the following
   private key: `c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179`.
 
+You can import these accounts into MetaMask for use with DApps:
+
+![](metamask-localhost.png)
+
+![](metamask-importaccount.png)
+
+![](metamask-privatekey.png)
+
 ### Stop the container
 Run
 
