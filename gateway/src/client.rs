@@ -308,8 +308,7 @@ impl Client {
     /// Returns a MockDb-backed StateDb for unit tests.
     #[cfg(test)]
     fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
-        let mut db = MockDb::new();
-        db.populate();
+        let db = MockDb::new();
         StateDb::new(db.storage(), db).unwrap()
     }
 
@@ -999,9 +998,7 @@ mod tests {
 
     #[test]
     fn test_last_hashes() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -1037,9 +1034,7 @@ mod tests {
 
     #[test]
     fn test_envinfo() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -1058,9 +1053,7 @@ mod tests {
     #[test]
     #[cfg(feature = "pubsub")]
     fn test_headers_since() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();

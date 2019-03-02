@@ -275,14 +275,14 @@ mod tests {
 
     #[test]
     fn test_get_statedb_empty() {
-        let db = MockDb::new();
+        let db = MockDb::empty();
         let state = StateDb::new(db.storage(), db).unwrap();
         assert!(state.is_none());
     }
 
     #[test]
     fn test_get_statedb() {
-        let mut db = MockDb::new();
+        let mut db = MockDb::empty();
         // insert a valid best block hash
         db.insert(
             &get_key(db::COL_EXTRA, b"best"),
@@ -294,9 +294,7 @@ mod tests {
 
     #[test]
     fn test_best_block() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
         assert_eq!(state.best_block_number(), 4);
     }
@@ -305,9 +303,7 @@ mod tests {
     fn test_logs() {
         use ethcore::{filter::Filter, ids::BlockId};
 
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -341,9 +337,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_account_state() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -370,9 +364,7 @@ mod tests {
 
     #[test]
     fn test_transaction() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -390,9 +382,7 @@ mod tests {
 
     #[test]
     fn test_receipt() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -409,9 +399,7 @@ mod tests {
 
     #[test]
     fn test_block() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -429,9 +417,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_default_block_parameter() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
