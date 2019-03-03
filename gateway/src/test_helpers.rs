@@ -112,8 +112,11 @@ impl<'de> Visitor<'de> for DbVisitor {
         M: MapAccess<'de>,
     {
         let mut map = BTreeMap::new();
-        while let Some((key, value)) = access.next_entry::<String, Vec<u8>>()? {
-            map.insert(hex::decode(key).unwrap().to_vec(), value.to_vec());
+        while let Some((key, value)) = access.next_entry::<String, String>()? {
+            map.insert(
+                hex::decode(key).unwrap().to_vec(),
+                hex::decode(value).unwrap().to_vec(),
+            );
         }
         Ok(map)
     }
