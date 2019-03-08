@@ -28,14 +28,14 @@ docker_plugin: &docker_plugin_configuration
 
 steps:
   - label: Extract simulation platform resources
-    branches: master beta
+    branches: master beta pro-wh/feature/oodib
     command:
       - .buildkite/scripts/extract_platform_resources.sh sim-platform
     artifact_paths:
       - sim-platform/*
 
   - label: Extract hardware platform resources
-    branches: master
+    branches: master pro-wh/feature/oodib
     command:
       - .buildkite/scripts/extract_platform_resources.sh hw-platform
     artifact_paths:
@@ -49,7 +49,7 @@ steps:
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
 
   - label: Build simulation artifacts (master branches only)
-    branches: master beta
+    branches: master beta pro-wh/feature/oodib
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
@@ -63,7 +63,7 @@ steps:
       <<: *docker_plugin_configuration
 
   - label: Build hardware artifacts (master branches only)
-    branches: master
+    branches: master pro-wh/feature/oodib
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
@@ -81,7 +81,7 @@ steps:
   - wait
 
   - label: Update staging docker image tags (master branches only)
-    branches: master
+    branches: master pro-wh/feature/oodib
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh sim-context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging
@@ -93,7 +93,7 @@ steps:
       - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
 
   - label: Update hardware staging docker image tags (master branches only)
-    branches: master
+    branches: master pro-wh/feature/oodib
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh hw-context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging-hw
