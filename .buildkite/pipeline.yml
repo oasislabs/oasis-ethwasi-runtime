@@ -150,7 +150,7 @@ steps:
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
     async: true
-    branches: "master beta"
+    branches: "master beta pro-wh/feature/oodib"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
