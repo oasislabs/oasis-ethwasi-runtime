@@ -1000,7 +1000,6 @@ impl Client {
 mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
-
     use test_helpers::{MockDb, MockNotificationHandler};
 
     #[test]
