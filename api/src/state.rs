@@ -97,6 +97,7 @@ pub struct TransactionRequest {
 pub struct ExecuteTransactionResponse {
     pub hash: Result<H256, String>,
     pub created_contract: bool,
+    pub block_gas_limit_reached: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
