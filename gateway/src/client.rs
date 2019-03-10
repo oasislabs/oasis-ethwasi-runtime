@@ -948,13 +948,15 @@ impl Client {
         };
 
         // If we get a BlockGasLimitReached error, retry up to 5 times.
-        // TODO: remove hardcoded retries
+        const MAX_RETRIES: usize = 5;
+
         future::loop_fn(
-            (5, self.client.clone(), raw, oasis_contract),
+            (MAX_RETRIES, self.client.clone(), raw, oasis_contract),
             move |(retries, client, raw, oasis_contract)| {
                 client
                     .execute_raw_transaction(raw.clone())
                     .and_then(move |result| {
+                        // Retry on BlockGasLimitReached error.
                         if result.block_gas_limit_reached {
                             if retries == 0 {
                                 measure_counter_inc!("runtime_call_failed");
@@ -968,6 +970,7 @@ impl Client {
                             )));
                         }
 
+                        // Update contract_created metrics.
                         if result.created_contract {
                             measure_counter_inc!("contract_created");
 
@@ -986,7 +989,7 @@ impl Client {
                             Err(e) => {
                                 measure_counter_inc!("runtime_call_failed");
                                 info!("execute_raw_transaction error: {:?}", e);
-                                return Err(Error::new(e));
+                                Err(Error::new(e))
                             }
                         }
                     })
