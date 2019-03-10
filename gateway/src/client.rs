@@ -962,8 +962,10 @@ impl Client {
                                 measure_counter_inc!("runtime_call_failed");
                                 return Err(Error::new("Block gas limit exceeded.".to_string()));
                             }
+                            let retries = retries - 1;
+                            info!("execute_raw_transaction retries remaining: {}", retries);
                             return Ok(future::Loop::Continue((
-                                retries - 1,
+                                retries,
                                 client,
                                 raw,
                                 oasis_contract,
