@@ -28,13 +28,13 @@ use runtime_ethereum;
 use runtime_ethereum_common::State as EthState;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
-use client_utils::{self, db::Snapshot};
+use client_utils;
+#[cfg(not(test))]
+use client_utils::db::Snapshot;
 use ekiden_common::environment::Environment;
 use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
 use ekiden_storage_base::StorageBackend;
-#[cfg(test)]
-use ekiden_storage_dummy::DummyStorageBackend;
 use ethereum_api::TransactionRequest;
 use state::{self, StateDb};
 #[cfg(test)]
@@ -78,7 +78,7 @@ pub trait ChainNotify: Send + Sync {
 }
 
 pub struct Client {
-    client: runtime_ethereum::Client,
+    client: Arc<runtime_ethereum::Client>,
     engine: Arc<EthEngine>,
     #[cfg(not(test))]
     snapshot_manager: Option<client_utils::db::Manager>,
@@ -112,7 +112,7 @@ impl Client {
         };
 
         Self {
-            client: client,
+            client: Arc::new(client),
             engine: spec.engine.clone(),
             #[cfg(not(test))]
             snapshot_manager: snapshot_manager,
@@ -136,7 +136,7 @@ impl Client {
             grpc_environment,
         ));
         Self {
-            client: test_helpers::get_test_runtime_client(),
+            client: Arc::new(test_helpers::get_test_runtime_client()),
             engine: spec.engine.clone(),
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
@@ -947,27 +947,57 @@ impl Client {
             Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
-        record_runtime_call_result(
-            "execute_raw_transaction",
-            self.client
-                .execute_raw_transaction(raw)
-                .and_then(move |result| {
-                    if result.created_contract {
-                        measure_counter_inc!("contract_created");
+        // If we get a BlockGasLimitReached error, retry up to 5 times.
+        const MAX_RETRIES: usize = 5;
 
-                        let confidential =
-                            oasis_contract.as_ref().map_or(false, |c| c.confidential);
-                        if confidential {
-                            measure_counter_inc!("confidential_contract_created");
+        future::loop_fn(
+            (MAX_RETRIES, self.client.clone(), raw, oasis_contract),
+            move |(retries, client, raw, oasis_contract)| {
+                client
+                    .execute_raw_transaction(raw.clone())
+                    .and_then(move |result| {
+                        // Retry on BlockGasLimitReached error.
+                        if result.block_gas_limit_reached {
+                            if retries == 0 {
+                                measure_counter_inc!("runtime_call_failed");
+                                return Err(Error::new("Block gas limit exceeded.".to_string()));
+                            }
+                            let retries = retries - 1;
+                            info!("execute_raw_transaction retries remaining: {}", retries);
+                            return Ok(future::Loop::Continue((
+                                retries,
+                                client,
+                                raw,
+                                oasis_contract,
+                            )));
                         }
-                    }
 
-                    result.hash.map_err(|error| {
-                        info!("execute_raw_transaction error: {:?}", error);
-                        Error::new(error)
+                        // Update contract_created metrics.
+                        if result.created_contract {
+                            measure_counter_inc!("contract_created");
+
+                            let confidential =
+                                oasis_contract.as_ref().map_or(false, |c| c.confidential);
+                            if confidential {
+                                measure_counter_inc!("confidential_contract_created");
+                            }
+                        }
+
+                        match result.hash {
+                            Ok(hash) => {
+                                measure_counter_inc!("runtime_call_succeeded");
+                                Ok(future::Loop::Break(hash))
+                            }
+                            Err(e) => {
+                                measure_counter_inc!("runtime_call_failed");
+                                info!("execute_raw_transaction error: {:?}", e);
+                                Err(Error::new(e))
+                            }
+                        }
                     })
-                }),
+            },
         )
+        .into_box()
     }
 }
 
@@ -975,7 +1005,6 @@ impl Client {
 mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
-
     use test_helpers::{MockDb, MockNotificationHandler};
 
     #[test]
