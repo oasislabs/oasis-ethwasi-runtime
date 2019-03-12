@@ -877,6 +877,9 @@ impl Client {
             "simulate_transaction",
             self.client.simulate_transaction(request),
         ));
+
+        info!("finished estimating gas for a confidential contract");
+
         match response {
             Err(e) => Err(CallError::Execution(ExecutionError::Internal(
                 e.to_string(),
