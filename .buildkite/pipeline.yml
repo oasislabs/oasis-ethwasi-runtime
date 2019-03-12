@@ -28,7 +28,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_INCREMENTAL=/cargo_cache"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "EKIDEN_BRANCH=master"
-      - "E2E_TESTS_BRANCH=peterjgilbert/feature/gateway_retry"
+      - "E2E_TESTS_BRANCH=master"
     propagate-environment: true
     unconfined: true
 
