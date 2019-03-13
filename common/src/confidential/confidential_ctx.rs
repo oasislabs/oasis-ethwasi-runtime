@@ -81,15 +81,18 @@ impl EthConfidentialCtx for ConfidentialCtx {
         if contract_key.is_none() {
             return Err("Could not fetch contract key".to_string());
         }
+
         self.contract_key = contract_key;
 
-        let tx_data = if encrypted_tx_data.is_some() {
-            self.open_tx_data(encrypted_tx_data.unwrap())?
+        if encrypted_tx_data.is_some() {
+            let data = self.open_tx_data(encrypted_tx_data.unwrap());
+            if data.is_err() {
+                self.close();
+            }
+            data
         } else {
-            vec![]
-        };
-
-        Ok(tx_data)
+            Ok(vec![])
+        }
     }
 
     fn is_open(&self) -> bool {
@@ -99,6 +102,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
     fn close(&mut self) {
         self.peer_public_key = None;
         self.contract_key = None;
+        self.next_nonce = None;
     }
 
     fn encrypt(&mut self, data: Vec<u8>) -> Result<Vec<u8>, String> {
