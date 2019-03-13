@@ -383,6 +383,7 @@ pub fn simulate_transaction(
     let tx = match make_unsigned_transaction(&ectx.cache, request) {
         Ok(t) => t,
         Err(e) => {
+            info!("simulate_transaction returning error: {:?}", e);
             return Ok(SimulateTransactionResponse {
                 used_gas: U256::from(0),
                 refunded_gas: U256::from(0),
@@ -393,6 +394,7 @@ pub fn simulate_transaction(
     let exec = match evm::simulate_transaction(&ectx.cache, &tx) {
         Ok(exec) => exec,
         Err(e) => {
+            info!("simulate_transaction returning error: {:?}", e);
             return Ok(SimulateTransactionResponse {
                 used_gas: U256::from(0),
                 refunded_gas: U256::from(0),
@@ -401,6 +403,7 @@ pub fn simulate_transaction(
         }
     };
 
+    info!("simulate_transaction returning success: {:?}", exec);
     Ok(SimulateTransactionResponse {
         used_gas: exec.gas_used,
         refunded_gas: exec.refunded,
