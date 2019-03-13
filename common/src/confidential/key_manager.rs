@@ -62,6 +62,7 @@ impl KeyManager {
     /// Returns the contract id for the given contract address. The contract_id
     /// is used to fetch keys for a contract.
     fn contract_id(contract: Address) -> ContractId {
+        println!("key_manager: making contract id for {:?}", contract);
         ContractId::from(&keccak(contract.to_vec())[..])
     }
 
@@ -69,20 +70,26 @@ impl KeyManager {
     /// If the key already exists, returns the existing key.
     /// Returns the tuple (public_key, signature_{KeyManager}(public_key)).
     fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
+        println!("key_manager: create long term public key");
         let contract_id = Self::contract_id(contract);
+        println!("key_manager: got id {:?} getting ekiden km client instance", contract_id);
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
-
+        println!("key_manager: get or create secret keys");
         // first create the keys
         km.get_or_create_secret_keys(contract_id)
             .map_err(|err| err.description().to_string())?;
+        println!("key_manager: getting long term public key");
         // then extract the long term key
         let pk_payload = km
             .long_term_public_key(contract_id)
             .map_err(|err| err.description().to_string())?;
-        match pk_payload {
+        println!("key_manager: disecting the payload");
+        let payload = match pk_payload {
             Some(payload) => Ok((payload.public_key.to_vec(), payload.signature.to_vec())),
             None => Err("Failed to create key".to_string()),
-        }
+        };
+        println!("key_manager: rececived payload {:?}", payload);
+        payload
     }
 
     fn contract_key(address: Address) -> Result<Option<ContractKey>, String> {
