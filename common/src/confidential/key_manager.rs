@@ -72,7 +72,10 @@ impl KeyManager {
     fn create_long_term_public_key(contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
         println!("key_manager: create long term public key");
         let contract_id = Self::contract_id(contract);
-        println!("key_manager: got id {:?} getting ekiden km client instance", contract_id);
+        println!(
+            "key_manager: got id {:?} getting ekiden km client instance",
+            contract_id
+        );
         let mut km = EkidenKeyManager::instance().expect("Should always have a key manager client");
         println!("key_manager: get or create secret keys");
         // first create the keys
