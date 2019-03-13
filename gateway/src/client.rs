@@ -9,7 +9,7 @@ use ethcore::{
     blockchain::{BlockProvider, TransactionAddress},
     encoded,
     engines::EthEngine,
-    error::{CallError, ExecutionError},
+    error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
     filter::Filter as EthcoreFilter,
     header::BlockNumber,
@@ -797,36 +797,39 @@ impl Client {
         )
     }
 
-    pub fn estimate_gas(
-        &self,
-        transaction: &SignedTransaction,
-        id: BlockId,
-    ) -> Result<U256, CallError> {
+    pub fn estimate_gas(&self, transaction: &SignedTransaction, id: BlockId) -> BoxFuture<U256> {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
                 error!("Could not get db snapshot");
-                return Err(CallError::StateCorrupt);
+                return future::err(Error::new("Could not estimate gas")).into_box();
             }
         };
         let state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
                 error!("Could not get state snapshot");
-                return Err(CallError::StateCorrupt);
+                return future::err(Error::new("Could not estimate gas")).into_box();
             }
         };
 
         // Extract contract deployment header.
-        let oasis_contract = state
-            .oasis_contract(transaction)
-            .map_err(|e| ExecutionError::TransactionMalformed(e))?;
+        let oasis_contract = match state.oasis_contract(transaction) {
+            Ok(contract) => contract,
+            Err(error) => return future::err(Error::new(error)).into_box(),
+        };
 
         let confidential = oasis_contract.as_ref().map_or(false, |c| c.confidential);
         if confidential {
             self.confidential_estimate_gas(transaction)
         } else {
-            self._estimate_gas(transaction, db, state)
+            let result = self._estimate_gas(transaction, db, state);
+            future::done(
+                result
+                    .map(Into::into)
+                    .map_err(|error| Error::new(error.to_string())),
+            )
+            .into_box()
         }
     }
 
@@ -852,10 +855,7 @@ impl Client {
 
     /// Estimates gas for a transaction calling a confidential contract by sending
     /// the transaction through the scheduler to be run by the compute comittee.
-    fn confidential_estimate_gas(
-        &self,
-        transaction: &SignedTransaction,
-    ) -> Result<U256, CallError> {
+    fn confidential_estimate_gas(&self, transaction: &SignedTransaction) -> BoxFuture<U256> {
         info!("estimating gas for a confidential contract");
 
         let to_addr = match transaction.action {
@@ -873,28 +873,15 @@ impl Client {
             gas: Some(transaction.gas),
         };
 
-        let response = self.block_on(record_runtime_call_result(
+        record_runtime_call_result(
             "simulate_transaction",
-            self.client.simulate_transaction(request),
-        ));
-
-        info!("finished estimating gas for a confidential contract");
-
-        match response {
-            Err(e) => Err(CallError::Execution(ExecutionError::Internal(
-                e.to_string(),
-            ))),
-            Ok(response) => {
-                // Must check that the transaction result has not errored. Otherwise, we'll
-                // just report estimateGas == 0 without giving an error.
-                match response.result {
-                    Err(e) => Err(CallError::Execution(ExecutionError::Internal(
-                        e.to_string(),
-                    ))),
-                    Ok(_result) => Ok(response.used_gas + response.refunded_gas),
-                }
-            }
-        }
+            self.client
+                .simulate_transaction(request)
+                .and_then(|r| match r.result {
+                    Err(e) => Err(Error::new(e)),
+                    Ok(_result) => Ok(r.used_gas + r.refunded_gas),
+                }),
+        )
     }
 
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
