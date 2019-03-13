@@ -40,9 +40,9 @@ impl ConfidentialCtx {
     }
 
     pub fn open_tx_data(&mut self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>, String> {
-        // `open` must be called before this method.
-        assert!(self.contract_key.is_some());
-
+        if self.contract.is_none() {
+            return Err("The confidential context must have a contract key when opening encrypted transaction data".to_string());
+        }
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
 
         let decryption = crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key)
