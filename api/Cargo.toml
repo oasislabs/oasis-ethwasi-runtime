@@ -5,11 +5,11 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 
 [dependencies]
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/debugging/km_client" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 protobuf = "~2.0"
 serde = "1.0"
 serde_derive = "1.0"
 
 [build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/debugging/km_client" }
