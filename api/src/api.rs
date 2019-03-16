@@ -3,6 +3,8 @@ use ekiden_core::runtime::runtime_api;
 runtime_api! {
     pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
 
+    pub fn estimate_gas(TransactionRequest) -> U256;
+
     pub fn execute_raw_transaction(Vec<u8>) -> ExecuteTransactionResponse;
 
     pub fn get_block_height(bool) -> U256;
