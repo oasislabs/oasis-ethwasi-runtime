@@ -10,9 +10,9 @@ extern crate ethereum_types;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate runtime_ethereum_common;
 extern crate ekiden_keymanager_client;
 extern crate ekiden_keymanager_common;
+extern crate runtime_ethereum_common;
 
 #[cfg(feature = "test")]
 extern crate ekiden_roothash_base;
@@ -56,8 +56,8 @@ use ekiden_trusted::{
 use ethcore::{
     block::{IsBlock, OpenBlock},
     error::{Error as EthcoreError, ErrorKind, ExecutionError},
-    rlp,
     receipt::Receipt as EthReceipt,
+    rlp,
     transaction::{
         Action, SignedTransaction, Transaction as EthcoreTransaction, UnverifiedTransaction,
     },
@@ -311,14 +311,12 @@ pub fn execute_raw_transaction(
 
     // Execute the transaction and handle the result.
     match transact(&mut ectx, signed) {
-        Ok(outcome) => {
-            Ok(ExecuteTransactionResponse {
-                created_contract: is_create,
-                hash: Ok(outcome.hash),
-                block_gas_limit_reached: false,
-                output: outcome.output,
-            })
-        },
+        Ok(outcome) => Ok(ExecuteTransactionResponse {
+            created_contract: is_create,
+            hash: Ok(outcome.hash),
+            block_gas_limit_reached: false,
+            output: outcome.output,
+        }),
         Err(EthcoreError(ErrorKind::Execution(ExecutionError::BlockGasLimitReached { .. }), _)) => {
             Ok(ExecuteTransactionResponse {
                 created_contract: false,
@@ -326,23 +324,21 @@ pub fn execute_raw_transaction(
                 block_gas_limit_reached: true,
                 output: Vec::new(),
             })
-        },
-        Err(err) => {
-            Ok(ExecuteTransactionResponse {
-                created_contract: false,
-                hash: Err(err.to_string()),
-                block_gas_limit_reached: false,
-                output: Vec::new(),
-            })
         }
+        Err(err) => Ok(ExecuteTransactionResponse {
+            created_contract: false,
+            hash: Err(err.to_string()),
+            block_gas_limit_reached: false,
+            output: Vec::new(),
+        }),
     }
 }
 
 struct TransactOutcome {
     /// The receipt for the applied transaction.
-	  pub receipt: EthReceipt,
-	  /// The output of the applied transaction.
-	  pub output: Vec<u8>,
+    pub receipt: EthReceipt,
+    /// The output of the applied transaction.
+    pub output: Vec<u8>,
     /// Transaction hash
     pub hash: H256,
 }
@@ -353,8 +349,10 @@ fn transact(
 ) -> core::result::Result<TransactOutcome, EthcoreError> {
     let hash = transaction.hash();
     let tx_hash = transaction.hash();
-    let outcome = ectx.block.push_transaction_with_outcome(transaction, None, true)?;
-    Ok(TransactOutcome{
+    let outcome = ectx
+        .block
+        .push_transaction_with_outcome(transaction, None, true)?;
+    Ok(TransactOutcome {
         receipt: outcome.receipt,
         output: outcome.output,
         hash: tx_hash,

@@ -211,7 +211,10 @@ impl Client {
         Client::notify_listeners(&self.listeners, f)
     }
 
-    fn notify_listeners<F: Fn(&ChainNotify)>(listeners: &Arc<RwLock<Vec<Weak<ChainNotify>>>>, f: F) {
+    fn notify_listeners<F: Fn(&ChainNotify)>(
+        listeners: &Arc<RwLock<Vec<Weak<ChainNotify>>>>,
+        f: F,
+    ) {
         for listener in &*listeners.read().unwrap() {
             if let Some(listener) = listener.upgrade() {
                 f(&*listener)

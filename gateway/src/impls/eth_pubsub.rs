@@ -34,13 +34,14 @@ use parity_rpc::v1::{
     helpers::{errors, Subscribers},
     metadata::Metadata,
     traits::EthPubSub,
-    types::{pubsub, TransactionOutcome, Log, RichHeader, H256, H64},
+    types::{pubsub, Log, RichHeader, TransactionOutcome, H256, H64},
 };
 
-use ethcore::{encoded,
-              filter::Filter as EthFilter,
-              filter::TxFilter as EthTxFilter,
-              ids::BlockId};
+use ethcore::{
+    encoded,
+    filter::{Filter as EthFilter, TxFilter as EthTxFilter},
+    ids::BlockId,
+};
 use parity_reactor::Remote;
 use parking_lot::RwLock;
 
@@ -176,16 +177,20 @@ impl ChainNotify for ChainNotificationHandler {
             // a subscription without any other filtering criteria
             let transaction_hash = match filter.transaction_hash {
                 None => continue,
-                Some(hash) => hash
+                Some(hash) => hash,
             };
 
             if transaction_hash == hash {
                 let remote = self.remote.clone();
                 self.remote.spawn({
-                    Self::notify(&remote, &subscriber, pubsub::Result::TransactionOutcome(TransactionOutcome{
-                        hash: hash.into(),
-                        output: output.clone(),
-                    }));
+                    Self::notify(
+                        &remote,
+                        &subscriber,
+                        pubsub::Result::TransactionOutcome(TransactionOutcome{
+                            hash: hash.into(),
+                            output: output.clone(),
+                        }),
+                    );
                     Ok(())
                 });
             }
@@ -212,23 +217,21 @@ impl EthPubSub for EthPubSubClient {
             (pubsub::Kind::NewHeads, None) => {
                 self.heads_subscribers.write().push(subscriber);
                 return;
-            },
+            }
             (pubsub::Kind::NewHeads, _) => {
                 errors::invalid_params("newHeads", "Expected no parameters.")
-            },
+            }
             (pubsub::Kind::Logs, Some(pubsub::Params::Logs(filter))) => {
                 self.logs_subscribers
                     .write()
                     .push(subscriber, filter.into());
                 return;
-            },
+            }
             (pubsub::Kind::Logs, _) => errors::invalid_params("logs", "Expected a filter object."),
             (pubsub::Kind::CompletedTransaction, Some(pubsub::Params::Transaction(filter))) => {
-                self.tx_subscribers
-                    .write()
-                    .push(subscriber, filter.into());
+                self.tx_subscribers.write().push(subscriber, filter.into());
                 return;
-            },
+            }
             // we don't track pending transactions currently
             (pubsub::Kind::NewPendingTransactions, _) => errors::unimplemented(None),
             _ => errors::unimplemented(None),
