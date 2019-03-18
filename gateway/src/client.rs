@@ -957,7 +957,6 @@ impl Client {
                 client
                     .execute_raw_transaction(raw.clone())
                     .and_then(move |result| {
-                        println!("subscrib RESULT FROM TRANSACTION BYTES: {}", result.output.len());
                         // Retry on BlockGasLimitReached error.
                         if result.block_gas_limit_reached {
                             if retries == 0 {
