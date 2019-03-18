@@ -9,13 +9,13 @@ license = "GPL-3.0"
 elastic-array = "0.10"
 log = "0.3"
 # rand = "0.4"
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-triehash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-memorydb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }
+triehash = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }
+memorydb = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }
 
 [dev-dependencies]
-trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "eauge/impl-invoke/return-outcome-on-transaction-push" }

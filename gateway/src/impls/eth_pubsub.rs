@@ -186,7 +186,7 @@ impl ChainNotify for ChainNotificationHandler {
                     Self::notify(
                         &remote,
                         &subscriber,
-                        pubsub::Result::TransactionOutcome(TransactionOutcome{
+                        pubsub::Result::TransactionOutcome(TransactionOutcome {
                             hash: hash.into(),
                             output: output.clone(),
                         }),
