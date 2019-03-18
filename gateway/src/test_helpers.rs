@@ -17,6 +17,8 @@ use client::ChainNotify;
 use runtime_ethereum;
 use runtime_ethereum_common::get_key;
 
+use std::vec::Vec;
+
 fn from_hex<S: AsRef<str>>(hex: S) -> Vec<u8> {
     hex::decode(hex.as_ref()).unwrap()
 }
@@ -61,6 +63,8 @@ impl ChainNotify for MockNotificationHandler {
         let mut notifications = self.log_notifications.lock().unwrap();
         notifications.push((from_block, to_block));
     }
+
+    fn notify_completed_transaction(&self, hash: H257, output: Vec<u8>) {}
 }
 
 pub fn get_test_runtime_client() -> runtime_ethereum::Client {
