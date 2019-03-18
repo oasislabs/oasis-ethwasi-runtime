@@ -77,7 +77,7 @@ pub trait ChainNotify: Send + Sync {
     /// Notifies about new log filter matches.
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
 
-    /// Notifies about a completed transaction
+    /// Notifies about a completed transaction.
     fn notify_completed_transaction(&self, hash: H256, output: Vec<u8>);
 }
 
