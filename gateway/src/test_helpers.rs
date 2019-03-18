@@ -6,14 +6,10 @@ use std::{
 
 use clap::{App, Arg};
 use ekiden_common::bytes::H256;
-use ekiden_core::{self, error::Result, futures::prelude::*};
+use ekiden_core::{error::Result, futures::prelude::*};
 use ekiden_db_trusted::{Database, DatabaseHandle};
 use ekiden_keymanager_common::StateKeyType;
-use ekiden_registry_client;
-use ekiden_roothash_client;
-use ekiden_scheduler_client;
 use ekiden_storage_base::{InsertOptions, StorageBackend};
-use ekiden_storage_client;
 use ekiden_storage_dummy::DummyStorageBackend;
 use ethcore::{encoded, ids::BlockId};
 use hex;

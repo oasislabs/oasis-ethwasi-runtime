@@ -54,6 +54,7 @@ use ekiden_trusted::{
 };
 use ethcore::{
     block::{IsBlock, OpenBlock},
+    error::{Error as EthcoreError, ErrorKind, ExecutionError},
     rlp,
     transaction::{
         Action, SignedTransaction, Transaction as EthcoreTransaction, UnverifiedTransaction,
@@ -64,6 +65,7 @@ use ethereum_api::{
     SimulateTransactionResponse, Transaction, TransactionRequest,
 };
 use ethereum_types::{Address, H256, U256};
+use runtime_ethereum_common::BLOCK_GAS_LIMIT;
 
 use self::state::Cache;
 
@@ -268,16 +270,28 @@ pub fn execute_raw_transaction(
 
     info!("execute_raw_transaction");
 
+    // Decode the transaction.
     let decoded: UnverifiedTransaction = match rlp::decode(request) {
         Ok(t) => t,
         Err(e) => {
             return Ok(ExecuteTransactionResponse {
                 hash: Err(e.to_string()),
                 created_contract: false,
+                block_gas_limit_reached: false,
             });
         }
     };
 
+    // Check that gas < block gas limit.
+    if decoded.as_unsigned().gas > U256::from(BLOCK_GAS_LIMIT) {
+        return Ok(ExecuteTransactionResponse {
+            hash: Err("Requested gas greater than block gas limit.".to_string()),
+            created_contract: false,
+            block_gas_limit_reached: false,
+        });
+    }
+
+    // Check signature.
     let is_create = decoded.as_unsigned().action == Action::Create;
     let signed = match SignedTransaction::new(decoded) {
         Ok(t) => t,
@@ -285,17 +299,33 @@ pub fn execute_raw_transaction(
             return Ok(ExecuteTransactionResponse {
                 hash: Err(e.to_string()),
                 created_contract: false,
+                block_gas_limit_reached: false,
             });
         }
     };
-    let result = transact(&mut ectx, signed).map_err(|e| e.to_string());
+
+    // Execute the transaction.
+    let result = transact(&mut ectx, signed);
+
+    // Check for BlockGasLimitReached error.
+    let block_gas_limit_reached = match result {
+        Err(EthcoreError(ErrorKind::Execution(ExecutionError::BlockGasLimitReached { .. }), _)) => {
+            true
+        }
+        _ => false,
+    };
+
     Ok(ExecuteTransactionResponse {
         created_contract: if result.is_err() { false } else { is_create },
-        hash: result,
+        hash: result.map_err(|e| e.to_string()),
+        block_gas_limit_reached: block_gas_limit_reached,
     })
 }
 
-fn transact(ectx: &mut EthereumContext, transaction: SignedTransaction) -> Result<H256> {
+fn transact(
+    ectx: &mut EthereumContext,
+    transaction: SignedTransaction,
+) -> core::result::Result<H256, EthcoreError> {
     let tx_hash = transaction.hash();
     ectx.block.push_transaction(transaction, None)?;
     Ok(tx_hash)
@@ -353,6 +383,7 @@ pub fn simulate_transaction(
     let tx = match make_unsigned_transaction(&ectx.cache, request) {
         Ok(t) => t,
         Err(e) => {
+            info!("simulate_transaction returning error: {:?}", e);
             return Ok(SimulateTransactionResponse {
                 used_gas: U256::from(0),
                 refunded_gas: U256::from(0),
@@ -363,6 +394,7 @@ pub fn simulate_transaction(
     let exec = match evm::simulate_transaction(&ectx.cache, &tx) {
         Ok(exec) => exec,
         Err(e) => {
+            info!("simulate_transaction returning error: {:?}", e);
             return Ok(SimulateTransactionResponse {
                 used_gas: U256::from(0),
                 refunded_gas: U256::from(0),
@@ -371,6 +403,7 @@ pub fn simulate_transaction(
         }
     };
 
+    info!("simulate_transaction returning success: {:?}", exec);
     Ok(SimulateTransactionResponse {
         used_gas: exec.gas_used,
         refunded_gas: exec.refunded,

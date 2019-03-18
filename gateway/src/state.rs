@@ -268,8 +268,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use ekiden_storage_dummy::DummyStorageBackend;
-
     use super::*;
     use ethereum_types::{Address, H256, U256};
     use runtime_ethereum_common::get_key;
