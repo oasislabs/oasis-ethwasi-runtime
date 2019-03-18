@@ -440,3 +440,13 @@ pub fn simulate_transaction(
         result: Ok(exec.output),
     })
 }
+
+pub fn estimate_gas(request: &TransactionRequest, ctx: &mut RuntimeCallContext) -> Result<U256> {
+    let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
+
+    info!("estimate_gas");
+    let tx = make_unsigned_transaction(&ectx.cache, request)?;
+    let exec = evm::simulate_transaction(&ectx.cache, &tx)?;
+
+    Ok(exec.gas_used + exec.refunded)
+}

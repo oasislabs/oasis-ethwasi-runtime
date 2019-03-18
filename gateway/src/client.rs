@@ -881,15 +881,7 @@ impl Client {
             gas: Some(transaction.gas),
         };
 
-        record_runtime_call_result(
-            "simulate_transaction",
-            self.client
-                .simulate_transaction(request)
-                .and_then(|r| match r.result {
-                    Err(e) => Err(Error::new(e)),
-                    Ok(_result) => Ok(r.used_gas + r.refunded_gas),
-                }),
-        )
+        record_runtime_call_result("simulate_transaction", self.client.estimate_gas(request))
     }
 
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
