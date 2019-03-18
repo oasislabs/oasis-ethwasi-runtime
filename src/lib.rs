@@ -309,7 +309,7 @@ pub fn execute_raw_transaction(
         }
     };
 
-    // execute the transaction and handle the result
+    // Execute the transaction and handle the result.
     match transact(&mut ectx, signed) {
         Ok(outcome) => {
             Ok(ExecuteTransactionResponse {
