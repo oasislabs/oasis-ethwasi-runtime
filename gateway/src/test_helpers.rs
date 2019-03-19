@@ -17,11 +17,6 @@ use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
 
 use client::ChainNotify;
 use runtime_ethereum;
-use runtime_ethereum_common::get_key;
-
-fn from_hex<S: AsRef<str>>(hex: S) -> Vec<u8> {
-    hex::decode(hex.as_ref()).unwrap()
-}
 
 pub struct MockNotificationHandler {
     headers: Mutex<Vec<encoded::Header>>,
@@ -145,7 +140,7 @@ impl<'de> Visitor<'de> for StorageVisitor {
         while let Some(value) = seq.next_element()? {
             let hex: String = value;
             storage
-                .insert(from_hex(hex), 10, InsertOptions::default())
+                .insert(hex::decode(hex).unwrap(), 10, InsertOptions::default())
                 .wait()
                 .unwrap();
         }
