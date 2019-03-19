@@ -37,7 +37,6 @@ use ekiden_keymanager_client::use_key_manager_contract;
 
 use std::sync::Arc;
 
-use bytes::Bytes;
 use ekiden_core::error::{Error, Result};
 use ekiden_storage_base::StorageBackend;
 #[cfg(not(target_env = "sgx"))]
@@ -347,7 +346,6 @@ fn transact(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
 ) -> core::result::Result<TransactOutcome, EthcoreError> {
-    let hash = transaction.hash();
     let tx_hash = transaction.hash();
     let outcome = ectx
         .block
