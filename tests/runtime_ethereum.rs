@@ -27,34 +27,46 @@ fn test_create_balance() {
     let init_bal =
         runtime_ethereum::get_account_balance(&client.keypair.address(), &mut test::dummy_ctx())
             .unwrap();
-    let contract_bal = U256::from(10);
-    let remaining_bal = init_bal - contract_bal;
 
     let init_nonce =
         runtime_ethereum::get_account_nonce(&client.keypair.address(), &mut test::dummy_ctx())
             .unwrap();
 
     let code = hex::decode("3331600055").unwrap(); // SSTORE(0x0, BALANCE(CALLER()))
-    let (_, contract) = client.create_contract(code, &contract_bal);
+    let contract_bal = U256::from(10);
+    let (tx_hash, contract) = client.create_contract(code, &contract_bal);
+    let receipt = client.receipt(tx_hash);
+    let gas_used = receipt.gas_used.unwrap();
 
+    // Sender's remaining balance should be initial balance - contract balance - gas fee.
+    let expected_remaining_bal = init_bal - contract_bal - gas_used * client.gas_price;
+
+    // Check that sender's balance was updated correctly.
     assert_eq!(
         runtime_ethereum::get_account_balance(&client.keypair.address(), &mut test::dummy_ctx())
             .unwrap(),
-        remaining_bal
+        expected_remaining_bal
     );
+
+    // Check that sender's nonce was updated.
     assert_eq!(
         runtime_ethereum::get_account_nonce(&client.keypair.address(), &mut test::dummy_ctx())
             .unwrap(),
         init_nonce + U256::one()
     );
+
+    // Check that contract balance was updated correctly.
     assert_eq!(
         runtime_ethereum::get_account_balance(&contract, &mut test::dummy_ctx()).unwrap(),
         contract_bal
     );
+
+    // Check that sender balance during deploy transaction was:
+    // initial balance - contract balance - gas limit * gas price
     assert_eq!(
         runtime_ethereum::get_storage_at(&(contract, H256::zero()), &mut test::dummy_ctx())
             .unwrap(),
-        H256::from(&remaining_bal)
+        H256::from(init_bal - contract_bal - client.gas_limit * client.gas_price)
     );
 }
 
