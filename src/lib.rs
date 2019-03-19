@@ -10,10 +10,9 @@ extern crate ethereum_types;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate runtime_ethereum_common;
-
 extern crate ekiden_keymanager_client;
 extern crate ekiden_keymanager_common;
+extern crate runtime_ethereum_common;
 
 #[cfg(feature = "test")]
 extern crate ekiden_roothash_base;
@@ -22,6 +21,7 @@ extern crate ethkey;
 
 #[cfg(feature = "test")]
 extern crate byteorder;
+extern crate bytes;
 #[cfg(feature = "test")]
 extern crate elastic_array;
 #[cfg(feature = "test")]
@@ -37,6 +37,7 @@ use ekiden_keymanager_client::use_key_manager_contract;
 
 use std::sync::Arc;
 
+use bytes::Bytes;
 use ekiden_core::error::{Error, Result};
 use ekiden_storage_base::StorageBackend;
 #[cfg(not(target_env = "sgx"))]
@@ -55,6 +56,7 @@ use ekiden_trusted::{
 use ethcore::{
     block::{IsBlock, OpenBlock},
     error::{Error as EthcoreError, ErrorKind, ExecutionError},
+    receipt::Receipt as EthReceipt,
     rlp,
     transaction::{
         Action, SignedTransaction, Transaction as EthcoreTransaction, UnverifiedTransaction,
@@ -278,6 +280,7 @@ pub fn execute_raw_transaction(
                 hash: Err(e.to_string()),
                 created_contract: false,
                 block_gas_limit_reached: false,
+                output: Vec::new(),
             });
         }
     };
@@ -288,6 +291,7 @@ pub fn execute_raw_transaction(
             hash: Err("Requested gas greater than block gas limit.".to_string()),
             created_contract: false,
             block_gas_limit_reached: false,
+            output: Vec::new(),
         });
     }
 
@@ -300,35 +304,59 @@ pub fn execute_raw_transaction(
                 hash: Err(e.to_string()),
                 created_contract: false,
                 block_gas_limit_reached: false,
+                output: Vec::new(),
             });
         }
     };
 
-    // Execute the transaction.
-    let result = transact(&mut ectx, signed);
-
-    // Check for BlockGasLimitReached error.
-    let block_gas_limit_reached = match result {
+    // Execute the transaction and handle the result.
+    match transact(&mut ectx, signed) {
+        Ok(outcome) => Ok(ExecuteTransactionResponse {
+            created_contract: is_create,
+            hash: Ok(outcome.hash),
+            block_gas_limit_reached: false,
+            output: outcome.output,
+        }),
         Err(EthcoreError(ErrorKind::Execution(ExecutionError::BlockGasLimitReached { .. }), _)) => {
-            true
+            Ok(ExecuteTransactionResponse {
+                created_contract: false,
+                hash: Err("block gas limit reached".to_string()),
+                block_gas_limit_reached: true,
+                output: Vec::new(),
+            })
         }
-        _ => false,
-    };
+        Err(err) => Ok(ExecuteTransactionResponse {
+            created_contract: false,
+            hash: Err(err.to_string()),
+            block_gas_limit_reached: false,
+            output: Vec::new(),
+        }),
+    }
+}
 
-    Ok(ExecuteTransactionResponse {
-        created_contract: if result.is_err() { false } else { is_create },
-        hash: result.map_err(|e| e.to_string()),
-        block_gas_limit_reached: block_gas_limit_reached,
-    })
+struct TransactOutcome {
+    /// The receipt for the applied transaction.
+    pub receipt: EthReceipt,
+    /// The output of the applied transaction.
+    pub output: Vec<u8>,
+    /// Transaction hash
+    pub hash: H256,
 }
 
 fn transact(
     ectx: &mut EthereumContext,
     transaction: SignedTransaction,
-) -> core::result::Result<H256, EthcoreError> {
+) -> core::result::Result<TransactOutcome, EthcoreError> {
+    let hash = transaction.hash();
     let tx_hash = transaction.hash();
-    ectx.block.push_transaction(transaction, None)?;
-    Ok(tx_hash)
+    let outcome = ectx
+        .block
+        .push_transaction_with_outcome(transaction, None, true)?;
+    Ok(TransactOutcome {
+        receipt: outcome.receipt,
+        output: outcome.output,
+        hash: tx_hash,
+    })
 }
 
 fn make_unsigned_transaction(

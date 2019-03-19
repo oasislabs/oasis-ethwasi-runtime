@@ -12,6 +12,7 @@ use ekiden_keymanager_common::StateKeyType;
 use ekiden_storage_base::{InsertOptions, StorageBackend};
 use ekiden_storage_dummy::DummyStorageBackend;
 use ethcore::{encoded, ids::BlockId};
+use ethereum_types;
 use hex;
 use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
 
@@ -58,6 +59,8 @@ impl ChainNotify for MockNotificationHandler {
         let mut notifications = self.log_notifications.lock().unwrap();
         notifications.push((from_block, to_block));
     }
+
+    fn notify_completed_transaction(&self, hash: ethereum_types::H256, output: Vec<u8>) {}
 }
 
 pub fn get_test_runtime_client() -> runtime_ethereum::Client {
