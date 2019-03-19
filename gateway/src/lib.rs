@@ -57,15 +57,7 @@ extern crate ekiden_runtime_client;
 #[macro_use]
 extern crate ekiden_instrumentation;
 extern crate ekiden_keymanager_common;
-#[cfg(test)]
-extern crate ekiden_registry_client;
-#[cfg(test)]
-extern crate ekiden_roothash_client;
-#[cfg(test)]
-extern crate ekiden_scheduler_client;
 extern crate ekiden_storage_base;
-#[cfg(test)]
-extern crate ekiden_storage_client;
 #[cfg(test)]
 extern crate ekiden_storage_dummy;
 extern crate ethereum_api;

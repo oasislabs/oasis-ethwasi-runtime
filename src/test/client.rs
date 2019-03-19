@@ -74,10 +74,7 @@ impl Client {
             gas: None,
         };
 
-        with_batch_handler(self.timestamp, |ctx| {
-            let response = simulate_transaction(&tx, ctx).unwrap();
-            response.used_gas + response.refunded_gas
-        })
+        with_batch_handler(self.timestamp, |ctx| estimate_gas(&tx, ctx).unwrap())
     }
 
     pub fn confidential_estimate_gas(

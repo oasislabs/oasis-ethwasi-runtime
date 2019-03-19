@@ -88,6 +88,20 @@ The genesis block contains the following accounts:
 * `1cca28600d7491365520b31b466f88647b9839ec` is a test account with the following
   private key: `c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179`.
 
+You can import these accounts into MetaMask for use with DApps:
+
+![](metamask-localhost.png)
+
+![](metamask-importaccount.png)
+
+![](metamask-privatekey.png)
+
+### Develop DApps
+This image runs the key manager with an insecure built-in set of keys.
+To test confidential contracts, use the public key `0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f` to verify the key manager's signatures.
+See the Secret Ballot example's [app.js](https://github.com/oasislabs/secret-ballot/blob/9dbdc82512db042ae37d55059c31eae3befe6e7b/app/javascripts/app.js#L155-L158) for how to configure web3c.js to use this key in a DApp.
+You can [try the Secret Ballot example with this key](https://cdn.oasiscloud.io/ballot/index.html?insecureTestingKeys=1) online.
+
 ### Stop the container
 Run
 

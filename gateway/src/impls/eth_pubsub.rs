@@ -34,10 +34,14 @@ use parity_rpc::v1::{
     helpers::{errors, Subscribers},
     metadata::Metadata,
     traits::EthPubSub,
-    types::{pubsub, Log, RichHeader, H256, H64},
+    types::{pubsub, Log, RichHeader, TransactionOutcome, H256, H64},
 };
 
-use ethcore::{encoded, filter::Filter as EthFilter, ids::BlockId};
+use ethcore::{
+    encoded,
+    filter::{Filter as EthFilter, TxFilter as EthTxFilter},
+    ids::BlockId,
+};
 use parity_reactor::Remote;
 use parking_lot::RwLock;
 
@@ -50,6 +54,7 @@ pub struct EthPubSubClient {
     handler: Arc<ChainNotificationHandler>,
     heads_subscribers: Arc<RwLock<Subscribers<PubSubClient>>>,
     logs_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthFilter)>>>,
+    tx_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthTxFilter)>>>,
 }
 
 impl EthPubSubClient {
@@ -57,6 +62,7 @@ impl EthPubSubClient {
     pub fn new(client: Arc<Client>, remote: Remote) -> Self {
         let heads_subscribers = Arc::new(RwLock::new(Subscribers::default()));
         let logs_subscribers = Arc::new(RwLock::new(Subscribers::default()));
+        let tx_subscribers = Arc::new(RwLock::new(Subscribers::default()));
 
         EthPubSubClient {
             handler: Arc::new(ChainNotificationHandler {
@@ -64,9 +70,11 @@ impl EthPubSubClient {
                 remote,
                 heads_subscribers: heads_subscribers.clone(),
                 logs_subscribers: logs_subscribers.clone(),
+                tx_subscribers: tx_subscribers.clone(),
             }),
             heads_subscribers,
             logs_subscribers,
+            tx_subscribers,
         }
     }
 
@@ -82,6 +90,7 @@ pub struct ChainNotificationHandler {
     remote: Remote,
     heads_subscribers: Arc<RwLock<Subscribers<PubSubClient>>>,
     logs_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthFilter)>>>,
+    tx_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthTxFilter)>>>,
 }
 
 impl ChainNotificationHandler {
@@ -158,6 +167,35 @@ impl ChainNotify for ChainNotificationHandler {
             });
         }
     }
+
+    fn notify_completed_transaction(&self, hash: ethereum_types::H256, output: Vec<u8>) {
+        for &(ref subscriber, ref filter) in self.tx_subscribers.read().values() {
+            let mut filter = filter.clone();
+
+            // since transaction_hash is the only filter property, it should be set
+            // otherwise the gateway would have to sent all completed transactions to
+            // a subscription without any other filtering criteria
+            let transaction_hash = match filter.transaction_hash {
+                None => continue,
+                Some(hash) => hash,
+            };
+
+            if transaction_hash == hash {
+                let remote = self.remote.clone();
+                self.remote.spawn({
+                    Self::notify(
+                        &remote,
+                        &subscriber,
+                        pubsub::Result::TransactionOutcome(TransactionOutcome {
+                            hash: hash.into(),
+                            output: output.clone(),
+                        }),
+                    );
+                    Ok(())
+                });
+            }
+        }
+    }
 }
 
 impl EthPubSub for EthPubSubClient {
@@ -190,6 +228,10 @@ impl EthPubSub for EthPubSubClient {
                 return;
             }
             (pubsub::Kind::Logs, _) => errors::invalid_params("logs", "Expected a filter object."),
+            (pubsub::Kind::CompletedTransaction, Some(pubsub::Params::Transaction(filter))) => {
+                self.tx_subscribers.write().push(subscriber, filter.into());
+                return;
+            }
             // we don't track pending transactions currently
             (pubsub::Kind::NewPendingTransactions, _) => errors::unimplemented(None),
             _ => errors::unimplemented(None),
@@ -203,7 +245,8 @@ impl EthPubSub for EthPubSubClient {
         info!("unsubscribe(id: {:?})", id);
         let res = self.heads_subscribers.write().remove(&id).is_some();
         let res2 = self.logs_subscribers.write().remove(&id).is_some();
+        let res3 = self.tx_subscribers.write().remove(&id).is_some();
 
-        Ok(res || res2)
+        Ok(res || res2 || res3)
     }
 }
