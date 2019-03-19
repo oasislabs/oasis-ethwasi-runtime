@@ -1,4 +1,5 @@
 use ethereum_types::{Address, Bloom, H256, H512, U256};
+use std::vec::Vec;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum BlockId {
@@ -98,6 +99,7 @@ pub struct ExecuteTransactionResponse {
     pub hash: Result<H256, String>,
     pub created_contract: bool,
     pub block_gas_limit_reached: bool,
+    pub output: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

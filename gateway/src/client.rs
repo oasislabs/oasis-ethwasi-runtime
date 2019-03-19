@@ -1,6 +1,7 @@
 use std::{
     marker::{Send, Sync},
     sync::{Arc, Mutex, RwLock, Weak},
+    vec::Vec,
 };
 
 use bytes::Bytes;
@@ -75,6 +76,9 @@ pub trait ChainNotify: Send + Sync {
 
     /// Notifies about new log filter matches.
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
+
+    /// Notifies about a completed transaction.
+    fn notify_completed_transaction(&self, hash: H256, output: Vec<u8>);
 }
 
 pub struct Client {
@@ -88,7 +92,7 @@ pub struct Client {
     storage_backend: Arc<StorageBackend>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
-    listeners: RwLock<Vec<Weak<ChainNotify>>>,
+    listeners: Arc<RwLock<Vec<Weak<ChainNotify>>>>,
     gas_price: U256,
 }
 
@@ -122,7 +126,7 @@ impl Client {
             storage_backend: backend,
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
-            listeners: RwLock::new(vec![]),
+            listeners: Arc::new(RwLock::new(vec![])),
             gas_price: gas_price,
         }
     }
@@ -141,7 +145,7 @@ impl Client {
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
             notified_block_number: Mutex::new(0),
-            listeners: RwLock::new(vec![]),
+            listeners: Arc::new(RwLock::new(vec![])),
             gas_price: U256::from(1_000_000_000),
         }
     }
@@ -204,7 +208,14 @@ impl Client {
 
     /// Notify `ChainNotify` listeners.
     fn notify<F: Fn(&ChainNotify)>(&self, f: F) {
-        for listener in &*self.listeners.read().unwrap() {
+        Client::notify_listeners(&self.listeners, f)
+    }
+
+    fn notify_listeners<F: Fn(&ChainNotify)>(
+        listeners: &Arc<RwLock<Vec<Weak<ChainNotify>>>>,
+        f: F,
+    ) {
+        for listener in &*listeners.read().unwrap() {
             if let Some(listener) = listener.upgrade() {
                 f(&*listener)
             }
@@ -932,9 +943,12 @@ impl Client {
         // If we get a BlockGasLimitReached error, retry up to 5 times.
         const MAX_RETRIES: usize = 5;
 
+        let listeners = Arc::clone(&self.listeners);
         future::loop_fn(
             (MAX_RETRIES, self.client.clone(), raw, oasis_contract),
             move |(retries, client, raw, oasis_contract)| {
+                let listeners = Arc::clone(&listeners);
+
                 client
                     .execute_raw_transaction(raw.clone())
                     .and_then(move |result| {
@@ -968,6 +982,10 @@ impl Client {
                         match result.hash {
                             Ok(hash) => {
                                 measure_counter_inc!("runtime_call_succeeded");
+                                Client::notify_listeners(&listeners, |listener| {
+                                    let output = result.output.clone();
+                                    listener.notify_completed_transaction(hash, output);
+                                });
                                 Ok(future::Loop::Break(hash))
                             }
                             Err(e) => {
