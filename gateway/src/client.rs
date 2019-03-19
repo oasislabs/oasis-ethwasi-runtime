@@ -145,7 +145,7 @@ impl Client {
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
             notified_block_number: Mutex::new(0),
-            listeners: RwLock::new(vec![]),
+            listeners: Arc::new(RwLock::new(vec![])),
             gas_price: U256::from(1_000_000_000),
         }
     }
