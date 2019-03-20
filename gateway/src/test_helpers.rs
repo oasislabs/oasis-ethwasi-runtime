@@ -60,7 +60,7 @@ impl ChainNotify for MockNotificationHandler {
         notifications.push((from_block, to_block));
     }
 
-    fn notify_completed_transaction(&self, hash: ethereum_types::H256, output: Vec<u8>) {}
+    fn notify_completed_transaction(&self, _hash: ethereum_types::H256, _output: Vec<u8>) {}
 }
 
 pub fn get_test_runtime_client() -> runtime_ethereum::Client {
