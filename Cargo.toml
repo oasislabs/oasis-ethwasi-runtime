@@ -8,11 +8,11 @@ build = "build.rs"
 ethereum-api = { path = "./api" }
 runtime-ethereum-common = { path = "./common" }
 
-common-types = { git = "https://github.com/oasislabs/parity", branch = "eauge/invoke/filter-on-transaction-address"}
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "eauge/invoke/filter-on-transaction-address"}
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "eauge/invoke/filter-on-transaction-address"}
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "eauge/invoke/filter-on-transaction-address"}
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "eauge/invoke/filter-on-transaction-address"}
+common-types = { git = "https://github.com/oasislabs/parity", branch = "master"}
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "master"}
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "master"}
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "master"}
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "master"}
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
