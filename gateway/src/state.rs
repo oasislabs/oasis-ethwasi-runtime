@@ -339,9 +339,7 @@ mod tests {
         assert_eq!(logs.len(), 4);
     }
 
-    // TODO: re-enable this test with new mock data
     #[test]
-    #[ignore]
     fn test_account_state() {
         let db = MockDb::new();
 
@@ -351,10 +349,10 @@ mod tests {
         // get ethstate at latest block
         let ethstate = state.get_ethstate_at(BlockId::Latest).unwrap();
 
-        // an account in the genesis block containing 100 ETH, no storage, and no code
+        // an account in the genesis block containing 100000000000 ETH, no storage, and no code
         let balance_only = Address::from("7110316b618d20d0c44728ac2a3d683536ea682b");
         let balance = ethstate.balance(&balance_only).unwrap();
-        assert_eq!(balance, U256::from("56bc75e2d63100000"));
+        assert_eq!(balance, U256::from("1431e0fae6d7217caa0000000"));
         let code = ethstate.code(&balance_only).unwrap().unwrap();
         assert_eq!(code.len(), 0);
         let val = ethstate.storage_at(&balance_only, &H256::zero()).unwrap();
@@ -420,9 +418,7 @@ mod tests {
         assert_eq!(best_block.header_view().number(), 10);
     }
 
-    // TODO: re-enable this test with mock data
     #[test]
-    #[ignore]
     fn test_default_block_parameter() {
         let db = MockDb::new();
 
