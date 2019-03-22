@@ -12,7 +12,7 @@ use ethcore::{
     engines::EthEngine,
     error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
-    filter::Filter as EthcoreFilter,
+    filter::{Filter as EthcoreFilter, TxEntry as EthTxEntry},
     header::BlockNumber,
     ids::{BlockId, TransactionId},
     receipt::LocalizedReceipt,
@@ -78,7 +78,12 @@ pub trait ChainNotify: Send + Sync {
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
 
     /// Notifies about a completed transaction.
-    fn notify_completed_transaction(&self, hash: H256, output: Vec<u8>);
+    fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>);
+}
+
+pub struct CheckedTransaction {
+    pub from_address: Address,
+    pub contract: Option<OasisContract>,
 }
 
 pub struct Client {
@@ -889,7 +894,7 @@ impl Client {
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
     /// and that the contract header, if present, is valid. Returns the OasisContract (or None
     /// if no header is present), or an error message if any check fails.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Option<OasisContract>, String> {
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<CheckedTransaction, String> {
         // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
@@ -925,8 +930,12 @@ impl Client {
                 return Err("Could not parse header".to_string());
             }
         };
+
         let oasis_contract = state.oasis_contract(&signed_transaction)?;
-        Ok(oasis_contract)
+        Ok(CheckedTransaction {
+            from_address: signed_transaction.sender(),
+            contract: oasis_contract,
+        })
     }
 
     /// Submit raw transaction to the current leader.
@@ -934,11 +943,13 @@ impl Client {
     /// This method returns immediately and does not wait for the transaction to
     /// be confirmed.
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
-        let oasis_contract = match self.precheck_transaction(&raw) {
-            Ok(contract) => contract,
+        let checked_transaction = match self.precheck_transaction(&raw) {
+            Ok(transaction) => transaction,
             Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
+        let oasis_contract = checked_transaction.contract;
+        let from_address = checked_transaction.from_address;
         // If we get a BlockGasLimitReached error, retry up to 5 times.
         const MAX_RETRIES: usize = 5;
 
@@ -983,7 +994,13 @@ impl Client {
                                 measure_counter_inc!("runtime_call_succeeded");
                                 Client::notify_listeners(&listeners, |listener| {
                                     let output = result.output.clone();
-                                    listener.notify_completed_transaction(hash, output);
+                                    listener.notify_completed_transaction(
+                                        &EthTxEntry {
+                                            from_address: from_address,
+                                            transaction_hash: hash,
+                                        },
+                                        output,
+                                    );
                                 });
                                 Ok(future::Loop::Break(hash))
                             }
