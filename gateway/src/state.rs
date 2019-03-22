@@ -296,7 +296,7 @@ mod tests {
     fn test_best_block() {
         let db = MockDb::new();
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
-        assert_eq!(state.best_block_number(), 4);
+        assert_eq!(state.best_block_number(), 10);
     }
 
     #[test]
@@ -310,11 +310,17 @@ mod tests {
 
         // all blocks
         let blocks = vec![
-            H256::from("3546adf1c89e32acd11093f6f78468f5db413a207843aded872397821ea685ae"),
-            H256::from("9a4ffe2733a837c80d0b7e2fd63b838806e3b8294dab3ad86249619b28fd9526"),
-            H256::from("613afac8fd33fd7a35b8928e68f6abc031ca8e16c35caa2eaa7518c4e753cffc"),
-            H256::from("75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e"),
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118"),
+            H256::from("9b26126b79590cf25dea37b63a513aefd7e5d775124478ee2118988bffec6dd8"),
+            H256::from("155032cef8c377f1aa81a0b968852ea552c3944f2b2addc89197b53e5f0ed618"),
+            H256::from("b71fb084bd34f31dca06a3f47b3c182ba7f8848dd25e45f36413bf6047a96b07"),
+            H256::from("32185fcbe326513f77f85135dc5a913b1e5a645076e5ed2e34bc6ec7bc3268d4"),
+            H256::from("779d5d6d648b5dc2136d8aefa50dc99c960626f6c52ed4b06045835de8b5c70d"),
+            H256::from("e34d21062a4b605fda1e2d4b832fef615bd90d2704d1bbe209b1c2cb8e03905d"),
+            H256::from("b1a04a31b23c3ad0dccf0c757a94463cfca1265966bc66efaf08a427e668e088"),
+            H256::from("bac57123063dd9cf9a9406996a6ec6d3f5ab93cd16a05318365784477f30f8a5"),
+            H256::from("834deb56b3560fff98cbbb72dc0ea1e890cc8c32d675c80d52cab70ffbbd817f"),
+            H256::from("bacdbc2ed8161be77ed20a490e71f080017a39a1e81975e3a732da3e3d1b416b"),
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778"),
         ];
 
         // query over all blocks
@@ -329,8 +335,8 @@ mod tests {
         // get logs
         let logs = state.logs(blocks, |entry| filter.matches(entry), filter.limit);
 
-        // one log entry expected
-        assert_eq!(logs.len(), 1);
+        // four logs expected
+        assert_eq!(logs.len(), 4);
     }
 
     // TODO: re-enable this test with new mock data
@@ -369,15 +375,15 @@ mod tests {
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
-        // get the transaction from block 4
+        // get the transaction from block 10
         let tx = state
             .transaction_address(&H256::from(
-                "0x13519e194348f7492afa783639c35185d3e81015c6aa19d5598b4a5de08eec9f",
+                "0x584be3ae3b766f4ca4353ab3ee8e54bab4bda00aa264165c5792a868496c568f",
             ))
             .and_then(|addr| BlockProvider::transaction(&state, &addr))
             .unwrap();
 
-        assert_eq!(tx.block_number, 4);
+        assert_eq!(tx.block_number, 10);
     }
 
     #[test]
@@ -387,9 +393,10 @@ mod tests {
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
+        // get the transaction from block 10
         let receipt = state
             .transaction_address(&H256::from(
-                "0x13519e194348f7492afa783639c35185d3e81015c6aa19d5598b4a5de08eec9f",
+                "0x584be3ae3b766f4ca4353ab3ee8e54bab4bda00aa264165c5792a868496c568f",
             ))
             .and_then(|addr| state.transaction_receipt(&addr))
             .unwrap();
@@ -410,7 +417,7 @@ mod tests {
             .and_then(|hash| state.block(&hash))
             .unwrap();
 
-        assert_eq!(best_block.header_view().number(), 4);
+        assert_eq!(best_block.header_view().number(), 10);
     }
 
     // TODO: re-enable this test with mock data

@@ -1016,30 +1016,30 @@ mod tests {
         // start with best block
         let hashes = Client::last_hashes(
             &state,
-            &H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118"),
+            &H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778"),
         );
 
         assert_eq!(
             hashes[0],
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
         assert_eq!(
             hashes[1],
-            H256::from("75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e")
+            H256::from("bacdbc2ed8161be77ed20a490e71f080017a39a1e81975e3a732da3e3d1b416b")
         );
         assert_eq!(
             hashes[2],
-            H256::from("613afac8fd33fd7a35b8928e68f6abc031ca8e16c35caa2eaa7518c4e753cffc")
+            H256::from("834deb56b3560fff98cbbb72dc0ea1e890cc8c32d675c80d52cab70ffbbd817f")
         );
         assert_eq!(
             hashes[3],
-            H256::from("9a4ffe2733a837c80d0b7e2fd63b838806e3b8294dab3ad86249619b28fd9526")
+            H256::from("bac57123063dd9cf9a9406996a6ec6d3f5ab93cd16a05318365784477f30f8a5")
         );
         assert_eq!(
             hashes[4],
-            H256::from("3546adf1c89e32acd11093f6f78468f5db413a207843aded872397821ea685ae")
+            H256::from("b1a04a31b23c3ad0dccf0c757a94463cfca1265966bc66efaf08a427e668e088")
         );
-        assert_eq!(hashes[5], H256::zero());
+        assert_eq!(hashes[11], H256::zero());
     }
 
     #[test]
@@ -1050,13 +1050,13 @@ mod tests {
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         let envinfo = Client::get_env_info(&state);
-        assert_eq!(envinfo.number, 5);
+        assert_eq!(envinfo.number, 11);
         assert_eq!(envinfo.author, Address::default());
-        assert_eq!(envinfo.timestamp, 1539086487);
+        assert_eq!(envinfo.timestamp, 1553202944);
         assert_eq!(envinfo.difficulty, U256::zero());
         assert_eq!(
             envinfo.last_hashes[0],
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
     }
 
@@ -1068,12 +1068,12 @@ mod tests {
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
-        // blocks 1...4
-        let headers = Client::headers_since(&state, 1, 4, 256);
-        assert_eq!(headers.len(), 4);
+        // blocks 1...10
+        let headers = Client::headers_since(&state, 1, 10, 256);
+        assert_eq!(headers.len(), 10);
         assert_eq!(
-            &headers[3].hash(),
-            &H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            &headers[9].hash(),
+            &H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
     }
 
@@ -1090,7 +1090,7 @@ mod tests {
         assert_eq!(client.max_block_number(id_latest, id_2), id_latest);
 
         let id_3 = BlockId::Hash(H256::from(
-            "75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e",
+            "32185fcbe326513f77f85135dc5a913b1e5a645076e5ed2e34bc6ec7bc3268d4",
         ));
         assert_eq!(client.max_block_number(id_3, id_2), id_3);
     }
@@ -1129,15 +1129,15 @@ mod tests {
         client.new_blocks();
 
         let headers = handler.get_notified_headers();
-        assert_eq!(headers.len(), 4);
+        assert_eq!(headers.len(), 10);
         assert_eq!(
-            headers[3].hash(),
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            headers[9].hash(),
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
 
         let log_notifications = handler.get_log_notifications();
         assert_eq!(log_notifications.len(), 1);
         assert_eq!(log_notifications[0].0, BlockId::Number(1));
-        assert_eq!(log_notifications[0].1, BlockId::Number(4));
+        assert_eq!(log_notifications[0].1, BlockId::Number(10));
     }
 }
