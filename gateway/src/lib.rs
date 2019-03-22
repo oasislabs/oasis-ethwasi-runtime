@@ -27,6 +27,7 @@ extern crate parking_lot;
 extern crate rayon;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde;
 
 extern crate jsonrpc_core;
 #[macro_use]
@@ -131,7 +132,7 @@ pub fn start(
 
     run::execute(
         client,
-        Some(snapshot_manager),
+        snapshot_manager,
         storage,
         environment,
         pubsub_interval_secs,
