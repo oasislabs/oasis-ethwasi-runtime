@@ -44,6 +44,8 @@ docker build --pull --rm --force-rm \
   --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=${git_commit_sha} \
   --build-arg RUNTIME_ETHEREUM_BUILD_IMAGE_TAG=${docker_image_tag} \
   --build-arg OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=${base_image_tag} \
+  --build-arg "RUNTIME_BUILD_EXTRA_ARGS=${RUNTIME_BUILD_EXTRA_ARGS:-}" \
+  --build-arg "GATEWAY_BUILD_EXTRA_ARGS=${GATEWAY_BUILD_EXTRA_ARGS:-}" \
   -t oasislabs/ekiden-runtime-ethereum:${docker_image_tag} \
   docker/ekiden-runtime-ethereum
 set -x

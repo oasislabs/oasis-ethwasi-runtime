@@ -1,5 +1,8 @@
 ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest
 
+# Load a reference testnet base image
+FROM oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG} as testnet
+
 # TODO: add arg to override this default image
 FROM oasislabs/development:0.2.0 as builder
 
@@ -68,7 +71,7 @@ RUN eval $(ssh-agent -s) && \
       ekiden-tools
 
 # Build the runtime (benchmark version)
-COPY --from=docker.io/oasislabs/testnet:latest /ekiden/lib/ekiden-keymanager-trusted.so /workdir/
+COPY --from=testnet /ekiden/lib/ekiden-keymanager-trusted.so /workdir/
 RUN eval $(ssh-agent -s) && \
     ssh-add && \
     git config --global url."ssh://git@github.com".insteadOf "https://github.com" && \
@@ -92,7 +95,7 @@ RUN eval $(ssh-agent -s) && \
     cd benchmark && \
     make
 
-FROM docker.io/oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG}
+FROM testnet
 
 ARG RUNTIME_ETHEREUM_COMMIT_SHA
 ARG RUNTIME_ETHEREUM_BUILD_IMAGE_TAG

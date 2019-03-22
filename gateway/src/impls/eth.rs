@@ -601,8 +601,12 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.estimate_gas(&signed, Self::get_block_id(num));
-        Box::new(future::done(result.map(Into::into).map_err(errors::call)))
+        Box::new(
+            self.client
+                .estimate_gas(&signed, Self::get_block_id(num))
+                .map(Into::into)
+                .map_err(errors::execution),
+        )
     }
 
     fn compile_lll(&self, _: String) -> Result<Bytes> {

@@ -1,0 +1,21 @@
+#!/bin/sh -e
+
+sv start aesm
+sv start ias-proxy
+
+export \
+    SCRIPTS_UTILS=./utils.sh \
+    EKIDEN_NODE=/ekiden/bin/ekiden-node \
+    EKIDEN_WORKER=/ekiden/bin/ekiden-worker \
+    GATEWAY=/ekiden/bin/gateway \
+    RUNTIME_ENCLAVE=/ekiden/lib/runtime-ethereum.so \
+    RUNTIME_MRENCLAVE=/ekiden/res/runtime-ethereum.mrenclave \
+    KM_NODE=/ekiden/bin/ekiden-keymanager-node \
+    KM_MRENCLAVE=/ekiden/res/ekiden-keymanager-trusted.mrenclave \
+    KM_ENCLAVE=/ekiden/lib/ekiden-keymanager-trusted.so \
+    KM_KEY=/etc/service/gateway/km-key.pem \
+    KM_CERT=/etc/service/gateway/km.pem \
+    UTILS_COMPUTE_EXTRA_ARGS='--worker.ias.proxy_addr=127.0.0.1:9001 --worker.runtime.sgx_ids=0000000000000000000000000000000000000000000000000000000000000000' \
+    UTILS_RUNTIME_INIT_EXTRA_ARGS='--runtime.tee_hardware intel-sgx'
+
+exec ./gateway.sh 2>&1

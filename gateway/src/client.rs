@@ -1,6 +1,7 @@
 use std::{
     marker::{Send, Sync},
     sync::{Arc, Mutex, RwLock, Weak},
+    vec::Vec,
 };
 
 use bytes::Bytes;
@@ -9,9 +10,9 @@ use ethcore::{
     blockchain::{BlockProvider, TransactionAddress},
     encoded,
     engines::EthEngine,
-    error::{CallError, ExecutionError},
+    error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
-    filter::Filter as EthcoreFilter,
+    filter::{Filter as EthcoreFilter, TxEntry as EthTxEntry},
     header::BlockNumber,
     ids::{BlockId, TransactionId},
     receipt::LocalizedReceipt,
@@ -24,22 +25,17 @@ use ethereum_types::{Address, H256, U256};
 use futures::future::Future;
 #[cfg(test)]
 use grpcio;
-use hash::keccak;
-use parity_rpc::v1::types::Bytes as RpcBytes;
 use runtime_ethereum;
 use runtime_ethereum_common::State as EthState;
-use traits::oasis::PublicKeyResult;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
-use client_utils::{self, db::Snapshot};
+use client_utils;
+#[cfg(not(test))]
+use client_utils::db::Snapshot;
 use ekiden_common::environment::Environment;
 use ekiden_core::{error::Error, futures::prelude::*};
 use ekiden_db_trusted::Database;
-use ekiden_keymanager_client::KeyManager as EkidenKeyManager;
-use ekiden_keymanager_common::ContractId;
 use ekiden_storage_base::StorageBackend;
-#[cfg(test)]
-use ekiden_storage_dummy::DummyStorageBackend;
 use ethereum_api::TransactionRequest;
 use state::{self, StateDb};
 #[cfg(test)]
@@ -80,10 +76,18 @@ pub trait ChainNotify: Send + Sync {
 
     /// Notifies about new log filter matches.
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
+
+    /// Notifies about a completed transaction.
+    fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>);
+}
+
+pub struct CheckedTransaction {
+    pub from_address: Address,
+    pub contract: Option<OasisContract>,
 }
 
 pub struct Client {
-    client: runtime_ethereum::Client,
+    client: Arc<runtime_ethereum::Client>,
     engine: Arc<EthEngine>,
     #[cfg(not(test))]
     snapshot_manager: Option<client_utils::db::Manager>,
@@ -93,7 +97,7 @@ pub struct Client {
     storage_backend: Arc<StorageBackend>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
-    listeners: RwLock<Vec<Weak<ChainNotify>>>,
+    listeners: Arc<RwLock<Vec<Weak<ChainNotify>>>>,
     gas_price: U256,
 }
 
@@ -117,7 +121,7 @@ impl Client {
         };
 
         Self {
-            client: client,
+            client: Arc::new(client),
             engine: spec.engine.clone(),
             #[cfg(not(test))]
             snapshot_manager: snapshot_manager,
@@ -127,7 +131,7 @@ impl Client {
             storage_backend: backend,
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
-            listeners: RwLock::new(vec![]),
+            listeners: Arc::new(RwLock::new(vec![])),
             gas_price: gas_price,
         }
     }
@@ -141,12 +145,12 @@ impl Client {
             grpc_environment,
         ));
         Self {
-            client: test_helpers::get_test_runtime_client(),
+            client: Arc::new(test_helpers::get_test_runtime_client()),
             engine: spec.engine.clone(),
             eip86_transition: spec.params().eip86_transition,
             environment: environment,
             notified_block_number: Mutex::new(0),
-            listeners: RwLock::new(vec![]),
+            listeners: Arc::new(RwLock::new(vec![])),
             gas_price: U256::from(1_000_000_000),
         }
     }
@@ -209,7 +213,14 @@ impl Client {
 
     /// Notify `ChainNotify` listeners.
     fn notify<F: Fn(&ChainNotify)>(&self, f: F) {
-        for listener in &*self.listeners.read().unwrap() {
+        Client::notify_listeners(&self.listeners, f)
+    }
+
+    fn notify_listeners<F: Fn(&ChainNotify)>(
+        listeners: &Arc<RwLock<Vec<Weak<ChainNotify>>>>,
+        f: F,
+    ) {
+        for listener in &*listeners.read().unwrap() {
             if let Some(listener) = listener.upgrade() {
                 f(&*listener)
             }
@@ -802,36 +813,39 @@ impl Client {
         )
     }
 
-    pub fn estimate_gas(
-        &self,
-        transaction: &SignedTransaction,
-        id: BlockId,
-    ) -> Result<U256, CallError> {
+    pub fn estimate_gas(&self, transaction: &SignedTransaction, id: BlockId) -> BoxFuture<U256> {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
                 error!("Could not get db snapshot");
-                return Err(CallError::StateCorrupt);
+                return future::err(Error::new("Could not estimate gas")).into_box();
             }
         };
         let state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
                 error!("Could not get state snapshot");
-                return Err(CallError::StateCorrupt);
+                return future::err(Error::new("Could not estimate gas")).into_box();
             }
         };
 
         // Extract contract deployment header.
-        let oasis_contract = state
-            .oasis_contract(transaction)
-            .map_err(|e| ExecutionError::TransactionMalformed(e))?;
+        let oasis_contract = match state.oasis_contract(transaction) {
+            Ok(contract) => contract,
+            Err(error) => return future::err(Error::new(error)).into_box(),
+        };
 
         let confidential = oasis_contract.as_ref().map_or(false, |c| c.confidential);
         if confidential {
             self.confidential_estimate_gas(transaction)
         } else {
-            self._estimate_gas(transaction, db, state)
+            let result = self._estimate_gas(transaction, db, state);
+            future::done(
+                result
+                    .map(Into::into)
+                    .map_err(|error| Error::new(error.to_string())),
+            )
+            .into_box()
         }
     }
 
@@ -857,10 +871,7 @@ impl Client {
 
     /// Estimates gas for a transaction calling a confidential contract by sending
     /// the transaction through the scheduler to be run by the compute comittee.
-    fn confidential_estimate_gas(
-        &self,
-        transaction: &SignedTransaction,
-    ) -> Result<U256, CallError> {
+    fn confidential_estimate_gas(&self, transaction: &SignedTransaction) -> BoxFuture<U256> {
         info!("estimating gas for a confidential contract");
 
         let to_addr = match transaction.action {
@@ -878,31 +889,13 @@ impl Client {
             gas: Some(transaction.gas),
         };
 
-        let response = self.block_on(record_runtime_call_result(
-            "simulate_transaction",
-            self.client.simulate_transaction(request),
-        ));
-        match response {
-            Err(e) => Err(CallError::Execution(ExecutionError::Internal(
-                e.to_string(),
-            ))),
-            Ok(response) => {
-                // Must check that the transaction result has not errored. Otherwise, we'll
-                // just report estimateGas == 0 without giving an error.
-                match response.result {
-                    Err(e) => Err(CallError::Execution(ExecutionError::Internal(
-                        e.to_string(),
-                    ))),
-                    Ok(_result) => Ok(response.used_gas + response.refunded_gas),
-                }
-            }
-        }
+        record_runtime_call_result("simulate_transaction", self.client.estimate_gas(request))
     }
 
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
     /// and that the contract header, if present, is valid. Returns the OasisContract (or None
     /// if no header is present), or an error message if any check fails.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Option<OasisContract>, String> {
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<CheckedTransaction, String> {
         // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
@@ -938,8 +931,12 @@ impl Client {
                 return Err("Could not parse header".to_string());
             }
         };
+
         let oasis_contract = state.oasis_contract(&signed_transaction)?;
-        Ok(oasis_contract)
+        Ok(CheckedTransaction {
+            from_address: signed_transaction.sender(),
+            contract: oasis_contract,
+        })
     }
 
     /// Submit raw transaction to the current leader.
@@ -947,49 +944,77 @@ impl Client {
     /// This method returns immediately and does not wait for the transaction to
     /// be confirmed.
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
-        let oasis_contract = match self.precheck_transaction(&raw) {
-            Ok(contract) => contract,
+        let checked_transaction = match self.precheck_transaction(&raw) {
+            Ok(transaction) => transaction,
             Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
-        record_runtime_call_result(
-            "execute_raw_transaction",
-            self.client
-                .execute_raw_transaction(raw)
-                .and_then(move |result| {
-                    if result.created_contract {
-                        measure_counter_inc!("contract_created");
+        let oasis_contract = checked_transaction.contract;
+        let from_address = checked_transaction.from_address;
+        // If we get a BlockGasLimitReached error, retry up to 5 times.
+        const MAX_RETRIES: usize = 5;
 
-                        let confidential =
-                            oasis_contract.as_ref().map_or(false, |c| c.confidential);
-                        if confidential {
-                            measure_counter_inc!("confidential_contract_created");
+        let listeners = Arc::clone(&self.listeners);
+        future::loop_fn(
+            (MAX_RETRIES, self.client.clone(), raw, oasis_contract),
+            move |(retries, client, raw, oasis_contract)| {
+                let listeners = Arc::clone(&listeners);
+
+                client
+                    .execute_raw_transaction(raw.clone())
+                    .and_then(move |result| {
+                        // Retry on BlockGasLimitReached error.
+                        if result.block_gas_limit_reached {
+                            if retries == 0 {
+                                measure_counter_inc!("runtime_call_failed");
+                                return Err(Error::new("Block gas limit exceeded.".to_string()));
+                            }
+                            let retries = retries - 1;
+                            info!("execute_raw_transaction retries remaining: {}", retries);
+                            return Ok(future::Loop::Continue((
+                                retries,
+                                client,
+                                raw,
+                                oasis_contract,
+                            )));
                         }
-                    }
 
-                    result.hash.map_err(|error| {
-                        info!("execute_raw_transaction error: {:?}", error);
-                        Error::new(error)
+                        // Update contract_created metrics.
+                        if result.created_contract {
+                            measure_counter_inc!("contract_created");
+
+                            let confidential =
+                                oasis_contract.as_ref().map_or(false, |c| c.confidential);
+                            if confidential {
+                                measure_counter_inc!("confidential_contract_created");
+                            }
+                        }
+
+                        match result.hash {
+                            Ok(hash) => {
+                                measure_counter_inc!("runtime_call_succeeded");
+                                Client::notify_listeners(&listeners, |listener| {
+                                    let output = result.output.clone();
+                                    listener.notify_completed_transaction(
+                                        &EthTxEntry {
+                                            from_address: from_address,
+                                            transaction_hash: hash,
+                                        },
+                                        output,
+                                    );
+                                });
+                                Ok(future::Loop::Break(hash))
+                            }
+                            Err(e) => {
+                                measure_counter_inc!("runtime_call_failed");
+                                info!("execute_raw_transaction error: {:?}", e);
+                                Err(Error::new(e))
+                            }
+                        }
                     })
-                }),
+            },
         )
-    }
-
-    /// Returns the public key for the given contract from the key manager.
-    pub fn public_key(&self, contract: Address) -> Result<Option<PublicKeyResult>, String> {
-        let contract_id: ContractId =
-            ekiden_core::bytes::H256::from(&keccak(contract.to_vec())[..]);
-
-        let public_key_payload = EkidenKeyManager::instance()
-            .expect("Should always have an key manager client")
-            .get_public_key(contract_id)
-            .map_err(|err| err.description().to_string())?;
-
-        Ok(public_key_payload.map(|payload| PublicKeyResult {
-            public_key: RpcBytes::from(payload.public_key.to_vec()),
-            timestamp: payload.timestamp,
-            signature: RpcBytes::from(payload.signature.to_vec()),
-        }))
+        .into_box()
     }
 }
 
@@ -997,7 +1022,6 @@ impl Client {
 mod tests {
     use super::*;
     use ethereum_types::{Address, H256};
-
     use test_helpers::{MockDb, MockNotificationHandler};
 
     #[test]

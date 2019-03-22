@@ -8,11 +8,11 @@ build = "build.rs"
 ethereum-api = { path = "./api" }
 runtime-ethereum-common = { path = "./common" }
 
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden"}
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden"}
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden"}
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden"}
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden"}
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -25,6 +25,7 @@ ekiden-storage-lru = { git = "https://github.com/oasislabs/ekiden", branch = "ma
 ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 
+bytes = "0.4"
 byteorder = "1.0"
 elastic-array = "0.10"
 hex = "0.3"
@@ -49,6 +50,7 @@ benchmark = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
 test = ["runtime-ethereum-common/test"]
+production-genesis = []
 
 [profile.release]
 panic = "abort"
