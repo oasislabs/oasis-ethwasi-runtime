@@ -27,6 +27,7 @@ extern crate parking_lot;
 extern crate rayon;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde;
 
 extern crate jsonrpc_core;
 #[macro_use]
