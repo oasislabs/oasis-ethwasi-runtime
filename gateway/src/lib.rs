@@ -132,7 +132,7 @@ pub fn start(
 
     run::execute(
         client,
-        Some(snapshot_manager),
+        snapshot_manager,
         storage,
         environment,
         pubsub_interval_secs,

@@ -39,7 +39,7 @@ use util;
 
 pub fn execute(
     ekiden_client: runtime_ethereum::Client,
-    snapshot_manager: Option<client_utils::db::Manager>,
+    snapshot_manager: client_utils::db::Manager,
     storage: Arc<StorageBackend>,
     environment: Arc<Environment>,
     pubsub_interval_secs: u64,
