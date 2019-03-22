@@ -90,7 +90,7 @@ pub struct Client {
     client: Arc<runtime_ethereum::Client>,
     engine: Arc<EthEngine>,
     #[cfg(not(test))]
-    snapshot_manager: Option<client_utils::db::Manager>,
+    snapshot_manager: client_utils::db::Manager,
     eip86_transition: u64,
     environment: Arc<Environment>,
     #[cfg(not(test))]
@@ -104,21 +104,18 @@ pub struct Client {
 impl Client {
     pub fn new(
         spec: &Spec,
-        snapshot_manager: Option<client_utils::db::Manager>,
+        snapshot_manager: client_utils::db::Manager,
         client: runtime_ethereum::Client,
         environment: Arc<Environment>,
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
         // get current block number from db snapshot (or 0)
-        let current_block_number = match snapshot_manager {
-            Some(ref manager) => match state::StateDb::new(backend.clone(), manager.get_snapshot())
-            {
+        let current_block_number =
+            match state::StateDb::new(backend.clone(), snapshot_manager.get_snapshot()) {
                 Ok(db) => db.map_or(0, |db| db.best_block_number()),
                 Err(_) => 0,
-            },
-            None => 0,
-        };
+            };
 
         Self {
             client: Arc::new(client),
@@ -306,18 +303,16 @@ impl Client {
     /// blockchain database has not yet been initialized by the runtime.
     #[cfg(not(test))]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
-        match self.snapshot_manager {
-            Some(ref manager) => {
-                match state::StateDb::new(self.storage_backend.clone(), manager.get_snapshot()) {
-                    Ok(db) => db,
-                    Err(e) => {
-                        measure_counter_inc!("read_state_failed");
-                        error!("Could not get db snapshot: {:?}", e);
-                        None
-                    }
-                }
+        match state::StateDb::new(
+            self.storage_backend.clone(),
+            self.snapshot_manager.get_snapshot(),
+        ) {
+            Ok(db) => db,
+            Err(e) => {
+                measure_counter_inc!("read_state_failed");
+                error!("Could not get db snapshot: {:?}", e);
+                None
             }
-            None => None,
         }
     }
 
