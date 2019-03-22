@@ -117,8 +117,10 @@ run_backend_tendermint_committee() {
         storage node \
         --datadir ${storage_datadir} \
         --grpc.port ${storage_port} \
-        --log.file ${TEST_BASE_DIR}/storage.log \
+        --log.level DEBUG \
         --metrics.mode none \
+        | tee ${TEST_BASE_DIR}/storage.log \
+        | sed 's/^/[storage-node] /' \
         &
 
     # Run the validator nodes.
