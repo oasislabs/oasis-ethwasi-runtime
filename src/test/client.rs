@@ -35,6 +35,11 @@ pub struct Client {
     /// Contract key used for encrypting web3c transactions.
     pub ephemeral_key: ContractKey,
     pub timestamp: u64,
+    /// Gas limit used for transactions.
+    /// TODO: use estimate gas to set this dynamically
+    pub gas_limit: U256,
+    /// Gas price used for transactions.
+    pub gas_price: U256,
 }
 
 impl Client {
@@ -50,6 +55,8 @@ impl Client {
             .unwrap(),
             ephemeral_key: TestKeyManager::create_random_key(),
             timestamp: 0xcafedeadbeefc0de,
+            gas_price: U256::from(1000000000),
+            gas_limit: U256::from(1000000),
         }
     }
 
@@ -182,8 +189,8 @@ impl Client {
                     Action::Call(*contract.unwrap())
                 },
                 nonce: get_account_nonce(&self.keypair.address(), ctx).unwrap(),
-                gas_price: U256::from(0),
-                gas: U256::from(1000000),
+                gas_price: self.gas_price,
+                gas: self.gas_limit,
                 value: *value,
                 data: data,
             }

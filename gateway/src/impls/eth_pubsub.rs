@@ -39,7 +39,7 @@ use parity_rpc::v1::{
 
 use ethcore::{
     encoded,
-    filter::{Filter as EthFilter, TxFilter as EthTxFilter},
+    filter::{Filter as EthFilter, TxEntry as EthTxEntry, TxFilter as EthTxFilter},
     ids::BlockId,
 };
 use parity_reactor::Remote;
@@ -168,32 +168,26 @@ impl ChainNotify for ChainNotificationHandler {
         }
     }
 
-    fn notify_completed_transaction(&self, hash: ethereum_types::H256, output: Vec<u8>) {
+    fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>) {
         for &(ref subscriber, ref filter) in self.tx_subscribers.read().values() {
             let mut filter = filter.clone();
 
-            // since transaction_hash is the only filter property, it should be set
-            // otherwise the gateway would have to sent all completed transactions to
-            // a subscription without any other filtering criteria
-            let transaction_hash = match filter.transaction_hash {
-                None => continue,
-                Some(hash) => hash,
-            };
-
-            if transaction_hash == hash {
-                let remote = self.remote.clone();
-                self.remote.spawn({
-                    Self::notify(
-                        &remote,
-                        &subscriber,
-                        pubsub::Result::TransactionOutcome(TransactionOutcome {
-                            hash: hash.into(),
-                            output: output.clone(),
-                        }),
-                    );
-                    Ok(())
-                });
+            if !filter.matches(entry) {
+                continue;
             }
+
+            let remote = self.remote.clone();
+            self.remote.spawn({
+                Self::notify(
+                    &remote,
+                    &subscriber,
+                    pubsub::Result::TransactionOutcome(TransactionOutcome {
+                        hash: entry.transaction_hash.into(),
+                        output: output.clone(),
+                    }),
+                );
+                Ok(())
+            });
         }
     }
 }

@@ -12,7 +12,7 @@ use ethcore::{
     engines::EthEngine,
     error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
-    filter::Filter as EthcoreFilter,
+    filter::{Filter as EthcoreFilter, TxEntry as EthTxEntry},
     header::BlockNumber,
     ids::{BlockId, TransactionId},
     receipt::LocalizedReceipt,
@@ -78,14 +78,19 @@ pub trait ChainNotify: Send + Sync {
     fn notify_logs(&self, from_block: BlockId, to_block: BlockId);
 
     /// Notifies about a completed transaction.
-    fn notify_completed_transaction(&self, hash: H256, output: Vec<u8>);
+    fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>);
+}
+
+pub struct CheckedTransaction {
+    pub from_address: Address,
+    pub contract: Option<OasisContract>,
 }
 
 pub struct Client {
     client: Arc<runtime_ethereum::Client>,
     engine: Arc<EthEngine>,
     #[cfg(not(test))]
-    snapshot_manager: Option<client_utils::db::Manager>,
+    snapshot_manager: client_utils::db::Manager,
     eip86_transition: u64,
     environment: Arc<Environment>,
     #[cfg(not(test))]
@@ -99,21 +104,18 @@ pub struct Client {
 impl Client {
     pub fn new(
         spec: &Spec,
-        snapshot_manager: Option<client_utils::db::Manager>,
+        snapshot_manager: client_utils::db::Manager,
         client: runtime_ethereum::Client,
         environment: Arc<Environment>,
         backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
         // get current block number from db snapshot (or 0)
-        let current_block_number = match snapshot_manager {
-            Some(ref manager) => match state::StateDb::new(backend.clone(), manager.get_snapshot())
-            {
+        let current_block_number =
+            match state::StateDb::new(backend.clone(), snapshot_manager.get_snapshot()) {
                 Ok(db) => db.map_or(0, |db| db.best_block_number()),
                 Err(_) => 0,
-            },
-            None => 0,
-        };
+            };
 
         Self {
             client: Arc::new(client),
@@ -301,26 +303,23 @@ impl Client {
     /// blockchain database has not yet been initialized by the runtime.
     #[cfg(not(test))]
     fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
-        match self.snapshot_manager {
-            Some(ref manager) => {
-                match state::StateDb::new(self.storage_backend.clone(), manager.get_snapshot()) {
-                    Ok(db) => db,
-                    Err(e) => {
-                        measure_counter_inc!("read_state_failed");
-                        error!("Could not get db snapshot: {:?}", e);
-                        None
-                    }
-                }
+        match state::StateDb::new(
+            self.storage_backend.clone(),
+            self.snapshot_manager.get_snapshot(),
+        ) {
+            Ok(db) => db,
+            Err(e) => {
+                measure_counter_inc!("read_state_failed");
+                error!("Could not get db snapshot: {:?}", e);
+                None
             }
-            None => None,
         }
     }
 
     /// Returns a MockDb-backed StateDb for unit tests.
     #[cfg(test)]
     fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
-        let mut db = MockDb::new();
-        db.populate();
+        let db = MockDb::new();
         StateDb::new(db.storage(), db).unwrap()
     }
 
@@ -890,7 +889,7 @@ impl Client {
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
     /// and that the contract header, if present, is valid. Returns the OasisContract (or None
     /// if no header is present), or an error message if any check fails.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<Option<OasisContract>, String> {
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<CheckedTransaction, String> {
         // decode transaction
         let decoded: UnverifiedTransaction = match rlp::decode(raw) {
             Ok(t) => t,
@@ -926,8 +925,12 @@ impl Client {
                 return Err("Could not parse header".to_string());
             }
         };
+
         let oasis_contract = state.oasis_contract(&signed_transaction)?;
-        Ok(oasis_contract)
+        Ok(CheckedTransaction {
+            from_address: signed_transaction.sender(),
+            contract: oasis_contract,
+        })
     }
 
     /// Submit raw transaction to the current leader.
@@ -935,11 +938,13 @@ impl Client {
     /// This method returns immediately and does not wait for the transaction to
     /// be confirmed.
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
-        let oasis_contract = match self.precheck_transaction(&raw) {
-            Ok(contract) => contract,
+        let checked_transaction = match self.precheck_transaction(&raw) {
+            Ok(transaction) => transaction,
             Err(error) => return future::err(Error::new(error)).into_box(),
         };
 
+        let oasis_contract = checked_transaction.contract;
+        let from_address = checked_transaction.from_address;
         // If we get a BlockGasLimitReached error, retry up to 5 times.
         const MAX_RETRIES: usize = 5;
 
@@ -984,7 +989,13 @@ impl Client {
                                 measure_counter_inc!("runtime_call_succeeded");
                                 Client::notify_listeners(&listeners, |listener| {
                                     let output = result.output.clone();
-                                    listener.notify_completed_transaction(hash, output);
+                                    listener.notify_completed_transaction(
+                                        &EthTxEntry {
+                                            from_address: from_address,
+                                            transaction_hash: hash,
+                                        },
+                                        output,
+                                    );
                                 });
                                 Ok(future::Loop::Break(hash))
                             }
@@ -1009,9 +1020,7 @@ mod tests {
 
     #[test]
     fn test_last_hashes() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
@@ -1019,68 +1028,64 @@ mod tests {
         // start with best block
         let hashes = Client::last_hashes(
             &state,
-            &H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118"),
+            &H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778"),
         );
 
         assert_eq!(
             hashes[0],
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
         assert_eq!(
             hashes[1],
-            H256::from("75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e")
+            H256::from("bacdbc2ed8161be77ed20a490e71f080017a39a1e81975e3a732da3e3d1b416b")
         );
         assert_eq!(
             hashes[2],
-            H256::from("613afac8fd33fd7a35b8928e68f6abc031ca8e16c35caa2eaa7518c4e753cffc")
+            H256::from("834deb56b3560fff98cbbb72dc0ea1e890cc8c32d675c80d52cab70ffbbd817f")
         );
         assert_eq!(
             hashes[3],
-            H256::from("9a4ffe2733a837c80d0b7e2fd63b838806e3b8294dab3ad86249619b28fd9526")
+            H256::from("bac57123063dd9cf9a9406996a6ec6d3f5ab93cd16a05318365784477f30f8a5")
         );
         assert_eq!(
             hashes[4],
-            H256::from("3546adf1c89e32acd11093f6f78468f5db413a207843aded872397821ea685ae")
+            H256::from("b1a04a31b23c3ad0dccf0c757a94463cfca1265966bc66efaf08a427e668e088")
         );
-        assert_eq!(hashes[5], H256::zero());
+        assert_eq!(hashes[11], H256::zero());
     }
 
     #[test]
     fn test_envinfo() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
         let envinfo = Client::get_env_info(&state);
-        assert_eq!(envinfo.number, 5);
+        assert_eq!(envinfo.number, 11);
         assert_eq!(envinfo.author, Address::default());
-        assert_eq!(envinfo.timestamp, 1539086487);
+        assert_eq!(envinfo.timestamp, 1553202944);
         assert_eq!(envinfo.difficulty, U256::zero());
         assert_eq!(
             envinfo.last_hashes[0],
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
     }
 
     #[test]
     #[cfg(feature = "pubsub")]
     fn test_headers_since() {
-        let mut db = MockDb::new();
-        // populate the db with test data
-        db.populate();
+        let db = MockDb::new();
 
         // get state
         let state = StateDb::new(db.storage(), db).unwrap().unwrap();
 
-        // blocks 1...4
-        let headers = Client::headers_since(&state, 1, 4, 256);
-        assert_eq!(headers.len(), 4);
+        // blocks 1...10
+        let headers = Client::headers_since(&state, 1, 10, 256);
+        assert_eq!(headers.len(), 10);
         assert_eq!(
-            &headers[3].hash(),
-            &H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            &headers[9].hash(),
+            &H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
     }
 
@@ -1097,7 +1102,7 @@ mod tests {
         assert_eq!(client.max_block_number(id_latest, id_2), id_latest);
 
         let id_3 = BlockId::Hash(H256::from(
-            "75be890ab64005e4239cfc257349c536fdde555a211c663b9235abb2ec21e56e",
+            "32185fcbe326513f77f85135dc5a913b1e5a645076e5ed2e34bc6ec7bc3268d4",
         ));
         assert_eq!(client.max_block_number(id_3, id_2), id_3);
     }
@@ -1136,15 +1141,15 @@ mod tests {
         client.new_blocks();
 
         let headers = handler.get_notified_headers();
-        assert_eq!(headers.len(), 4);
+        assert_eq!(headers.len(), 10);
         assert_eq!(
-            headers[3].hash(),
-            H256::from("832e166d73a1baddb00d65de04086616548e3c96b0aaf0f9fe1939e29868c118")
+            headers[9].hash(),
+            H256::from("c6c2b9de0cd02f617035534d69ac1413f184e5f5adf41bef9ae6271f18308778")
         );
 
         let log_notifications = handler.get_log_notifications();
         assert_eq!(log_notifications.len(), 1);
         assert_eq!(log_notifications[0].0, BlockId::Number(1));
-        assert_eq!(log_notifications[0].1, BlockId::Number(4));
+        assert_eq!(log_notifications[0].1, BlockId::Number(10));
     }
 }
