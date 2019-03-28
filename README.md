@@ -28,27 +28,58 @@ where the code has been checked out.
 
 ## Building the runtime
 
-To build everything required for running the runtime and benchmarks, simply execute in the
+To build everything required for running the runtime, simply execute in the
 top-level directory:
-```
+```bash
+$ cd /code/
 $ make
 ```
 
 ## Running the gateway
 
 To run a local single-node Ekiden "cluster" and a development version of the gateway, run:
-```
+```bash
+$ cd /code/
 $ make run-gateway
 ```
 
 ## Benchmarking
 
+Benchmarks require smart contract compilation and deployment tools, so you need
+to install:
+
+* rust support for wasm32 target: `rustup target add wasm32-unknown-unknown`,
+
+* wasm-build command: `cargo install owasm-utils-cli --bin wasm-build`,
+
+* abigen command as part of go ethereum devtools:
+```bash
+go get -u github.com/ethereum/go-ethereum
+cd $GOPATH/src/github.com/ethereum/go-ethereum/
+make devtools
+```
+* xxd command for converting binary-compiled contract to readable hex format:
+  `apt install xxd`,
+
 To build the benchmarking version of the runtime (release build, logging suppressed, nonce checking disabled):
 ```bash
+$ cd /code/
 $ CARGO_TARGET_DIR=target_benchmark cargo build --release --features benchmark
 ```
 
 Release builds of `gateway` and `genesis` are also used for benchmarking. To build, for each component:
 ```bash
+$ cd /code/
 $ cargo build -p <component> --release
 ```
+
+Finally, to build the benchmarking go client with benchmarks and Rust smart
+contracts:
+```bash
+$ cd /code/benchmark
+$ make
+```
+
+Run benchmarks by first spinning up the gateway (see previous chapter) and then
+executing `/code/benchmark/benchmark -b <benchmark_name>`. Benchmarks results
+will be reported to STDOUT in JSON format.

@@ -239,7 +239,7 @@ run_gateway() {
     let ws_port=id+8554
     let prometheus_port=id+3000
 
-    echo "Starting web3 gateway ${id} on ports ${http_port} and ${ws_port}."
+    echo "Starting web3 gateway ${id} on http://0.0.0.0:${http_port} and ws://0.0.0.0:${ws_port}."
     ${GATEWAY} \
         --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
         --mr-enclave $(cat $RUNTIME_MRENCLAVE) \
