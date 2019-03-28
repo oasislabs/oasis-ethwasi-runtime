@@ -19,27 +19,31 @@ set -euxo pipefail
 
 source .buildkite/scripts/download_utils.sh
 
-# Create directory to put enclave artifacts into.
-mkdir -p target/enclave
+# Create directory to put artifacts into.
+mkdir -p \
+    go/ekiden \
+    target/debug \
+    target/x86_64-fortanix-unknown-sgx/debug
 
 ###########################################
 # Download artifacts from other pipelines
 ###########################################
-download_ekiden_node .
-download_ekiden_worker .
-download_keymanager_node .
-download_keymanager_enclave target/enclave
-download_keymanager_mrenclave target/enclave
+download_ekiden_node go/ekiden
+download_ekiden_runtime_loader target/debug
+download_keymanager_runtime target/debug
+download_keymanager_runtime_sgx target/x86_64-fortanix-unknown-sgx/debug
 
-############################################
-# Download runtime-ethereum(.so|.mrenclave)
-############################################
+###########################
+# Download runtime-ethereum
+###########################
 buildkite-agent artifact download \
-    runtime-ethereum.so \
-    target/enclave
+    runtime-ethereum.sgxs \
+    target/x86_64-fortanix-unknown-sgx/debug
+
 buildkite-agent artifact download \
-    runtime-ethereum.mrenclave \
-    target/enclave
+    runtime-ethereum \
+    target/debug
+chmod +x target/debug/runtime-ethereum
 
 ##################
 # Download gateway

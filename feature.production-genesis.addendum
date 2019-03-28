@@ -1,2 +1,0 @@
-[features]
-production-genesis = ["runtime-ethereum/production-genesis"]

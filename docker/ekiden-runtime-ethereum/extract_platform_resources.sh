@@ -18,4 +18,4 @@ mkdir -p "$dst_dir"
 container=$(docker create "oasislabs/testnet:$base_image_tag")
 trap "docker rm $container" EXIT
 
-docker cp "$container:/ekiden/lib/ekiden-keymanager-trusted.so" "$dst_dir"
+docker cp "$container:/ekiden/lib/ekiden-keymanager-runtime.sgxs" "$dst_dir"

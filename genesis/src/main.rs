@@ -4,25 +4,24 @@ extern crate ethcore;
 extern crate ethereum_types;
 extern crate filebuffer;
 extern crate hex;
-extern crate log;
-extern crate pretty_env_logger;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
-
-extern crate ekiden_core;
-extern crate ekiden_db_trusted;
-extern crate ekiden_roothash_base;
-extern crate ekiden_storage_base;
-extern crate ekiden_storage_batch;
-extern crate ekiden_storage_client;
-extern crate ekiden_tracing;
-
+extern crate ekiden_client;
+extern crate ekiden_runtime;
+extern crate failure;
+extern crate grpcio;
 extern crate runtime_ethereum_common;
+extern crate serde_bytes;
+extern crate serde_json;
 
 use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
 
 use clap::{crate_authors, crate_description, crate_name, crate_version, App, Arg};
+use ekiden_client::{transaction::api::storage, Node};
+use ekiden_runtime::{
+    common::{crypto::hash::Hash, roothash},
+    storage::{cas::PassthroughCAS, mkvs::CASPatriciaTrie, CAS},
+};
 use ethcore::{
     block::{IsBlock, OpenBlock},
     blockchain::{BlockChain, ExtrasInsert},
@@ -32,16 +31,11 @@ use ethcore::{
     state::backend::Wrapped as WrappedBackend,
 };
 use ethereum_types::{Address, H256, U256};
-use log::{debug, info};
-use serde_json::{de::SliceRead, StreamDeserializer};
-
-use ekiden_core::{
-    environment::{Environment, GrpcEnvironment},
-    futures::Future,
-};
-use ekiden_db_trusted::DatabaseHandle;
-use ekiden_storage_base::InsertOptions;
+use failure::Fallible;
+use grpcio::EnvBuilder;
 use runtime_ethereum_common::{get_factories, BlockchainStateDb, StorageHashDB, BLOCK_GAS_LIMIT};
+use serde_bytes::ByteBuf;
+use serde_json::{de::SliceRead, StreamDeserializer};
 
 #[derive(Deserialize)]
 struct ExportedAccount {
@@ -150,11 +144,49 @@ impl<'a> Iterator for StateParser<'a> {
     }
 }
 
-fn main() {
-    // Initialize logger.
-    pretty_env_logger::init();
+struct RemoteCAS(storage::StorageClient);
 
-    let args = App::new(concat!(crate_name!(), " client"))
+impl RemoteCAS {
+    fn insert_batch(&self, batch: Vec<(ByteBuf, u64)>) -> Fallible<()> {
+        for chunk in batch.chunks(10000) {
+            let mut request = storage::InsertBatchRequest::new();
+            request.set_items(
+                chunk
+                    .into_iter()
+                    .map(|(value, expiry)| {
+                        let mut request = storage::InsertRequest::new();
+                        request.set_data(value.clone().into());
+                        request.set_expiry(*expiry);
+
+                        request
+                    })
+                    .collect(),
+            );
+
+            self.0.insert_batch(&request)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl CAS for RemoteCAS {
+    fn get(&self, key: Hash) -> Fallible<Vec<u8>> {
+        let mut request = storage::GetRequest::new();
+        request.set_id(key.as_ref().to_vec());
+
+        let response = self.0.get(&request)?;
+
+        Ok(response.data)
+    }
+
+    fn insert(&self, _value: Vec<u8>, _expiry: u64) -> Fallible<Hash> {
+        unimplemented!("not needed as we only use insert_batch");
+    }
+}
+
+fn main() {
+    let matches = App::new(concat!(crate_name!(), " client"))
         .about(crate_description!())
         .author(crate_authors!())
         .version(crate_version!())
@@ -170,24 +202,28 @@ fn main() {
                 .takes_value(true)
                 .required(true),
         )
-        .args(&ekiden_core::remote_node::get_arguments())
+        .arg(
+            Arg::with_name("node-address")
+                .help("Storage node address")
+                .long("node-address")
+                .takes_value(true)
+                .required(true),
+        )
         .get_matches();
 
-    // Initialize tracing.
-    ekiden_tracing::report_forever("genesis", &args);
+    let node_address = matches.value_of("node-address").unwrap();
 
-    // Initialize storage and database overlays.
-    let environment: Arc<Environment> = Arc::new(GrpcEnvironment::default());
-    let remote_node = ekiden_core::remote_node::RemoteNode::from_args(&args);
-    let channel = remote_node.create_channel(environment);
-    let raw_storage = Arc::new(ekiden_storage_client::StorageClient::new(channel));
-    let storage = Arc::new(ekiden_storage_batch::BatchStorageBackend::new(raw_storage));
-    let db = DatabaseHandle::new(storage.clone());
-    let blockchain_db = Arc::new(BlockchainStateDb::new(db));
-    let state_db = StorageHashDB::new(storage.clone(), blockchain_db.clone());
+    // Initialize CAS and MKVS overlays.
+    let env = Arc::new(EnvBuilder::new().build());
+    let node = Node::new(env, node_address);
+    let remote_cas = Arc::new(RemoteCAS(storage::StorageClient::new(node.channel())));
+    let cas = Arc::new(PassthroughCAS::new(remote_cas.clone()));
+    let mkvs = CASPatriciaTrie::new(cas.clone(), &Hash::empty_hash());
+    let blockchain_db = Arc::new(BlockchainStateDb::new(mkvs));
+    let state_db = StorageHashDB::new(cas.clone(), blockchain_db.clone());
 
     // Initialize state with genesis block.
-    info!("Initializing genesis block");
+    println!("Initializing genesis block");
     let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");
     let spec = Spec::load(Cursor::new(genesis_json)).unwrap();
     let state_backend = spec
@@ -219,14 +255,12 @@ fn main() {
     .unwrap();
 
     // Iteratively parse input and import into state.
-    info!("Injecting accounts");
-    let state_path = args.value_of("exported_state").unwrap();
+    println!("Injecting accounts");
+    let state_path = matches.value_of("exported_state").unwrap();
     let state_fb = filebuffer::FileBuffer::open(state_path).unwrap();
     let accounts = StateParser::new(&state_fb);
 
     for (addr, account) in accounts {
-        debug!("Injecting account {}", addr);
-
         let address = Address::from_str(strip_0x(&addr)).unwrap();
         let balance = U256::from_str(strip_0x(&account.balance)).unwrap();
         let nonce = U256::from_str(strip_0x(&account.nonce)).unwrap();
@@ -247,8 +281,6 @@ fn main() {
 
         // Inject account storage items.
         if let Some(storage) = account.storage {
-            debug!("Injecting {} account storage items", storage.len());
-
             for (key, value) in storage {
                 let key = H256::from_str(strip_0x(&key)).unwrap();
                 let value = H256::from_str(strip_0x(&value)).unwrap();
@@ -262,7 +294,7 @@ fn main() {
         }
     }
 
-    info!("Injected all state, ready to commit");
+    println!("Injected all state, ready to commit");
 
     let block = block
         .close_and_lock()
@@ -270,7 +302,7 @@ fn main() {
         .unwrap();
 
     // Queue the db operations necessary to insert this block.
-    info!("Block sealed, generating storage transactions for commit");
+    println!("Block sealed, generating storage transactions for commit");
     let mut db_tx = kvdb::DBTransaction::default();
     chain.insert_block(
         &mut db_tx,
@@ -284,37 +316,34 @@ fn main() {
     );
 
     // Commit the insert to the in-memory blockchain cache.
-    info!("Commit into in-memory blockchain cache");
+    println!("Commit into in-memory blockchain cache");
     chain.commit();
     // Write blockchain updates.
-    info!("Writing blockchain update transactions");
+    println!("Writing blockchain update transactions");
     blockchain_db
         .write(db_tx)
         .expect("write blockchain updates");
 
     // Commit any pending state updates.
-    info!("Commit state updates");
+    println!("Commit state updates");
     state_db.commit();
     // Commit any blockchain state updates.
-    info!("Commit blockchain state updates");
+    println!("Commit blockchain state updates");
     let state_root = blockchain_db.commit().expect("commit blockchain state");
 
-    info!("Done, genesis state root is {:?}", state_root);
+    println!("Done, genesis state root is {:?}", state_root);
 
     // Now push everything to underlying storage as this has all been in-memory.
-    info!("Pushing batches to storage backend");
-    storage
-        .commit(10000, InsertOptions::default())
-        .wait()
-        .unwrap();
+    println!("Pushing batches to storage backend");
+    remote_cas.insert_batch(cas.take_inserts()).unwrap();
 
     // Generate genesis roothash block file.
-    let mut block = ekiden_roothash_base::Block::default();
+    let mut block = roothash::Block::default();
     block.header.state_root = state_root;
     // TODO: Take runtime identifier as an argument.
     let blocks = vec![block];
 
     // Save to file.
-    let mut file = File::create(args.value_of("output_file").unwrap()).unwrap();
+    let mut file = File::create(matches.value_of("output_file").unwrap()).unwrap();
     serde_json::to_writer(&mut file, &blocks).unwrap();
 }

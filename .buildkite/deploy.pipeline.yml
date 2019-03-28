@@ -27,52 +27,27 @@ docker_plugin: &docker_plugin_configuration
     propagate-environment: true
 
 steps:
-  - label: Extract simulation platform resources
+  - label: Extract platform resources
     branches: master beta
     command:
-      - .buildkite/scripts/extract_platform_resources.sh sim-platform
+      - .buildkite/scripts/extract_platform_resources.sh platform
     artifact_paths:
-      - sim-platform/*
-
-  - label: Extract hardware platform resources
-    branches: master
-    command:
-      - .buildkite/scripts/extract_platform_resources.sh hw-platform
-    artifact_paths:
-      - hw-platform/*
-    env:
-      DEPLOYMENT_VARIANT: hw
+      - platform/*
 
   - wait
 
   - label: Get docker tag and save it as metadata for use later
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
 
-  - label: Build simulation artifacts (master branches only)
+  - label: Build artifacts (master branches only)
     branches: master beta
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
       - ssh-add
-      - .buildkite/scripts/build_deployment_context.sh sim-platform sim-context.tar.gz
+      - .buildkite/scripts/build_deployment_context.sh platform context.tar.gz
     artifact_paths:
-      - sim-context.tar.gz
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: Build hardware artifacts (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - eval $(ssh-agent -s)
-      - ssh-add
-      - .buildkite/scripts/build_deployment_context.sh hw-platform hw-context.tar.gz
-    artifact_paths:
-      - hw-context.tar.gz
-    env:
-      SGX_MODE: hw
+      - context.tar.gz
     agents:
       buildkite_agent_size: large
     plugins:
@@ -83,22 +58,14 @@ steps:
   - label: Update staging docker image tags (master branches only)
     branches: master
     command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh sim-context.tar.gz
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging
 
   - label: Update staging beta docker image tags (beta branch only)
     branches: beta
     command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh sim-context.tar.gz
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
-
-  - label: Update hardware staging docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh hw-context.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh staging-hw
-    env:
-      DEPLOYMENT_VARIANT: hw
 
   - wait
 

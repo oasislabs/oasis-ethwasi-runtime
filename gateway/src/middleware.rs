@@ -3,12 +3,30 @@
 use informant::RpcStats;
 use jsonrpc_core as rpc;
 use jsonrpc_ws_server as ws;
+use lazy_static::lazy_static;
 use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
+use prometheus::{
+    histogram_opts, opts, register_counter, register_histogram, register_int_counter,
+    register_int_gauge, Histogram, IntCounter, IntGauge, __register_gauge,
+};
 use std::{sync::Arc, vec::Vec};
 
 /// Custom JSON-RPC error codes
 const ERROR_BATCH_SIZE: i64 = -32099;
 const ERROR_RATE_LIMITED: i64 = -32098;
+
+// Metrics.
+lazy_static! {
+    static ref WS_RATE_LIMITED: IntCounter = register_int_counter!(
+        "web3_gateway_ws_rate_limited",
+        "Number of WebSocket rate limiter activations"
+    )
+    .unwrap();
+    static ref JSONRPC_BATCH_SIZE: Histogram =
+        register_histogram!("web3_gateway_jsonrpc_batch_size", "JSON-RPC batch sizes").unwrap();
+    static ref WS_SESSIONS: IntGauge =
+        register_int_gauge!("web3_gateway_ws_sessions", "Number of WebSocket sessions").unwrap();
+}
 
 /// A custom JSON-RPC error for batches containing too many requests.
 fn error_batch_size() -> rpc::Error {
@@ -111,7 +129,7 @@ impl<M: rpc::Metadata, T: ActivityNotifier> rpc::Middleware<M> for Middleware<T>
         // Check the number of requests in the JSON-RPC batch.
         if let rpc::Request::Batch(ref calls) = request {
             let batch_size = calls.len();
-            measure_histogram!("jsonrpc_batch_size", batch_size);
+            JSONRPC_BATCH_SIZE.observe(batch_size as f64);
 
             // If it exceeds the limit, respond with a custom application error.
             if batch_size > self.max_batch_size {
@@ -157,7 +175,7 @@ impl rpc::Middleware<Metadata> for WsDispatcher {
                 dapp: _,
             } => {
                 if self.stats.count_request(session) as usize > self.max_req_per_sec {
-                    measure_counter_inc!("ws_rate_limited");
+                    WS_RATE_LIMITED.inc();
                     error!("Rejecting WS request");
                     return generate_error_response(request, &RateLimitedErrGen {});
                 }
@@ -183,13 +201,13 @@ impl WsStats {
 
 impl ws::SessionStats for WsStats {
     fn open_session(&self, id: ws::SessionId) {
-        measure_gauge!("ws_sessions", self.stats.sessions());
-        self.stats.open_session(H256::from(id))
+        self.stats.open_session(H256::from(id));
+        WS_SESSIONS.set(self.stats.sessions() as i64);
     }
 
     fn close_session(&self, id: ws::SessionId) {
-        measure_gauge!("ws_sessions", self.stats.sessions());
-        self.stats.close_session(&H256::from(id))
+        self.stats.close_session(&H256::from(id));
+        WS_SESSIONS.set(self.stats.sessions() as i64);
     }
 }
 

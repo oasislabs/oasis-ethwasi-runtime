@@ -1,15 +1,11 @@
 [package]
-name = "ethereum-api"
-version = "0.1.0"
+name = "runtime-ethereum-api"
+version = "0.2.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
-build = "build.rs"
+edition = "2018"
 
 [dependencies]
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "kostko/feature/fortanix-sgx" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-protobuf = "~2.0"
-serde = "1.0"
+serde = "1.0.71"
 serde_derive = "1.0"
-
-[build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

@@ -3,7 +3,7 @@
 ################
 docker_plugin: &docker_plugin_configuration
   oasislabs/docker#v2.1.0-oasis4:
-    image: "oasislabs/testing:0.2.0"
+    image: "oasislabs/testing:0.3.0"
     always_pull: true
     workdir: /workdir
     volumes:
@@ -27,7 +27,8 @@ docker_plugin: &docker_plugin_configuration
       - "LANG=C.UTF-8"
       - "CARGO_TARGET_DIR=/tmp/artifacts"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
-      - "EKIDEN_BRANCH=master"
+      # XXX: Change to master once ekiden PR #1531 is merged.
+      - "EKIDEN_BRANCH=kostko/feature/fortanix-sgx"
       - "E2E_TESTS_BRANCH=master"
     propagate-environment: true
     unconfined: true
@@ -43,21 +44,22 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build inspector
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/build_generic.sh /workdir -p inspector
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
+  # TODO: Update and build again when we start using the new storage interface.
+  # - label: Build inspector
+  #   command:
+  #     - .buildkite/scripts/setup_gitconfig.sh
+  #     - .buildkite/rust/build_generic.sh /workdir -p inspector
+  #   agents:
+  #     buildkite_agent_size: large
+  #   plugins:
+  #     <<: *docker_plugin_configuration
 
   - label: Build web3 gateway
     command:
       - .buildkite/scripts/setup_gitconfig.sh
 
       # Build code and run tests
-      - .buildkite/rust/build_generic.sh /workdir -p web3-gateway -Z unstable-options
+      - .buildkite/rust/build_generic.sh /workdir -p web3-gateway
 
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
@@ -69,7 +71,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build runtime
+  - label: Build runtime (ELF)
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_runtime.sh /workdir
@@ -77,9 +79,27 @@ steps:
       # Upload artifact required in end-to-end tests.
       # This is done here to keep the build and test
       # script generic.
-      - cd /tmp/artifacts/enclave
-      - buildkite-agent artifact upload runtime-ethereum.so
-      - buildkite-agent artifact upload runtime-ethereum.mrenclave
+      - cd /tmp/artifacts/debug
+      - buildkite-agent artifact upload runtime-ethereum
+    env:
+      RUNTIME_VARIANT: elf
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build runtime (SGXS)
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/rust/build_runtime.sh /workdir
+
+      # Upload artifact required in end-to-end tests.
+      # This is done here to keep the build and test
+      # script generic.
+      - cd /tmp/artifacts/x86_64-fortanix-unknown-sgx/debug
+      - buildkite-agent artifact upload runtime-ethereum.sgxs
+    env:
+      RUNTIME_VARIANT: sgxs
     agents:
       buildkite_agent_size: large
     plugins:
@@ -122,7 +142,9 @@ steps:
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_rpc_test.sh
+      - .buildkite/scripts/download_ekiden_test_scripts.sh
+      - rm -rf tests/rpc-tests
+      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-rpc-tests
     timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
@@ -135,7 +157,9 @@ steps:
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/run_end_to_end_test.sh
+      - .buildkite/scripts/download_ekiden_test_scripts.sh
+      - rm -rf tests/e2e-tests
+      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
     timeout_in_minutes: 25
     # use default: exit-status: "*" and retry limit of 2
     retry:

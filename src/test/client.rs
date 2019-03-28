@@ -1,7 +1,20 @@
 //! Test client to interact with a runtime-ethereum blockchain.
+use std::{str::FromStr, sync::Arc};
 
-use ekiden_core::mrae::nonce::{Nonce, NONCE_SIZE};
-use ekiden_keymanager_common::ContractKey;
+use byteorder::{BigEndian, ByteOrder};
+use ekiden_keymanager_client::{self, ContractId, ContractKey, KeyManagerClient};
+use ekiden_runtime::{
+    common::{
+        crypto::{
+            hash::Hash,
+            mrae::nonce::{Nonce, NONCE_SIZE},
+        },
+        roothash::Header,
+    },
+    executor::Executor,
+    storage::{cas::MemoryCAS, mkvs::CASPatriciaTrie, StorageContext, CAS, MKVS},
+    transaction::{dispatcher::BatchHandler, Context as TxnContext},
+};
 use elastic_array::ElasticArray128;
 use ethcore::{
     rlp,
@@ -9,41 +22,41 @@ use ethcore::{
     transaction::{Action, Transaction as EthcoreTransaction},
     vm::OASIS_HEADER_PREFIX,
 };
-use ethereum_api::{Receipt, TransactionRequest};
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
-use runtime_ethereum_common::confidential::{
-    key_manager::{KeyManagerClient, TestKeyManager},
-    ConfidentialCtx,
-};
-use std::{
-    str::FromStr,
-    sync::{Mutex, MutexGuard},
-};
-use test::*;
+use io_context::Context as IoContext;
+use keccak_hash::keccak;
+use runtime_ethereum_api::{Receipt, TransactionRequest};
+use runtime_ethereum_common::confidential::ConfidentialCtx;
+use serde_json::map::Map;
 
-use byteorder::{BigEndian, ByteOrder};
-use serde_json::{map::Map, Value};
+use crate::{cache::Cache, methods, EthereumBatchHandler};
 
-lazy_static! {
-    static ref CLIENT: Mutex<Client> = Mutex::new(Client::new());
-}
-
+/// Test client.
 pub struct Client {
     /// KeyPair used for signing transactions.
     pub keypair: KeyPair,
     /// Contract key used for encrypting web3c transactions.
     pub ephemeral_key: ContractKey,
-    pub timestamp: u64,
     /// Gas limit used for transactions.
     /// TODO: use estimate gas to set this dynamically
     pub gas_limit: U256,
     /// Gas price used for transactions.
     pub gas_price: U256,
+    /// Header.
+    pub header: Header,
+    /// In-memory CAS.
+    pub cas: Arc<CAS>,
+    /// Key manager client.
+    pub km_client: Arc<KeyManagerClient>,
+    /// State cache.
+    pub cache: Arc<Cache>,
 }
 
 impl Client {
-    fn new() -> Self {
+    pub fn new() -> Self {
+        let km_client = Arc::new(ekiden_keymanager_client::mock::MockClient::new());
+
         Self {
             // address: 0x7110316b618d20d0c44728ac2a3d683536ea682
             keypair: KeyPair::from_secret(
@@ -53,24 +66,54 @@ impl Client {
                 .unwrap(),
             )
             .unwrap(),
-            ephemeral_key: TestKeyManager::create_random_key(),
-            timestamp: 0xcafedeadbeefc0de,
+            ephemeral_key: ContractKey::generate(),
             gas_price: U256::from(1000000000),
             gas_limit: U256::from(1000000),
+            cas: Arc::new(MemoryCAS::new()),
+            cache: Arc::new(Cache::new(km_client.clone())),
+            km_client,
+            header: Header {
+                timestamp: 0xcafedeadbeefc0de,
+                state_root: Hash::empty_hash(),
+            },
         }
     }
 
-    /// Returns a handle to the client to interact with the blockchain.
-    pub fn instance<'a>() -> MutexGuard<'a, Self> {
-        CLIENT.lock().unwrap()
+    pub fn execute_batch<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut Self, &mut TxnContext) -> R,
+    {
+        println!("execute with header: {:?}", self.header);
+        let mut mkvs = CASPatriciaTrie::new(self.cas.clone(), &self.header.state_root);
+        let mut ctx = TxnContext::new(IoContext::background().freeze(), self.header.clone());
+        let handler = EthereumBatchHandler::new(self.cache.clone());
+
+        let result = StorageContext::enter(self.cas.clone(), &mut mkvs, || {
+            handler.start_batch(&mut ctx);
+            let result = f(self, &mut ctx);
+            handler.end_batch(ctx);
+
+            result
+        });
+
+        let new_state_root = mkvs.commit().expect("mkvs commit must succeed");
+        self.cache.finalize_root(new_state_root);
+        self.header.state_root = new_state_root;
+
+        result
     }
 
-    /// Sets the timestamp passed to the runtime via RuntimeCallContext.
+    /// Sets the timestamp passed to the runtime.
     pub fn set_timestamp(&mut self, timestamp: u64) {
-        self.timestamp = timestamp;
+        self.header.timestamp = timestamp;
     }
 
-    pub fn estimate_gas(&self, contract: Option<&Address>, data: Vec<u8>, value: &U256) -> U256 {
+    pub fn estimate_gas(
+        &mut self,
+        contract: Option<&Address>,
+        data: Vec<u8>,
+        value: &U256,
+    ) -> U256 {
         let tx = TransactionRequest {
             caller: Some(self.keypair.address()),
             is_call: contract.is_some(),
@@ -81,11 +124,11 @@ impl Client {
             gas: None,
         };
 
-        with_batch_handler(self.timestamp, |ctx| estimate_gas(&tx, ctx).unwrap())
+        self.execute_batch(|_client, ctx| methods::estimate_gas(&tx, ctx).unwrap())
     }
 
     pub fn confidential_estimate_gas(
-        &self,
+        &mut self,
         contract: Option<&Address>,
         data: Vec<u8>,
         value: &U256,
@@ -116,9 +159,8 @@ impl Client {
     /// and the address of the contract.
     pub fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
         let hash = self.send(None, code, balance);
-        let receipt = with_batch_handler(self.timestamp, |ctx| {
-            get_receipt(&hash, ctx).unwrap().unwrap()
-        });
+        let receipt =
+            self.execute_batch(|_client, ctx| methods::get_receipt(&hash, ctx).unwrap().unwrap());
         (hash, receipt.contract_address.unwrap())
     }
 
@@ -134,15 +176,14 @@ impl Client {
         let mut data = Self::make_header(expiry, confidentiality);
         data.extend(code);
         let hash = self.send(None, data, balance);
-        let receipt = with_batch_handler(self.timestamp, |ctx| {
-            get_receipt(&hash, ctx).unwrap().unwrap()
-        });
+        let receipt =
+            self.execute_batch(|_client, ctx| methods::get_receipt(&hash, ctx).unwrap().unwrap());
         (hash, receipt.contract_address.unwrap())
     }
 
     /// Returns the receipt for the given transaction hash.
-    pub fn receipt(&self, tx_hash: H256) -> Receipt {
-        with_batch_handler(self.timestamp, |ctx| get_receipt(&tx_hash, ctx))
+    pub fn receipt(&mut self, tx_hash: H256) -> Receipt {
+        self.execute_batch(|_client, ctx| methods::get_receipt(&tx_hash, ctx))
             .unwrap()
             .unwrap()
     }
@@ -155,9 +196,10 @@ impl Client {
         balance: &U256,
     ) -> (H256, Address) {
         let hash = self.confidential_send(None, code, balance);
-        let receipt = with_batch_handler(self.timestamp, |ctx| {
-            get_receipt(&hash, ctx).unwrap().unwrap()
-        });
+        let receipt = self
+            .execute_batch(|_client, ctx| methods::get_receipt(&hash, ctx))
+            .unwrap()
+            .unwrap();
         (hash, receipt.contract_address.unwrap())
     }
 
@@ -174,30 +216,31 @@ impl Client {
             gas: None,
         };
 
-        with_batch_handler(self.timestamp, |ctx| {
-            simulate_transaction(&tx, ctx).unwrap().result.unwrap()
-        })
+        self.execute_batch(|_client, ctx| methods::simulate_transaction(&tx, ctx))
+            .unwrap()
+            .result
+            .unwrap()
     }
 
     /// Sends a transaction onchain that updates the blockchain, analagous to the web3.js send().
     pub fn send(&mut self, contract: Option<&Address>, data: Vec<u8>, value: &U256) -> H256 {
-        with_batch_handler(self.timestamp, |ctx| {
+        self.execute_batch(|client, ctx| {
             let tx = EthcoreTransaction {
                 action: if contract == None {
                     Action::Create
                 } else {
                     Action::Call(*contract.unwrap())
                 },
-                nonce: get_account_nonce(&self.keypair.address(), ctx).unwrap(),
-                gas_price: self.gas_price,
-                gas: self.gas_limit,
+                nonce: methods::get_account_nonce(&client.keypair.address(), ctx).unwrap(),
+                gas_price: client.gas_price,
+                gas: client.gas_limit,
                 value: *value,
                 data: data,
             }
-            .sign(&self.keypair.secret(), None);
+            .sign(&client.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            execute_raw_transaction(&raw.into_vec(), ctx)
+            methods::execute_raw_transaction(&raw.into_vec(), ctx)
                 .unwrap()
                 .hash
                 .unwrap()
@@ -271,7 +314,15 @@ impl Client {
     /// to web3c. The latter can be used to encrypt/decrypt inside web3c (just as a compute node
     /// would).
     fn make_ctx(&self, contract: Address, is_key_manager: bool) -> ConfidentialCtx {
-        let contract_key = KeyManagerClient::contract_key(contract).unwrap().unwrap();
+        let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
+        let mut executor = Executor::new();
+        let contract_key = executor
+            .block_on(
+                self.km_client
+                    .get_or_create_keys(IoContext::background(), contract_id),
+            )
+            .unwrap();
+
         // Note that what key is used as the "peer" switches depending upon `is_key_manager`.
         // From the perspective of the client, the "peer" is the contract (i.e. the key
         // manager), and vice versa. This is a result of our mrae's symmetric key derivation.
@@ -289,15 +340,19 @@ impl Client {
             peer_public_key: Some(peer_key),
             contract_key: Some(contract_key),
             next_nonce: Some(nonce),
+            key_manager: self.km_client.clone(),
+            io_ctx: IoContext::background().freeze(),
         }
     }
 
     /// Returns the raw underlying storage for the given `contract`--without
     /// encrypting the key or decrypting the return value.
-    pub fn raw_storage(&self, contract: Address, storage_key: H256) -> Option<Vec<u8>> {
-        with_batch_handler(self.timestamp, |ctx| {
-            let ectx = ctx.runtime.downcast_mut::<EthereumContext>().unwrap();
-            let state = ectx.cache.get_state(ConfidentialCtx::new()).unwrap();
+    pub fn raw_storage(&mut self, contract: Address, storage_key: H256) -> Option<Vec<u8>> {
+        self.execute_batch(|client, _ctx| {
+            let state = client
+                .cache
+                .get_state(IoContext::background().freeze())
+                .unwrap();
             state._storage_at(&contract, &storage_key).unwrap()
         })
     }
@@ -306,7 +361,7 @@ impl Client {
     /// To be used together with `Client::raw_storage`.
     pub fn confidential_storage_key(&self, contract: Address, storage_key: H256) -> H256 {
         let km_confidential_ctx = self.key_manager_confidential_ctx(contract);
-        keccak_hash::keccak(
+        keccak(
             &km_confidential_ctx
                 .encrypt_storage(storage_key.to_vec())
                 .unwrap(),
@@ -314,8 +369,9 @@ impl Client {
     }
 
     /// Returns the storage expiry timestamp for a contract.
-    pub fn storage_expiry(&self, contract: Address) -> u64 {
-        with_batch_handler(self.timestamp, |ctx| get_storage_expiry(&contract, ctx)).unwrap()
+    pub fn storage_expiry(&mut self, contract: Address) -> u64 {
+        self.execute_batch(|_client, ctx| methods::get_storage_expiry(&contract, ctx))
+            .unwrap()
     }
 
     /// Returns a valid contract deployment header with specified expiry and confidentiality.

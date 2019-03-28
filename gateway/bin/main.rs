@@ -17,40 +17,50 @@
 //! web3 gateway for Oasis Ethereum runtime.
 
 #![deny(warnings)]
-extern crate ctrlc;
+
 extern crate fdlimit;
-extern crate log;
-extern crate parking_lot;
+extern crate signal_hook;
 #[macro_use]
 extern crate clap;
-
-#[macro_use]
-extern crate client_utils;
-extern crate ekiden_tracing;
-
+extern crate ekiden_runtime;
+extern crate failure;
 extern crate runtime_ethereum_common;
+extern crate slog;
 extern crate web3_gateway;
 
-use std::sync::Arc;
+use std::{io::Read, os::unix::net::UnixStream};
 
 use clap::{App, Arg};
-use ctrlc::CtrlC;
+use failure::Fallible;
 use fdlimit::raise_fd_limit;
-use log::LevelFilter;
-use parking_lot::{Condvar, Mutex};
+use slog::{error, info};
 
+use ekiden_runtime::common::logger::get_logger;
 use runtime_ethereum_common::MIN_GAS_PRICE_GWEI;
 use web3_gateway::util;
 
-// Run our version of parity.
-fn main() {
+fn main() -> Fallible<()> {
     // TODO: is this needed?
     // increase max number of open files
     raise_fd_limit();
 
     let gas_price = MIN_GAS_PRICE_GWEI.to_string();
 
-    let args = default_app!()
+    let args = App::new("Ethereum Runtime Web3 Gateway")
+        .arg(
+            Arg::with_name("runtime-id")
+                .long("runtime-id")
+                .help("Ekiden runtime identifier for ethereum-runtime")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("node-address")
+                .long("node-address")
+                .help("Ekiden node address")
+                .takes_value(true)
+                .required(true),
+        )
         .arg(
             Arg::with_name("http-port")
                 .long("http-port")
@@ -113,54 +123,31 @@ fn main() {
                 .multiple(true)
                 .help("Sets the level of verbosity"),
         )
-        .arg(
-            Arg::with_name("key-manager-host")
-                .long("key-manager-host")
-                .help("Address for the key manager server.")
-                .takes_value(true)
-                .default_value("127.0.0.1"),
-        )
-        .arg(
-            Arg::with_name("key-manager-port")
-                .long("key-manager-port")
-                .help("Port for the KeyManager server.")
-                .default_value("9003")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("key-manager-cert")
-                .long("key-manager-cert")
-                .required(true)
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("key-manager-mrenclave")
-                .long("key-manager-mrenclave")
-                .required(true)
-                .takes_value(true),
-        )
         .get_matches();
 
+    let logger = get_logger("gateway/main");
+
     // reset max log level to Info after default_app macro sets it to Trace
+    /*
     log::set_max_level(match args.occurrences_of("v") {
         0 => LevelFilter::Error,
         1 => LevelFilter::Info,
         2 => LevelFilter::Debug,
         3 => LevelFilter::Trace,
         _ => LevelFilter::max(),
-    });
+    });*/
 
-    // Initialize tracing.
-    ekiden_tracing::report_forever("web3-gateway", &args);
+    let num_threads = value_t!(args, "threads", usize)?;
+    let http_port = value_t!(args, "http-port", u16)?;
+    let ws_port = value_t!(args, "ws-port", u16)?;
+    let ws_max_connections = value_t!(args, "ws-max-connections", usize)?;
+    let ws_rate_limit = value_t!(args, "ws-rate-limit", usize)?;
+    let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64)?;
+    let gas_price = util::gwei_to_wei(value_t!(args, "gas-price", u64)?);
+    let jsonrpc_max_batch_size = value_t!(args, "jsonrpc-max-batch", usize)?;
 
-    let num_threads = value_t!(args, "threads", usize).unwrap();
-    let http_port = value_t!(args, "http-port", u16).unwrap();
-    let ws_port = value_t!(args, "ws-port", u16).unwrap();
-    let ws_max_connections = value_t!(args, "ws-max-connections", usize).unwrap();
-    let ws_rate_limit = value_t!(args, "ws-rate-limit", usize).unwrap();
-    let pubsub_interval_secs = value_t!(args, "pubsub-interval", u64).unwrap();
-    let gas_price = util::gwei_to_wei(value_t!(args, "gas-price", u64).unwrap());
-    let jsonrpc_max_batch_size = value_t!(args, "jsonrpc-max-batch", usize).unwrap();
+    info!(logger, "Starting the web3 gateway");
+
     let client = web3_gateway::start(
         args,
         pubsub_interval_secs,
@@ -171,20 +158,32 @@ fn main() {
         ws_rate_limit,
         gas_price,
         jsonrpc_max_batch_size,
-    )
-    .unwrap();
+    );
 
-    let exit = Arc::new((Mutex::new(false), Condvar::new()));
-    CtrlC::set_handler({
-        let e = exit.clone();
-        move || {
-            e.1.notify_all();
+    let client = match client {
+        Ok(client) => client,
+        Err(err) => {
+            error!(logger, "Failed to initialize web3 gateway"; "err" => ?err);
+            return Ok(());
         }
-    });
+    };
 
-    // Wait for signal
-    let mut lock = exit.0.lock();
-    let _ = exit.1.wait(&mut lock);
+    info!(logger, "Web3 gateway is running");
+
+    // Register a self-pipe for handing the SIGTERM and SIGINT signals.
+    let (mut read, write) = UnixStream::pair()?;
+    signal_hook::pipe::register(signal_hook::SIGINT, write.try_clone()?)?;
+    signal_hook::pipe::register(signal_hook::SIGTERM, write.try_clone()?)?;
+
+    // Wait for signal.
+    let mut buff = [0];
+    read.read_exact(&mut buff)?;
+
+    info!(logger, "The web3 gateway is shutting down");
 
     client.shutdown();
+
+    info!(logger, "Shutdown completed");
+
+    Ok(())
 }

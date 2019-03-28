@@ -23,34 +23,47 @@ use std::{
     sync::{Arc, Weak},
 };
 
+use ekiden_runtime::common::logger::get_logger;
+use ethcore::{
+    encoded,
+    filter::{Filter as EthFilter, TxEntry as EthTxEntry, TxFilter as EthTxFilter},
+    ids::BlockId,
+};
 use jsonrpc_core::{futures::Future, Result};
 use jsonrpc_macros::{
     pubsub::{Sink, Subscriber},
     Trailing,
 };
 use jsonrpc_pubsub::SubscriptionId;
-
+use lazy_static::lazy_static;
+use parity_reactor::Remote;
 use parity_rpc::v1::{
     helpers::{errors, Subscribers},
     metadata::Metadata,
     traits::EthPubSub,
     types::{pubsub, Log, RichHeader, TransactionOutcome, H256, H64},
 };
-
-use ethcore::{
-    encoded,
-    filter::{Filter as EthFilter, TxEntry as EthTxEntry, TxFilter as EthTxFilter},
-    ids::BlockId,
-};
-use parity_reactor::Remote;
 use parking_lot::RwLock;
+use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+use slog::{info, Logger};
 
-use client::{ChainNotify, Client};
+use crate::client::{ChainNotify, Client};
+
+// Metrics.
+lazy_static! {
+    static ref ETH_PUBSUB_RPC_CALLS: IntCounterVec = register_int_counter_vec!(
+        "web3_gateway_eth_pubsub_rpc_calls",
+        "Number of eth_pubsub API RPC calls",
+        &["call"]
+    )
+    .unwrap();
+}
 
 type PubSubClient = Sink<pubsub::Result>;
 
 /// Eth PubSub implementation.
 pub struct EthPubSubClient {
+    logger: Logger,
     handler: Arc<ChainNotificationHandler>,
     heads_subscribers: Arc<RwLock<Subscribers<PubSubClient>>>,
     logs_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthFilter)>>>,
@@ -65,6 +78,7 @@ impl EthPubSubClient {
         let tx_subscribers = Arc::new(RwLock::new(Subscribers::default()));
 
         EthPubSubClient {
+            logger: get_logger("gateway/impls/eth_pubsub"),
             handler: Arc::new(ChainNotificationHandler {
                 client,
                 remote,
@@ -202,11 +216,16 @@ impl EthPubSub for EthPubSubClient {
         kind: pubsub::Kind,
         params: Trailing<pubsub::Params>,
     ) {
-        measure_counter_inc!("subscribe");
+        ETH_PUBSUB_RPC_CALLS
+            .with(&labels! {"call" => "subscribe",})
+            .inc();
         info!(
-            "eth_subscribe(subscriber: {:?}, kind: {:?})",
-            subscriber, kind
+            self.logger,
+            "eth_subscribe";
+                "subscriber" => ?subscriber,
+                "kind" => ?kind
         );
+
         let error = match (kind, params.into()) {
             (pubsub::Kind::NewHeads, None) => {
                 self.heads_subscribers.write().push(subscriber);
@@ -235,8 +254,11 @@ impl EthPubSub for EthPubSubClient {
     }
 
     fn unsubscribe(&self, id: SubscriptionId) -> Result<bool> {
-        measure_counter_inc!("unsubscribe");
-        info!("unsubscribe(id: {:?})", id);
+        ETH_PUBSUB_RPC_CALLS
+            .with(&labels! {"call" => "unsubscribe",})
+            .inc();
+        info!(self.logger, "unsubscribe"; "id" => ?id);
+
         let res = self.heads_subscribers.write().remove(&id).is_some();
         let res2 = self.logs_subscribers.write().remove(&id).is_some();
         let res3 = self.tx_subscribers.write().remove(&id).is_some();

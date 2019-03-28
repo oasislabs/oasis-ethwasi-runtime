@@ -9,7 +9,6 @@ mod contracts;
 use ethcore::state::ConfidentialCtx;
 use ethereum_types::{Address, H256, U256};
 use runtime_ethereum::test;
-use std::sync::MutexGuard;
 
 /// With a contract of the form
 ///
@@ -40,7 +39,7 @@ use std::sync::MutexGuard;
 #[test]
 fn deploy_contract_storage_encryption_no_constructor() {
     // Given.
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
     // When.
     let contract = deploy_counter_no_constructor(&mut client);
     // Then.
@@ -55,7 +54,7 @@ fn deploy_contract_storage_encryption_no_constructor() {
 #[test]
 fn tx_contract_storage_encryption_no_constructor() {
     // Given.
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
     let contract = deploy_counter_no_constructor(&mut client);
     // When.
     increment_counter(contract.clone(), &mut client);
@@ -104,7 +103,7 @@ fn tx_contract_storage_encryption_no_constructor() {
 #[test]
 fn test_deploy_contract_storage_encryption_with_constructor() {
     // Given.
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
     // When.
     let contract = deploy_counter_with_constructor(&mut client);
     // Then.
@@ -126,7 +125,7 @@ fn test_deploy_contract_storage_encryption_with_constructor() {
     );
 }
 
-fn deploy_counter_no_constructor<'a>(client: &mut MutexGuard<'a, test::Client>) -> Address {
+fn deploy_counter_no_constructor<'a>(client: &mut test::Client) -> Address {
     let counter_code = contracts::counter::solidity_initcode();
     let (_, contract) = client.create_confidential_contract(counter_code, &U256::zero());
 
@@ -139,14 +138,14 @@ fn deploy_counter_no_constructor<'a>(client: &mut MutexGuard<'a, test::Client>) 
 }
 
 /// Makes a *call* to the `getCounter()` method.
-fn get_counter<'a>(contract: &Address, client: &mut MutexGuard<'a, test::Client>) -> Vec<u8> {
+fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> Vec<u8> {
     let sighash_data = contracts::counter::get_counter_sighash();
     client.confidential_call(contract, sighash_data, &U256::zero())
 }
 
 /// Invokes the `incrementCounter` method on the contract (and does some post
 /// validation to sanity check it worked).
-fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Client>) {
+fn increment_counter<'a>(contract: Address, client: &mut test::Client) {
     let increment_counter_data = contracts::counter::increment_counter_sighash();
     client.confidential_send(Some(&contract), increment_counter_data, &U256::zero());
 
@@ -159,7 +158,7 @@ fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Cl
     assert_eq!(counter_one, expected_one);
 }
 
-fn deploy_counter_with_constructor<'a>(client: &mut MutexGuard<'a, test::Client>) -> Address {
+fn deploy_counter_with_constructor<'a>(client: &mut test::Client) -> Address {
     let initcode =
         hex::decode("608060405234801561001057600080fd5b506040516020806100ea83398101806040528101908080519060200190929190505050806000819055505060a1806100496000396000f300608060405260043610603f576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680638ada066e146044575b600080fd5b348015604f57600080fd5b506056606c565b6040518082815260200191505060405180910390f35b600080549050905600a165627a7a72305820137067541d27b3ea9965691d1cb4585098dddc2cc08809233b6a1df18ddc110300290000000000000000000000000000000000000000000000000000000000000005").unwrap();
 

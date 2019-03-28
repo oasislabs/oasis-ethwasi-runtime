@@ -9,6 +9,6 @@ ARG RUNTIME_ETHEREUM_BUILD_IMAGE_TAG
 LABEL com.oasislabs.runtime-ethereum-commit-sha="${RUNTIME_ETHEREUM_COMMIT_SHA}"
 LABEL com.oasislabs.runtime-ethereum-build-image-tag="${RUNTIME_ETHEREUM_BUILD_IMAGE_TAG}"
 
-COPY target/enclave/runtime-ethereum.so /ekiden/lib/
-COPY target/enclave/runtime-ethereum.mrenclave /ekiden/res/
+COPY target/release/runtime-ethereum /ekiden/lib/
+COPY target/x86_64-fortanix-unknown-sgx/release/runtime-ethereum.sgxs /ekiden/lib/
 COPY target/release/gateway /ekiden/bin/

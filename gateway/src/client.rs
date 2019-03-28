@@ -6,6 +6,10 @@ use std::{
 
 use bytes::Bytes;
 use common_types::log_entry::LocalizedLogEntry;
+#[cfg(not(test))]
+use ekiden_client::transaction::snapshot::BlockSnapshot;
+use ekiden_client::BoxFuture;
+use ekiden_runtime::{common::logger::get_logger, storage::MKVS};
 use ethcore::{
     blockchain::{BlockProvider, TransactionAddress},
     encoded,
@@ -22,49 +26,90 @@ use ethcore::{
     vm::{EnvInfo, LastHashes, OasisContract},
 };
 use ethereum_types::{Address, H256, U256};
-use futures::future::Future;
-#[cfg(test)]
-use grpcio;
-use runtime_ethereum;
+use failure::{format_err, Error, Fallible};
+use futures::{future, prelude::*};
+use lazy_static::lazy_static;
+use prometheus::{
+    histogram_opts, opts, register_counter, register_histogram, register_int_counter, Histogram,
+    IntCounter,
+};
+use runtime_ethereum_api::TransactionRequest;
 use runtime_ethereum_common::State as EthState;
+use slog::{debug, error, info, Logger};
+use tokio::runtime::TaskExecutor;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
 
-use client_utils;
-#[cfg(not(test))]
-use client_utils::db::Snapshot;
-use ekiden_common::environment::Environment;
-use ekiden_core::{error::Error, futures::prelude::*};
-use ekiden_db_trusted::Database;
-use ekiden_storage_base::StorageBackend;
-use ethereum_api::TransactionRequest;
-use state::{self, StateDb};
 #[cfg(test)]
-use test_helpers::{self, MockDb};
+use crate::test_helpers::{self, MockDb};
 #[cfg(test)]
-use util;
-use util::from_block_id;
+use crate::util;
+use crate::{
+    future_ext::block_on,
+    state::{self, StateDb},
+    util::from_block_id,
+    EthereumRuntimeClient,
+};
+
+// Metrics.
+lazy_static! {
+    static ref RUNTIME_CALL_SUCCEEDED: IntCounter = register_int_counter!(
+        "web3_gateway_runtime_call_succeeded",
+        "Number of successful calls into the runtime"
+    )
+    .unwrap();
+    static ref RUNTIME_CALL_FAILED: IntCounter = register_int_counter!(
+        "web3_gateway_runtime_call_failed",
+        "Number of failed calls into the runtime"
+    )
+    .unwrap();
+    static ref READ_STATE_FAILED: IntCounter = register_int_counter!(
+        "web3_gateway_read_state_failed",
+        "Number of failed state reads"
+    )
+    .unwrap();
+    static ref CONTRACT_CREATED: IntCounter = register_int_counter!(
+        "web3_gateway_contract_created",
+        "Number of create contract calls"
+    )
+    .unwrap();
+    static ref ENC_CONTRACT_CREATED: IntCounter = register_int_counter!(
+        "web3_gateway_confidential_contract_created",
+        "Number of confidential create contract calls"
+    )
+    .unwrap();
+    static ref LOG_FILTER_REJECTED: IntCounter = register_int_counter!(
+        "web3_gateway_log_filter_rejected",
+        "Number of rejected log filters"
+    )
+    .unwrap();
+    static ref PUBSUB_NOTIFY_TIME: Histogram = register_histogram!(
+        "web3_gateway_pubsub_notify_time",
+        "Time it takes to dispatch pubsub notifications"
+    )
+    .unwrap();
+}
 
 /// Record runtime call outcome.
-fn record_runtime_call_result<F, T>(call: &'static str, result: F) -> BoxFuture<T>
+fn record_runtime_call_result<F, T>(logger: &Logger, call: &'static str, result: F) -> BoxFuture<T>
 where
     T: 'static + Send,
     F: 'static + Future<Item = T, Error = Error> + Send,
 {
-    result
-        .then(move |result| {
-            match result {
-                Ok(_) => {
-                    measure_counter_inc!("runtime_call_succeeded");
-                }
-                Err(ref error) => {
-                    measure_counter_inc!("runtime_call_failed");
-                    error!("{}: {:?}", call, error);
-                }
-            }
+    let logger = logger.clone();
 
-            result
-        })
-        .into_box()
+    Box::new(result.then(move |result| {
+        match result {
+            Ok(_) => {
+                RUNTIME_CALL_SUCCEEDED.inc();
+            }
+            Err(ref error) => {
+                RUNTIME_CALL_FAILED.inc();
+                error!(logger, "Runtime call failed"; "call" => call, "err" => ?error);
+            }
+        }
+
+        result
+    }))
 }
 
 /// An actor listening to chain events.
@@ -87,14 +132,11 @@ pub struct CheckedTransaction {
 }
 
 pub struct Client {
-    client: Arc<runtime_ethereum::Client>,
+    logger: Logger,
+    executor: TaskExecutor,
+    client: Arc<EthereumRuntimeClient>,
     engine: Arc<EthEngine>,
-    #[cfg(not(test))]
-    snapshot_manager: client_utils::db::Manager,
     eip86_transition: u64,
-    environment: Arc<Environment>,
-    #[cfg(not(test))]
-    storage_backend: Arc<StorageBackend>,
     /// The most recent block for which we have sent notifications.
     notified_block_number: Mutex<BlockNumber>,
     listeners: Arc<RwLock<Vec<Weak<ChainNotify>>>>,
@@ -103,29 +145,28 @@ pub struct Client {
 
 impl Client {
     pub fn new(
+        executor: TaskExecutor,
+        client: EthereumRuntimeClient,
         spec: &Spec,
-        snapshot_manager: client_utils::db::Manager,
-        client: runtime_ethereum::Client,
-        environment: Arc<Environment>,
-        backend: Arc<StorageBackend>,
         gas_price: U256,
     ) -> Self {
-        // get current block number from db snapshot (or 0)
-        let current_block_number =
-            match state::StateDb::new(backend.clone(), snapshot_manager.get_snapshot()) {
-                Ok(db) => db.map_or(0, |db| db.best_block_number()),
-                Err(_) => 0,
-            };
+        let logger = get_logger("gateway/client");
+
+        // Get current block number from db snapshot (or 0).
+        debug!(logger, "Discovering latest block number");
+        let current_block_number = block_on(&executor, client.txn_client().get_latest_block())
+            .and_then(|snapshot| state::StateDb::new(Arc::new(snapshot.clone()), snapshot))
+            .and_then(|maybe_db| Ok(maybe_db.map_or(0, |db| db.best_block_number())))
+            .unwrap_or(0);
+
+        debug!(logger, "Discovered latest block number"; "block_num" => current_block_number);
 
         Self {
+            logger,
+            executor,
             client: Arc::new(client),
             engine: spec.engine.clone(),
-            #[cfg(not(test))]
-            snapshot_manager: snapshot_manager,
             eip86_transition: spec.params().eip86_transition,
-            environment,
-            #[cfg(not(test))]
-            storage_backend: backend,
             // start at current block
             notified_block_number: Mutex::new(current_block_number),
             listeners: Arc::new(RwLock::new(vec![])),
@@ -135,38 +176,20 @@ impl Client {
 
     /// A blockchain client for unit tests.
     #[cfg(test)]
-    pub fn get_test_client() -> Self {
+    pub fn new_test_client() -> Self {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
         let spec = &util::load_spec();
-        let grpc_environment = grpcio::EnvBuilder::new().build();
-        let environment = Arc::new(ekiden_common::environment::GrpcEnvironment::new(
-            grpc_environment,
-        ));
+
         Self {
-            client: Arc::new(test_helpers::get_test_runtime_client()),
+            logger: get_logger("gateway/client"),
+            executor: runtime.executor(),
+            client: Arc::new(test_helpers::new_test_runtime_client()),
             engine: spec.engine.clone(),
             eip86_transition: spec.params().eip86_transition,
-            environment: environment,
             notified_block_number: Mutex::new(0),
             listeners: Arc::new(RwLock::new(vec![])),
             gas_price: U256::from(1_000_000_000),
         }
-    }
-
-    /// Spawn a future in our environment and wait for its result.
-    pub fn block_on<F, R, E>(&self, future: F) -> Result<R, E>
-    where
-        F: Send + 'static + Future<Item = R, Error = E>,
-        R: Send + 'static,
-        E: Send + 'static,
-    {
-        let (result_tx, result_rx) = std::sync::mpsc::channel();
-        self.environment.spawn(Box::new(future.then(move |result| {
-            drop(result_tx.send(result));
-            Ok(())
-        })));
-        result_rx
-            .recv()
-            .expect("block_on: Environment dropped our result sender")
     }
 
     /// Notify listeners of new blocks.
@@ -176,7 +199,7 @@ impl Client {
 
         let mut last_block = self.notified_block_number.lock().unwrap();
 
-        measure_histogram_timer!("pubsub_notify_time");
+        let _timer = PUBSUB_NOTIFY_TIME.start_timer();
 
         if let Some(db) = self.get_db_snapshot() {
             let current_block = db.best_block_number();
@@ -302,25 +325,22 @@ impl Client {
     /// Returns a StateDb backed by an Ekiden db snapshot, or None when the
     /// blockchain database has not yet been initialized by the runtime.
     #[cfg(not(test))]
-    fn get_db_snapshot(&self) -> Option<StateDb<Snapshot>> {
-        match state::StateDb::new(
-            self.storage_backend.clone(),
-            self.snapshot_manager.get_snapshot(),
-        ) {
-            Ok(db) => db,
-            Err(e) => {
-                measure_counter_inc!("read_state_failed");
-                error!("Could not get db snapshot: {:?}", e);
+    fn get_db_snapshot(&self) -> Option<StateDb<BlockSnapshot>> {
+        block_on(&self.executor, self.client.txn_client().get_latest_block())
+            .and_then(|snapshot| state::StateDb::new(Arc::new(snapshot.clone()), snapshot))
+            .unwrap_or_else(|err| {
+                READ_STATE_FAILED.inc();
+                error!(self.logger, "Could not get db snapshot"; "err" => ?err);
+
                 None
-            }
-        }
+            })
     }
 
     /// Returns a MockDb-backed StateDb for unit tests.
     #[cfg(test)]
     fn get_db_snapshot(&self) -> Option<StateDb<MockDb>> {
         let db = MockDb::new();
-        StateDb::new(db.storage(), db).unwrap()
+        StateDb::new(db.cas(), db).unwrap()
     }
 
     // block-related
@@ -333,23 +353,29 @@ impl Client {
         // Fall back to runtime call if database has not been initialized.
         // NOTE: We need to block on this call as making this method futures-aware
         //       would complicate the consumers a lot.
-        self.block_on(record_runtime_call_result(
-            "get_block_height",
-            self.client
-                .get_block_height(false)
-                .map(|height| height.into()),
-        ))
+        block_on(
+            &self.executor,
+            record_runtime_call_result(
+                &self.logger,
+                "get_block_height",
+                self.client
+                    .get_block_height(false)
+                    .map(|height| height.into()),
+            ),
+        )
         .unwrap_or_default()
     }
 
     pub fn block(&self, id: BlockId) -> BoxFuture<Option<encoded::Block>> {
         if let Some(db) = self.get_db_snapshot() {
-            return future::ok(Self::id_to_block_hash(&db, id).and_then(|h| db.block(&h)))
-                .into_box();
+            return Box::new(future::ok(
+                Self::id_to_block_hash(&db, id).and_then(|h| db.block(&h)),
+            ));
         }
 
         // Fall back to runtime call if database has not been initialized.
         record_runtime_call_result(
+            &self.logger,
             "get_block",
             self.client
                 .get_block(from_block_id(id))
@@ -468,7 +494,7 @@ impl Client {
 
     fn id_to_block_hash<T>(db: &StateDb<T>, id: BlockId) -> Option<H256>
     where
-        T: 'static + Database + Send + Sync,
+        T: 'static + MKVS + Send + Sync,
     {
         match id {
             BlockId::Hash(hash) => Some(hash),
@@ -492,10 +518,12 @@ impl Client {
             // Check block range
             if to_number > from_number {
                 if to_number - from_number >= MAX_BLOCK_RANGE {
-                    measure_counter_inc!("log_filter_rejected");
+                    LOG_FILTER_REJECTED.inc();
                     error!(
-                        "getLogs rejected block range: ({:?}, {:?})",
-                        from_number, to_number
+                        self.logger,
+                        "getLogs rejected block range";
+                            "from_number" => from_number,
+                            "to_number" => to_number,
                     );
                     return Some(false);
                 }
@@ -565,20 +593,22 @@ impl Client {
             Some(db) => {
                 if let Some(state) = db.get_ethstate_at(id) {
                     match state.balance(&address) {
-                        Ok(balance) => future::ok(balance).into_box(),
-                        Err(e) => {
-                            measure_counter_inc!("read_state_failed");
-                            error!("Could not get balance from ethstate: {:?}", e);
-                            future::err(Error::new("Could not get balance")).into_box()
+                        Ok(balance) => Box::new(future::ok(balance)),
+                        Err(err) => {
+                            READ_STATE_FAILED.inc();
+                            error!(self.logger, "Could not get balance from ethstate"; "err" => ?err);
+
+                            Box::new(future::err(format_err!("Could not get balance")))
                         }
                     }
                 } else {
-                    future::err(Error::new("Unknown block")).into_box()
+                    Box::new(future::err(format_err!("Unknown block")))
                 }
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
                 record_runtime_call_result(
+                    &self.logger,
                     "get_account_balance",
                     self.client.get_account_balance(*address),
                 )
@@ -592,20 +622,22 @@ impl Client {
             Some(db) => {
                 if let Some(state) = db.get_ethstate_at(id) {
                     match state.code(&address) {
-                        Ok(code) => future::ok(code.map(|c| (&*c).clone())).into_box(),
-                        Err(e) => {
-                            measure_counter_inc!("read_state_failed");
-                            error!("Could not get code from ethstate: {:?}", e);
-                            future::err(Error::new("Could not get code")).into_box()
+                        Ok(code) => Box::new(future::ok(code.map(|c| (&*c).clone()))),
+                        Err(err) => {
+                            READ_STATE_FAILED.inc();
+                            error!(self.logger, "Could not get code from ethstate"; "err" => ?err);
+
+                            Box::new(future::err(format_err!("Could not get code")))
                         }
                     }
                 } else {
-                    future::err(Error::new("Unknown block")).into_box()
+                    Box::new(future::err(format_err!("Unknown block")))
                 }
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
                 record_runtime_call_result(
+                    &self.logger,
                     "get_account_code",
                     self.client.get_account_code(*address),
                 )
@@ -618,20 +650,22 @@ impl Client {
             Some(db) => {
                 if let Some(state) = db.get_ethstate_at(id) {
                     match state.nonce(&address) {
-                        Ok(nonce) => future::ok(nonce).into_box(),
-                        Err(e) => {
-                            measure_counter_inc!("read_state_failed");
-                            error!("Could not get nonce from ethstate: {:?}", e);
-                            future::err(Error::new("Could not get nonce")).into_box()
+                        Ok(nonce) => Box::new(future::ok(nonce)),
+                        Err(err) => {
+                            READ_STATE_FAILED.inc();
+                            error!(self.logger, "Could not get nonce from ethstate"; "err" => ?err);
+
+                            Box::new(future::err(format_err!("Could not get nonce")))
                         }
                     }
                 } else {
-                    future::err(Error::new("Unknown block")).into_box()
+                    Box::new(future::err(format_err!("Unknown block")))
                 }
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
                 record_runtime_call_result(
+                    &self.logger,
                     "get_account_nonce",
                     self.client.get_account_nonce(*address),
                 )
@@ -644,20 +678,22 @@ impl Client {
             Some(db) => {
                 if let Some(state) = db.get_ethstate_at(id) {
                     match state.storage_at(address, position) {
-                        Ok(val) => future::ok(val).into_box(),
-                        Err(e) => {
-                            measure_counter_inc!("read_state_failed");
-                            error!("Could not get storage from ethstate: {:?}", e);
-                            future::err(Error::new("Could not get storage")).into_box()
+                        Ok(val) => Box::new(future::ok(val)),
+                        Err(err) => {
+                            READ_STATE_FAILED.inc();
+                            error!(self.logger, "Could not get storage from ethstate"; "err" => ?err);
+
+                            Box::new(future::err(format_err!("Could not get storage")))
                         }
                     }
                 } else {
-                    future::err(Error::new("Unknown block")).into_box()
+                    Box::new(future::err(format_err!("Unknown block")))
                 }
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
                 record_runtime_call_result(
+                    &self.logger,
                     "get_storage_at",
                     self.client.get_storage_at((*address, *position)),
                 )
@@ -670,20 +706,22 @@ impl Client {
             Some(db) => {
                 if let Some(state) = db.get_ethstate_at(id) {
                     match state.storage_expiry(&address) {
-                        Ok(timestamp) => future::ok(timestamp).into_box(),
-                        Err(e) => {
-                            measure_counter_inc!("read_state_failed");
-                            error!("Could not get storage expiry from ethstate: {:?}", e);
-                            future::err(Error::new("Could not get storage expiry")).into_box()
+                        Ok(timestamp) => Box::new(future::ok(timestamp)),
+                        Err(err) => {
+                            READ_STATE_FAILED.inc();
+                            error!(self.logger, "Could not get storage expiry from ethstate"; "err" => ?err);
+
+                            Box::new(future::err(format_err!("Could not get storage expiry")))
                         }
                     }
                 } else {
-                    future::err(Error::new("Unknown block")).into_box()
+                    Box::new(future::err(format_err!("Unknown block")))
                 }
             }
             None => {
                 // Fall back to runtime call if database has not been initialized.
                 record_runtime_call_result(
+                    &self.logger,
                     "get_storage_expiry",
                     self.client.get_storage_expiry(*address),
                 )
@@ -693,7 +731,7 @@ impl Client {
 
     fn last_hashes<T>(db: &StateDb<T>, parent_hash: &H256) -> Arc<LastHashes>
     where
-        T: 'static + Database + Send + Sync,
+        T: 'static + MKVS + Send + Sync,
     {
         let mut last_hashes = LastHashes::new();
         last_hashes.resize(256, H256::default());
@@ -718,7 +756,7 @@ impl Client {
         max: u64,
     ) -> Vec<encoded::Header>
     where
-        T: 'static + Database + Send + Sync,
+        T: 'static + MKVS + Send + Sync,
     {
         // limit to `max` headers
         let start = if end - start + 1 >= max {
@@ -749,12 +787,13 @@ impl Client {
 
     fn get_env_info<T>(db: &StateDb<T>) -> EnvInfo
     where
-        T: 'static + Database + Send + Sync,
+        T: 'static + MKVS + Send + Sync,
     {
         let parent = db
             .best_block_hash()
             .and_then(|hash| db.block_header_data(&hash))
             .expect("No best block");
+
         EnvInfo {
             // next block
             number: parent.number() + 1,
@@ -776,14 +815,14 @@ impl Client {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
-                error!("Could not get db snapshot");
+                error!(self.logger, "Could not get db snapshot");
                 return Err(CallError::StateCorrupt);
             }
         };
         let mut state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
-                error!("Could not get state snapshot");
+                error!(self.logger, "Could not get state snapshot");
                 return Err(CallError::StateCorrupt);
             }
         };
@@ -800,10 +839,11 @@ impl Client {
 
     pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> BoxFuture<Bytes> {
         record_runtime_call_result(
+            &self.logger,
             "simulate_transaction",
             self.client
                 .simulate_transaction(request)
-                .and_then(|r| r.result.map_err(|error| Error::new(error))),
+                .and_then(|r| r.result.map_err(|error| format_err!("{}", error))),
         )
     }
 
@@ -811,22 +851,22 @@ impl Client {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
-                error!("Could not get db snapshot");
-                return future::err(Error::new("Could not estimate gas")).into_box();
+                error!(self.logger, "Could not get db snapshot");
+                return Box::new(future::err(format_err!("Could not estimate gas")));
             }
         };
         let state = match db.get_ethstate_at(id) {
             Some(state) => state,
             None => {
-                error!("Could not get state snapshot");
-                return future::err(Error::new("Could not estimate gas")).into_box();
+                error!(self.logger, "Could not get state snapshot");
+                return Box::new(future::err(format_err!("Could not estimate gas")));
             }
         };
 
         // Extract contract deployment header.
         let oasis_contract = match state.oasis_contract(transaction) {
             Ok(contract) => contract,
-            Err(error) => return future::err(Error::new(error)).into_box(),
+            Err(error) => return Box::new(future::err(format_err!("{}", error))),
         };
 
         let confidential = oasis_contract.as_ref().map_or(false, |c| c.confidential);
@@ -834,24 +874,23 @@ impl Client {
             self.confidential_estimate_gas(transaction)
         } else {
             let result = self._estimate_gas(transaction, db, state);
-            future::done(
+            Box::new(future::done(
                 result
                     .map(Into::into)
-                    .map_err(|error| Error::new(error.to_string())),
-            )
-            .into_box()
+                    .map_err(|error| format_err!("{}", error)),
+            ))
         }
     }
 
     /// Estimates gas for a transaction calling a regular, non-confidential contract
     /// by running the transaction locally at the gateway.
-    fn _estimate_gas<T: 'static + Database + Send + Sync>(
+    fn _estimate_gas<T: 'static + MKVS + Send + Sync>(
         &self,
         transaction: &SignedTransaction,
         db: StateDb<T>,
         mut state: EthState,
     ) -> Result<U256, CallError> {
-        info!("estimating gas for a contract");
+        info!(self.logger, "estimating gas for a contract");
 
         let env_info = Self::get_env_info(&db);
         let machine = self.engine.machine();
@@ -873,7 +912,7 @@ impl Client {
     /// Estimates gas for a transaction calling a confidential contract by sending
     /// the transaction through the scheduler to be run by the compute comittee.
     fn confidential_estimate_gas(&self, transaction: &SignedTransaction) -> BoxFuture<U256> {
-        info!("estimating gas for a confidential contract");
+        info!(self.logger, "estimating gas for a confidential contract");
 
         let to_addr = match transaction.action {
             Action::Create => None,
@@ -890,50 +929,50 @@ impl Client {
             gas: Some(transaction.gas),
         };
 
-        record_runtime_call_result("simulate_transaction", self.client.estimate_gas(request))
+        record_runtime_call_result(
+            &self.logger,
+            "estimate_gas",
+            self.client.estimate_gas(request),
+        )
     }
 
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
     /// and that the contract header, if present, is valid. Returns the OasisContract (or None
     /// if no header is present), or an error message if any check fails.
-    pub fn precheck_transaction(&self, raw: &Bytes) -> Result<CheckedTransaction, String> {
+    pub fn precheck_transaction(&self, raw: &Bytes) -> Fallible<CheckedTransaction> {
         // decode transaction
-        let decoded: UnverifiedTransaction = match rlp::decode(raw) {
-            Ok(t) => t,
-            Err(e) => return Err(e.to_string()),
-        };
+        let decoded: UnverifiedTransaction = rlp::decode(raw)?;
 
         // validate signature
         if decoded.is_unsigned() {
-            return Err("Transaction is not signed".to_string());
+            return Err(format_err!("Transaction is not signed"));
         }
-        let signed_transaction = match SignedTransaction::new(decoded) {
-            Ok(t) => t,
-            Err(e) => return Err(e.to_string()),
-        };
+        let signed_transaction = SignedTransaction::new(decoded)?;
 
         // Check gas price.
         if signed_transaction.gas_price < self.gas_price() {
-            return Err("Insufficient gas price".to_string());
+            return Err(format_err!("Insufficient gas price"));
         }
 
         // Validate contract deployment header (if present).
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
-                error!("Could not get db snapshot");
-                return Err("Could not parse header".to_string());
+                error!(self.logger, "Could not get db snapshot");
+                return Err(format_err!("Could not parse header"));
             }
         };
         let state = match db.get_ethstate_at(BlockId::Latest) {
             Some(state) => state,
             None => {
-                error!("Could not get state snapshot");
-                return Err("Could not parse header".to_string());
+                error!(self.logger, "Could not get state snapshot");
+                return Err(format_err!("Could not parse header"));
             }
         };
 
-        let oasis_contract = state.oasis_contract(&signed_transaction)?;
+        let oasis_contract = state
+            .oasis_contract(&signed_transaction)
+            .map_err(|err| format_err!("{}", err))?;
         Ok(CheckedTransaction {
             from_address: signed_transaction.sender(),
             contract: oasis_contract,
@@ -947,7 +986,7 @@ impl Client {
     pub fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<H256> {
         let checked_transaction = match self.precheck_transaction(&raw) {
             Ok(transaction) => transaction,
-            Err(error) => return future::err(Error::new(error)).into_box(),
+            Err(error) => return Box::new(future::err(error)),
         };
 
         let oasis_contract = checked_transaction.contract;
@@ -956,10 +995,13 @@ impl Client {
         const MAX_RETRIES: usize = 5;
 
         let listeners = Arc::clone(&self.listeners);
-        future::loop_fn(
+        let logger = self.logger.clone();
+
+        Box::new(future::loop_fn(
             (MAX_RETRIES, self.client.clone(), raw, oasis_contract),
             move |(retries, client, raw, oasis_contract)| {
                 let listeners = Arc::clone(&listeners);
+                let logger = logger.clone();
 
                 client
                     .execute_raw_transaction(raw.clone())
@@ -967,11 +1009,14 @@ impl Client {
                         // Retry on BlockGasLimitReached error.
                         if result.block_gas_limit_reached {
                             if retries == 0 {
-                                measure_counter_inc!("runtime_call_failed");
-                                return Err(Error::new("Block gas limit exceeded.".to_string()));
+                                RUNTIME_CALL_FAILED.inc();
+                                return Err(format_err!("Block gas limit exceeded."));
                             }
                             let retries = retries - 1;
-                            info!("execute_raw_transaction retries remaining: {}", retries);
+                            info!(
+                                logger,
+                                "execute_raw_transaction retries remaining: {}", retries
+                            );
                             return Ok(future::Loop::Continue((
                                 retries,
                                 client,
@@ -982,18 +1027,18 @@ impl Client {
 
                         // Update contract_created metrics.
                         if result.created_contract {
-                            measure_counter_inc!("contract_created");
+                            CONTRACT_CREATED.inc();
 
                             let confidential =
                                 oasis_contract.as_ref().map_or(false, |c| c.confidential);
                             if confidential {
-                                measure_counter_inc!("confidential_contract_created");
+                                ENC_CONTRACT_CREATED.inc();
                             }
                         }
 
                         match result.hash {
                             Ok(hash) => {
-                                measure_counter_inc!("runtime_call_succeeded");
+                                RUNTIME_CALL_SUCCEEDED.inc();
                                 Client::notify_listeners(&listeners, |listener| {
                                     let output = result.output.clone();
                                     listener.notify_completed_transaction(
@@ -1006,16 +1051,16 @@ impl Client {
                                 });
                                 Ok(future::Loop::Break(hash))
                             }
-                            Err(e) => {
-                                measure_counter_inc!("runtime_call_failed");
-                                info!("execute_raw_transaction error: {:?}", e);
-                                Err(Error::new(e))
+                            Err(err) => {
+                                RUNTIME_CALL_FAILED.inc();
+                                error!(logger, "execute_raw_transaction error"; "err" => ?err);
+
+                                Err(format_err!("{}", err))
                             }
                         }
                     })
             },
-        )
-        .into_box()
+        ))
     }
 }
 
@@ -1030,7 +1075,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // start with best block
         let hashes = Client::last_hashes(
@@ -1066,7 +1111,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         let envinfo = Client::get_env_info(&state);
         assert_eq!(envinfo.number, 11);
@@ -1085,7 +1130,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // blocks 1...10
         let headers = Client::headers_since(&state, 1, 10, 256);
@@ -1099,7 +1144,7 @@ mod tests {
     #[test]
     #[cfg(feature = "pubsub")]
     fn test_max_block_number() {
-        let client = Client::get_test_client();
+        let client = Client::new_test_client();
 
         let id_1 = BlockId::Number(1);
         let id_2 = BlockId::Number(2);
@@ -1117,7 +1162,7 @@ mod tests {
     #[test]
     #[cfg(feature = "pubsub")]
     fn test_min_block_number() {
-        let client = Client::get_test_client();
+        let client = Client::new_test_client();
 
         let id_1 = BlockId::Number(1);
         let id_2 = BlockId::Number(2);
@@ -1135,7 +1180,7 @@ mod tests {
     #[test]
     #[cfg(feature = "pubsub")]
     fn test_pubsub_notify() {
-        let client = Client::get_test_client();
+        let client = Client::new_test_client();
 
         let handler = Arc::new(MockNotificationHandler::new());
         client.add_listener(Arc::downgrade(&handler) as Weak<_>);

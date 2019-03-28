@@ -12,12 +12,8 @@ set -euxo pipefail
 platform_dir=$1
 dst=$2
 
-: ${SGX_MODE:=SIM}
-export SGX_MODE
 EKIDEN_UNSAFE_SKIP_AVR_VERIFY=1
 export EKIDEN_UNSAFE_SKIP_AVR_VERIFY
-: ${INTEL_SGX_SDK:=/opt/sgxsdk}
-export INTEL_SGX_SDK
 
 # Install ekiden-tools
 #
@@ -32,11 +28,11 @@ cargo install \
     ekiden-tools
 
 # Build the runtime
-KM_ENCLAVE_PATH="$platform_dir/ekiden-keymanager-trusted.so" \
-cargo ekiden build-enclave \
-    --output-identity \
-    --release \
-    ${RUNTIME_BUILD_EXTRA_ARGS:-}
+export KM_ENCLAVE_PATH="$platform_dir/ekiden-keymanager-trusted.so"
+
+cargo build --release ${RUNTIME_BUILD_EXTRA_ARGS:-}
+cargo build --release --target x86_64-fortanix-unknown-sgx ${RUNTIME_BUILD_EXTRA_ARGS:-}
+cargo elf2sgxs
 
 # Build the gateway
 (
@@ -47,7 +43,7 @@ cargo ekiden build-enclave \
 )
 
 tar -czf "$dst" \
-    target/enclave/runtime-ethereum.so \
-    target/enclave/runtime-ethereum.mrenclave \
+    target/release/runtime-ethereum \
+    target/x86_64-fortanix-unknown-sgx/release/runtime-ethereum.sgxs \
     target/release/gateway \
     docker/ekiden-runtime-ethereum/Dockerfile

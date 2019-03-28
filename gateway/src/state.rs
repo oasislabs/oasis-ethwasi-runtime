@@ -1,11 +1,8 @@
 //! Read-only interface to blockchain and account state, backed by an Ekiden Database.
-
-use std::{
-    marker::{Send, Sync},
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use common_types::log_entry::{LocalizedLogEntry, LogEntry};
+use ekiden_runtime::storage::{CAS, MKVS};
 use ethcore::{
     self,
     blockchain::{BlockDetails, BlockProvider, BlockReceipts, TransactionAddress},
@@ -16,16 +13,25 @@ use ethcore::{
     state::backend::Wrapped as WrappedBackend,
 };
 use ethereum_types::{Bloom, H256, U256};
+use failure::{format_err, Fallible};
 use kvdb::KeyValueDB;
+use lazy_static::lazy_static;
+use prometheus::{opts, register_counter, register_int_counter, IntCounter};
 use rayon::prelude::*;
 use rlp_compress::{blocks_swapper, decompress};
-
-use ekiden_db_trusted::Database;
-use ekiden_storage_base::StorageBackend;
-pub use runtime_ethereum_common::{confidential::ConfidentialCtx, State as EthState};
+pub use runtime_ethereum_common::State as EthState;
 use runtime_ethereum_common::{get_factories, Backend, BlockchainStateDb, StorageHashDB};
 
-pub struct StateDb<T: Database + Send + Sync> {
+// Metrics.
+lazy_static! {
+    static ref READ_STATE_FAILED: IntCounter = register_int_counter!(
+        "web3_gateway_internal_read_state_failed",
+        "Number of failed state reads"
+    )
+    .unwrap();
+}
+
+pub struct StateDb<T: MKVS> {
     /// Blockchain state database instance.
     blockchain_db: Arc<BlockchainStateDb<T>>,
     /// Ethereum state backend.
@@ -34,7 +40,7 @@ pub struct StateDb<T: Database + Send + Sync> {
 
 impl<T> BlockProvider for StateDb<T>
 where
-    T: Database + Send + Sync,
+    T: MKVS,
 {
     fn block(&self, hash: &H256) -> Option<encoded::Block> {
         let header = self.block_header_data(hash)?;
@@ -51,7 +57,7 @@ where
                 hash.map(|h| encoded::Header::new(decompress(&h, blocks_swapper()).into_vec()))
             }
             Err(e) => {
-                measure_counter_inc!("read_state_failed");
+                READ_STATE_FAILED.inc();
                 error!("Could not get block header from database: {:?}", e);
                 None
             }
@@ -64,7 +70,7 @@ where
                 body.map(|b| encoded::Body::new(decompress(&b, blocks_swapper()).into_vec()))
             }
             Err(e) => {
-                measure_counter_inc!("read_state_failed");
+                READ_STATE_FAILED.inc();
                 error!("Could not get block body from database: {:?}", e);
                 None
             }
@@ -193,21 +199,22 @@ where
 
 impl<T> StateDb<T>
 where
-    T: 'static + Database + Send + Sync,
+    T: 'static + MKVS,
 {
     // returns None if the database has not been initialized (i.e., no best block)
-    pub fn new(storage: Arc<StorageBackend>, db: T) -> Result<Option<Self>, String> {
-        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
-        let state_db = StorageHashDB::new(storage, blockchain_db.clone());
+    pub fn new(cas: Arc<CAS>, mkvs: T) -> Fallible<Option<Self>> {
+        let blockchain_db = Arc::new(BlockchainStateDb::new(mkvs));
+        let state_db = StorageHashDB::new(cas, blockchain_db.clone());
         let state_backend = WrappedBackend(Box::new(state_db.clone()));
 
-        match blockchain_db.get(db::COL_EXTRA, b"best") {
-            Ok(best) => Ok(best.map(|_| Self {
-                blockchain_db,
-                state_backend,
-            })),
-            Err(e) => Err(e.to_string()),
-        }
+        let best = blockchain_db
+            .get(db::COL_EXTRA, b"best")
+            .map_err(|err| format_err!("{}", err))?;
+
+        Ok(best.map(|_| Self {
+            blockchain_db,
+            state_backend,
+        }))
     }
 
     // returns None if the database has not been initialized
@@ -218,11 +225,11 @@ where
             root,
             U256::zero(), /* account_start_nonce */
             get_factories(),
-            Some(Box::new(ConfidentialCtx::new())),
+            None,
         ) {
             Ok(state) => Some(state),
             Err(e) => {
-                measure_counter_inc!("read_state_failed");
+                READ_STATE_FAILED.inc();
                 error!("Could not get EthState from database: {:?}", e);
                 None
             }
@@ -233,7 +240,7 @@ where
         match self.blockchain_db.get(db::COL_EXTRA, b"best") {
             Ok(best) => best.map(|best| H256::from_slice(&best)),
             Err(e) => {
-                measure_counter_inc!("read_state_failed");
+                READ_STATE_FAILED.inc();
                 error!("Could not get best block hash from database: {:?}", e);
                 None
             }
@@ -276,7 +283,7 @@ mod tests {
     #[test]
     fn test_get_statedb_empty() {
         let db = MockDb::empty();
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap();
         assert!(state.is_none());
     }
 
@@ -288,14 +295,14 @@ mod tests {
             &get_key(db::COL_EXTRA, b"best"),
             &H256::from("0xec891bd71e6d6a64ec299b8641c6cce3638989c03a4a41fd5898a2c0356c7ae6"),
         );
-        let state = StateDb::new(db.storage(), db).unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap();
         assert!(state.is_some());
     }
 
     #[test]
     fn test_best_block() {
         let db = MockDb::new();
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
         assert_eq!(state.best_block_number(), 10);
     }
 
@@ -306,7 +313,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // all blocks
         let blocks = vec![
@@ -344,7 +351,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // get ethstate at latest block
         let ethstate = state.get_ethstate_at(BlockId::Latest).unwrap();
@@ -371,7 +378,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // get the transaction from block 10
         let tx = state
@@ -389,7 +396,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // get the transaction from block 10
         let receipt = state
@@ -407,7 +414,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // get best block
         let best_block = state
@@ -423,7 +430,7 @@ mod tests {
         let db = MockDb::new();
 
         // get state
-        let state = StateDb::new(db.storage(), db).unwrap().unwrap();
+        let state = StateDb::new(db.cas(), db).unwrap().unwrap();
 
         // a deployed contract
         let deployed_contract = Address::from("fbe2ab6ee22dace9e2ca1cb42c57bf94a32ddd41");
