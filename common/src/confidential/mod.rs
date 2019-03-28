@@ -1,5 +1,7 @@
+//! Handling of confidential execution.
+
 mod confidential_ctx;
 mod crypto;
-pub mod key_manager;
 
-pub use self::{confidential_ctx::ConfidentialCtx, key_manager::KeyManagerClient};
+// Re-exports.
+pub use self::confidential_ctx::ConfidentialCtx;

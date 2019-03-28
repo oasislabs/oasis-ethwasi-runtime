@@ -11,7 +11,7 @@ set -euxo pipefail
 
 platform_dir=$1
 context=$2
-export RUNTIME_BUILD_EXTRA_ARGS='--cargo-addendum feature.production-genesis.addendum -- --features production-genesis'
+export RUNTIME_BUILD_EXTRA_ARGS='--features production-genesis'
 export GATEWAY_BUILD_EXTRA_ARGS='--features production-genesis'
 
 buildkite-agent artifact download "$platform_dir/*" .

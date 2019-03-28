@@ -16,14 +16,17 @@
 
 use std::{cmp::PartialEq, collections::HashSet, str::FromStr, sync::Arc};
 
-use client::Client;
+use ekiden_keymanager_client::KeyManagerClient;
 use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_reactor;
 use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
 #[cfg(feature = "pubsub")]
-use impls::EthPubSubClient;
-use impls::{EthClient, EthFilterClient, EthSigningClient, NetClient, OasisClient, Web3Client};
+use crate::impls::EthPubSubClient;
+use crate::{
+    client::Client,
+    impls::{EthClient, EthFilterClient, EthSigningClient, NetClient, OasisClient, Web3Client},
+};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -142,6 +145,7 @@ pub trait Dependencies {
 /// RPC dependencies for a full node.
 pub struct FullDependencies {
     pub client: Arc<Client>,
+    pub km_client: Arc<KeyManagerClient>,
     pub ws_address: Option<Host>,
     pub remote: parity_reactor::Remote,
 }
@@ -190,7 +194,9 @@ impl FullDependencies {
                     }
                 }
                 Api::Oasis => {
-                    handler.extend_with(OasisClient::new(self.client.clone()).to_delegate());
+                    handler.extend_with(
+                        OasisClient::new(self.client.clone(), self.km_client.clone()).to_delegate(),
+                    );
                 }
             }
         }

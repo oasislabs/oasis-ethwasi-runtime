@@ -1,20 +1,13 @@
 //! Common data structures shared by runtime and gateway.
-
-extern crate ekiden_core;
 extern crate ekiden_keymanager_client;
-extern crate ekiden_keymanager_common;
-extern crate ekiden_storage_base;
-extern crate ekiden_storage_lru;
-extern crate ekiden_trusted;
+extern crate ekiden_runtime;
 extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_types;
+extern crate failure;
 extern crate hashdb;
+extern crate io_context;
 extern crate keccak_hash;
-
-#[cfg(feature = "test")]
-#[macro_use]
-extern crate lazy_static;
 
 pub mod confidential;
 
@@ -23,10 +16,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use ekiden_core::{error::Result, futures::prelude::*};
-use ekiden_storage_base::{hash_storage_key, InsertOptions, StorageBackend};
-use ekiden_storage_lru::LruCacheStorageBackend;
-use ekiden_trusted::db::Database;
+use ekiden_runtime::{
+    common::crypto::hash::Hash,
+    storage::{CAS, MKVS},
+};
 use elastic_array::ElasticArray128;
 use ethcore::{
     account_db::Factory as AccountFactory,
@@ -36,6 +29,7 @@ use ethcore::{
     state::backend::Wrapped as WrappedBackend,
 };
 use ethereum_types::H256;
+use failure::Fallible;
 use hashdb::{DBValue, HashDB};
 use keccak_hash::KECCAK_NULL_RLP;
 
@@ -68,38 +62,33 @@ enum PendingItem {
 }
 
 /// Internal structures, shared by multiple `StorageHashDB` clones.
-struct StorageHashDBInner<T: Database + Send + Sync> {
+struct StorageHashDBInner<T: MKVS> {
     /// Storage backend.
-    backend: Arc<StorageBackend>,
+    backend: Arc<CAS>,
     /// Blockchain state database instance.
     blockchain_db: Arc<BlockchainStateDb<T>>,
     /// Pending inserts.
     pending_inserts: HashMap<H256, PendingItem>,
 }
 
-/// Parity's `HashDB` backed by our `StorageBackend`.
-pub struct StorageHashDB<T: Database + Send + Sync> {
+/// Parity's `HashDB` backed by our `CAS`.
+pub struct StorageHashDB<T: MKVS> {
     inner: Arc<Mutex<StorageHashDBInner<T>>>,
 }
 
 impl<T> StorageHashDB<T>
 where
-    T: Database + Send + Sync,
+    T: MKVS,
 {
-    /// Size of the in-memory storage cache (number of entries).
-    const STORAGE_CACHE_SIZE: usize = 1024;
     // TODO: Handle storage expiry.
     const STORAGE_EXPIRY_TIME: u64 = u64::max_value() / 2;
     /// Column to use in the blockchain state database.
     const STATE_DB_COLUMN: Option<u32> = None;
 
-    pub fn new(storage: Arc<StorageBackend>, blockchain_db: Arc<BlockchainStateDb<T>>) -> Self {
+    pub fn new(storage: Arc<CAS>, blockchain_db: Arc<BlockchainStateDb<T>>) -> Self {
         Self {
             inner: Arc::new(Mutex::new(StorageHashDBInner {
-                backend: Arc::new(LruCacheStorageBackend::new(
-                    storage,
-                    Self::STORAGE_CACHE_SIZE,
-                )),
+                backend: storage,
                 blockchain_db,
                 pending_inserts: HashMap::new(),
             })),
@@ -107,7 +96,7 @@ where
     }
 
     fn hash_storage_key(value: &[u8]) -> H256 {
-        H256::from(&hash_storage_key(value)[..])
+        H256::from(Hash::digest_bytes(value).as_ref())
     }
 
     /// Commit changes into the underlying store.
@@ -125,8 +114,7 @@ where
                     }
 
                     backend
-                        .insert(value, Self::STORAGE_EXPIRY_TIME, InsertOptions::default())
-                        .wait()
+                        .insert(value, Self::STORAGE_EXPIRY_TIME)
                         .expect("insert into storage");
                 }
                 PendingItem::State(ref_count, _) if ref_count <= 0 => {
@@ -152,7 +140,7 @@ where
 
 impl<T> Clone for StorageHashDB<T>
 where
-    T: Database + Send + Sync,
+    T: MKVS,
 {
     fn clone(&self) -> Self {
         Self {
@@ -163,7 +151,7 @@ where
 
 impl<T> HashDB for StorageHashDB<T>
 where
-    T: Database + Send + Sync,
+    T: MKVS,
 {
     fn keys(&self) -> HashMap<H256, i32> {
         unimplemented!();
@@ -190,8 +178,8 @@ where
                 // external storage as doing otherwise could lead to state
                 // corruption since pending items with zero or negative reference
                 // count are not persisted.
-                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
-                match inner.backend.get(storage_key).wait() {
+                let storage_key = Hash::from(&key[..]);
+                match inner.backend.get(storage_key) {
                     Ok(result) => Some(ElasticArray128::from_vec(result)),
                     _ => None,
                 }
@@ -211,8 +199,8 @@ where
             _ => {
                 // Key is not in local cache. First try to fetch it from the
                 // storage backend.
-                let storage_key = ekiden_core::bytes::H256::from(&key[..]);
-                match inner.backend.get(storage_key).wait() {
+                let storage_key = Hash::from(&key[..]);
+                match inner.backend.get(storage_key) {
                     Ok(result) => Some(ElasticArray128::from_vec(result)),
                     _ => {
                         // Then, try to fetch from blockchain state database.
@@ -314,26 +302,21 @@ where
 
 #[derive(Debug)]
 /// Blockchain state database.
-pub struct BlockchainStateDb<T: Database + Send + Sync> {
+pub struct BlockchainStateDb<T: MKVS> {
     db: Mutex<T>,
 }
 
 impl<T> BlockchainStateDb<T>
 where
-    T: Database + Send + Sync,
+    T: MKVS,
 {
     /// Create new blockchain state database.
     pub fn new(db: T) -> Self {
         Self { db: Mutex::new(db) }
     }
 
-    /// Return current state root hash.
-    pub fn get_root_hash(&self) -> ekiden_core::bytes::H256 {
-        self.db.lock().unwrap().get_root_hash()
-    }
-
-    /// Commits updates to the underlying database.
-    pub fn commit(&self) -> Result<ekiden_core::bytes::H256> {
+    /// Commit updates to the underlying database.
+    pub fn commit(&self) -> Fallible<Hash> {
         let mut db = self.db.lock().unwrap();
         db.commit()
     }
@@ -354,7 +337,7 @@ pub fn get_key(col: Option<u32>, key: &[u8]) -> Vec<u8> {
 
 impl<T> kvdb::KeyValueDB for BlockchainStateDb<T>
 where
-    T: Database + Send + Sync,
+    T: MKVS,
 {
     fn get(&self, col: Option<u32>, key: &[u8]) -> kvdb::Result<Option<kvdb::DBValue>> {
         let db = self.db.lock().unwrap();
@@ -410,14 +393,12 @@ where
 
 #[cfg(test)]
 mod tests {
-    extern crate ekiden_storage_dummy;
-
+    use ekiden_runtime::{
+        common::crypto::hash::Hash,
+        storage::{cas::MemoryCAS, mkvs::CASPatriciaTrie},
+    };
     use ethereum_types::H256;
     use hashdb::{DBValue, HashDB};
-
-    use self::ekiden_storage_dummy::DummyStorageBackend;
-    use ekiden_storage_base::hash_storage_key;
-    use ekiden_trusted::db::DatabaseHandle;
 
     use super::*;
 
@@ -435,12 +416,12 @@ mod tests {
 
     #[test]
     fn test_remove_before_insert() {
-        let storage = Arc::new(DummyStorageBackend::new());
-        let db = DatabaseHandle::new(storage.clone());
-        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
-        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+        let cas = Arc::new(MemoryCAS::new());
+        let mkvs = CASPatriciaTrie::new(cas.clone(), &Hash::empty_hash());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(mkvs));
+        let mut hash_db = StorageHashDB::new(cas.clone(), blockchain_db);
 
-        let hw_key = H256::from(&hash_storage_key(b"hello world")[..]);
+        let hw_key = H256::from(Hash::digest_bytes(b"hello world").as_ref());
         // Remove key from db, reference count should be -1, value empty.
         hash_db.remove(&hw_key);
         assert_eq!(hash_db.get(&hw_key), None);
@@ -457,10 +438,10 @@ mod tests {
 
     #[test]
     fn test_storage_hashdb() {
-        let storage = Arc::new(DummyStorageBackend::new());
-        let db = DatabaseHandle::new(storage.clone());
-        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
-        let mut hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+        let cas = Arc::new(MemoryCAS::new());
+        let mkvs = CASPatriciaTrie::new(cas.clone(), &Hash::empty_hash());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(mkvs));
+        let mut hash_db = StorageHashDB::new(cas.clone(), blockchain_db);
 
         assert_eq!(hash_db.get(&H256::zero()), None);
         let hw_key = hash_db.insert(b"hello world");
@@ -505,9 +486,9 @@ mod tests {
 
         // Commit and re-create database.
         hash_db.commit();
-        let db = DatabaseHandle::new(storage.clone());
-        let blockchain_db = Arc::new(BlockchainStateDb::new(db));
-        let hash_db = StorageHashDB::new(storage.clone(), blockchain_db);
+        let mkvs = CASPatriciaTrie::new(cas.clone(), &Hash::empty_hash());
+        let blockchain_db = Arc::new(BlockchainStateDb::new(mkvs));
+        let hash_db = StorageHashDB::new(cas.clone(), blockchain_db);
         assert_eq!(
             hash_db.get(&hw_key),
             Some(DBValue::from_slice(b"hello world"))

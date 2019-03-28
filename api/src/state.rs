@@ -1,5 +1,5 @@
 use ethereum_types::{Address, Bloom, H256, H512, U256};
-use std::vec::Vec;
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum BlockId {

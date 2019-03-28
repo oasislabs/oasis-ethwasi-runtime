@@ -26,18 +26,26 @@ shift
 
 source .buildkite/rust/common.sh
 
-##############################
-# Fetch the keymanager enclave
-##############################
-mkdir -p $src_dir/target/enclave
+#######################################
+# Fetch the key manager runtime enclave
+#######################################
+echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
+mkdir -p $src_dir/target/x86_64-fortanix-unknown-sgx/debug
+.buildkite/scripts/download_artifact.sh \
+    ekiden \
+    $EKIDEN_BRANCH \
+    "Build key manager runtime" \
+    ekiden-keymanager-runtime.sgxs \
+    $src_dir/target/x86_64-fortanix-unknown-sgx/debug
 
-echo "Fetching the ekiden-keymanager-trusted.so enclave"
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.so $src_dir/target/enclave
-
-export KM_ENCLAVE_PATH="$src_dir/target/enclave/ekiden-keymanager-trusted.so"
+export KM_ENCLAVE_PATH="$src_dir/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
 
 ###############
 # Run the tests
 ###############
 cd $src_dir
-cargo test --features test -p runtime-ethereum -p runtime-ethereum-common -p web3-gateway
+cargo test \
+    --features test \
+    -p runtime-ethereum \
+    -p runtime-ethereum-common \
+    -p web3-gateway

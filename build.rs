@@ -1,23 +1,6 @@
-//! build crate for the ekiden runtime based enclave
-
-extern crate ekiden_edl;
-extern crate ekiden_tools;
-
-use std::env;
+use ekiden_tools::sgxs::generate_enclave_hash;
 
 fn main() {
-    ekiden_tools::build_trusted(ekiden_edl::get_edls().unwrap());
-    generate_km_enclave_identity();
-}
-
-/// Take a previously built key manager enclave and generate an identity file.
-/// The runtime uses this to extract the key manager's MRENCLAVE at compile time
-/// via the use_key_manager_contract! macro.
-fn generate_km_enclave_identity() {
-    let km_enclave_path = env::var("KM_ENCLAVE_PATH").expect("Please define KM_ENCLAVE_PATH");
-    ekiden_tools::generate_mod("src/generated", &[]);
-    ekiden_tools::generate_enclave_identity(
-        "src/generated/ekiden-key-manager.identity",
-        &km_enclave_path,
-    );
+    // Generate key manager enclave hash for inclusion as OUT_DIR/km_enclave_hash.rs.
+    generate_enclave_hash("KM", "Key manager").unwrap();
 }

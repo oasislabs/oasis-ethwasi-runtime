@@ -14,12 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Ethcore client application.
+//! Web3 gateway.
 
-#[macro_use]
 extern crate clap;
 extern crate futures;
-#[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
@@ -27,52 +25,41 @@ extern crate parking_lot;
 extern crate rayon;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
-
 extern crate jsonrpc_core;
+extern crate serde;
 #[macro_use]
 extern crate jsonrpc_macros;
-extern crate jsonrpc_http_server;
-extern crate jsonrpc_pubsub;
-extern crate jsonrpc_ws_server;
-
 extern crate common_types;
 extern crate ethcore;
 extern crate ethcore_bytes as bytes;
 extern crate ethcore_transaction as transaction;
 extern crate ethereum_types;
+extern crate failure;
+extern crate grpcio;
 #[cfg(test)]
 extern crate hex;
+extern crate io_context;
+extern crate jsonrpc_http_server;
+extern crate jsonrpc_pubsub;
+extern crate jsonrpc_ws_server;
 extern crate keccak_hash as hash;
 extern crate kvdb;
 extern crate parity_reactor;
 extern crate parity_rpc;
+extern crate prometheus;
 extern crate rlp_compress;
+extern crate slog;
+extern crate tokio;
 
-#[macro_use]
-extern crate client_utils;
-extern crate ekiden_common;
-extern crate ekiden_core;
-extern crate ekiden_db_trusted;
-extern crate ekiden_runtime_client;
-#[macro_use]
-extern crate ekiden_instrumentation;
-extern crate ekiden_keymanager_common;
-extern crate ekiden_storage_base;
-#[cfg(test)]
-extern crate ekiden_storage_dummy;
-extern crate ethereum_api;
-#[cfg(test)]
-extern crate grpcio;
+extern crate ekiden_client;
+extern crate ekiden_keymanager_client;
+extern crate ekiden_runtime;
+
+extern crate runtime_ethereum_api;
 extern crate runtime_ethereum_common;
 
-extern crate ekiden_enclave_common;
-extern crate ekiden_keymanager_client;
-
-use ekiden_enclave_common::quote::MrEnclave;
-use ekiden_keymanager_client::{KeyManager, NetworkRpcClientBackendConfig};
-
 mod client;
+mod future_ext;
 mod impls;
 mod informant;
 mod middleware;
@@ -88,20 +75,20 @@ mod test_helpers;
 mod traits;
 pub mod util;
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
-use clap::ArgMatches;
+use clap::{value_t_or_exit, ArgMatches};
+use ekiden_client::{create_txn_api_client, Node, TxnClient};
+use ekiden_runtime::common::runtime::RuntimeId;
 use ethereum_types::U256;
-
-use ekiden_core::{environment::Environment, x509};
-use ekiden_runtime_client::create_runtime_client;
-use ekiden_storage_base::BackendIdentityMapper;
-use ethereum_api::with_api;
+use failure::Fallible;
+use grpcio::EnvBuilder;
+use runtime_ethereum_api::*;
 
 pub use self::run::RunningClient;
 
 with_api! {
-    create_runtime_client!(runtime_ethereum, ethereum_api, api);
+    create_txn_api_client!(EthereumRuntimeClient, api);
 }
 
 pub fn start(
@@ -114,27 +101,24 @@ pub fn start(
     ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
-) -> Result<RunningClient, String> {
-    let client = runtime_client!(runtime_ethereum, args);
-    let environment = client.get_environment();
-    let storage = client.get_storage();
-    let roothash = client.get_roothash();
+) -> Fallible<RunningClient> {
+    let node_address = args.value_of("node-address").unwrap();
+    let runtime_id = value_t_or_exit!(args, "runtime-id", RuntimeId);
 
-    let runtime_id = client_utils::args::get_runtime_id(&args);
-    let snapshot_manager = client_utils::db::Manager::new(
-        environment.clone(),
+    let env = Arc::new(EnvBuilder::new().build());
+    let node = Node::new(env.clone(), node_address);
+    let txn_client = TxnClient::new(node.channel(), runtime_id, None);
+    let client = EthereumRuntimeClient::new(txn_client);
+    // TODO: Key manager MRENCLAVE.
+    let km_client = Arc::new(ekiden_keymanager_client::RemoteClient::new_grpc(
         runtime_id,
-        roothash,
-        Arc::new(BackendIdentityMapper::new(storage.clone())),
-    );
-
-    setup_key_manager(&args, environment.clone());
+        None,
+        node.channel(),
+    ));
 
     run::execute(
         client,
-        snapshot_manager,
-        storage,
-        environment,
+        km_client,
         pubsub_interval_secs,
         http_port,
         num_threads,
@@ -144,37 +128,4 @@ pub fn start(
         gas_price,
         jsonrpc_max_batch_size,
     )
-}
-
-/// Configures the global KeyManager instance with the MRENCLAVE and
-/// NetworkRpcClientBackendConfig specified by the cli args.
-fn setup_key_manager(args: &ArgMatches, environment: Arc<Environment>) {
-    let mut key_manager = KeyManager::instance().expect("Should always have a key manager");
-
-    let backend = key_manager_backend(&args, environment);
-    let mrenclave =
-        value_t!(args.value_of("key-manager-mrenclave"), MrEnclave).unwrap_or_else(|e| e.exit());
-
-    key_manager.configure_backend(backend);
-    key_manager.set_contract(mrenclave);
-}
-
-fn key_manager_backend(
-    args: &ArgMatches,
-    environment: Arc<Environment>,
-) -> NetworkRpcClientBackendConfig {
-    let timeout = Some(Duration::new(5, 0));
-    let host = value_t!(args.value_of("key-manager-host"), String).unwrap_or_else(|e| e.exit());
-    let port = value_t!(args.value_of("key-manager-port"), u16).unwrap_or_else(|e| e.exit());
-    let certificate = x509::load_certificate_pem(&args.value_of("key-manager-cert").unwrap())
-        .expect("unable to load key manager's certificate");
-    let certificate = x509::Certificate::from_pem(&certificate).unwrap();
-
-    NetworkRpcClientBackendConfig {
-        environment,
-        timeout,
-        host,
-        port,
-        certificate,
-    }
 }

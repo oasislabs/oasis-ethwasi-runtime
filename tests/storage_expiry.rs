@@ -1,17 +1,16 @@
-extern crate ethereum_api;
 extern crate ethereum_types;
 extern crate runtime_ethereum;
+extern crate runtime_ethereum_api;
 extern crate time;
 
 mod contracts;
 
-use ethereum_api::Receipt;
 use ethereum_types::{Address, U256};
 use runtime_ethereum::test;
-use std::sync::MutexGuard;
+use runtime_ethereum_api::Receipt;
 
 /// Makes a call to the `getCounter()` method.
-fn get_counter<'a>(contract: &Address, client: &mut MutexGuard<'a, test::Client>) -> U256 {
+fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> U256 {
     let sighash_data = contracts::counter::get_counter_sighash();
     U256::from(
         client
@@ -21,7 +20,7 @@ fn get_counter<'a>(contract: &Address, client: &mut MutexGuard<'a, test::Client>
 }
 
 /// Invokes the `incrementCounter` method on the contract, returns the receipt.
-fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Client>) -> Receipt {
+fn increment_counter<'a>(contract: Address, client: &mut test::Client) -> Receipt {
     let sighash_data = contracts::counter::increment_counter_sighash();
     let tx_hash = client.send(Some(&contract), sighash_data, &U256::zero());
     client.receipt(tx_hash)
@@ -29,7 +28,7 @@ fn increment_counter<'a>(contract: Address, client: &mut MutexGuard<'a, test::Cl
 
 #[test]
 fn test_default_expiry() {
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
 
     // get current time
     let now = time::get_time().sec as u64;
@@ -46,7 +45,7 @@ fn test_default_expiry() {
 
 #[test]
 fn test_invalid_expiry() {
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
 
     // get current time
     let now = time::get_time().sec as u64;
@@ -68,7 +67,7 @@ fn test_invalid_expiry() {
 
 #[test]
 fn test_expiry() {
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
 
     // get current time
     let deploy_time = time::get_time().sec as u64;

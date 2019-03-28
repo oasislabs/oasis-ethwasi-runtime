@@ -40,9 +40,19 @@ set -x
 #################################################
 ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 
-# Workaround to avoid linker errors in
-# tarpaulin: disable cargo build script.
-echo 'fn main() {}' > build.rs
+#######################################
+# Fetch the key manager runtime enclave
+#######################################
+echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
+mkdir -p target/x86_64-fortanix-unknown-sgx/debug
+.buildkite/scripts/download_artifact.sh \
+    ekiden \
+    $EKIDEN_BRANCH \
+    "Build key manager runtime" \
+    ekiden-keymanager-runtime.sgxs \
+    target/x86_64-fortanix-unknown-sgx/debug
+
+export KM_ENCLAVE_PATH="$PWD/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
 
 # We need to use a separate target dir for tarpaulin as it otherwise clears
 # the build cache.
@@ -54,6 +64,7 @@ cargo tarpaulin \
   --packages runtime-ethereum \
   --packages runtime-ethereum-common \
   --packages web3-gateway \
+  --exclude-files .e2e* \
   --exclude-files *generated* \
   --exclude-files genesis* \
   --exclude-files inspector* \
@@ -67,3 +78,7 @@ cargo tarpaulin \
   --features test \
   -v
 set -x
+
+# Error if coverage results file does not exist.
+# Workaround for `cargo tarpaulin` ignoring errors.
+[ -f cobertura.xml ]

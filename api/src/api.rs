@@ -1,4 +1,4 @@
-use ekiden_core::runtime::runtime_api;
+use ekiden_runtime::runtime_api;
 
 runtime_api! {
     pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
