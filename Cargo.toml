@@ -8,11 +8,11 @@ build = "build.rs"
 ethereum-api = { path = "./api" }
 runtime-ethereum-common = { path = "./common" }
 
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/better-errors" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/better-errors" }
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/better-errors" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/better-errors" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/better-errors" }
 ekiden-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-enclave-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }

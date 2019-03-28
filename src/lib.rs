@@ -309,7 +309,8 @@ pub fn execute_raw_transaction(
     };
 
     // Execute the transaction and handle the result.
-    match transact(&mut ectx, signed) {
+    let res = transact(&mut ectx, signed);
+    match res {
         Ok(outcome) => Ok(ExecuteTransactionResponse {
             created_contract: is_create,
             hash: Ok(outcome.hash),
@@ -350,6 +351,7 @@ fn transact(
     let outcome = ectx
         .block
         .push_transaction_with_outcome(transaction, None, true)?;
+
     Ok(TransactOutcome {
         receipt: outcome.receipt,
         output: outcome.output,
