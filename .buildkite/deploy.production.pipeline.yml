@@ -1,0 +1,36 @@
+##
+# Docker image deployment pipeline
+#
+# This is a scheduled pipeline for automatic production deployments.
+##
+common_tools_plugin: &common_tools_plugin
+  oasislabs/private-oasis-buildkite-tools#v0.2.0: ~
+
+steps:
+  # Due to the scheduled nature of this pipeline if there is a pause let's not
+  # update any of the docker image tags
+  - label: "Check if ci production deployment enabled"
+    branches: "master"
+    commands:
+      - .buildkite/common/scripts/ci_deploys_enabled.sh production
+    plugins:
+      - *common_tools_plugin
+
+  - wait
+
+  - label: Update production docker image tags (master branches only)
+    branches: master
+    command:
+      - .buildkite/scripts/promote_docker_image_to.sh --from-image-tag staging oasislabs/ekiden-runtime-ethereum latest
+    plugins:
+      - *common_tools_plugin
+
+  - wait
+
+  - label: "Trigger production deployment (master branches only)"
+    trigger: private-ops-deploy-ekiden-production
+    branches: master
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: "HEAD"
+      branch: master
