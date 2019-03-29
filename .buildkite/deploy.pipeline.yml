@@ -59,33 +59,3 @@ steps:
       message: "${BUILDKITE_MESSAGE}"
       commit: HEAD
       branch: master
-
-  - wait
-
-  - block: Human approval required to deploy to production
-    branches: "*"
-    prompt: |
-      Clicking "OK" below will unblock this step and
-      permit the deployment to production.
-
-      NOTE - It is possible to click the "OK" button to
-      unblock this step even if the staging deploy is
-      still working. Be sure you tested on staging before
-      clicking this button.
-
-      - The Friendly Oasis Labs Robot
-
-  - label: Update production docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/promote_deployment_image_to.sh latest
-
-  - wait
-
-  - label: "Trigger production deployment (master branches only)"
-    trigger: private-ops-deploy-ekiden-production
-    branches: master
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: "HEAD"
-      branch: master
