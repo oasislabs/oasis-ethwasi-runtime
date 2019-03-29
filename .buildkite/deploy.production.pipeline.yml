@@ -14,6 +14,6 @@ steps:
   - label: Update staging tag to be next-production-deployment (master branches only)
     branches: master
     command:
-      - .buildkite/scripts/promote_docker_image_to.sh --from-image-tag staging oasislabs/ekiden-runtime-ethereum next-production-deployment
+      - .buildkite/common/scripts/promote_docker_image_to.sh --from-image-tag staging oasislabs/ekiden-runtime-ethereum next-production-deployment
     plugins:
       - *common_tools_plugin
