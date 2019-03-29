@@ -1,0 +1,38 @@
+_extends: private-global-settings
+
+
+labels:
+  - name: "c: benchmark"
+    color: "590f84"
+    description: "Category: benchmark"
+  
+  - name: "c: gateway"
+    color: "a5f733"
+    description: ""
+  
+  - name: "c: testing"
+    color: "d4c5f9"
+    description: "Category: testing"
+  
+  - name: "c:monitoring"
+    color: "f783bf"
+    description: "Category: Monitoring"
+  
+  - name: "epic"
+    color: "5f96f4"
+    description: ""
+  
+  - name: "late addition"
+    color: "fc7c20"
+    description: "Scoped in to the sprint after the initial planning phase."
+  
+  - name: "s:watching"
+    color: "d8ffaf"
+    description: "Watching to reproduce"
+  
+
+collaborators:
+  # peterjgilbert is the owner of this repository
+  - username: peterjgilbert
+    permission: admin
+  
