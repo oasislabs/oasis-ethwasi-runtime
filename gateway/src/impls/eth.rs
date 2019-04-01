@@ -43,7 +43,7 @@ use parity_rpc::v1::{
     types::{
         block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter,
         Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, Transaction as RpcTransaction,
-        Work, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64, U256 as RpcU256
+        Work, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64, U256 as RpcU256,
     },
 };
 

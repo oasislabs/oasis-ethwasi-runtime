@@ -21,9 +21,9 @@
 
 pub mod eth;
 pub mod eth_filter;
-pub mod eth_signing;
 #[cfg(feature = "pubsub")]
 pub mod eth_pubsub;
+pub mod eth_signing;
 pub mod net;
 pub mod oasis;
 pub mod web3;

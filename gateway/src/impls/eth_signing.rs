@@ -8,9 +8,9 @@ use parity_rpc::v1::{
     traits::{Eth, EthSigning},
     types::{
         block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter,
-        Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, Transaction as RpcTransaction,
-        Work, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64, U256 as RpcU256, H520 as RpcH520,
-        TransactionRequest, RichRawTransaction
+        Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, RichRawTransaction,
+        Transaction as RpcTransaction, TransactionRequest, Work, H160 as RpcH160, H256 as RpcH256,
+        H520 as RpcH520, H64 as RpcH64, U256 as RpcU256,
     },
 };
 
@@ -18,7 +18,7 @@ pub struct EthSigningClient {}
 
 impl EthSigningClient {
     pub fn new() -> EthSigningClient {
-        return EthSigningClient{}
+        return EthSigningClient {}
     }
 }
 
@@ -37,7 +37,11 @@ impl EthSigning for EthSigningClient {
             Make sure that the wallet is setup correctly in the client in case transaction signing is expected to happen transparently".to_string(), None)))
     }
 
-    fn sign_transaction(&self, _: Metadata, _: TransactionRequest) -> BoxFuture<RichRawTransaction> {
+    fn sign_transaction(
+        &self,
+        _: Metadata,
+        _: TransactionRequest
+    ) -> BoxFuture<RichRawTransaction> {
         measure_counter_inc!("signTransaction");
         Box::new(future::failed(errors::unsupported("eth_signTransaction is not implemented because the gateway cannot sign transactions. \
             Make sure that the wallet is setup correctly in the client in case transaction signing is expected to happen transparently".to_string(), None)))

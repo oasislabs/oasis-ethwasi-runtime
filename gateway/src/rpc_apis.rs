@@ -23,7 +23,7 @@ use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
 #[cfg(feature = "pubsub")]
 use impls::EthPubSubClient;
-use impls::{EthClient, EthFilterClient, NetClient, OasisClient, Web3Client, EthSigningClient};
+use impls::{EthClient, EthFilterClient, EthSigningClient, NetClient, OasisClient, Web3Client};
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Api {
@@ -155,7 +155,7 @@ impl FullDependencies {
     ) where
         S: core::Middleware<Metadata>,
     {
-        use parity_rpc::v1::{Eth, EthSigning, EthFilter, EthPubSub, Net, Web3};
+        use parity_rpc::v1::{Eth, EthFilter, EthPubSub, EthSigning, Net, Web3};
         use traits::Oasis;
 
         for api in apis {
