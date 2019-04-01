@@ -1,0 +1,19 @@
+##
+# Docker image deployment pipeline
+#
+# This is a scheduled pipeline for automatic production deployments. That sets
+# today's `staging` docker tag to be the `next-production-deployment` tag. An
+# automated process on private-ops will change `next-production-deployment` to
+# `latest` during a deployment. This ensures we always have a 24 hour cycle of
+# testing a specific change.
+##
+common_tools_plugin: &common_tools_plugin
+  oasislabs/private-oasis-buildkite-tools#v0.2.0: ~
+
+steps:
+  - label: Update staging tag to be next-production-deployment (master branches only)
+    branches: master
+    command:
+      - .buildkite/common/scripts/promote_docker_image_to.sh --from-image-tag staging oasislabs/ekiden-runtime-ethereum next-production-deployment
+    plugins:
+      - *common_tools_plugin
