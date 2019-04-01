@@ -18,7 +18,7 @@ pub struct EthSigningClient {}
 
 impl EthSigningClient {
     pub fn new() -> EthSigningClient {
-        return EthSigningClient {}
+        EthSigningClient {}
     }
 }
 
@@ -40,11 +40,10 @@ impl EthSigning for EthSigningClient {
     fn sign_transaction(
         &self,
         _: Metadata,
-        _: TransactionRequest
+        _: TransactionRequest,
     ) -> BoxFuture<RichRawTransaction> {
         measure_counter_inc!("signTransaction");
         Box::new(future::failed(errors::unsupported("eth_signTransaction is not implemented because the gateway cannot sign transactions. \
             Make sure that the wallet is setup correctly in the client in case transaction signing is expected to happen transparently".to_string(), None)))
     }
-
 }

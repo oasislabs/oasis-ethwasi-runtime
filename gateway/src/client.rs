@@ -865,7 +865,7 @@ impl Client {
             Some(err) => {
                 let s = format!("{}", err);
                 Err(CallError::Execution(ExecutionError::Internal(s)))
-            },
+            }
             None => Ok(ret.gas_used + ret.refunded),
         }
     }

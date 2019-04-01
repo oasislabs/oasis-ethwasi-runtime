@@ -31,6 +31,6 @@ pub mod web3;
 #[cfg(feature = "pubsub")]
 pub use self::eth_pubsub::EthPubSubClient;
 pub use self::{
-    eth::EthClient, eth_signing::EthSigningClient, eth_filter::EthFilterClient, net::NetClient, oasis::OasisClient,
-    web3::Web3Client,
+    eth::EthClient, eth_filter::EthFilterClient, eth_signing::EthSigningClient, net::NetClient,
+    oasis::OasisClient, web3::Web3Client,
 };
