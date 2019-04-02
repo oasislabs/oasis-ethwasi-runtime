@@ -44,7 +44,9 @@ ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" 
 
 [dev-dependencies]
 time = "0.1"
-ethabi = "5.1"
+ethabi = "6.1.0"
+ethabi-contract = "6.0.0"
+ethabi-derive = "6.0.2"
 
 [features]
 default = ["confidential"]

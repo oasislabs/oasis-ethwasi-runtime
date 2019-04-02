@@ -1,0 +1,49 @@
+[
+  {
+    "type": "function",
+    "name": "encrypt",
+    "inputs": [
+      {
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "returnValue0",
+        "type": "bytes"
+      }
+    ],
+    "constant": false
+  },
+  {
+    "type": "function",
+    "name": "decrypt",
+    "inputs": [
+      {
+        "name": "data",
+        "type": "bytes16"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "returnValue0",
+        "type": "bytes"
+      }
+    ],
+    "constant": false
+  },
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "key",
+        "type": "bytes16"
+      },
+      {
+        "name": "iv",
+        "type": "bytes16"
+      }
+    ]
+  }
+]

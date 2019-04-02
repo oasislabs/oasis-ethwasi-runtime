@@ -6,6 +6,10 @@ extern crate ekiden_storage_base;
 extern crate ekiden_storage_dummy;
 extern crate ekiden_trusted;
 extern crate ethabi;
+#[macro_use]
+extern crate ethabi_contract;
+#[macro_use]
+extern crate ethabi_derive;
 extern crate ethcore;
 extern crate ethereum_types;
 extern crate ethkey;
@@ -136,8 +140,8 @@ fn test_storagestudy_storage() {
 
     eprintln!("Creating contract %%%");
     storagestudy::era("create-contract");
-    let (tx_hash, contract_addr) =
-        client.create_contract(contracts::bulk_storage::initcode(), &U256::from(0));
+    let (_tx_hash, contract_addr) =
+        client.create_contract(contracts::bulk_storage::initcode(), &0.into());
 
     eprintln!("Accessing bulk storage %%%");
     storagestudy::era("bulk-storage");
@@ -162,11 +166,34 @@ fn test_storagestudy_storage() {
         }
     });
 
-//    let params = [ethabi::Token::Uint(0.into()), dummy_value.clone()];
-//    let data = m_set_bulk_storage.encode_input(&params).unwrap();
-//    let tx_hash2 = client.send(Some(&contract_addr), data, &0.into());
-//    let receipt = client.receipt(tx_hash2);
-//    eprintln!("Used {} gas", receipt.gas_used.unwrap());
+    //    let params = [ethabi::Token::Uint(0.into()), dummy_value.clone()];
+    //    let data = m_set_bulk_storage.encode_input(&params).unwrap();
+    //    let tx_hash2 = client.send(Some(&contract_addr), data, &0.into());
+    //    let receipt = client.receipt(tx_hash2);
+    //    eprintln!("Used {} gas", receipt.gas_used.unwrap());
+}
+
+use_contract!(aes, "tests/contracts/AesContract.abi");
+
+#[test]
+fn test_aes_decrypt() {
+    let mut client = test::Client::instance();
+    client.gas_limit = 1182141.into();
+
+    eprintln!("Creating contract %%%");
+    storagestudy::era("create-contract");
+    let mut key = [0; 16];
+    key[..8].copy_from_slice(&hex::decode("abcdefabcdefabcd").unwrap());
+    let mut iv = [0; 16];
+    iv[..8].copy_from_slice(&hex::decode("abcdecabaeefabcd").unwrap());
+    let d = aes::constructor(contracts::aes::initcode(), key, iv);
+    let (_tx_hash, contract_addr) = client.create_contract(d, &0.into());
+
+    eprintln!("Estimating decrypt gas %%%");
+    storagestudy::era("bulk-storage"); // %%% too lazy to change the parser WANT
+    let d = aes::functions::decrypt::encode_input([0; 16]);
+    let gas = client.estimate_gas(Some(&contract_addr), d, &0.into());
+    eprintln!("Estimate {} gas", gas);
 }
 
 #[test]
