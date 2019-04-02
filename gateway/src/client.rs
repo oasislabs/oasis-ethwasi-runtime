@@ -865,10 +865,14 @@ impl Client {
             Some(err) => {
                 let cause = match std::str::from_utf8(&ret.output[..]) {
                     Ok(s) => s.to_string(),
-                    Err(_) => "".to_string()
+                    Err(_) => "".to_string(),
                 };
 
-                let s = format!("{} with output `{}`", err, cause);
+                let s = if cause.len() > 0 {
+                    format!("{} with output `{}`", err, cause)
+                } else {
+                    format!("{}", err)
+                };
                 Err(CallError::Execution(ExecutionError::Internal(s)))
             }
             None => Ok(ret.gas_used + ret.refunded),

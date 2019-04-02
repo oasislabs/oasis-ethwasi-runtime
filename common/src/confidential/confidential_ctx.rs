@@ -45,8 +45,13 @@ impl ConfidentialCtx {
         }
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
 
-        let decryption = crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key)
-            .map_err(|err| err.description().to_string())?;
+        let decryption =
+            crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key).map_err(|err| {
+                format!(
+                    "Unable to decrypt transaction data: {}",
+                    err.description().to_string()
+                )
+            })?;
         self.peer_public_key = Some(decryption.peer_public_key);
 
         let mut nonce = decryption.nonce;
