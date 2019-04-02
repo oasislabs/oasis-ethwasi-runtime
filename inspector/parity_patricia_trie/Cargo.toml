@@ -9,13 +9,13 @@ license = "GPL-3.0"
 elastic-array = "0.10"
 log = "0.3"
 # rand = "0.4"
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-triehash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-memorydb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+triehash = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+memorydb = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
 
 [dev-dependencies]
-trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }

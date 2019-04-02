@@ -20,19 +20,19 @@ jsonrpc-ws-server = { git = "https://github.com/paritytech/jsonrpc.git", branch 
 jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.0.1"
-wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "eauge/debug/panic-string-return-error" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-mem = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "eauge/fix/wasm-debugging" }
 
 ## Common functionality between runtime and gateway
 runtime-ethereum-common = { path = "../common" }
