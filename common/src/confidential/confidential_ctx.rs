@@ -42,7 +42,7 @@ impl ConfidentialCtx {
     pub fn new_with_keys(
         peer_public_key: PublicKeyType,
         contract_key: ContractKey,
-        next_nonce: Nonce
+        next_nonce: Nonce,
     ) -> Self {
         Self {
             peer_public_key: Some(peer_public_key),
@@ -194,7 +194,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ekiden_keymanager_common::{ContractKey, PublicKeyType, PrivateKeyType, StateKeyType};
+    use ekiden_keymanager_common::{ContractKey, PrivateKeyType, PublicKeyType, StateKeyType};
 
     #[test]
     fn test_open_tx_data_with_no_contract_key() {
@@ -216,6 +216,9 @@ mod tests {
 
         let res = ctx.open_tx_data(Vec::new());
 
-        assert_eq!(res.err(), Some("Unable to decrypt transaction data: Invalid nonce or public key".to_string()));
+        assert_eq!(
+            res.err(),
+            Some("Unable to decrypt transaction data: Invalid nonce or public key".to_string())
+        );
     }
 }
