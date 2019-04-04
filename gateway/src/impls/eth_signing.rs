@@ -1,16 +1,14 @@
 use jsonrpc_core::{
-    futures::{future, Future},
+    futures::future,
     BoxFuture, Result,
 };
 use parity_rpc::v1::{
     helpers::errors,
     metadata::Metadata,
-    traits::{Eth, EthSigning},
+    traits::EthSigning,
     types::{
-        block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter,
-        Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, RichRawTransaction,
-        Transaction as RpcTransaction, TransactionRequest, Work, H160 as RpcH160, H256 as RpcH256,
-        H520 as RpcH520, H64 as RpcH64, U256 as RpcU256,
+        Bytes, RichRawTransaction, TransactionRequest, H160 as RpcH160, H256 as RpcH256,
+        H520 as RpcH520
     },
 };
 
