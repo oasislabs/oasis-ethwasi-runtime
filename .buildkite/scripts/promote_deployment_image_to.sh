@@ -36,4 +36,10 @@ tag_suffix=${DEPLOYMENT_VARIANT:+-$DEPLOYMENT_VARIANT}
 # Add the provided tag to the deployment image
 ##############################################
 
-echo 'test only. skipping promote step'
+docker pull "${docker_image_name}:${deployment_image_tag}${tag_suffix}"
+
+docker tag \
+  "${docker_image_name}:${deployment_image_tag}${tag_suffix}" \
+  "${docker_image_name}:${new_image_tag}"
+
+docker push "${docker_image_name}:${new_image_tag}"
