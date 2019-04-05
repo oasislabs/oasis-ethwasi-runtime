@@ -9,9 +9,6 @@ target/
 *.o
 *.so
 **/generated
-Cargo.lock
-Cargo.enclave.lock
-Xargo.toml
 node_modules/
 
 # Enclave compilation
