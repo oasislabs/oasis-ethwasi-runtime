@@ -45,8 +45,13 @@ impl ConfidentialCtx {
         }
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
 
-        let decryption = crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key)
-            .map_err(|err| err.description().to_string())?;
+        let decryption =
+            crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key).map_err(|err| {
+                format!(
+                    "Unable to decrypt transaction data: {}",
+                    err.description().to_string()
+                )
+            })?;
         self.peer_public_key = Some(decryption.peer_public_key);
 
         let mut nonce = decryption.nonce;
@@ -171,5 +176,90 @@ impl EthConfidentialCtx for ConfidentialCtx {
 
     fn peer(&self) -> Option<Vec<u8>> {
         self.peer_public_key.as_ref().map(|pk| pk.to_vec())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ekiden_keymanager_common::{ContractKey, PrivateKeyType, PublicKeyType, StateKeyType};
+
+    #[test]
+    fn test_open_tx_data_with_no_contract_key() {
+        let mut ctx = ConfidentialCtx::new();
+        let res = ctx.open_tx_data(Vec::new());
+
+        assert_eq!(res.err(), Some("The confidential context must have a contract key when opening encrypted transaction data".to_string()));
+    }
+
+    #[test]
+    fn test_open_tx_data_decrypt_invalid() {
+        let peer_public_key: PublicKeyType = [0; 32];
+        let public_key: PublicKeyType = [0; 32];
+        let private_key: PrivateKeyType = [0; 32];
+        let state_key: StateKeyType = [0; 64];
+        let contract_key = ContractKey::new(public_key, private_key, state_key);
+        let nonce = Nonce::new([0; NONCE_SIZE]);
+        let mut ctx = ConfidentialCtx {
+            peer_public_key: Some(peer_public_key),
+            contract_key: Some(contract_key),
+            next_nonce: Some(nonce),
+        };
+
+        let res = ctx.open_tx_data(Vec::new());
+
+        assert_eq!(
+            res.err(),
+            Some("Unable to decrypt transaction data: Invalid nonce or public key".to_string())
+        );
+    }
+
+    #[test]
+    fn test_is_open() {
+        let peer_public_key: PublicKeyType = [0; 32];
+        let public_key: PublicKeyType = [0; 32];
+        let private_key: PrivateKeyType = [0; 32];
+        let state_key: StateKeyType = [0; 64];
+        let contract_key = ContractKey::new(public_key, private_key, state_key);
+        let nonce = Nonce::new([0; NONCE_SIZE]);
+
+        assert_eq!(
+            ConfidentialCtx {
+                peer_public_key: Some(peer_public_key),
+                contract_key: Some(contract_key),
+                next_nonce: Some(nonce),
+            }
+            .is_open(),
+            true
+        );
+        assert_eq!(
+            ConfidentialCtx {
+                peer_public_key: None,
+                contract_key: None,
+                next_nonce: None,
+            }
+            .is_open(),
+            false
+        );
+    }
+
+    #[test]
+    fn test_open_tx_data_after_close() {
+        let peer_public_key: PublicKeyType = [0; 32];
+        let public_key: PublicKeyType = [0; 32];
+        let private_key: PrivateKeyType = [0; 32];
+        let state_key: StateKeyType = [0; 64];
+        let contract_key = ContractKey::new(public_key, private_key, state_key);
+        let nonce = Nonce::new([0; NONCE_SIZE]);
+        let mut ctx = ConfidentialCtx {
+            peer_public_key: Some(peer_public_key),
+            contract_key: Some(contract_key),
+            next_nonce: Some(nonce),
+        };
+
+        ctx.close();
+        let res = ctx.open_tx_data(Vec::new());
+
+        assert_eq!(res.err(), Some("The confidential context must have a contract key when opening encrypted transaction data".to_string()));
     }
 }
