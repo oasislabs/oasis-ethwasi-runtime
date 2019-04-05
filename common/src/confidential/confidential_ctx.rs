@@ -228,13 +228,19 @@ mod tests {
                 peer_public_key: Some(peer_public_key),
                 contract_key: Some(contract_key),
                 next_nonce: Some(nonce),
-            }.is_open(), true);
+            }
+            .is_open(),
+            true
+        );
         assert_eq!(
             ConfidentialCtx {
                 peer_public_key: None,
                 contract_key: None,
                 next_nonce: None,
-            }.is_open(), false);
+            }
+            .is_open(),
+            false
+        );
     }
 
     #[test]
