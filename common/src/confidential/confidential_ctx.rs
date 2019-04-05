@@ -39,18 +39,6 @@ impl ConfidentialCtx {
         }
     }
 
-    pub fn new_with_keys(
-        peer_public_key: PublicKeyType,
-        contract_key: ContractKey,
-        next_nonce: Nonce,
-    ) -> Self {
-        Self {
-            peer_public_key: Some(peer_public_key),
-            contract_key: Some(contract_key),
-            next_nonce: Some(next_nonce),
-        }
-    }
-
     pub fn open_tx_data(&mut self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>, String> {
         if self.contract_key.is_none() {
             return Err("The confidential context must have a contract key when opening encrypted transaction data".to_string());
@@ -212,7 +200,11 @@ mod tests {
         let state_key: StateKeyType = [0; 64];
         let contract_key = ContractKey::new(public_key, private_key, state_key);
         let nonce = Nonce::new([0; NONCE_SIZE]);
-        let mut ctx = ConfidentialCtx::new_with_keys(peer_public_key, contract_key, nonce);
+        let mut ctx = ConfidentialCtx {
+            peer_public_key: Some(peer_public_key),
+            contract_key: Some(contract_key),
+            next_nonce: Some(nonce),
+        };
 
         let res = ctx.open_tx_data(Vec::new());
 

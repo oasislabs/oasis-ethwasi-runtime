@@ -1,14 +1,11 @@
-use jsonrpc_core::{
-    futures::future,
-    BoxFuture, Result,
-};
+use jsonrpc_core::{futures::future, BoxFuture, Result};
 use parity_rpc::v1::{
     helpers::errors,
     metadata::Metadata,
     traits::EthSigning,
     types::{
         Bytes, RichRawTransaction, TransactionRequest, H160 as RpcH160, H256 as RpcH256,
-        H520 as RpcH520
+        H520 as RpcH520,
     },
 };
 
