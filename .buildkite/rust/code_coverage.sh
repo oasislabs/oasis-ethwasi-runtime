@@ -78,3 +78,7 @@ cargo tarpaulin \
   --features test \
   -v
 set -x
+
+# Error if coverage results file does not exist.
+# Workaround for `cargo tarpaulin` ignoring errors.
+[ -f cobertura.xml ]
