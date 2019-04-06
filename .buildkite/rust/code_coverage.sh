@@ -64,6 +64,7 @@ cargo tarpaulin \
   --packages runtime-ethereum \
   --packages runtime-ethereum-common \
   --packages web3-gateway \
+  --exclude-files .e2e* \
   --exclude-files *generated* \
   --exclude-files genesis* \
   --exclude-files inspector* \
