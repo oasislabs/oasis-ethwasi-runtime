@@ -25,6 +25,7 @@ use crate::{
     client::Client,
     impls::eth::EthClient,
     traits::oasis::{Oasis, RpcPublicKeyPayload},
+    util::execution_error,
 };
 
 // Metrics.
@@ -116,7 +117,7 @@ impl Oasis for OasisClient {
         Box::new(
             self.client
                 .call_enc(request, EthClient::get_block_id(num))
-                .map_err(errors::execution)
+                .map_err(execution_error)
                 .map(Into::into)
                 .then(move |result| {
                     drop(timer);

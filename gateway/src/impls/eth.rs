@@ -47,7 +47,10 @@ use prometheus::{
 };
 use slog::{debug, info, Logger};
 
-use crate::{client::Client, util::jsonrpc_error};
+use crate::{
+    client::Client,
+    util::{execution_error, jsonrpc_error},
+};
 
 // Metrics.
 lazy_static! {
@@ -623,7 +626,7 @@ impl Eth for EthClient {
             self.client
                 .send_raw_transaction(raw.into())
                 .map(Into::into)
-                .map_err(errors::execution)
+                .map_err(execution_error)
                 .then(move |result| {
                     drop(timer);
                     result
@@ -690,7 +693,7 @@ impl Eth for EthClient {
             self.client
                 .estimate_gas(&signed, Self::get_block_id(num))
                 .map(Into::into)
-                .map_err(errors::execution),
+                .map_err(execution_error),
         )
     }
 
