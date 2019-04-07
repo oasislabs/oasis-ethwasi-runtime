@@ -29,7 +29,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       # XXX: Change to master once ekiden PR #1531 is merged.
       - "EKIDEN_BRANCH=kostko/feature/fortanix-sgx"
-      - "E2E_TESTS_BRANCH=master"
+      - "E2E_TESTS_BRANCH=peterjgilbert/fix/error_message"
     propagate-environment: true
     unconfined: true
 
