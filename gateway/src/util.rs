@@ -41,10 +41,7 @@ pub fn jsonrpc_error(err: Error) -> jsonrpc_core::Error {
 pub fn execution_error<T: fmt::Display>(data: T) -> jsonrpc_core::Error {
     jsonrpc_core::Error {
         code: ErrorCode::ServerError(-32015),
-        message: format!(
-            "Transaction execution error with cause Error {{ message: \"{}\" }}",
-            data
-        ),
+        message: format!("Transaction execution error with cause: {}", data),
         data: Some(Value::String(format!("{}", data))),
     }
 }
