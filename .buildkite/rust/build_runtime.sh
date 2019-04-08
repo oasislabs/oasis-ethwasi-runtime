@@ -23,6 +23,8 @@ if [ ! -d $src_dir ]; then
   exit 1
 fi
 shift
+# Runtime variant (elf, sgxs).
+variant=${RUNTIME_VARIANT:-elf}
 
 #########################################
 # Additional args passed to `cargo build`
@@ -47,23 +49,46 @@ set +u
 export PATH=$CARGO_INSTALL_ROOT/bin/:$PATH
 set -u
 
-echo "Installing ekiden-tools."
-cargo install \
-    --git https://github.com/oasislabs/ekiden \
-    --branch master \
-    --debug \
-    ekiden-tools
+#################################################################
+# Ensure we have ekiden-tools installed, needed to build enclaves
+#################################################################
+if [ ! -x ${CARGO_INSTALL_ROOT}/bin/cargo-elf2sgxs ]; then
+    cargo install \
+        --force \
+        --git https://github.com/oasislabs/ekiden \
+        --branch $EKIDEN_BRANCH \
+        --debug \
+        ekiden-tools
+fi
 
-mkdir -p $src_dir/target/enclave
+#######################################
+# Fetch the key manager runtime enclave
+#######################################
+echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
+mkdir -p $src_dir/target/x86_64-fortanix-unknown-sgx/debug
+.buildkite/scripts/download_artifact.sh \
+    ekiden \
+    $EKIDEN_BRANCH \
+    "Build key manager runtime" \
+    ekiden-keymanager-runtime.sgxs \
+    $src_dir/target/x86_64-fortanix-unknown-sgx/debug
 
-echo "Fetching the ekiden-keymanager-trusted.so enclave"
-.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager enclave" ekiden-keymanager-trusted.so $src_dir/target/enclave
+export KM_ENCLAVE_PATH="$src_dir/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
 
 ###################
 # Build the runtime
 ###################
-export KM_ENCLAVE_PATH="$src_dir/target/enclave/ekiden-keymanager-trusted.so"
-cargo ekiden build-enclave --output-identity ${extra_args}
+case $variant in
+    elf)
+        # Build non-SGX runtime.
+        cargo build -p runtime-ethereum
+        ;;
+    sgxs)
+        # Build SGX runtime.
+        cargo build -p runtime-ethereum --target x86_64-fortanix-unknown-sgx
+        cargo elf2sgxs
+        ;;
+esac
 
 ######################################
 # Apply the rust code formatting rules

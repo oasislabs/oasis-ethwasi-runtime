@@ -18,13 +18,10 @@
 
 use std::{collections::HashSet, sync::Arc};
 
-use client::Client;
-use util::jsonrpc_error;
-
+use ekiden_runtime::common::logger::get_logger;
 use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use ethereum_types::H256;
-use parking_lot::Mutex;
-
+use failure::format_err;
 use jsonrpc_core::{
     futures::{
         future::{self, Either},
@@ -32,11 +29,27 @@ use jsonrpc_core::{
     },
     BoxFuture, Result,
 };
+use lazy_static::lazy_static;
 use parity_rpc::v1::{
     helpers::{errors, limit_logs, PollFilter, PollManager},
     traits::EthFilter,
     types::{BlockNumber, Filter, FilterChanges, Index, Log, H256 as RpcH256, U256 as RpcU256},
 };
+use parking_lot::Mutex;
+use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+use slog::{info, Logger};
+
+use crate::{client::Client, util::jsonrpc_error};
+
+// Metrics.
+lazy_static! {
+    static ref ETH_FILTER_RPC_CALLS: IntCounterVec = register_int_counter_vec!(
+        "web3_gateway_eth_filter_rpc_calls",
+        "Number of eth_filter API RPC calls",
+        &["call"]
+    )
+    .unwrap();
+}
 
 /// Something which provides data that can be filtered over.
 pub trait Filterable {
@@ -61,6 +74,7 @@ pub trait Filterable {
 
 /// Eth filter rpc implementation for a full node.
 pub struct EthFilterClient {
+    logger: Logger,
     client: Arc<Client>,
     polls: Mutex<PollManager<PollFilter>>,
 }
@@ -69,6 +83,7 @@ impl EthFilterClient {
     /// Creates new Eth filter client.
     pub fn new(client: Arc<Client>) -> Self {
         EthFilterClient {
+            logger: get_logger("gateway/impls/eth_filter"),
             client: client,
             polls: Mutex::new(PollManager::new()),
         }
@@ -89,14 +104,16 @@ impl Filterable for EthFilterClient {
     }
 
     fn logs(&self, filter: EthcoreFilter) -> BoxFuture<Vec<Log>> {
-        measure_counter_inc!("getFilterLogs");
-        info!("eth_getFilterLogs(filter: {:?})", filter);
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "getFilterLogs",})
+            .inc();
+        info!(self.logger, "eth_getFilterLogs"; "filter" => ?filter);
 
         // Temporary mitigation for #397: check filter block range
         if !self.client.check_filter_range(filter.clone()) {
-            return Box::new(future::err(jsonrpc_error(
-                "Filter exceeds allowed block range".to_string(),
-            )));
+            return Box::new(future::err(jsonrpc_error(format_err!(
+                "Filter exceeds allowed block range"
+            ))));
         }
 
         Box::new(future::ok({
@@ -119,7 +136,9 @@ impl Filterable for EthFilterClient {
 
 impl EthFilter for EthFilterClient {
     fn new_filter(&self, filter: Filter) -> Result<RpcU256> {
-        measure_counter_inc!("newFilter");
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "newFilter",})
+            .inc();
         let mut polls = self.polls().lock();
         let block_number = self.best_block_number();
         let id = polls.create_poll(PollFilter::Logs(block_number, Default::default(), filter));
@@ -127,7 +146,9 @@ impl EthFilter for EthFilterClient {
     }
 
     fn new_block_filter(&self) -> Result<RpcU256> {
-        measure_counter_inc!("newBlockFilter");
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "newBlockFilter",})
+            .inc();
         let mut polls = self.polls().lock();
         // +1, since we don't want to include the current block
         let id = polls.create_poll(PollFilter::Block(self.best_block_number() + 1));
@@ -135,7 +156,9 @@ impl EthFilter for EthFilterClient {
     }
 
     fn new_pending_transaction_filter(&self) -> Result<RpcU256> {
-        measure_counter_inc!("newPendingTransactionFilter");
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "newPendingTransactionFilter",})
+            .inc();
         let mut polls = self.polls().lock();
         let pending_transactions = self.pending_transactions_hashes();
         let id = polls.create_poll(PollFilter::PendingTransaction(pending_transactions));
@@ -143,7 +166,9 @@ impl EthFilter for EthFilterClient {
     }
 
     fn filter_changes(&self, index: Index) -> BoxFuture<FilterChanges> {
-        measure_counter_inc!("getFilterChanges");
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "getFilterChanges",})
+            .inc();
         let mut polls = self.polls().lock();
         Box::new(match polls.poll_mut(&index.value()) {
             None => Either::A(future::err(errors::filter_not_found())),
@@ -235,7 +260,9 @@ impl EthFilter for EthFilterClient {
     }
 
     fn filter_logs(&self, index: Index) -> BoxFuture<Vec<Log>> {
-        measure_counter_inc!("getFilterLogs");
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "getFilterLogs",})
+            .inc();
         let filter = {
             let mut polls = self.polls().lock();
 
@@ -273,7 +300,9 @@ impl EthFilter for EthFilterClient {
     }
 
     fn uninstall_filter(&self, index: Index) -> Result<bool> {
-        measure_counter_inc!("uninstallFilter");
+        ETH_FILTER_RPC_CALLS
+            .with(&labels! {"call" => "uninstallFilter",})
+            .inc();
         Ok(self.polls().lock().remove_poll(&index.value()))
     }
 }

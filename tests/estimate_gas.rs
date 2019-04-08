@@ -57,7 +57,7 @@ fn estimate_gas_rust_tx_confidential() {
 #[test]
 fn estimate_gas_wasm_scaling() {
     // Given
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
     let data = contracts::bulk_storage::initcode();
     // When
     let estimate_gas = client.estimate_gas(None, data.clone(), &U256::from(0));
@@ -90,7 +90,7 @@ fn estimate_gas_tx_test(initcode: Vec<u8>, confidential: bool) {
 }
 
 fn estimate_gas_deploy<'a>(data: Vec<u8>, confidential: bool) -> U256 {
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
 
     let (estimate, tx_hash) = if confidential {
         (
@@ -114,7 +114,7 @@ fn estimate_gas_deploy<'a>(data: Vec<u8>, confidential: bool) -> U256 {
 /// Always redploys the contract to make sure the state is the same every time we
 /// run this.
 fn estimate_gas_tx<'a>(initcode: Vec<u8>, confidential: bool) -> U256 {
-    let mut client = test::Client::instance();
+    let mut client = test::Client::new();
     let data = contracts::counter::increment_counter_sighash();
 
     let (conf_data, address) = if confidential {

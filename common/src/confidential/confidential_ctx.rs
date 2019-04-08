@@ -1,23 +1,31 @@
 #![deny(warnings)]
-use super::{crypto, key_manager::KeyManagerClient};
-use ekiden_core::mrae::{
-    nonce::{Nonce, NONCE_SIZE},
-    sivaessha2::{SivAesSha2, KEY_SIZE},
+use std::sync::Arc;
+
+use ekiden_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
+use ekiden_runtime::{
+    common::crypto::mrae::{
+        nonce::{Nonce, NONCE_SIZE},
+        sivaessha2::{SivAesSha2, KEY_SIZE},
+    },
+    executor::Executor,
 };
-use ekiden_keymanager_common::{ContractKey, PublicKeyType};
 use ethcore::state::ConfidentialCtx as EthConfidentialCtx;
 use ethereum_types::Address;
+use failure::{format_err, Fallible, ResultExt};
+use io_context::Context;
+use keccak_hash::keccak;
+
+use super::crypto;
 
 /// Facade for the underlying confidential contract services to be injected into
 /// the parity state. Manages the confidential state--i.e., encryption keys and
 /// nonce to use--to be encrypting under for a *single* transaction. Each
 /// transaction for a confidential contract should have it's own ConfidentialCtx
 /// that is closed at the end of the transaction's execution.
-#[derive(Clone)]
 pub struct ConfidentialCtx {
     /// The peer public key used for encryption. This should not change for an
     /// open confidential context. This is implicitly set by the `open` method.
-    pub peer_public_key: Option<PublicKeyType>,
+    pub peer_public_key: Option<PublicKey>,
     /// The contract address and keys used for encryption. These keys may be
     /// swapped in an open confidential context, facilitating a confidential
     /// context switch to encrypt for the *same user* but under a different
@@ -28,66 +36,67 @@ pub struct ConfidentialCtx {
     /// `open_tx_data` fn. Then, throughout the context, is incremented each
     /// time a message is encrypted to the `peer_public_key`.
     pub next_nonce: Option<Nonce>,
+    /// Key manager client.
+    pub key_manager: Arc<KeyManagerClient>,
+    /// IO context (needed for the key manager client).
+    pub io_ctx: Arc<Context>,
 }
 
 impl ConfidentialCtx {
-    pub fn new() -> Self {
+    pub fn new(io_ctx: Arc<Context>, key_manager: Arc<KeyManagerClient>) -> Self {
         Self {
             peer_public_key: None,
             contract_key: None,
             next_nonce: None,
+            key_manager,
+            io_ctx,
         }
     }
 
-    pub fn open_tx_data(&mut self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>, String> {
+    pub fn open_tx_data(&mut self, encrypted_tx_data: Vec<u8>) -> Fallible<Vec<u8>> {
         if self.contract_key.is_none() {
-            return Err("The confidential context must have a contract key when opening encrypted transaction data".to_string());
+            return Err(format_err!("The confidential context must have a contract key when opening encrypted transaction data"));
         }
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
 
-        let decryption =
-            crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key).map_err(|err| {
-                format!(
-                    "Unable to decrypt transaction data: {}",
-                    err.description().to_string()
-                )
-            })?;
+        let decryption = crypto::decrypt(Some(encrypted_tx_data), contract_secret_key)
+            .with_context(|err| format!("Unable to decrypt transaction data: {}", err))?;
         self.peer_public_key = Some(decryption.peer_public_key);
 
         let mut nonce = decryption.nonce;
-        nonce
-            .increment()
-            .map_err(|err| err.description().to_string())?;
+        nonce.increment()?;
         self.next_nonce = Some(nonce);
 
         Ok(decryption.plaintext)
     }
 
-    pub fn decrypt(&self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>, String> {
+    pub fn decrypt(&self, encrypted_tx_data: Vec<u8>) -> Fallible<Vec<u8>> {
         let contract_secret_key = self.contract_key.as_ref().unwrap().input_keypair.get_sk();
-        let decryption = crypto::decrypt(Some(encrypted_tx_data), &contract_secret_key)
-            .map_err(|err| err.description().to_string())?;
+        let decryption = crypto::decrypt(Some(encrypted_tx_data), contract_secret_key)?;
 
         Ok(decryption.plaintext)
     }
 }
 
 impl EthConfidentialCtx for ConfidentialCtx {
-    fn open(
-        &mut self,
-        contract: Address,
-        encrypted_tx_data: Option<Vec<u8>>,
-    ) -> Result<Vec<u8>, String> {
+    fn open(&mut self, contract: Address, encrypted_tx_data: Option<Vec<u8>>) -> Fallible<Vec<u8>> {
         if self.is_open() {
-            return Err("Can't open a confidential context that's already open".to_string());
+            return Err(format_err!(
+                "can't open a confidential context that's already open"
+            ));
         }
 
-        let contract_key = KeyManagerClient::contract_key(contract)?;
-        if contract_key.is_none() {
-            return Err("Could not fetch contract key".to_string());
-        }
+        let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
+        let contract_key = Executor::with_current(|executor| {
+            executor
+                .block_on(
+                    self.key_manager
+                        .get_or_create_keys(Context::create_child(&self.io_ctx), contract_id),
+                )
+                .context("failed to get or create keys")
+        })?;
 
-        self.contract_key = contract_key;
+        self.contract_key = Some(contract_key);
 
         if encrypted_tx_data.is_some() {
             let data = self.open_tx_data(encrypted_tx_data.unwrap());
@@ -110,12 +119,14 @@ impl EthConfidentialCtx for ConfidentialCtx {
         self.next_nonce = None;
     }
 
-    fn encrypt(&mut self, data: Vec<u8>) -> Result<Vec<u8>, String> {
+    fn encrypt(&mut self, data: Vec<u8>) -> Fallible<Vec<u8>> {
         if self.peer_public_key.is_none()
             || self.contract_key.is_none()
             || self.next_nonce.is_none()
         {
-            return Err("must have key pair of a contract and peer and a next nonce".to_string());
+            return Err(format_err!(
+                "must have key pair of a contract and peer and a next nonce"
+            ));
         }
 
         let contract_key = &self.contract_key.as_ref().unwrap();
@@ -126,26 +137,25 @@ impl EthConfidentialCtx for ConfidentialCtx {
             data,
             self.next_nonce.clone().unwrap(),
             self.peer_public_key.clone().unwrap(),
-            &contract_pk,
-            &contract_sk,
-        )
-        .map_err(|err| err.description().to_string());
+            contract_pk,
+            contract_sk,
+        );
 
-        self.next_nonce
-            .as_mut()
-            .unwrap()
-            .increment()
-            .map_err(|err| err.description().to_string())?;
+        // NOTE: Result is only checked after the nonce is incremented.
 
-        encrypted_payload
+        self.next_nonce.as_mut().unwrap().increment()?;
+
+        Ok(encrypted_payload?)
     }
 
-    fn encrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>, String> {
+    fn encrypt_storage(&self, data: Vec<u8>) -> Fallible<Vec<u8>> {
         let contract_key = &self
             .contract_key
             .as_ref()
-            .expect("Should always have a contract key to encrypt storage");
+            .expect("should always have a contract key to encrypt storage");
         let state_key = contract_key.state_key;
+
+        // TODO: This should not use a fixed nonce.
 
         let key: Vec<u8> = state_key.as_ref()[..KEY_SIZE].to_vec();
         let nonce: Vec<u8> = state_key.as_ref()[KEY_SIZE..KEY_SIZE + NONCE_SIZE].to_vec();
@@ -155,12 +165,14 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(mrae.seal(nonce, data, vec![]).unwrap())
     }
 
-    fn decrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>, String> {
+    fn decrypt_storage(&self, data: Vec<u8>) -> Fallible<Vec<u8>> {
         let contract_key = &self
             .contract_key
             .as_ref()
-            .expect("Should always have a contract key to decrypt storage");
+            .expect("should always have a contract key to decrypt storage");
         let state_key = contract_key.state_key;
+
+        // TODO: This should not use a fixed nonce.
 
         let key: Vec<u8> = state_key.as_ref()[..KEY_SIZE].to_vec();
         let nonce: Vec<u8> = state_key.as_ref()[KEY_SIZE..KEY_SIZE + NONCE_SIZE].to_vec();
@@ -170,56 +182,83 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(mrae.open(nonce, data, vec![]).unwrap())
     }
 
-    fn create_long_term_public_key(&self, contract: Address) -> Result<(Vec<u8>, Vec<u8>), String> {
-        KeyManagerClient::create_long_term_public_key(contract)
+    fn create_long_term_public_key(&mut self, contract: Address) -> Fallible<(Vec<u8>, Vec<u8>)> {
+        let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
+        let pk = Executor::with_current(|executor| {
+            executor
+                .block_on(
+                    self.key_manager
+                        .get_or_create_keys(Context::create_child(&self.io_ctx), contract_id),
+                )
+                .context("failed to create keys")?;
+
+            executor
+                .block_on(
+                    self.key_manager
+                        .get_long_term_public_key(Context::create_child(&self.io_ctx), contract_id),
+                )
+                .context("failed to fetch long term key")?
+                .ok_or(format_err!("failed to create keys"))
+        })?;
+
+        Ok((pk.key.as_ref().to_vec(), pk.signature.as_ref().to_vec()))
     }
 
     fn peer(&self) -> Option<Vec<u8>> {
-        self.peer_public_key.as_ref().map(|pk| pk.to_vec())
+        self.peer_public_key.as_ref().map(|pk| pk.as_ref().to_vec())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use ekiden_keymanager_client::{self, ContractKey, PrivateKey, PublicKey, StateKey};
+
     use super::*;
-    use ekiden_keymanager_common::{ContractKey, PrivateKeyType, PublicKeyType, StateKeyType};
 
     #[test]
     fn test_open_tx_data_with_no_contract_key() {
-        let mut ctx = ConfidentialCtx::new();
+        let mut ctx = ConfidentialCtx::new(
+            Context::background().freeze(),
+            Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
+        );
         let res = ctx.open_tx_data(Vec::new());
 
-        assert_eq!(res.err(), Some("The confidential context must have a contract key when opening encrypted transaction data".to_string()));
+        assert_eq!(
+            &format!("{}", res.err().unwrap()),
+            "The confidential context must have a contract key when opening encrypted transaction data"
+        );
     }
 
     #[test]
     fn test_open_tx_data_decrypt_invalid() {
-        let peer_public_key: PublicKeyType = [0; 32];
-        let public_key: PublicKeyType = [0; 32];
-        let private_key: PrivateKeyType = [0; 32];
-        let state_key: StateKeyType = [0; 64];
+        let peer_public_key = PublicKey::default();
+        let public_key = PublicKey::default();
+        let private_key = PrivateKey::default();
+        let state_key = StateKey::default();
         let contract_key = ContractKey::new(public_key, private_key, state_key);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let mut ctx = ConfidentialCtx {
             peer_public_key: Some(peer_public_key),
             contract_key: Some(contract_key),
             next_nonce: Some(nonce),
+            key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
+            io_ctx: Context::background().freeze(),
         };
 
         let res = ctx.open_tx_data(Vec::new());
 
         assert_eq!(
-            res.err(),
-            Some("Unable to decrypt transaction data: Invalid nonce or public key".to_string())
+            &format!("{}", res.err().unwrap()),
+            "Unable to decrypt transaction data: invalid nonce or public key"
         );
     }
 
     #[test]
     fn test_is_open() {
-        let peer_public_key: PublicKeyType = [0; 32];
-        let public_key: PublicKeyType = [0; 32];
-        let private_key: PrivateKeyType = [0; 32];
-        let state_key: StateKeyType = [0; 64];
+        let peer_public_key = PublicKey::default();
+        let public_key = PublicKey::default();
+        let private_key = PrivateKey::default();
+        let state_key = StateKey::default();
         let contract_key = ContractKey::new(public_key, private_key, state_key);
         let nonce = Nonce::new([0; NONCE_SIZE]);
 
@@ -228,6 +267,8 @@ mod tests {
                 peer_public_key: Some(peer_public_key),
                 contract_key: Some(contract_key),
                 next_nonce: Some(nonce),
+                key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
+                io_ctx: Context::background().freeze(),
             }
             .is_open(),
             true
@@ -237,6 +278,8 @@ mod tests {
                 peer_public_key: None,
                 contract_key: None,
                 next_nonce: None,
+                key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
+                io_ctx: Context::background().freeze(),
             }
             .is_open(),
             false
@@ -245,21 +288,26 @@ mod tests {
 
     #[test]
     fn test_open_tx_data_after_close() {
-        let peer_public_key: PublicKeyType = [0; 32];
-        let public_key: PublicKeyType = [0; 32];
-        let private_key: PrivateKeyType = [0; 32];
-        let state_key: StateKeyType = [0; 64];
+        let peer_public_key = PublicKey::default();
+        let public_key = PublicKey::default();
+        let private_key = PrivateKey::default();
+        let state_key = StateKey::default();
         let contract_key = ContractKey::new(public_key, private_key, state_key);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let mut ctx = ConfidentialCtx {
             peer_public_key: Some(peer_public_key),
             contract_key: Some(contract_key),
             next_nonce: Some(nonce),
+            key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
+            io_ctx: Context::background().freeze(),
         };
 
         ctx.close();
         let res = ctx.open_tx_data(Vec::new());
 
-        assert_eq!(res.err(), Some("The confidential context must have a contract key when opening encrypted transaction data".to_string()));
+        assert_eq!(
+            &format!("{}", res.err().unwrap()),
+            "The confidential context must have a contract key when opening encrypted transaction data"
+        );
     }
 }

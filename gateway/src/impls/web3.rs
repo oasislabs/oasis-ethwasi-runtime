@@ -17,10 +17,22 @@
 //! Web3 rpc implementation.
 use hash::keccak;
 use jsonrpc_core::Result;
+use lazy_static::lazy_static;
 use parity_rpc::v1::{
     traits::Web3,
     types::{Bytes, H256},
 };
+use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+
+// Metrics.
+lazy_static! {
+    static ref WEB3_RPC_CALLS: IntCounterVec = register_int_counter_vec!(
+        "web3_gateway_web3_rpc_calls",
+        "Number of web3 API RPC calls",
+        &["call"]
+    )
+    .unwrap();
+}
 
 /// Web3 rpc implementation.
 pub struct Web3Client;
@@ -34,7 +46,9 @@ impl Web3Client {
 
 impl Web3 for Web3Client {
     fn client_version(&self) -> Result<String> {
-        measure_counter_inc!("clientVersion");
+        WEB3_RPC_CALLS
+            .with(&labels! {"call" => "clientVersion",})
+            .inc();
         Ok(format!(
             "oasis/{}/{}",
             env!("CARGO_PKG_NAME"),
@@ -43,7 +57,7 @@ impl Web3 for Web3Client {
     }
 
     fn sha3(&self, data: Bytes) -> Result<H256> {
-        measure_counter_inc!("sha3");
+        WEB3_RPC_CALLS.with(&labels! {"call" => "sha3",}).inc();
         Ok(keccak(&data.0).into())
     }
 }

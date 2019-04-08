@@ -4,22 +4,17 @@ version = "0.1.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
-ekiden-core = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+# Ekiden.
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-common = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-base = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-storage-lru = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-trusted = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-elastic-array = "0.10"
+
+# Parity.
 ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-lazy_static = { version = "1.1.0", features = ["spin_no_std"] }
-sodalite = "0.3.0"
 
-[dev-dependencies]
-ekiden-storage-dummy = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-
-[features]
-test = []
+# Others.
+elastic-array = "0.10"
+failure = "0.1.5"
+io-context = "0.2.0"

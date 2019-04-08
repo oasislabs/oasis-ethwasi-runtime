@@ -15,33 +15,28 @@
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::{
-    any::Any,
     sync::{Arc, Weak},
     thread,
     time::{Duration, Instant},
 };
 
-use client::Client;
-
-use client_utils;
-use ekiden_core::environment::Environment;
-use ekiden_storage_base::StorageBackend;
+use ekiden_keymanager_client::KeyManagerClient;
+use ekiden_runtime::common::logger::get_logger;
 use ethereum_types::U256;
+use failure::{format_err, Fallible};
 use informant;
 use parity_reactor::EventLoop;
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
+use slog::{info, warn, Logger};
 
 #[cfg(feature = "pubsub")]
-use notifier::PubSubNotifier;
-use runtime_ethereum;
-use util;
+use crate::notifier::notify_client_blocks;
+use crate::{client::Client, util, EthereumRuntimeClient};
 
 pub fn execute(
-    ekiden_client: runtime_ethereum::Client,
-    snapshot_manager: client_utils::db::Manager,
-    storage: Arc<StorageBackend>,
-    environment: Arc<Environment>,
+    client: EthereumRuntimeClient,
+    km_client: Arc<KeyManagerClient>,
     pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
@@ -50,18 +45,28 @@ pub fn execute(
     ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
-) -> Result<RunningClient, String> {
+) -> Fallible<RunningClient> {
+    let logger = get_logger("gateway/execute");
+
+    let mut runtime = tokio::runtime::Runtime::new()?;
+
+    // Wait for the Ekiden node to be fully synced.
+    info!(logger, "Waiting for the Ekiden node to be fully synced");
+    runtime.block_on(client.txn_client().wait_sync())?;
+    info!(
+        logger,
+        "Ekiden node is fully synced, proceeding with initialization"
+    );
+
     let client = Arc::new(Client::new(
+        runtime.executor(),
+        client,
         &util::load_spec(),
-        snapshot_manager,
-        ekiden_client,
-        environment.clone(),
-        storage.clone(),
         gas_price,
     ));
 
     #[cfg(feature = "pubsub")]
-    let notifier = PubSubNotifier::new(client.clone(), environment.clone(), pubsub_interval_secs);
+    runtime.spawn(notify_client_blocks(client.clone(), pubsub_interval_secs));
 
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
@@ -90,9 +95,10 @@ pub fn execute(
     http_conf.processing_threads = num_threads;
     http_conf.max_batch_size = jsonrpc_max_batch_size;
 
-    // start RPCs
+    // Define RPC handlers.
     let deps_for_rpc_apis = Arc::new(rpc_apis::FullDependencies {
         client: client.clone(),
+        km_client: km_client.clone(),
         ws_address: ws_conf.address(),
         remote: event_loop.remote(),
     });
@@ -103,20 +109,22 @@ pub fn execute(
         stats: rpc_stats.clone(),
     };
 
-    // start rpc servers
-    let ws_server = rpc::new_ws(ws_conf, &dependencies)?;
-    let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)?;
+    // Start RPC servers.
+    info!(logger, "Starting WS server"; "conf" => ?ws_conf);
+    let ws_server = rpc::new_ws(ws_conf, &dependencies).map_err(|err| format_err!("{}", err))?;
 
-    #[cfg(feature = "pubsub")]
-    let keep_alive_set = (event_loop, http_server, notifier, ws_server);
-    #[cfg(not(feature = "pubsub"))]
-    let keep_alive_set = (event_loop, http_server, ws_server);
+    info!(logger, "Starting HTTP server"; "conf" => ?http_conf);
+    let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)
+        .map_err(|err| format_err!("{}", err))?;
 
     let running_client = RunningClient {
-        inner: RunningClientInner::Full {
-            client,
-            keep_alive: Box::new(keep_alive_set),
-        },
+        logger,
+        runtime,
+        client,
+        km_client,
+        event_loop,
+        http_server,
+        ws_server,
     };
     Ok(running_client)
 }
@@ -126,35 +134,46 @@ pub fn execute(
 /// Should be destroyed by calling `shutdown()`, otherwise execution will continue in the
 /// background.
 pub struct RunningClient {
-    inner: RunningClientInner,
-}
-
-enum RunningClientInner {
-    Full {
-        client: Arc<Client>,
-        keep_alive: Box<Any>,
-    },
+    logger: Logger,
+    runtime: tokio::runtime::Runtime,
+    client: Arc<Client>,
+    km_client: Arc<KeyManagerClient>,
+    event_loop: EventLoop,
+    http_server: Option<jsonrpc_http_server::Server>,
+    ws_server: Option<jsonrpc_ws_server::Server>,
 }
 
 impl RunningClient {
     /// Shuts down the client.
     pub fn shutdown(self) {
-        match self.inner {
-            RunningClientInner::Full { client, keep_alive } => {
-                info!("Finishing work, please wait...");
-                // Create a weak reference to the client so that we can wait on shutdown
-                // until it is dropped
-                let weak_client = Arc::downgrade(&client);
-                // drop this stuff as soon as exit detected.
-                drop(keep_alive);
-                drop(client);
-                wait_for_drop(weak_client);
-            }
-        }
+        let RunningClient {
+            logger,
+            runtime,
+            client,
+            km_client,
+            event_loop,
+            http_server,
+            ws_server,
+        } = self;
+
+        info!(logger, "Terminating event loop");
+
+        // Create a weak reference to the client so that we can wait on shutdown
+        // until it is dropped.
+        let weak_client = Arc::downgrade(&client);
+        // drop this stuff as soon as exit detected.
+        drop(runtime.shutdown_now());
+        drop(event_loop);
+        drop(http_server);
+        drop(ws_server);
+        drop(client);
+        drop(km_client);
+
+        wait_for_drop(logger, weak_client);
     }
 }
 
-fn wait_for_drop<T>(w: Weak<T>) {
+fn wait_for_drop<T>(logger: Logger, w: Weak<T>) {
     let sleep_duration = Duration::from_secs(1);
     let warn_timeout = Duration::from_secs(60);
     let max_timeout = Duration::from_secs(300);
@@ -169,11 +188,11 @@ fn wait_for_drop<T>(w: Weak<T>) {
 
         if !warned && instant.elapsed() > warn_timeout {
             warned = true;
-            warn!("Shutdown is taking longer than expected.");
+            warn!(logger, "Shutdown is taking longer than expected");
         }
 
         thread::sleep(sleep_duration);
     }
 
-    warn!("Shutdown timeout reached, exiting uncleanly.");
+    warn!(logger, "Shutdown timeout reached, exiting uncleanly");
 }

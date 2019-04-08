@@ -1,20 +1,25 @@
-#!/bin/bash -e
+#!/bin/bash
 
-WORKDIR=${1:-$(pwd)}
+set -euo pipefail
 
-# Paths to Go node and keymanager enclave, assuming they were built according to the README
-: ${EKIDEN_NODE:=/go/src/github.com/oasislabs/ekiden/go/ekiden/ekiden}
-: ${KM_MRENCLAVE:=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.mrenclave}
-: ${KM_ENCLAVE:=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.so}
+# For automatic cleanup on exit.
+source .buildkite/scripts/common.sh
 
-# Paths to ekiden binaries
-: ${EKIDEN_WORKER:=$(which ekiden-worker)}
-: ${KM_NODE:=$(which ekiden-keymanager-node)}
+config="$1"
+ekiden_node="${EKIDEN_ROOT_PATH}/go/ekiden/ekiden"
+web3_gateway="target/debug/gateway"
 
-source ${SCRIPTS_UTILS:-scripts/utils.sh}
+# Prepare an empty node directory.
+data_dir="/tmp/runtime-ethereum-${config}"
+rm -rf "${data_dir}"
+cp -R "configs/${config}" "${data_dir}"
+chmod -R go-rwx "${data_dir}"
 
-# Ensure cleanup on exit.
-# cleanup() is defined in scripts/utils.sh
-trap 'cleanup' EXIT
-run_test_network
-wait
+# Start the Ekiden node.
+${ekiden_node} --config configs/${config}.yml 2>/dev/null &
+sleep 1
+
+# Start the gateway.
+${web3_gateway} \
+    --node-address "unix:${data_dir}/internal.sock" \
+    --runtime-id 0000000000000000000000000000000000000000000000000000000000000000

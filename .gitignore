@@ -9,9 +9,6 @@ target/
 *.o
 *.so
 **/generated
-Cargo.lock
-Cargo.enclave.lock
-Xargo.toml
 node_modules/
 
 # Enclave compilation
@@ -49,6 +46,13 @@ cargo_install_root/
 # that is useful to keep around to speed up
 # local dev and testing.
 tests/rpc-tests/
+tests/e2e-tests/
+
+# Ekiden E2E test scripts.
+.e2e
+
+# Ekiden binary symlinks or downloads.
+.ekiden
 
 # Coverage report from Tarpaulin
 cobertura.xml
