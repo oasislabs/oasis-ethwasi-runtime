@@ -13,7 +13,8 @@ use ethcore::{encoded, filter::TxEntry, ids::BlockId};
 use failure::Fallible;
 use grpcio::EnvBuilder;
 use hex;
-use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
+extern crate serde;
+use test_helpers::serde::de::{Deserializer, MapAccess, SeqAccess, Visitor};
 
 use crate::{client::ChainNotify, EthereumRuntimeClient};
 

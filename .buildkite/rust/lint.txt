@@ -17,7 +17,7 @@ private-in-public
 safe-extern-statics
 unconditional-recursion
 unions-with-drop-fields
-# unused
+unused
 unused-allocation
 unused-comparisons
 unused-parens

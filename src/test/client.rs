@@ -28,7 +28,7 @@ use io_context::Context as IoContext;
 use keccak_hash::keccak;
 use runtime_ethereum_api::{Receipt, TransactionRequest};
 use runtime_ethereum_common::confidential::ConfidentialCtx;
-use serde_json::map::Map;
+use serde_json::{json, map::Map};
 
 use crate::{cache::Cache, methods, EthereumBatchHandler};
 

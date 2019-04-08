@@ -1,15 +1,4 @@
 //! Ethereum runtime entry point.
-extern crate runtime_ethereum;
-
-extern crate ekiden_keymanager_client;
-extern crate ekiden_runtime;
-extern crate ethcore;
-extern crate ethereum_types;
-extern crate failure;
-extern crate io_context;
-extern crate lazy_static;
-extern crate runtime_ethereum_api;
-extern crate runtime_ethereum_common;
 
 use std::sync::Arc;
 

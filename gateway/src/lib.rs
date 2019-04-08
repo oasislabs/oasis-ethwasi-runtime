@@ -26,7 +26,6 @@ extern crate rayon;
 #[macro_use]
 extern crate serde_derive;
 extern crate jsonrpc_core;
-extern crate serde;
 #[macro_use]
 extern crate jsonrpc_macros;
 extern crate common_types;

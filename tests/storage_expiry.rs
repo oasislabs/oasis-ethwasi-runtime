@@ -1,8 +1,3 @@
-extern crate ethereum_types;
-extern crate runtime_ethereum;
-extern crate runtime_ethereum_api;
-extern crate time;
-
 mod contracts;
 
 use ethereum_types::{Address, U256};

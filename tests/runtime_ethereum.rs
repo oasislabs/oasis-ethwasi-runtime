@@ -1,10 +1,3 @@
-extern crate ethcore;
-extern crate ethereum_types;
-extern crate ethkey;
-extern crate hex;
-extern crate runtime_ethereum;
-extern crate runtime_ethereum_common;
-
 use ethcore::{
     rlp,
     transaction::{Action, Transaction as EthcoreTransaction},

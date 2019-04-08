@@ -1,9 +1,3 @@
-extern crate ethcore;
-extern crate ethereum_types;
-extern crate keccak_hash;
-extern crate runtime_ethereum;
-extern crate runtime_ethereum_common;
-
 mod contracts;
 
 use ethcore::state::ConfidentialCtx;

@@ -1,6 +1,3 @@
-extern crate ethereum_types;
-extern crate runtime_ethereum;
-
 mod contracts;
 
 use runtime_ethereum::test;
