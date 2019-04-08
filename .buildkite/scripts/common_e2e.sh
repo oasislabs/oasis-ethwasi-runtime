@@ -20,3 +20,32 @@ run_gateway() {
         --threads 100 \
         --ws-port ${ws_port} 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/gateway-$id.log | sed "s/^/[gateway-${id}] /" &
 }
+
+run_backend_tendermint_committee_custom() {
+    run_backend_tendermint_committee \
+        replica_group_size=3
+}
+
+run_no_client() {
+    :
+}
+
+scenario_basic() {
+    local runtime=$1
+
+    # Initialize compute nodes.
+    run_compute_node 1 ${runtime}
+    run_compute_node 2 ${runtime}
+    run_compute_node 3 ${runtime}
+    run_compute_node 4 ${runtime}
+
+    # Wait for all compute nodes to start.
+    wait_compute_nodes 4
+
+    # Advance epoch to elect a new committee.
+    set_epoch 1
+
+    # Initialize gateway.
+    run_gateway 1
+    sleep 3
+}

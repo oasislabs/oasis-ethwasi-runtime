@@ -2,24 +2,22 @@
 
 set -euo pipefail
 
+WORKDIR=$(pwd)
+
 # For automatic cleanup on exit.
 source .buildkite/scripts/common.sh
+source .e2e/ekiden_common_e2e.sh
+source .buildkite/scripts/common_e2e.sh
 
-config="$1"
-ekiden_node="${EKIDEN_ROOT_PATH}/go/ekiden/ekiden"
-web3_gateway="target/debug/gateway"
+scenario_run_gateway() {
+	scenario_basic runtime-ethereum
+	sleep infinity
+}
 
-# Prepare an empty node directory.
-data_dir="/tmp/runtime-ethereum-${config}"
-rm -rf "${data_dir}"
-cp -R "configs/${config}" "${data_dir}"
-chmod -R go-rwx "${data_dir}"
-
-# Start the Ekiden node.
-${ekiden_node} --config configs/${config}.yml 2>/dev/null &
-sleep 1
-
-# Start the gateway.
-${web3_gateway} \
-    --node-address "unix:${data_dir}/internal.sock" \
-    --runtime-id 0000000000000000000000000000000000000000000000000000000000000000
+run_test \
+    pre_init_hook=run_no_client \
+    scenario=scenario_run_gateway \
+    name="gateway.sh" \
+    backend_runner=run_backend_tendermint_committee_custom \
+    runtime=runtime-ethereum \
+    client_runner=run_no_client
