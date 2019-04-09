@@ -126,6 +126,9 @@ steps:
       # Save the report as a build artifact
       # so it can be easily accessed for debugging.
       - buildkite-agent artifact upload cobertura.xml
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
     agents:
       buildkite_agent_size: large
     plugins:
