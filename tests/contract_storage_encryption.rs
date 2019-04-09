@@ -6,7 +6,7 @@ extern crate runtime_ethereum_common;
 
 mod contracts;
 
-use ethcore::state::ConfidentialCtx;
+use ethcore::vm::ConfidentialCtx;
 use ethereum_types::{Address, H256, U256};
 use runtime_ethereum::test;
 

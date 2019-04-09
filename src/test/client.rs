@@ -18,12 +18,12 @@ use ekiden_runtime::{
 use elastic_array::ElasticArray128;
 use ethcore::{
     rlp,
-    state::ConfidentialCtx as EthConfidentialCtx,
     transaction::{Action, Transaction as EthcoreTransaction},
-    vm::OASIS_HEADER_PREFIX,
+    vm::{ConfidentialCtx as EthConfidentialCtx, OASIS_HEADER_PREFIX},
 };
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
+
 use io_context::Context as IoContext;
 use keccak_hash::keccak;
 use runtime_ethereum_api::{Receipt, TransactionRequest};
@@ -149,7 +149,7 @@ impl Client {
         let contract_addr = contract.unwrap();
         let enc_data = self
             .confidential_ctx(contract_addr.clone())
-            .encrypt(data)
+            .encrypt_session(data)
             .unwrap();
 
         enc_data
@@ -338,8 +338,9 @@ impl Client {
         let nonce = Nonce::new([0; NONCE_SIZE]);
         ConfidentialCtx {
             peer_public_key: Some(peer_key),
-            contract_key: Some(contract_key),
+            contract: Some((contract, contract_key)),
             next_nonce: Some(nonce),
+            activated: true,
             key_manager: self.km_client.clone(),
             io_ctx: IoContext::background().freeze(),
         }
