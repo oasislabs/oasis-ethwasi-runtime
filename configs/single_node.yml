@@ -31,7 +31,7 @@ worker:
   binary: .ekiden/target/debug/ekiden-runtime-loader
   runtime:
     id: "0000000000000000000000000000000000000000000000000000000000000000"
-    binary: target/debug/runtime-ethereum
+    binary: .runtime/target/debug/runtime-ethereum
   client:
     port: 9200
     addresses:

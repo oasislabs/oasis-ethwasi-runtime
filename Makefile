@@ -3,8 +3,17 @@
 # Ekiden binary base path.
 EKIDEN_ROOT_PATH ?= .ekiden
 
+# Runtime binary base path.
+RUNTIME_ROOT_PATH ?= .runtime
+
+# Ekiden cargo target directory.
+EKIDEN_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(EKIDEN_ROOT_PATH)/target)
+
+# Runtime cargo target directory.
+RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)
+
 # Key manager enclave path.
-KM_ENCLAVE_PATH ?= $(EKIDEN_ROOT_PATH)/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs
+KM_ENCLAVE_PATH ?= $(EKIDEN_CARGO_TARGET_DIR)/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs
 
 # Check if we're running in an interactive terminal.
 ISATTY := $(shell [ -t 0 ] && echo 1)
@@ -33,7 +42,7 @@ endif
 .PHONY: \
 	all \
 	check check-tools check-ekiden \
-	download-ekiden symlink-ekiden \
+	download-artifacts symlink-artifacts \
 	runtime gateway genesis \
 	clean clean-test-e2e \
 	fmt \
@@ -55,28 +64,29 @@ check-tools:
 check-ekiden:
 	@test -x $(EKIDEN_ROOT_PATH)/go/ekiden/ekiden || ( \
 		$(ECHO) "$(RED)error:$(OFF) ekiden node not found in $(EKIDEN_ROOT_PATH) (check EKIDEN_ROOT_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-ekiden\" or \"make download-ekiden\"?" && \
+		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\" or \"make download-artifacts\"?" && \
 		exit 1 \
 	)
 	@test -f $(KM_ENCLAVE_PATH) || ( \
 		$(ECHO) "$(RED)error:$(OFF) ekiden key manager enclave not found in $(KM_ENCLAVE_PATH) (check KM_ENCLAVE_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-ekiden\" or \"make download-ekiden\"?" && \
+		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\" or \"make download-artifacts\"?" && \
 		exit 1 \
 	)
 
-download-ekiden:
-	@$(ECHO) "$(CYAN)*** Downloading Ekiden build artifacts...$(OFF)"
-	@scripts/download_ekiden.sh "$(EKIDEN_ROOT_PATH)"
+download-artifacts:
+	@$(ECHO) "$(CYAN)*** Downloading Ekiden and runtime build artifacts...$(OFF)"
+	@scripts/download_artifacts.sh "$(EKIDEN_ROOT_PATH)"
 	@$(ECHO) "$(CYAN)*** Download completed!$(OFF)"
 
-symlink-ekiden:
-	@$(ECHO) "$(CYAN)*** Symlinking Ekiden build artifacts...$(OFF)"
-	@scripts/symlink_ekiden.sh "$(EKIDEN_ROOT_PATH)" "$(EKIDEN_SRC_PATH)"
+symlink-artifacts:
+	@$(ECHO) "$(CYAN)*** Symlinking Ekiden and runtime build artifacts...$(OFF)"
+	@export EKIDEN_CARGO_TARGET_DIR=$(EKIDEN_CARGO_TARGET_DIR) && \
+		scripts/symlink_artifacts.sh "$(EKIDEN_ROOT_PATH)" "$(EKIDEN_SRC_PATH)" "$(RUNTIME_ROOT_PATH)" $$(pwd)
 	@$(ECHO) "$(CYAN)*** Symlinking done!$(OFF)"
 
 runtime: check-ekiden
 	@$(ECHO) "$(CYAN)*** Building runtime-ethereum...$(OFF)"
-	@export KM_ENCLAVE_PATH=$$(pwd)/$(KM_ENCLAVE_PATH) && \
+	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
 		cargo build -p runtime-ethereum --target x86_64-fortanix-unknown-sgx && \
 		cargo build -p runtime-ethereum && \
 		cargo elf2sgxs
@@ -95,19 +105,19 @@ benchmark: genesis
 
 run-gateway:
 	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) && \
+	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
 		scripts/gateway.sh single_node
 
 run-gateway-sgx:
 	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) && \
+	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
 		scripts/gateway.sh single_node_sgx
 
 test: test-unit test-e2e
 
 test-unit: check-ekiden
 	@$(ECHO) "$(CYAN)*** Running unit tests...$(OFF)"
-	@export KM_ENCLAVE_PATH=$$(pwd)/$(KM_ENCLAVE_PATH) && \
+	@export KM_ENCLAVE_PATH=$$(KM_ENCLAVE_PATH) && \
 		cargo test \
 			--features test \
 			-p runtime-ethereum-common \
