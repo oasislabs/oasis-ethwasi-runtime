@@ -16,7 +16,7 @@ cp -R "configs/${config}" "${data_dir}"
 chmod -R go-rwx "${data_dir}"
 
 # Start the Ekiden node.
-${ekiden_node} --config configs/${config}.yml 2>/dev/null &
+${ekiden_node} --config configs/${config}.yml &
 sleep 1
 
 # Start the gateway.
