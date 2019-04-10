@@ -7,7 +7,7 @@ source .buildkite/scripts/common.sh
 
 config="$1"
 ekiden_node="${EKIDEN_ROOT_PATH}/go/ekiden/ekiden"
-web3_gateway="target/debug/gateway"
+web3_gateway="${RUNTIME_CARGO_TARGET_DIR}/debug/gateway"
 
 # Prepare an empty node directory.
 data_dir="/tmp/runtime-ethereum-${config}"
@@ -16,7 +16,7 @@ cp -R "configs/${config}" "${data_dir}"
 chmod -R go-rwx "${data_dir}"
 
 # Start the Ekiden node.
-${ekiden_node} --config configs/${config}.yml 2>/dev/null &
+${ekiden_node} --config configs/${config}.yml &
 sleep 1
 
 # Start the gateway.
