@@ -13,10 +13,10 @@ To do this, you can either:
 
 * Build Ekiden locally by checking out the Ekiden repository (e.g., in `/path/to/ekiden`)
   and then running `make -C /path/to/ekiden`. After the process completes you can then
-  run `make symlink-ekiden EKIDEN_SRC_PATH=/path/to/ekiden` and all the required artifacts
-  will be symlinked under `.ekiden` so they will be used by `make` invocations.
+  run `make symlink-artifacts EKIDEN_SRC_PATH=/path/to/ekiden` and all the required artifacts
+  will be symlinked under `.ekiden` and `.runtime` so they will be used by `make` invocations.
 
-* Download Ekiden artifacts from CI by running `make download-ekiden`. You need to have
+* Download Ekiden artifacts from CI by running `make download-artifacts`. You need to have
   the correct `BUILDKITE_ACCESS_TOKEN` set up to do this.
 
 * Manually provide the required artifacts in a custom directory and specify
