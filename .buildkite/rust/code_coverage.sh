@@ -77,7 +77,8 @@ cargo tarpaulin \
   --out Xml \
   --coveralls ${coveralls_api_token} \
   --features test \
-  -v
+  -v \
+  -- --test-threads=1
 set -x
 
 # Error if coverage results file does not exist.
