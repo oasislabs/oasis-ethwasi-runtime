@@ -36,8 +36,8 @@ pub struct ConfidentialCtx {
     /// `open_tx_data` fn. Then, throughout the context, is incremented each
     /// time a message is encrypted to the `peer_public_key`.
     pub next_nonce: Option<Nonce>,
-    /// True iff the confidential context is activated, i.e., if we're in the middle
-    /// of executing a confidential contract.
+    /// True iff the confidential context is activated, i.e., if we've executed
+    /// a confidnetial contract at any point in the call hierarchy.
     pub activated: bool,
     /// Key manager client.
     pub key_manager: Arc<KeyManagerClient>,
@@ -77,6 +77,8 @@ impl ConfidentialCtx {
 
 impl EthConfidentialCtx for ConfidentialCtx {
     fn is_encrypting(&self) -> bool {
+        // Note: self.activated == true and self.contract.is_some() == false when making
+        //       a cross-contract-call from confidential -> non-confidential.
         self.activated() && self.contract.is_some()
     }
 
@@ -84,6 +86,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
         self.activated
     }
 
+    /// `contract` is None when making a cross contract call from confidential -> non-confidential.
+    /// Otherwise, `contract` is the address of the contract for which we want to start encrypting.
     fn activate(&mut self, contract: Option<Address>) -> Result<Option<Address>> {
         self.activated = true;
 

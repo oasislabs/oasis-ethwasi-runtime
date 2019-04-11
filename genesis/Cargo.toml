@@ -11,8 +11,8 @@ clap = "2.29.1"
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
 filebuffer = "0.4.0"
 hex = "0.3.1"
-rlp = { git = "https://github.com/oasislabs/parity", branch = "armani/cross" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "armani/cross" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

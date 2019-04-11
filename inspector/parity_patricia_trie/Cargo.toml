@@ -9,13 +9,13 @@ license = "GPL-3.0"
 elastic-array = "0.10"
 log = "0.3"
 # rand = "0.4"
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
-rlp = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
-triehash = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
-memorydb = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+triehash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+memorydb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 
 [dev-dependencies]
-trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "armani/cross"}
+trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }

@@ -9,11 +9,11 @@ ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master
 ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 # Parity.
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "armani/cross" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "armani/cross" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "armani/cross" }
-vm = { git = "https://github.com/oasislabs/parity", branch = "armani/cross" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+vm = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 
 # Others.
 elastic-array = "0.10"
