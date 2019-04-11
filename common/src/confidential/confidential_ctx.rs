@@ -59,11 +59,11 @@ impl ConfidentialCtx {
 
     pub fn decrypt(&self, encrypted_tx_data: Vec<u8>) -> Result<Vec<u8>> {
         if self.contract.is_none() {
-            return Err(Error::Internal("The confidential context must have a contract key when opening encrypted transaction data".to_string()));
+            return Err(Error::Confidential("The confidential context must have a contract key when opening encrypted transaction data".to_string()));
         }
         let contract_secret_key = self.contract.as_ref().unwrap().1.input_keypair.get_sk();
         let decryption = crypto::decrypt(Some(encrypted_tx_data), contract_secret_key)
-            .map_err(|err| Error::Internal(err.to_string()))?;
+            .map_err(|err| Error::Confidential(err.to_string()))?;
 
         Ok(decryption.plaintext)
     }
@@ -100,7 +100,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
                             ))
                             .context("failed to get or create keys")
                     })
-                    .map_err(|err| Error::Internal(err.to_string()))?;
+                    .map_err(|err| Error::Confidential(err.to_string()))?;
 
                 Ok(self.swap_contract(Some((contract, contract_key))))
             }
@@ -116,7 +116,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
 
     fn encrypt_session(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
         if self.peer_public_key.is_none() || self.contract.is_none() || self.next_nonce.is_none() {
-            return Err(Error::Internal(
+            return Err(Error::Confidential(
                 "must have key pair of a contract and peer and a next nonce".to_string(),
             ));
         }
@@ -132,13 +132,13 @@ impl EthConfidentialCtx for ConfidentialCtx {
             contract_pk,
             contract_sk,
         )
-        .map_err(|err| Error::Internal(err.to_string()))?;
+        .map_err(|err| Error::Confidential(err.to_string()))?;
 
         self.next_nonce
             .as_mut()
             .unwrap()
             .increment()
-            .map_err(|err| Error::Internal(err.to_string()))?;
+            .map_err(|err| Error::Confidential(err.to_string()))?;
 
         Ok(encrypted_payload)
     }
@@ -147,13 +147,13 @@ impl EthConfidentialCtx for ConfidentialCtx {
         let contract_secret_key = self.contract.as_ref().unwrap().1.input_keypair.get_sk();
 
         let decryption = crypto::decrypt(Some(encrypted_payload), contract_secret_key)
-            .map_err(|err| Error::Internal(err.to_string()))?;
+            .map_err(|err| Error::Confidential(err.to_string()))?;
         self.peer_public_key = Some(decryption.peer_public_key);
 
         let mut nonce = decryption.nonce;
         nonce
             .increment()
-            .map_err(|err| Error::Internal(err.to_string()))?;
+            .map_err(|err| Error::Confidential(err.to_string()))?;
         self.next_nonce = Some(nonce);
 
         Ok(decryption.plaintext)
@@ -204,7 +204,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
                         .get_or_create_keys(Context::create_child(&self.io_ctx), contract_id),
                 )
                 .context("failed to create keys")
-                .map_err(|err| Error::Internal(err.to_string()))?;
+                .map_err(|err| Error::Confidential(err.to_string()))?;
 
             executor
                 .block_on(
@@ -212,8 +212,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
                         .get_long_term_public_key(Context::create_child(&self.io_ctx), contract_id),
                 )
                 .context("failed to fetch long term key")
-                .map_err(|err| Error::Internal(err.to_string()))?
-                .ok_or(Error::Internal("failed to create keys".to_string()))
+                .map_err(|err| Error::Confidential(err.to_string()))?
+                .ok_or(Error::Confidential("failed to create keys".to_string()))
         })?;
 
         Ok((pk.key.as_ref().to_vec(), pk.signature.as_ref().to_vec()))
@@ -240,7 +240,7 @@ mod tests {
 
         assert_eq!(
             &format!("{}", res.err().unwrap()),
-            "Internal error: The confidential context must have a contract key when opening encrypted transaction data"
+            "Confidential error: The confidential context must have a contract key when opening encrypted transaction data"
         );
     }
 
@@ -266,7 +266,7 @@ mod tests {
 
         assert_eq!(
             &format!("{}", res.err().unwrap()),
-            "Internal error: invalid nonce or public key"
+            "Confidential error: invalid nonce or public key"
         );
     }
 
@@ -328,7 +328,7 @@ mod tests {
 
         assert_eq!(
             &format!("{}", res.err().unwrap()),
-            "Internal error: The confidential context must have a contract key when opening encrypted transaction data"
+            "Confidential error: The confidential context must have a contract key when opening encrypted transaction data"
         );
     }
 }
