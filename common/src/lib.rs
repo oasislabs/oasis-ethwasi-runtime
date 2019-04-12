@@ -8,6 +8,7 @@ extern crate failure;
 extern crate hashdb;
 extern crate io_context;
 extern crate keccak_hash;
+extern crate vm;
 
 pub mod confidential;
 
