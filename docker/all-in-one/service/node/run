@@ -1,0 +1,12 @@
+#!/bin/sh -e
+exec 2>&1
+
+if [ -z "$AIO_NOSGX" ]; then
+    sv start aesm
+    sv start ias-proxy
+    config=configs/all-in-one-hw.yml
+else
+    config=configs/all-in-one-sw.yml
+fi
+
+exec /ekiden/bin/ekiden-node --config "$config"

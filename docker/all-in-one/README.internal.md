@@ -1,14 +1,9 @@
-To build and push the `ekiden-runtime-ethereum:testing-hw` image, run:
-```sh
-SGX_MODE=HW \
-./docker/ekiden-runtime-ethereum/docker_build_and_push.sh \
-master \
-testing-hw \
-"" \
-latest-hw
-```
-
-Then, to build the `all-in-one:testing-hw` image, run:
+To build the `all-in-one:testing` image, run:
 ```sh
 ./docker/all-in-one/build.sh
 ```
+
+We have some scripts containing example `docker run` invocations for the image:
+
+* **run.sh** runs the image, where IAS credentials are mounted from `../private-ops/untracked/ias-dev-creds` (an arbitrary choice).
+* **run-sw.sh** runs the image in an upcoming non-TEE configuration.

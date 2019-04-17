@@ -1,0 +1,63 @@
+datadir: /var/ekiden/all-in-one-hw
+
+log:
+  format: json
+  level:
+    default: info
+    tendermint: warn
+    tendermint/context: error
+
+worker:
+  backend: sandboxed
+  binary: /ekiden/bin/ekiden-runtime-loader
+  runtime:
+    id: "0000000000000000000000000000000000000000000000000000000000000000"
+    binary: /ekiden/lib/runtime-ethereum.sgxs
+    sgx_ids:
+      - "0000000000000000000000000000000000000000000000000000000000000000"
+  client:
+    port: 9200
+    addresses:
+      - 127.0.0.1:9200
+  p2p:
+    port: 9100
+
+ias:
+  proxy_addr: 127.0.0.1:9001
+
+keymanager:
+  tee_hardware: intel-sgx
+  loader: /ekiden/bin/ekiden-runtime-loader
+  runtime: /ekiden/lib/ekiden-keymanager-runtime.sgxs
+  port: 9003
+  client:
+    address: 127.0.0.1:9003
+    certificate: /var/ekiden/all-in-one-hw/tls_identity_cert.pem
+
+epochtime:
+  backend: tendermint
+  tendermint:
+    interval: 30
+
+beacon:
+  backend: tendermint
+
+storage:
+  backend: leveldb
+  debug:
+    mock_signing_key: true
+
+scheduler:
+  backend: trivial
+
+registry:
+  backend: tendermint
+
+roothash:
+  backend: tendermint
+
+tendermint:
+  core:
+    genesis_file: /var/ekiden/all-in-one-hw/genesis.json
+  consensus:
+    timeout_commit: 1s
