@@ -24,6 +24,7 @@ extern crate signal_hook;
 extern crate clap;
 extern crate ekiden_runtime;
 extern crate failure;
+extern crate log;
 extern crate prometheus;
 extern crate runtime_ethereum_common;
 extern crate slog;
@@ -38,7 +39,7 @@ use failure::Fallible;
 use fdlimit::raise_fd_limit;
 use slog::{error, info};
 
-use ekiden_runtime::common::logger::get_logger;
+use ekiden_runtime::common::logger::{get_logger, init_logger};
 use runtime_ethereum_common::MIN_GAS_PRICE_GWEI;
 use web3_gateway::util;
 
@@ -166,6 +167,16 @@ fn main() -> Fallible<()> {
         )
         .get_matches();
 
+    let log_level = match args.occurrences_of("v") {
+        0 => log::LogLevel::Error,
+        1 => log::LogLevel::Warn,
+        2 => log::LogLevel::Debug,
+        3 => log::LogLevel::Info,
+        4 | _ => log::LogLevel::Trace,
+    };
+
+    // Initializes the log -> slog adapter so that we can use the log crate, e.g., in Parity.
+    init_logger(log_level);
     let logger = get_logger("gateway/main");
 
     let num_threads = value_t!(args, "threads", usize)?;
