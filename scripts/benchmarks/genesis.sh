@@ -2,113 +2,33 @@
 
 WORKDIR=${1:-$(pwd)}
 
-source scripts/utils.sh
+# Paths to Go node and keymanager enclave, assuming they were built according to the README
+: ${EKIDEN_NODE:=/go/src/github.com/oasislabs/ekiden/go/ekiden/ekiden}
+: ${KM_MRENCLAVE:=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.mrenclave}
+: ${KM_ENCLAVE:=/go/src/github.com/oasislabs/ekiden/target/enclave/ekiden-keymanager-trusted.so}
+
+# Paths to ekiden binaries
+: ${EKIDEN_WORKER:=$(which ekiden-worker)}
+: ${KM_NODE:=$(which ekiden-keymanager-node)}
+
+# Path to benchmark client
+: ${GENESIS_CLIENT:=${WORKDIR}/target/release/genesis}
+: ${STATE:=${WORKDIR}/resources/benchmark/state.json}
+: ${GATEWAY:=${WORKDIR}/target/release/gateway}
+
+source ${SCRIPTS_UTILS:-scripts/utils.sh}
 
 # Ensure cleanup on exit.
 # cleanup() is defined in scripts/utils.sh
 trap 'cleanup' EXIT
 
-run_dummy_node_default() {
-    echo "Starting dummy node."
-
-    ekiden-node-dummy \
-        --random-beacon-backend dummy \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --time-source-notifier mockrpc \
-        --storage-backend dummy \
-        &> dummy.log &
-}
-
-run_dummy_node_storage_dynamodb() {
-    echo "Starting dummy node."
-
-    ekiden-node-dummy \
-        --time-source-notifier mockrpc \
-        --random-beacon-backend dummy \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --storage-backend dynamodb \
-        --storage-dynamodb-region us-east-1 \
-        --storage-dynamodb-table-name test \
-        &> dummy.log &
-}
-
-run_compute_node_default() {
-    local id=$1
-    shift
-    local extra_args=$*
-
-    # Generate port number.
-    let "port=id + 10000"
-
-    echo "Starting compute node ${id} on port ${port}."
-
-    ekiden-compute \
-        --no-persist-identity \
-        --max-batch-timeout 10 \
-        --time-source-notifier system \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --storage-backend remote \
-        --port ${port} \
-        ${extra_args} \
-        ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
-}
-
-run_compute_node_storage_multilayer() {
-    local id=$1
-    shift
-    local extra_args=$*
-
-    local db_dir=/tmp/ekiden-test-storage-multilayer-local-$id
-    # Generate port number.
-    let "port=id + 10000"
-
-    echo "Starting compute node ${id} on port ${port}."
-
-    ekiden-compute \
-        --no-persist-identity \
-        --max-batch-size 50 \
-        --max-batch-timeout 10 \
-        --time-source-notifier system \
-        --entity-ethereum-address 0000000000000000000000000000000000000000 \
-        --storage-backend multilayer \
-        --storage-multilayer-local-storage-base "$db_dir" \
-        --storage-multilayer-aws-region us-east-1 \
-        --storage-multilayer-aws-table-name test \
-        --port ${port} \
-        ${extra_args} \
-        ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.so &> compute${id}.log &
-}
-
 run_test() {
-    local dummy_node_runner=$1
-    local compute_node_runner=$2
-
-    # Start dummy node.
-    $dummy_node_runner
-    sleep 1
-
-    # Start compute nodes.
-    $compute_node_runner 1
-    sleep 1
-    $compute_node_runner 2
-
-    # Advance epoch to elect a new committee.
-    echo "Advancing epoch."
-    sleep 2
-    ekiden-node debug dummy set-epoch --epoch 1
-    sleep 2
-
     # Start genesis state injector.
     echo "Starting genesis state injector."
-    ${WORKDIR}/genesis/target/release/genesis \
-        --storage-backend remote \
-        --mr-enclave $(cat ${WORKDIR}/target_benchmark/enclave/runtime-ethereum.mrenclave) \
-        ${WORKDIR}/genesis/state-999999.json &
-    genesis_pid=$!
-
-    # Wait on genesis.
-    wait ${genesis_pid}
+    ${GENESIS_CLIENT} \
+	    ${STATE} # TODO: output_file missing!
 }
 
-#run_test run_dummy_node_storage_dynamodb run_compute_node_storage_multilayer
-run_test run_dummy_node_default run_compute_node_default
+run_test_network
+run_test
+cleanup

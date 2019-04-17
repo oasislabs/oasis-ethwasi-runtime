@@ -55,6 +55,7 @@ func (cfg *Config) RunBenchmark(ctx context.Context, benchmark Benchmark) error 
 		var err error
 
 		state := &State{
+			Id:     uint64(i),
 			Config: cfg,
 			Logger: log.With(logger, "goroutine", i),
 		}
@@ -286,6 +287,7 @@ type Cleanupable interface {
 
 // State is the per-goroutine benchmark state.
 type State struct {
+	Id        uint64
 	Config    *Config
 	Logger    log.Logger
 	RPCClient *rpc.Client

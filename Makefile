@@ -46,11 +46,10 @@ endif
 	runtime gateway genesis \
 	clean clean-test-e2e \
 	fmt \
-	benchmark \
 	run-gateway run-gateway-sgx \
 	test test-unit test-e2e
 
-all: check runtime gateway benchmark
+all: check runtime gateway
 	@$(ECHO) "$(CYAN)*** Everything built successfully!$(OFF)"
 
 check: check-tools check-ekiden
