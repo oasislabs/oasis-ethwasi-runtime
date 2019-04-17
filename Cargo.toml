@@ -1,6 +1,6 @@
 [package]
 name = "runtime-ethereum"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 edition = "2018"
@@ -25,11 +25,11 @@ ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "master"
 ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 # Parity.
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 
 # Others.

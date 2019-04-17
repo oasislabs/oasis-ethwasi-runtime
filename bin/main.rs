@@ -16,14 +16,10 @@ use std::sync::Arc;
 use ekiden_runtime::{
     rak::RAK, register_runtime_txn_methods, Protocol, RpcDispatcher, TxnDispatcher,
 };
-use ethereum_types::{Address, H256, U256};
+use runtime_ethereum::block::EthereumBatchHandler;
 #[cfg(target_env = "sgx")]
 use runtime_ethereum::KM_ENCLAVE_HASH;
-use runtime_ethereum::{cache::Cache, EthereumBatchHandler};
-use runtime_ethereum_api::{
-    with_api, BlockId, ExecuteTransactionResponse, Filter, Log, Receipt,
-    SimulateTransactionResponse, Transaction, TransactionRequest,
-};
+use runtime_ethereum_api::{with_api, ExecutionResult};
 
 fn main() {
     // Initializer.
@@ -32,7 +28,7 @@ fn main() {
                 _rpc: &mut RpcDispatcher,
                 txn: &mut TxnDispatcher| {
         {
-            use runtime_ethereum::methods::*;
+            use runtime_ethereum::methods::execute::*;
             with_api! { register_runtime_txn_methods!(txn, api); }
         }
 
@@ -46,11 +42,7 @@ fn main() {
             rak.clone(),
         ));
 
-        // Create the global Parity blockchain cache.
-        let cache = Arc::new(Cache::new(km_client));
-
-        txn.set_batch_handler(EthereumBatchHandler::new(cache.clone()));
-        txn.set_finalizer(move |new_state_root| cache.finalize_root(new_state_root));
+        txn.set_batch_handler(EthereumBatchHandler::new(km_client));
     };
 
     // Start the runtime.

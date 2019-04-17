@@ -18,36 +18,34 @@
 
 //! Eth PUB-SUB rpc implementation.
 
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, Weak},
-};
+use std::sync::{Arc, Weak};
 
 use ekiden_runtime::common::logger::get_logger;
 use ethcore::{
-    encoded,
     filter::{Filter as EthFilter, TxEntry as EthTxEntry, TxFilter as EthTxFilter},
     ids::BlockId,
 };
-use jsonrpc_core::{futures::Future, Result};
+use failure::format_err;
+use futures::{prelude::*, stream};
+use jsonrpc_core::Result;
 use jsonrpc_macros::{
     pubsub::{Sink, Subscriber},
     Trailing,
 };
 use jsonrpc_pubsub::SubscriptionId;
 use lazy_static::lazy_static;
-use parity_reactor::Remote;
 use parity_rpc::v1::{
     helpers::{errors, Subscribers},
     metadata::Metadata,
     traits::EthPubSub,
-    types::{pubsub, Log, RichHeader, TransactionOutcome, H256, H64},
+    types::{pubsub, TransactionOutcome},
 };
 use parking_lot::RwLock;
 use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
-use slog::{info, Logger};
+use slog::{error, info, warn, Logger};
+use tokio::spawn;
 
-use crate::client::{ChainNotify, Client};
+use crate::{pubsub::Listener, translator::Translator};
 
 // Metrics.
 lazy_static! {
@@ -72,16 +70,17 @@ pub struct EthPubSubClient {
 
 impl EthPubSubClient {
     /// Creates new `EthPubSubClient`.
-    pub fn new(client: Arc<Client>, remote: Remote) -> Self {
+    pub fn new(translator: Arc<Translator>) -> Self {
         let heads_subscribers = Arc::new(RwLock::new(Subscribers::default()));
         let logs_subscribers = Arc::new(RwLock::new(Subscribers::default()));
         let tx_subscribers = Arc::new(RwLock::new(Subscribers::default()));
+        let logger = get_logger("gateway/impls/eth_pubsub");
 
         EthPubSubClient {
-            logger: get_logger("gateway/impls/eth_pubsub"),
+            logger: logger.clone(),
             handler: Arc::new(ChainNotificationHandler {
-                client,
-                remote,
+                logger,
+                translator,
                 heads_subscribers: heads_subscribers.clone(),
                 logs_subscribers: logs_subscribers.clone(),
                 tx_subscribers: tx_subscribers.clone(),
@@ -100,86 +99,91 @@ impl EthPubSubClient {
 
 /// PubSub Notification handler.
 pub struct ChainNotificationHandler {
-    client: Arc<Client>,
-    remote: Remote,
+    logger: Logger,
+    translator: Arc<Translator>,
     heads_subscribers: Arc<RwLock<Subscribers<PubSubClient>>>,
     logs_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthFilter)>>>,
     tx_subscribers: Arc<RwLock<Subscribers<(PubSubClient, EthTxFilter)>>>,
 }
 
 impl ChainNotificationHandler {
-    fn notify(remote: &Remote, subscriber: &PubSubClient, result: pubsub::Result) {
-        remote.spawn(
+    fn notify(logger: &Logger, subscriber: &PubSubClient, result: pubsub::Result) {
+        let logger = logger.clone();
+        spawn(
             subscriber
                 .notify(Ok(result))
                 .map(|_| ())
-                .map_err(|e| warn!(target: "rpc", "Unable to send notification: {}", e)),
+                .map_err(move |err| warn!(logger, "Unable to send notification"; "err" => ?err)),
         );
     }
-}
 
-impl ChainNotify for ChainNotificationHandler {
-    fn has_heads_subscribers(&self) -> bool {
-        !self.heads_subscribers.read().is_empty()
-    }
-
-    fn notify_heads(&self, headers: &[encoded::Header]) {
-        for subscriber in self.heads_subscribers.read().values() {
-            for &ref header in headers {
-                // geth will fail to decode the response unless it has a number of
-                // fields even if they aren't relevant.
-                //
-                // See:
-                //  * https://github.com/ethereum/go-ethereum/issues/3230
-                //  * https://github.com/paritytech/parity-ethereum/issues/8841
-                let mut extra_info: BTreeMap<String, String> = BTreeMap::new();
-                extra_info.insert("mixHash".to_string(), format!("0x{:?}", H256::default()));
-                extra_info.insert("nonce".to_string(), format!("0x{:?}", H64::default()));
-
-                Self::notify(
-                    &self.remote,
-                    subscriber,
-                    pubsub::Result::Header(RichHeader {
-                        inner: header.into(),
-                        extra_info,
-                    }),
-                );
-            }
+    fn notify_heads(&self, from_block: u64, to_block: u64) {
+        // If there are no subscribers, don't do any notification processing.
+        if self.heads_subscribers.read().is_empty() {
+            return;
         }
+
+        // TODO: Should we support block range fetch?
+        let heads_subscribers = self.heads_subscribers.clone();
+        let translator = self.translator.clone();
+        let logger = self.logger.clone();
+        let logger2 = self.logger.clone();
+        spawn(
+            stream::iter_ok(from_block..=to_block)
+                .and_then(move |round| translator.get_block_by_round(round))
+                .and_then(|blk| match blk {
+                    Some(blk) => Ok(blk),
+                    None => Err(format_err!("block not found")),
+                })
+                .map(|blk| blk.rich_header())
+                .collect()
+                .map_err(move |err| error!(logger, "Failed to fetch blocks for heads notify"; "err" => ?err))
+                .map(move |headers| {
+                    let subscribers = heads_subscribers.read();
+
+                    for header in headers {
+                        for subscriber in subscribers.values() {
+                            Self::notify(&logger2, subscriber, pubsub::Result::Header(header.clone()));
+                        }
+                    }
+                }),
+        );
     }
 
-    fn notify_logs(&self, from_block: BlockId, to_block: BlockId) {
+    fn notify_logs(&self, from_block: u64, to_block: u64) {
         for &(ref subscriber, ref filter) in self.logs_subscribers.read().values() {
             let mut filter = filter.clone();
 
-            // if filter.from_block == "Latest", replace with from_block
-            if filter.from_block == BlockId::Latest {
-                filter.from_block = from_block;
-            }
-            // if filter.to_block == "Latest", replace with to_block
-            if filter.to_block == BlockId::Latest {
-                filter.to_block = to_block;
-            }
+            // Limit query range.
+            filter.from_block = BlockId::Number(from_block);
+            filter.to_block = BlockId::Number(to_block);
 
-            // limit query to range (from_block, to_block)
-            filter.from_block = self.client.max_block_number(filter.from_block, from_block);
-            filter.to_block = self.client.min_block_number(filter.to_block, to_block);
-
-            let remote = self.remote.clone();
             let subscriber = subscriber.clone();
-            self.remote.spawn({
-                let logs = self
-                    .client
+            let logger = self.logger.clone();
+            let logger2 = self.logger.clone();
+
+            spawn(
+                self.translator
                     .logs(filter)
-                    .into_iter()
-                    .map(From::from)
-                    .collect::<Vec<Log>>();
-                for log in logs {
-                    Self::notify(&remote, &subscriber, pubsub::Result::Log(log))
-                }
-                Ok(())
-            });
+                    .map(move |logs| {
+                        for log in logs {
+                            Self::notify(&logger2, &subscriber, pubsub::Result::Log(log.into()));
+                        }
+                    })
+                    .map_err(move |err| {
+                        error!(logger, "Failed to fetch logs";
+                            "err" => ?err,
+                        );
+                    }),
+            );
         }
+    }
+}
+
+impl Listener for ChainNotificationHandler {
+    fn notify_blocks(&self, from_block: u64, to_block: u64) {
+        self.notify_heads(from_block, to_block);
+        self.notify_logs(from_block, to_block);
     }
 
     fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>) {
@@ -190,18 +194,14 @@ impl ChainNotify for ChainNotificationHandler {
                 continue;
             }
 
-            let remote = self.remote.clone();
-            self.remote.spawn({
-                Self::notify(
-                    &remote,
-                    &subscriber,
-                    pubsub::Result::TransactionOutcome(TransactionOutcome {
-                        hash: entry.transaction_hash.into(),
-                        output: output.clone(),
-                    }),
-                );
-                Ok(())
-            });
+            Self::notify(
+                &self.logger,
+                &subscriber,
+                pubsub::Result::TransactionOutcome(TransactionOutcome {
+                    hash: entry.transaction_hash.into(),
+                    output: output.clone(),
+                }),
+            );
         }
     }
 }

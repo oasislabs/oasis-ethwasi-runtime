@@ -42,7 +42,15 @@ cargo elf2sgxs --release
         ${GATEWAY_BUILD_EXTRA_ARGS:-}
 )
 
+# Copy the correct genesis file.
+if [ -n "${BUILD_PRODUCTION_GENESIS:-}" ]; then
+    cp resources/genesis/ekiden_genesis.json resources/genesis.json
+else
+    cp resources/genesis/ekiden_genesis_testing.json resources/genesis.json
+fi
+
 tar -czf "$dst" \
+    resources/genesis.json \
     target/release/runtime-ethereum \
     target/x86_64-fortanix-unknown-sgx/release/runtime-ethereum.sgxs \
     target/release/gateway \

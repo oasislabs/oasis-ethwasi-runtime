@@ -18,14 +18,15 @@ use std::{cmp::PartialEq, collections::HashSet, str::FromStr, sync::Arc};
 
 use ekiden_keymanager_client::KeyManagerClient;
 use jsonrpc_core::{self as core, MetaIoHandler};
-use parity_reactor;
 use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
-#[cfg(feature = "pubsub")]
-use crate::impls::EthPubSubClient;
 use crate::{
-    client::Client,
-    impls::{EthClient, EthFilterClient, EthSigningClient, NetClient, OasisClient, Web3Client},
+    impls::{
+        EthClient, EthFilterClient, EthPubSubClient, EthSigningClient, NetClient, OasisClient,
+        Web3Client,
+    },
+    pubsub::Broker,
+    translator::Translator,
 };
 
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
@@ -118,8 +119,8 @@ impl FromStr for ApiSet {
 
 /// Client Notifier
 pub struct ClientNotifier {
-    /// Client
-    pub client: Arc<Client>,
+    /// Translator.
+    pub translator: Arc<Translator>,
 }
 
 impl ActivityNotifier for ClientNotifier {
@@ -144,10 +145,10 @@ pub trait Dependencies {
 
 /// RPC dependencies for a full node.
 pub struct FullDependencies {
-    pub client: Arc<Client>,
+    pub translator: Arc<Translator>,
+    pub broker: Arc<Broker>,
     pub km_client: Arc<KeyManagerClient>,
     pub ws_address: Option<Host>,
-    pub remote: parity_reactor::Remote,
 }
 
 impl FullDependencies {
@@ -171,31 +172,28 @@ impl FullDependencies {
                     handler.extend_with(NetClient::new().to_delegate());
                 }
                 Api::Eth => {
-                    let client = EthClient::new(&self.client);
+                    let client = EthClient::new(self.translator.clone());
                     handler.extend_with(client.to_delegate());
 
                     let signing_client = EthSigningClient::new();
                     handler.extend_with(signing_client.to_delegate());
 
                     if !for_generic_pubsub {
-                        let filter_client = EthFilterClient::new(self.client.clone());
+                        let filter_client = EthFilterClient::new(self.translator.clone());
                         handler.extend_with(filter_client.to_delegate());
                     }
                 }
                 Api::EthPubSub => {
                     if !for_generic_pubsub {
-                        #[cfg(feature = "pubsub")]
-                        {
-                            let pubsub_client =
-                                EthPubSubClient::new(self.client.clone(), self.remote.clone());
-                            self.client.add_listener(pubsub_client.handler());
-                            handler.extend_with(pubsub_client.to_delegate());
-                        }
+                        let pubsub_client = EthPubSubClient::new(self.translator.clone());
+                        self.broker.add_listener(pubsub_client.handler());
+                        handler.extend_with(pubsub_client.to_delegate());
                     }
                 }
                 Api::Oasis => {
                     handler.extend_with(
-                        OasisClient::new(self.client.clone(), self.km_client.clone()).to_delegate(),
+                        OasisClient::new(self.translator.clone(), self.km_client.clone())
+                            .to_delegate(),
                     );
                 }
             }
@@ -208,7 +206,7 @@ impl Dependencies for FullDependencies {
 
     fn activity_notifier(&self) -> ClientNotifier {
         ClientNotifier {
-            client: self.client.clone(),
+            translator: self.translator.clone(),
         }
     }
 

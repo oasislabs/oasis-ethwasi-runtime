@@ -1,10 +1,9 @@
-//! Oasis rpc interface.
-
+//! Oasis RPC interface.
 use ethereum_types::Address;
 use jsonrpc_core::BoxFuture;
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::types::{BlockNumber, Bytes, CallRequest, H160};
+use parity_rpc::v1::types::{BlockNumber, Bytes, H160};
 
 build_rpc_trait! {
     pub trait Oasis {
@@ -12,17 +11,6 @@ build_rpc_trait! {
         /// Returns the public key of a contract, given its address.
         #[rpc(name = "oasis_getPublicKey")]
         fn public_key(&self, Address) -> BoxFuture<Option<RpcPublicKeyPayload>>;
-
-        /// Executes a new message call without creating a transaction on chain.
-        /// Returns the return value of the executed contract, encrypted with
-        /// the user's public key.
-        #[rpc(meta, name = "oasis_call_enc")]
-        fn call_enc(
-            &self,
-            Self::Metadata,
-            CallRequest,
-            Trailing<BlockNumber>
-        ) -> BoxFuture<Bytes>;
 
         /// Get expiration timestamp for a contract.
         /// The value is a Unix timestamp (seconds since the epoch).

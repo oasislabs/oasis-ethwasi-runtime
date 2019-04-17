@@ -21,23 +21,57 @@ docker_plugin: &docker_plugin_configuration
     environment:
       - "LC_ALL=C.UTF-8"
       - "LANG=C.UTF-8"
-      - "CARGO_TARGET_DIR=/cargo_target"
+      - "CARGO_TARGET_DIR=/workdir/target"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
+      - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
     propagate-environment: true
     unconfined: true
 
 steps:
-  - label: Build runtime benchmark
+  - label: Build artifacts
+    branches: master
     command:
-      - .buildkite/scripts/build_tag_push_benchmark_image.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - eval $(ssh-agent -s)
+      - ssh-add
+      - .buildkite/scripts/build_benchmarking_context.sh context.tar.gz
+    artifact_paths:
+      - context.tar.gz
     agents:
       buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
 
   - wait
 
-  - label: "Trigger benchmark run"
+  - label: Update benchmarking docker image tags (master branches only)
+    branches: master
+    command:
+      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-testing benchmarking-latest
+
+  - label: Update benchmarking docker image tags (beta branches only)
+    branches: beta
+    command:
+      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-testing-beta benchmarking-latest-beta
+
+  - wait
+
+  - label: "Trigger benchmark run (master branches only)"
+    branches: master
     trigger: private-ops-run-benchmarks
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: HEAD
       branch: master
+      env:
+        BENCHMARK_IMAGE: oasislabs/ekiden-runtime-ethereum:benchmarking-latest
+
+  - label: "Trigger benchmark run (beta branches only)"
+    branches: beta
+    trigger: private-ops-run-benchmarks
+    build:
+      message: "${BUILDKITE_MESSAGE}"
+      commit: HEAD
+      branch: master
+      env:
+        BENCHMARK_IMAGE: oasislabs/ekiden-runtime-ethereum:benchmarking-latest-beta

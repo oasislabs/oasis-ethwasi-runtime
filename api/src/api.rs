@@ -1,31 +1,33 @@
 use ekiden_runtime::runtime_api;
+use ethereum_types::{Address, Bloom, H256, U256};
+use serde_derive::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct LogEntry {
+    /// The address of the contract executing at the point of the `LOG` operation.
+    pub address: Address,
+    /// The topics associated with the `LOG` operation.
+    pub topics: Vec<H256>,
+    /// The data associated with the `LOG` operation.
+    #[serde(with = "serde_bytes")]
+    pub data: Vec<u8>,
+}
+
+/// Transaction execution result.
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ExecutionResult {
+    pub cumulative_gas_used: U256,
+    pub gas_used: U256,
+    pub log_bloom: Bloom,
+    pub logs: Vec<LogEntry>,
+    pub status_code: u8,
+    #[serde(with = "serde_bytes")]
+    pub output: Vec<u8>,
+}
+
+/// Name of the method which executes an ethereum transaction.
+pub const METHOD_ETH_TXN: &'static str = "ethereum_transaction";
 
 runtime_api! {
-    pub fn simulate_transaction(TransactionRequest) -> SimulateTransactionResponse;
-
-    pub fn estimate_gas(TransactionRequest) -> U256;
-
-    pub fn execute_raw_transaction(Vec<u8>) -> ExecuteTransactionResponse;
-
-    pub fn get_block_height(bool) -> U256;
-
-    pub fn get_transaction(H256) -> Option<Transaction>;
-
-    pub fn get_receipt(H256) -> Option<Receipt>;
-
-    pub fn get_account_balance(Address) -> U256;
-
-    pub fn get_account_nonce(Address) -> U256;
-
-    pub fn get_account_code(Address) -> Option<Vec<u8>>;
-
-    pub fn get_block_hash(BlockId) -> Option<H256>;
-
-    pub fn get_block(BlockId) -> Option<Vec<u8>>;
-
-    pub fn get_storage_at((Address, H256)) -> H256;
-
-    pub fn get_storage_expiry(Address) -> u64;
-
-    pub fn get_logs(Filter) -> Vec<Log>;
+    pub fn ethereum_transaction(Vec<u8>) -> ExecutionResult;
 }
