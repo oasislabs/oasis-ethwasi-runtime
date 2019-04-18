@@ -73,6 +73,7 @@ impl Client {
             cache: Arc::new(Cache::new(km_client.clone())),
             km_client,
             header: Header {
+                round: 0,
                 timestamp: 0xcafedeadbeefc0de,
                 state_root: Hash::empty_hash(),
             },
@@ -85,7 +86,8 @@ impl Client {
     {
         println!("execute with header: {:?}", self.header);
         let mut mkvs = CASPatriciaTrie::new(self.cas.clone(), &self.header.state_root);
-        let mut ctx = TxnContext::new(IoContext::background().freeze(), self.header.clone());
+        let header = self.header.clone();
+        let mut ctx = TxnContext::new(IoContext::background().freeze(), &header);
         let handler = EthereumBatchHandler::new(self.cache.clone());
 
         let result = StorageContext::enter(self.cas.clone(), &mut mkvs, || {
