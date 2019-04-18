@@ -21,6 +21,7 @@ debug:
 # log:
 #   level: debug
 log:
+  format: json
   file: ekiden.log
   level:
     # Per-module log levels. Longest prefix match will be taken. Fallback to "default", if no match.
