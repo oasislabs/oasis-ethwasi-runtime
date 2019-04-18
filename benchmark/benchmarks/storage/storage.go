@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	gasLimit = uint64(300000)
+	gasLimit = uint64(100000)
 	randSeed = uint64(0x132A20CE0B5776A1) // some 64-bit prime number
 
 	flagChunkSize      uint64

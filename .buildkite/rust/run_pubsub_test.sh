@@ -9,8 +9,8 @@
 #
 # - job: build-and-test-runtime
 #   dependencies:
-#     - target/enclave/runtime-ethereum.so
-#     - target/enclave/runtime-ethereum.mrenclave
+#     - target/enclave/runtime-ethereum.sgxs
+#     - target/enclave/runtime-ethereum
 # - job: build-oasislabs-ekiden-go
 #   dependencies:
 #     - /go/bin/ekiden as ekiden-node
