@@ -852,14 +852,14 @@ impl Client {
             Some(db) => db,
             None => {
                 error!(self.logger, "Could not get db snapshot");
-                return Err("Could not parse header".to_string());
+                return Err("State corrupt".to_string());
             }
         };
         let state = match db.get_ethstate_at(BlockId::Latest) {
             Some(state) => state,
             None => {
                 error!(self.logger, "Could not get state snapshot");
-                return Err("Could not parse header".to_string());
+                return Err("State corrupt".to_string());
             }
         };
 
@@ -951,14 +951,14 @@ impl Client {
             Some(db) => db,
             None => {
                 error!(self.logger, "Could not get db snapshot");
-                return Err(format_err!("Could not parse header"));
+                return Err(format_err!("State corrupt"));
             }
         };
         let state = match db.get_ethstate_at(BlockId::Latest) {
             Some(state) => state,
             None => {
                 error!(self.logger, "Could not get state snapshot");
-                return Err(format_err!("Could not parse header"));
+                return Err(format_err!("State corrupt"));
             }
         };
 
