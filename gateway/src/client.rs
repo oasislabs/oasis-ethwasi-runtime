@@ -34,7 +34,6 @@ use prometheus::{
     IntCounter,
 };
 use runtime_ethereum_api::TransactionRequest;
-use runtime_ethereum_common::State as EthState;
 use slog::{debug, error, info, Logger};
 use tokio::runtime::TaskExecutor;
 use transaction::{Action, LocalizedTransaction, SignedTransaction};
@@ -847,50 +846,49 @@ impl Client {
         )
     }
 
-    pub fn estimate_gas(&self, transaction: &SignedTransaction, id: BlockId) -> BoxFuture<U256> {
+    /// Returns true if the transaction deploys or calls a confidential contract.
+    pub fn is_confidential(&self, transaction: &SignedTransaction) -> Result<bool, String> {
         let db = match self.get_db_snapshot() {
             Some(db) => db,
             None => {
                 error!(self.logger, "Could not get db snapshot");
-                return Box::new(future::err(format_err!("Could not estimate gas")));
+                return Err("Could not parse header".to_string());
             }
         };
-        let state = match db.get_ethstate_at(id) {
+        let state = match db.get_ethstate_at(BlockId::Latest) {
             Some(state) => state,
             None => {
                 error!(self.logger, "Could not get state snapshot");
-                return Box::new(future::err(format_err!("Could not estimate gas")));
+                return Err("Could not parse header".to_string());
             }
         };
 
-        // Extract contract deployment header.
-        let oasis_contract = match state.oasis_contract(transaction) {
-            Ok(contract) => contract,
-            Err(error) => return Box::new(future::err(format_err!("{}", error))),
-        };
-
-        let confidential = oasis_contract.as_ref().map_or(false, |c| c.confidential);
-        if confidential {
-            self.confidential_estimate_gas(transaction)
-        } else {
-            let result = self._estimate_gas(transaction, db, state);
-            Box::new(future::done(
-                result
-                    .map(Into::into)
-                    .map_err(|error| format_err!("{}", error)),
-            ))
-        }
+        let oasis_contract = state.oasis_contract(transaction)?;
+        Ok(oasis_contract.map_or(false, |c| c.confidential))
     }
 
     /// Estimates gas for a transaction calling a regular, non-confidential contract
     /// by running the transaction locally at the gateway.
-    fn _estimate_gas<T: 'static + MKVS + Send + Sync>(
+    pub fn estimate_gas(
         &self,
         transaction: &SignedTransaction,
-        db: StateDb<T>,
-        mut state: EthState,
+        id: BlockId,
     ) -> Result<U256, CallError> {
         info!(self.logger, "estimating gas for a contract");
+        let db = match self.get_db_snapshot() {
+            Some(db) => db,
+            None => {
+                error!(self.logger, "Could not get db snapshot");
+                return Err(CallError::StateCorrupt);
+            }
+        };
+        let mut state = match db.get_ethstate_at(id) {
+            Some(state) => state,
+            None => {
+                error!(self.logger, "Could not get state snapshot");
+                return Err(CallError::StateCorrupt);
+            }
+        };
 
         let env_info = Self::get_env_info(&db);
         let machine = self.engine.machine();
@@ -905,7 +903,7 @@ impl Client {
 
     /// Estimates gas for a transaction calling a confidential contract by sending
     /// the transaction through the scheduler to be run by the compute comittee.
-    fn confidential_estimate_gas(&self, transaction: &SignedTransaction) -> BoxFuture<U256> {
+    pub fn confidential_estimate_gas(&self, transaction: &SignedTransaction) -> BoxFuture<U256> {
         info!(self.logger, "estimating gas for a confidential contract");
 
         let to_addr = match transaction.action {

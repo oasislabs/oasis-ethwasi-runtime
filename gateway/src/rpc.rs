@@ -38,7 +38,6 @@ pub struct HttpConfiguration {
     pub cors: Option<Vec<String>>,
     pub hosts: Option<Vec<String>>,
     pub server_threads: usize,
-    pub processing_threads: usize,
     pub max_batch_size: usize,
 }
 
@@ -52,7 +51,6 @@ impl Default for HttpConfiguration {
             cors: Some(vec![]),
             hosts: Some(vec![]),
             server_threads: 1,
-            processing_threads: 4,
             max_batch_size: 10,
         }
     }
