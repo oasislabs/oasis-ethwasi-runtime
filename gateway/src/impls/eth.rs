@@ -701,7 +701,7 @@ impl Eth for EthClient {
 
         let is_confidential = match self.client.is_confidential(&signed) {
             Ok(conf) => conf,
-            Err(_) => return Box::new(future::err(errors::state_corrupt())),
+            Err(e) => return Box::new(future::err(execution_error(e))),
         };
 
         if is_confidential {
@@ -721,7 +721,7 @@ impl Eth for EthClient {
                 future::lazy(move || {
                     client
                         .estimate_gas(&signed, Self::get_block_id(num))
-                        .map_err(errors::call)
+                        .map_err(execution_error)
                         .map(Into::into)
                 })
                 .then(move |result| {
