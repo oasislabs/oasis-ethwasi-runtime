@@ -14,7 +14,7 @@ use ethcore::{
     blockchain::{BlockProvider, TransactionAddress},
     encoded,
     engines::EthEngine,
-    error::{CallError, ExecutionError},
+    error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
     filter::{Filter as EthcoreFilter, TxEntry as EthTxEntry},
     header::BlockNumber,
@@ -900,13 +900,7 @@ impl Client {
         let ret = Executive::new(&mut state, &env_info, machine)
             .transact_virtual(transaction, options)?;
 
-        match ret.exception {
-            Some(err) => {
-                let s = format!("{}", err);
-                Err(CallError::Execution(ExecutionError::Internal(s)))
-            }
-            None => Ok(ret.gas_used + ret.refunded),
-        }
+        Ok(ret.gas_used + ret.refunded)
     }
 
     /// Estimates gas for a transaction calling a confidential contract by sending
