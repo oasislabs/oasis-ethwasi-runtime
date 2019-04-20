@@ -124,3 +124,10 @@ steps:
       message: "${BUILDKITE_MESSAGE}"
       commit: HEAD
       branch: master
+
+  - label: "Build and push all-in-one image"
+    branches: master
+    command:
+      - ./docker/all-in-one/build.sh
+      - docker tag local-aio:latest oasislabs/private-all-in-one:latest
+      - docker push oasislabs/private-all-in-one:latest
