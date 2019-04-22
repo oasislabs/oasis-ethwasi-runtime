@@ -12,9 +12,9 @@ For building and running the runtime, you need to have specific Ekiden artifacts
 To do this, you can either:
 
 * Build Ekiden locally by checking out the Ekiden repository (e.g., in `/path/to/ekiden`)
-  and then running `make -C /path/to/ekiden`. After the process completes you can then
-  run `make symlink-artifacts EKIDEN_SRC_PATH=/path/to/ekiden` and all the required artifacts
-  will be symlinked under `.ekiden` and `.runtime` so they will be used by `make` invocations.
+  and then running `make -C /path/to/ekiden`. After the process completes you can then run
+  `make && make symlink-artifacts EKIDEN_SRC_PATH=/path/to/ekiden` and all the required
+  artifacts will be symlinked under `.ekiden` and `.runtime`.
 
 * Download Ekiden artifacts from CI by running `make download-artifacts`. You need to have
   the correct `BUILDKITE_ACCESS_TOKEN` set up to do this.
