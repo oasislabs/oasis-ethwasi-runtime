@@ -92,7 +92,7 @@ pub fn execute(
     http_conf.hosts = None;
     http_conf.interface = "0.0.0.0".into();
     http_conf.port = http_port;
-    http_conf.processing_threads = num_threads;
+    http_conf.server_threads = num_threads;
     http_conf.max_batch_size = jsonrpc_max_batch_size;
 
     // Define RPC handlers.

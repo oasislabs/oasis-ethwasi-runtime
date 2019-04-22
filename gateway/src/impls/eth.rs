@@ -650,7 +650,7 @@ impl Eth for EthClient {
         num: Trailing<BlockNumber>,
     ) -> BoxFuture<Bytes> {
         ETH_RPC_CALLS.with(&labels! {"call" => "call",}).inc();
-        let _timer = ETH_RPC_CALL_TIME
+        let timer = ETH_RPC_CALL_TIME
             .with(&labels! {"call" => "call",})
             .start_timer();
         let num = num.unwrap_or_default();
@@ -659,16 +659,25 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        let result = self.client.call(&signed, Self::get_block_id(num));
-        Box::new(future::done(
-            result
-                .map_err(errors::call)
-                .and_then(|executed| match executed.exception {
-                    Some(ref exception) => Err(errors::vm(exception, &executed.output)),
-                    None => Ok(executed),
-                })
-                .map(|b| b.output.into()),
-        ))
+
+        let client = self.client.clone();
+
+        Box::new(
+            future::lazy(move || {
+                client
+                    .call(&signed, Self::get_block_id(num))
+                    .map_err(errors::call)
+                    .and_then(|executed| match executed.exception {
+                        Some(ref exception) => Err(errors::vm(exception, &executed.output)),
+                        None => Ok(executed),
+                    })
+                    .map(|b| b.output.into())
+            })
+            .then(move |result| {
+                drop(timer);
+                result
+            }),
+        )
     }
 
     fn estimate_gas(
@@ -680,7 +689,7 @@ impl Eth for EthClient {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "estimateGas",})
             .inc();
-        let _timer = ETH_RPC_CALL_TIME
+        let timer = ETH_RPC_CALL_TIME
             .with(&labels! {"call" => "estimateGas",})
             .start_timer();
         let num = num.unwrap_or_default();
@@ -689,12 +698,38 @@ impl Eth for EthClient {
 
         let request = CallRequest::into(request);
         let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-        Box::new(
-            self.client
-                .estimate_gas(&signed, Self::get_block_id(num))
-                .map(Into::into)
-                .map_err(execution_error),
-        )
+
+        let is_confidential = match self.client.is_confidential(&signed) {
+            Ok(conf) => conf,
+            Err(e) => return Box::new(future::err(execution_error(e))),
+        };
+
+        if is_confidential {
+            Box::new(
+                self.client
+                    .confidential_estimate_gas(&signed)
+                    .map(Into::into)
+                    .map_err(execution_error)
+                    .then(move |result| {
+                        drop(timer);
+                        result
+                    }),
+            )
+        } else {
+            let client = self.client.clone();
+            Box::new(
+                future::lazy(move || {
+                    client
+                        .estimate_gas(&signed, Self::get_block_id(num))
+                        .map_err(execution_error)
+                        .map(Into::into)
+                })
+                .then(move |result| {
+                    drop(timer);
+                    result
+                }),
+            )
+        }
     }
 
     fn compile_lll(&self, _: String) -> Result<Bytes> {

@@ -17,6 +17,5 @@ run_gateway() {
         --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
         --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
-        --threads 100 \
         --ws-port ${ws_port} 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/gateway-$id.log | sed "s/^/[gateway-${id}] /" &
 }
