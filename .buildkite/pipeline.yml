@@ -30,6 +30,7 @@ docker_plugin: &docker_plugin_configuration
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
       - "EKIDEN_BRANCH=master"
       - "E2E_TESTS_BRANCH=master"
+      - "GOPROXY=https://athens.ops.oasiscloud.io/"
     propagate-environment: true
     unconfined: true
 
