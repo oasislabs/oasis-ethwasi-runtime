@@ -6,6 +6,6 @@ edition = "2018"
 
 [dependencies]
 ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
+ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 serde = "1.0.71"
 serde_derive = "1.0"
