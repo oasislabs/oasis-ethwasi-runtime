@@ -53,7 +53,6 @@ time = "0.1"
 [features]
 default = ["confidential"]
 confidential = []
-benchmark = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
 test = []
