@@ -22,11 +22,11 @@ jsonrpc-ws-server = { git = "https://github.com/paritytech/jsonrpc.git", branch 
 jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.3.0"
-wasmi = { git = "https://github.com/oasislabs/wasmi.git", branch = "ekiden" }
+wasmi = "0.4"
 ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethereum-types = { git = "https://github.com/oasislabs/primitives", branch = "ekiden" }
+ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
 parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
