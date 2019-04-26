@@ -8,15 +8,13 @@ log:
     tendermint/context: error
 
 worker:
-  compute:
-    enabled: true
-    backend: sandboxed
-    runtime_loader: /ekiden/bin/ekiden-runtime-loader
-    runtime:
-      id: "0000000000000000000000000000000000000000000000000000000000000000"
-      binary: /ekiden/lib/runtime-ethereum.sgxs
-      sgx_ids:
-        - "0000000000000000000000000000000000000000000000000000000000000000"
+  backend: sandboxed
+  binary: /ekiden/bin/ekiden-runtime-loader
+  runtime:
+    id: "0000000000000000000000000000000000000000000000000000000000000000"
+    binary: /ekiden/lib/runtime-ethereum.sgxs
+    sgx_ids:
+      - "0000000000000000000000000000000000000000000000000000000000000000"
   client:
     port: 9200
     addresses:
@@ -28,7 +26,6 @@ ias:
   proxy_addr: 127.0.0.1:9001
 
 keymanager:
-  enabled: true
   tee_hardware: intel-sgx
   loader: /ekiden/bin/ekiden-runtime-loader
   runtime: /ekiden/lib/ekiden-keymanager-runtime.sgxs
