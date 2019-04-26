@@ -8,11 +8,13 @@ log:
     tendermint/context: error
 
 worker:
-  backend: sandboxed
-  binary: /ekiden/bin/ekiden-runtime-loader
-  runtime:
-    id: "0000000000000000000000000000000000000000000000000000000000000000"
-    binary: /ekiden/lib/runtime-ethereum
+  compute:
+    enabled: true
+    backend: sandboxed
+    runtime_loader: /ekiden/bin/ekiden-runtime-loader
+    runtime:
+      id: "0000000000000000000000000000000000000000000000000000000000000000"
+      binary: /ekiden/lib/runtime-ethereum
   client:
     port: 9200
     addresses:
@@ -21,6 +23,7 @@ worker:
     port: 9100
 
 keymanager:
+  enabled: true
   loader: /ekiden/bin/ekiden-runtime-loader
   runtime: /ekiden/lib/ekiden-keymanager-runtime
   port: 9003
