@@ -83,11 +83,6 @@ symlink-artifacts:
 		scripts/symlink_artifacts.sh "$(EKIDEN_ROOT_PATH)" "$(EKIDEN_SRC_PATH)" "$(RUNTIME_ROOT_PATH)" $$(pwd)
 	@$(ECHO) "$(CYAN)*** Symlinking done!$(OFF)"
 
-runtime-elf: check-ekiden
-	@$(ECHO) "$(CYAN)*** Building runtime-ethereum...$(OFF)"
-	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
-		cargo build -p runtime-ethereum
-
 runtime: check-ekiden
 	@$(ECHO) "$(CYAN)*** Building runtime-ethereum...$(OFF)"
 	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
