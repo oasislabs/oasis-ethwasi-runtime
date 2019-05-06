@@ -90,42 +90,6 @@ impl Oasis for OasisClient {
         )
     }
 
-    fn call_enc(
-        &self,
-        _meta: Self::Metadata,
-        request: CallRequest,
-        tag: Trailing<BlockNumber>,
-    ) -> BoxFuture<Bytes> {
-        OASIS_RPC_CALLS.with(&labels! {"call" => "callEnc",}).inc();
-        let timer = OASIS_RPC_CALL_TIME
-            .with(&labels! {"call" => "callEnc",})
-            .start_timer();
-        let num = tag.unwrap_or_default();
-
-        info!(self.logger, "oasis_call_enc"; "request" => ?request, "num" => ?num);
-
-        let request = TransactionRequest {
-            nonce: request.nonce.map(Into::into),
-            caller: request.from.map(Into::into),
-            is_call: request.to.is_some(),
-            address: request.to.map(Into::into),
-            input: request.data.map(Into::into),
-            value: request.value.map(Into::into),
-            gas: request.gas.map(Into::into),
-        };
-
-        Box::new(
-            self.client
-                .call_enc(request, EthClient::get_block_id(num))
-                .map_err(execution_error)
-                .map(Into::into)
-                .then(move |result| {
-                    drop(timer);
-                    result
-                }),
-        )
-    }
-
     fn get_expiry(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<u64> {
         OASIS_RPC_CALLS
             .with(&labels! {"call" => "getExpiry",})

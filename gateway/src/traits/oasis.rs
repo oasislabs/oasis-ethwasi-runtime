@@ -13,17 +13,6 @@ build_rpc_trait! {
         #[rpc(name = "oasis_getPublicKey")]
         fn public_key(&self, Address) -> BoxFuture<Option<RpcPublicKeyPayload>>;
 
-        /// Executes a new message call without creating a transaction on chain.
-        /// Returns the return value of the executed contract, encrypted with
-        /// the user's public key.
-        #[rpc(meta, name = "oasis_call_enc")]
-        fn call_enc(
-            &self,
-            Self::Metadata,
-            CallRequest,
-            Trailing<BlockNumber>
-        ) -> BoxFuture<Bytes>;
-
         /// Get expiration timestamp for a contract.
         /// The value is a Unix timestamp (seconds since the epoch).
         #[rpc(name = "oasis_getExpiry")]

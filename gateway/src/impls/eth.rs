@@ -705,16 +705,9 @@ impl Eth for EthClient {
         };
 
         if is_confidential {
-            Box::new(
-                self.client
-                    .confidential_estimate_gas(&signed)
-                    .map(Into::into)
-                    .map_err(execution_error)
-                    .then(move |result| {
-                        drop(timer);
-                        result
-                    }),
-            )
+            Box::new(future::err(errors::deprecated(
+                "Confidential estimateGas is deprecated".to_string(),
+            )))
         } else {
             let client = self.client.clone();
             Box::new(
