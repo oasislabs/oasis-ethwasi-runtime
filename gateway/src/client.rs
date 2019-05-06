@@ -836,16 +836,6 @@ impl Client {
         Ok(ret)
     }
 
-    pub fn call_enc(&self, request: TransactionRequest, _id: BlockId) -> BoxFuture<Bytes> {
-        record_runtime_call_result(
-            &self.logger,
-            "simulate_transaction",
-            self.client
-                .simulate_transaction(request)
-                .and_then(|r| r.result.map_err(|error| format_err!("{}", error))),
-        )
-    }
-
     /// Returns true if the transaction deploys or calls a confidential contract.
     pub fn is_confidential(&self, transaction: &SignedTransaction) -> Result<bool, String> {
         let db = match self.get_db_snapshot() {
@@ -899,33 +889,6 @@ impl Client {
             .transact_virtual(transaction, options)?;
 
         Ok(ret.gas_used + ret.refunded)
-    }
-
-    /// Estimates gas for a transaction calling a confidential contract by sending
-    /// the transaction through the scheduler to be run by the compute comittee.
-    pub fn confidential_estimate_gas(&self, transaction: &SignedTransaction) -> BoxFuture<U256> {
-        info!(self.logger, "estimating gas for a confidential contract");
-
-        let to_addr = match transaction.action {
-            Action::Create => None,
-            Action::Call(to_addr) => Some(to_addr),
-        };
-
-        let request = TransactionRequest {
-            nonce: Some(transaction.nonce),
-            caller: Some(transaction.sender()),
-            is_call: to_addr.is_some(),
-            address: to_addr,
-            input: Some(transaction.data.clone()),
-            value: Some(transaction.value),
-            gas: Some(transaction.gas),
-        };
-
-        record_runtime_call_result(
-            &self.logger,
-            "estimate_gas",
-            self.client.estimate_gas(request),
-        )
     }
 
     /// Checks that transaction is well formed, meets min gas price, has a valid signature,
