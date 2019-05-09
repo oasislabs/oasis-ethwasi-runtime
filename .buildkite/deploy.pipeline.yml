@@ -28,17 +28,31 @@ docker_plugin: &docker_plugin_configuration
     propagate-environment: true
 
 steps:
-  - label: Extract platform resources
-    branches: master beta
+  - label: Extract platform resources (master branches only)
+    branches: master
     command:
       - .buildkite/scripts/extract_platform_resources.sh platform
     artifact_paths:
       - platform/*
 
-  - label: Extract production-track platform resources
-    branches: master beta
+  - label: Extract platform resources (beta branch only)
+    branches: beta
+    command:
+      - .buildkite/scripts/extract_platform_resources.sh platform latest-beta
+    artifact_paths:
+      - platform/*
+
+  - label: Extract production-track platform resources (master branches only)
+    branches: master
     command:
       - .buildkite/scripts/extract_platform_resources.sh platform-prod
+    artifact_paths:
+      - platform-prod/*
+
+  - label: Extract production-track platform resources (beta branch only)
+    branches: beta
+    command:
+      - .buildkite/scripts/extract_platform_resources.sh platform-prod latest-beta
     artifact_paths:
       - platform-prod/*
 
@@ -47,7 +61,7 @@ steps:
   - label: Get docker tag and save it as metadata for use later
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
 
-  - label: Build artifacts (master branches only)
+  - label: Build artifacts
     branches: master beta
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -61,7 +75,7 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build production-track artifacts (master branches only)
+  - label: Build production-track artifacts
     branches: master beta
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -79,11 +93,19 @@ steps:
 
   - wait
 
-  - label: Update docker image tags (master branches only)
+  - label: Update testing docker image tags (master branches only)
     branches: master
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-testing
+    env:
+      DEPLOYMENT_VARIANT: testing
+
+  - label: Update testing docker image tags (beta branch only)
+    branches: beta
+    command:
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
+      - .buildkite/scripts/promote_deployment_image_to.sh latest-testing-beta
     env:
       DEPLOYMENT_VARIANT: testing
 
@@ -125,9 +147,16 @@ steps:
       commit: HEAD
       branch: master
 
-  - label: "Build and push all-in-one image"
+  - label: "Build and push all-in-one image (master branches only)"
     branches: master
     command:
       - ./docker/all-in-one/build.sh
       - docker tag local-aio:latest oasislabs/private-all-in-one:latest
       - docker push oasislabs/private-all-in-one:latest
+
+  - label: "Build and push all-in-one image (beta branch only)"
+    branches: beta
+    command:
+      - ./docker/all-in-one/build.sh
+      - docker tag local-aio:latest oasislabs/private-all-in-one:latest-beta
+      - docker push oasislabs/private-all-in-one:latest-beta
