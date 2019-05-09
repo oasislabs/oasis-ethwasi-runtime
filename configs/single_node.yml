@@ -40,6 +40,8 @@ worker:
       - "127.0.0.1:9200"
   p2p:
     port: 9100
+  storage:
+    enabled: true
 
 # Key manager configuration.
 keymanager:
