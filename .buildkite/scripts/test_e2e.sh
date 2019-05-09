@@ -60,7 +60,7 @@ scenario_basic() {
     run_compute_node 4 ${runtime}
 
     # Wait for all compute nodes to start.
-    wait_compute_nodes 4
+    wait_nodes 5 # 4 + storage
 
     # Advance epoch to elect a new committee.
     set_epoch 1

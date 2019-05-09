@@ -228,7 +228,7 @@ run_compute_committee() {
     run_compute_node 4 ${UTILS_COMPUTE_EXTRA_ARGS}
 
     # Wait for all nodes to register.
-    wait_compute_nodes 4
+    wait_nodes 5 # 4 + storage
 }
 
 run_gateway() {
@@ -267,18 +267,6 @@ run_keymanager_node() {
         --tls-key $KM_KEY \
         --storage-path ${storage_dir} \
         ${extra_args} &
-}
-
-# Wait for a number of compute nodes to register.
-#
-# Arguments:
-#   nodes - number of nodes to wait for
-wait_compute_nodes() {
-    local nodes=$1
-
-    ${EKIDEN_NODE} debug dummy wait-nodes \
-        --address unix:${EKIDEN_VALIDATOR_SOCKET} \
-        --nodes $nodes
 }
 
 # Set epoch.
