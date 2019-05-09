@@ -38,9 +38,11 @@ steps:
   - label: Extract platform resources (beta branch only)
     branches: beta
     command:
-      - .buildkite/scripts/extract_platform_resources.sh platform latest-beta
+      - .buildkite/scripts/extract_platform_resources.sh platform
     artifact_paths:
       - platform/*
+    env:
+      DEPLOYMENT_VARIANT: beta
 
   - label: Extract production-track platform resources (master branches only)
     branches: master
