@@ -54,9 +54,11 @@ steps:
   - label: Extract production-track platform resources (beta branch only)
     branches: beta
     command:
-      - .buildkite/scripts/extract_platform_resources.sh platform-prod latest-beta
+      - .buildkite/scripts/extract_platform_resources.sh platform-prod
     artifact_paths:
       - platform-prod/*
+    env:
+      DEPLOYMENT_VARIANT: beta
 
   - wait
 
@@ -122,6 +124,8 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
+    env:
+      DEPLOYMENT_VARIANT: beta
 
   - wait
 
