@@ -30,9 +30,7 @@ use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;
 use slog::{info, warn, Logger};
 
-#[cfg(feature = "pubsub")]
-use crate::notifier::notify_client_blocks;
-use crate::{client::Client, util, EthereumRuntimeClient};
+use crate::{pubsub::Broker, translator::Translator, EthereumRuntimeClient};
 
 pub fn execute(
     client: EthereumRuntimeClient,
@@ -45,7 +43,7 @@ pub fn execute(
     ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
-) -> Fallible<RunningClient> {
+) -> Fallible<RunningGateway> {
     let logger = get_logger("gateway/execute");
 
     let mut runtime = tokio::runtime::Runtime::new()?;
@@ -58,15 +56,9 @@ pub fn execute(
         "Ekiden node is fully synced, proceeding with initialization"
     );
 
-    let client = Arc::new(Client::new(
-        runtime.executor(),
-        client,
-        &util::load_spec(),
-        gas_price,
-    ));
-
-    #[cfg(feature = "pubsub")]
-    runtime.spawn(notify_client_blocks(client.clone(), pubsub_interval_secs));
+    let translator = Arc::new(Translator::new(client, gas_price));
+    let broker = Arc::new(Broker::new(translator.clone()));
+    runtime.spawn(broker.start(Duration::new(pubsub_interval_secs, 0)));
 
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
@@ -97,10 +89,10 @@ pub fn execute(
 
     // Define RPC handlers.
     let deps_for_rpc_apis = Arc::new(rpc_apis::FullDependencies {
-        client: client.clone(),
+        translator: translator.clone(),
+        broker: broker.clone(),
         km_client: km_client.clone(),
         ws_address: ws_conf.address(),
-        remote: event_loop.remote(),
     });
 
     let dependencies = rpc::Dependencies {
@@ -117,10 +109,10 @@ pub fn execute(
     let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)
         .map_err(|err| format_err!("{}", err))?;
 
-    let running_client = RunningClient {
+    let running_client = RunningGateway {
         logger,
         runtime,
-        client,
+        translator,
         km_client,
         event_loop,
         http_server,
@@ -129,27 +121,27 @@ pub fn execute(
     Ok(running_client)
 }
 
-/// Parity client currently executing in background threads.
+/// Gateway currently executing in background threads.
 ///
 /// Should be destroyed by calling `shutdown()`, otherwise execution will continue in the
 /// background.
-pub struct RunningClient {
+pub struct RunningGateway {
     logger: Logger,
     runtime: tokio::runtime::Runtime,
-    client: Arc<Client>,
+    translator: Arc<Translator>,
     km_client: Arc<KeyManagerClient>,
     event_loop: EventLoop,
     http_server: Option<jsonrpc_http_server::Server>,
     ws_server: Option<jsonrpc_ws_server::Server>,
 }
 
-impl RunningClient {
-    /// Shuts down the client.
+impl RunningGateway {
+    /// Shuts down the gateway.
     pub fn shutdown(self) {
-        let RunningClient {
+        let RunningGateway {
             logger,
             runtime,
-            client,
+            translator,
             km_client,
             event_loop,
             http_server,
@@ -160,16 +152,16 @@ impl RunningClient {
 
         // Create a weak reference to the client so that we can wait on shutdown
         // until it is dropped.
-        let weak_client = Arc::downgrade(&client);
+        let weak_translator = Arc::downgrade(&translator);
         // drop this stuff as soon as exit detected.
         drop(runtime.shutdown_now());
         drop(event_loop);
         drop(http_server);
         drop(ws_server);
-        drop(client);
+        drop(translator);
         drop(km_client);
 
-        wait_for_drop(logger, weak_client);
+        wait_for_drop(logger, weak_translator);
     }
 }
 

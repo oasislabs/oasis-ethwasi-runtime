@@ -43,7 +43,9 @@ nvm_script="${NVM_DIR:-${HOME}/.nvm}/nvm.sh"
 ###################
 run_backend_tendermint_committee_custom() {
     run_backend_tendermint_committee \
-        replica_group_size=3
+        epochtime_backend=tendermint_mock \
+        replica_group_size=3 \
+        runtime_genesis=${WORKDIR}/resources/genesis/ekiden_genesis_testing.json
 }
 
 run_no_client() {
@@ -184,13 +186,14 @@ test_suite() {
         client_runner=run_no_client
 
     # E2E tests from e2e-tests repository.
-    run_test \
-        pre_init_hook=install_e2e_tests \
-        scenario=scenario_e2e_tests \
-        name="e2e-${backend_name}-e2e-tests" \
-        backend_runner=$backend_runner \
-        runtime=runtime-ethereum \
-        client_runner=run_no_client
+    # TODO: Temporarily disabled (see #749).
+    #run_test \
+    #    pre_init_hook=install_e2e_tests \
+    #    scenario=scenario_e2e_tests \
+    #    name="e2e-${backend_name}-e2e-tests" \
+    #    backend_runner=$backend_runner \
+    #    runtime=runtime-ethereum \
+    #    client_runner=run_no_client
 }
 
 ##########################################

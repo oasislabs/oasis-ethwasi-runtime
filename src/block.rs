@@ -1,0 +1,86 @@
+//! Ethereum block creation.
+use std::{collections::HashSet, sync::Arc};
+
+use ekiden_keymanager_client::KeyManagerClient;
+use ekiden_runtime::{
+    common::logger::get_logger,
+    runtime_context,
+    transaction::{dispatcher::BatchHandler, Context as TxnContext},
+};
+use ethcore::{self, state::State, vm::EnvInfo};
+use ethereum_types::{H256, U256};
+use io_context::Context as IoContext;
+use runtime_ethereum_common::{
+    confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
+};
+use slog::{info, Logger};
+
+pub struct BlockContext {
+    /// Logger.
+    pub logger: Logger,
+    /// Ethereum state for the current batch.
+    pub state: State<NullBackend>,
+    /// Environment info for the current batch.
+    pub env_info: EnvInfo,
+    /// Set of executed transactions.
+    pub transaction_set: HashSet<H256>,
+}
+
+/// Ethereum runtime batch handler.
+pub struct EthereumBatchHandler {
+    key_manager: Arc<KeyManagerClient>,
+}
+
+impl EthereumBatchHandler {
+    pub fn new(key_manager: Arc<KeyManagerClient>) -> Self {
+        Self { key_manager }
+    }
+}
+
+impl BatchHandler for EthereumBatchHandler {
+    fn start_batch(&self, ctx: &mut TxnContext) {
+        let logger = get_logger("ethereum/block");
+
+        info!(logger, "Computing new block"; "round" => ctx.header.round + 1);
+
+        // Initialize Ethereum state access functions.
+        let state = State::from_existing(
+            Box::new(ThreadLocalMKVS::new(IoContext::create_child(&ctx.io_ctx))),
+            NullBackend,
+            U256::zero(),       /* account_start_nonce */
+            Default::default(), /* factories */
+            Some(Box::new(ConfidentialCtx::new(
+                ctx.io_ctx.clone(),
+                self.key_manager.clone(),
+            ))),
+        )
+        .expect("state initialization must succeed");
+
+        // Initialize Ethereum environment information.
+        let env_info = EnvInfo {
+            number: ctx.header.round + 1,
+            author: Default::default(),
+            timestamp: ctx.header.timestamp,
+            difficulty: Default::default(),
+            gas_limit: *genesis::GAS_LIMIT,
+            // TODO: Get last_hashes.
+            last_hashes: Arc::new(vec![]),
+            gas_used: Default::default(),
+        };
+
+        ctx.runtime = Box::new(BlockContext {
+            logger,
+            state,
+            env_info,
+            transaction_set: HashSet::new(),
+        });
+    }
+
+    fn end_batch(&self, ctx: &mut TxnContext) {
+        let ectx = runtime_context!(ctx, BlockContext);
+
+        info!(ectx.logger, "Commiting state into storage");
+        ectx.state.commit().expect("state commit must succeed");
+        info!(ectx.logger, "Block finalized");
+    }
+}

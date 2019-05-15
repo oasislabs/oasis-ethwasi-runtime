@@ -30,7 +30,7 @@ const (
 	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
 	cfgQueryNonces  = "benchmarks.transfer.query_nonces"
 
-	transferCost = 21000 // Simple transfers always cost this much gas.
+	transferCost = 2100 // Simple transfers always cost this much gas.
 )
 
 var (

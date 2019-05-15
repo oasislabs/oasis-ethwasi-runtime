@@ -48,8 +48,10 @@ extern crate parity_reactor;
 extern crate parity_rpc;
 extern crate prometheus;
 extern crate rlp_compress;
+extern crate serde_cbor;
 extern crate slog;
 extern crate tokio;
+extern crate tokio_threadpool;
 
 extern crate ekiden_client;
 extern crate ekiden_keymanager_client;
@@ -58,21 +60,16 @@ extern crate ekiden_runtime;
 extern crate runtime_ethereum_api;
 extern crate runtime_ethereum_common;
 
-mod client;
-mod future_ext;
 mod impls;
 mod informant;
 mod middleware;
-#[cfg(feature = "pubsub")]
-mod notifier;
+mod pubsub;
 mod rpc;
 mod rpc_apis;
 mod run;
 mod servers;
-mod state;
-#[cfg(test)]
-mod test_helpers;
 mod traits;
+mod translator;
 pub mod util;
 
 use std::sync::Arc;
@@ -85,7 +82,7 @@ use failure::Fallible;
 use grpcio::EnvBuilder;
 use runtime_ethereum_api::*;
 
-pub use self::run::RunningClient;
+pub use self::run::RunningGateway;
 
 with_api! {
     create_txn_api_client!(EthereumRuntimeClient, api);
@@ -101,7 +98,7 @@ pub fn start(
     ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
-) -> Fallible<RunningClient> {
+) -> Fallible<RunningGateway> {
     let node_address = args.value_of("node-address").unwrap();
     let runtime_id = value_t_or_exit!(args, "runtime-id", RuntimeId);
 

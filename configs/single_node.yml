@@ -20,6 +20,10 @@ log:
     tendermint: warn
     tendermint/context: error
 
+# Genesis.
+genesis:
+  file: /tmp/runtime-ethereum-single_node/genesis.json
+
 # Internal gRPC services.
 grpc:
   log:
@@ -81,13 +85,19 @@ registry:
 # Roothash backend.
 roothash:
   backend: tendermint
+  tendermint:
+    index_blocks: true
 
 # Tendermint backend configuration.
 tendermint:
-  core:
-    genesis_file: /tmp/runtime-ethereum-single_node/genesis.json
   consensus:
     timeout_commit: 1s
+
+# Client configuration.
+client:
+  indexer:
+    runtimes:
+      - "0000000000000000000000000000000000000000000000000000000000000000"
 
 # Tracing settings.
 #tracing:

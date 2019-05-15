@@ -9,3 +9,4 @@ ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 serde = "1.0.71"
 serde_derive = "1.0"
+serde_bytes = "~0.10"

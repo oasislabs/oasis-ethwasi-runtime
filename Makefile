@@ -15,6 +15,15 @@ RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)
 # Key manager enclave path.
 KM_ENCLAVE_PATH ?= $(EKIDEN_CARGO_TARGET_DIR)/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs
 
+# Genesis files.
+GENESIS_ROOT_PATH ?= resources/genesis
+GENESIS_FILES ?= \
+	genesis.json \
+	genesis_testing.json
+
+# Extra build args.
+EXTRA_BUILD_ARGS := $(if $(RELEASE),--release,)
+
 # Check if we're running in an interactive terminal.
 ISATTY := $(shell [ -t 0 ] && echo 1)
 
@@ -44,6 +53,7 @@ endif
 	check check-tools check-ekiden \
 	download-artifacts symlink-artifacts \
 	runtime gateway genesis \
+	genesis-update \
 	clean clean-test-e2e \
 	fmt \
 	run-gateway run-gateway-sgx \
@@ -86,17 +96,26 @@ symlink-artifacts:
 runtime: check-ekiden
 	@$(ECHO) "$(CYAN)*** Building runtime-ethereum...$(OFF)"
 	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
-		cargo build -p runtime-ethereum --target x86_64-fortanix-unknown-sgx && \
-		cargo build -p runtime-ethereum && \
-		cargo elf2sgxs
+		cargo build -p runtime-ethereum $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
+		cargo build -p runtime-ethereum $(EXTRA_BUILD_ARGS) && \
+		cargo elf2sgxs $(EXTRA_BUILD_ARGS)
 
 gateway:
 	@$(ECHO) "$(CYAN)*** Building web3-gateway...$(OFF)"
-	@cargo build -p web3-gateway
+	@cargo build -p web3-gateway $(EXTRA_BUILD_ARGS)
 
 genesis:
-	@$(ECHO) "$(CYAN)*** Building replay benchmark genesis utility...$(OFF)"
-	@cargo build -p genesis
+	@$(ECHO) "$(CYAN)*** Building genesis utilities...$(OFF)"
+	@cargo build -p genesis $(EXTRA_BUILD_ARGS)
+
+genesis-update:
+	@$(ECHO) "$(CYAN)*** Generating Ekiden-compatible genesis files...$(OFF)"
+	@for g in $(GENESIS_FILES); do \
+		$(ECHO) "$(MAGENTA)  * Genesis file: $$g$(OFF)"; \
+		cargo run -p genesis $(EXTRA_BUILD_ARGS) --bin genesis-init -- \
+			"$(GENESIS_ROOT_PATH)/$${g}" \
+			"$(GENESIS_ROOT_PATH)/ekiden_$${g}"; \
+	done
 
 benchmark: genesis
 	@$(ECHO) "$(CYAN)*** Building benchmark client...$(OFF)"
@@ -116,7 +135,7 @@ test: test-unit test-e2e
 
 test-unit: check-ekiden
 	@$(ECHO) "$(CYAN)*** Running unit tests...$(OFF)"
-	@export KM_ENCLAVE_PATH=$$(KM_ENCLAVE_PATH) && \
+	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
 		cargo test \
 			--features test \
 			-p runtime-ethereum-common \
@@ -132,7 +151,6 @@ test-e2e: check-ekiden
 
 fmt:
 	@cargo fmt
-	@make -C benchmark fmt
 
 clean-test-e2e:
 	@$(ECHO) "$(CYAN)*** Cleaning up E2E tests...$(OFF)"
