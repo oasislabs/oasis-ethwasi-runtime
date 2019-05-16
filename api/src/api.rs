@@ -6,7 +6,6 @@ use serde_derive::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_bytes::ByteBuf;
 
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LogEntry {
     /// The address of the contract executing at the point of the `LOG` operation.
