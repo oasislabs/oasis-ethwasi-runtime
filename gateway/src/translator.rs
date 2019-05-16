@@ -571,7 +571,7 @@ impl EthereumBlock {
     ) -> impl Future<Item = impl Iterator<Item = UnverifiedTransaction>, Error = Error> {
         self.raw_transactions().and_then(|txns| {
             Ok(txns.filter_map(|txn| {
-                let raw: Vec<u8> = serde_cbor::from_value(txn.args).ok()?;
+                let raw: ByteBuf = serde_cbor::from_value(txn.args).ok()?;
                 let signed: UnverifiedTransaction = rlp::decode(&raw).ok()?;
 
                 Some(signed)
