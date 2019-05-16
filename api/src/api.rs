@@ -1,7 +1,11 @@
 use ekiden_runtime::runtime_api;
 use ethereum_types::{Address, Bloom, H256, U256};
-use serde_bytes::ByteBuf;
 use serde_derive::{Deserialize, Serialize};
+
+// used in runtime_api! macro
+#[allow(unused_imports)]
+use serde_bytes::ByteBuf;
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LogEntry {
