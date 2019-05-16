@@ -38,6 +38,8 @@ use runtime_ethereum_api::{ExecutionResult, METHOD_ETH_TXN};
 use runtime_ethereum_common::{
     genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC, TAG_ETH_TX_HASH,
 };
+
+use serde_bytes::ByteBuf;
 use serde_cbor;
 use slog::{error, Logger};
 use tokio_threadpool::{Builder as ThreadPoolBuilder, ThreadPool};
@@ -201,7 +203,7 @@ impl Translator {
 
             Box::new(
                 client
-                    .ethereum_transaction(raw)
+                    .ethereum_transaction(ByteBuf::from(raw))
                     .map(move |_result| decoded.hash()),
             )
         })
@@ -340,7 +342,7 @@ impl Translator {
                 }
 
                 // We know that arguments are raw Ethereum transaction bytes.
-                let raw: Vec<u8> = match serde_cbor::from_value(txn.input.args.clone()) {
+                let raw: ByteBuf = match serde_cbor::from_value(txn.input.args.clone()) {
                     Ok(raw) => raw,
                     Err(err) => {
                         error!(logger, "Error while decoding ethereum transaction input";
@@ -433,7 +435,7 @@ impl EthereumTransaction {
         }
 
         // We know that arguments are raw Ethereum transaction bytes.
-        let raw: Vec<u8> = serde_cbor::from_value(self.snapshot.input.args.clone())?;
+        let raw: ByteBuf = serde_cbor::from_value(self.snapshot.input.args.clone())?;
         let signed: UnverifiedTransaction = rlp::decode(&raw)?;
 
         Ok(LocalizedTransaction {
@@ -569,7 +571,7 @@ impl EthereumBlock {
     ) -> impl Future<Item = impl Iterator<Item = UnverifiedTransaction>, Error = Error> {
         self.raw_transactions().and_then(|txns| {
             Ok(txns.filter_map(|txn| {
-                let raw: Vec<u8> = serde_cbor::from_value(txn.args).ok()?;
+                let raw: ByteBuf = serde_cbor::from_value(txn.args).ok()?;
                 let signed: UnverifiedTransaction = rlp::decode(&raw).ok()?;
 
                 Some(signed)

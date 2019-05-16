@@ -48,6 +48,7 @@ extern crate parity_reactor;
 extern crate parity_rpc;
 extern crate prometheus;
 extern crate rlp_compress;
+extern crate serde_bytes;
 extern crate serde_cbor;
 extern crate slog;
 extern crate tokio;
@@ -81,6 +82,7 @@ use ethereum_types::U256;
 use failure::Fallible;
 use grpcio::EnvBuilder;
 use runtime_ethereum_api::*;
+use serde_bytes::ByteBuf;
 
 pub use self::run::RunningGateway;
 

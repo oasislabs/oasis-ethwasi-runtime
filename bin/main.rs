@@ -10,8 +10,11 @@ extern crate io_context;
 extern crate lazy_static;
 extern crate runtime_ethereum_api;
 extern crate runtime_ethereum_common;
+extern crate serde_bytes;
 
 use std::sync::Arc;
+
+use serde_bytes::ByteBuf;
 
 use ekiden_runtime::{
     rak::RAK, register_runtime_txn_methods, Protocol, RpcDispatcher, TxnDispatcher,

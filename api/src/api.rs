@@ -2,6 +2,10 @@ use ekiden_runtime::runtime_api;
 use ethereum_types::{Address, Bloom, H256, U256};
 use serde_derive::{Deserialize, Serialize};
 
+// used in runtime_api! macro
+#[allow(unused_imports)]
+use serde_bytes::ByteBuf;
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LogEntry {
     /// The address of the contract executing at the point of the `LOG` operation.
@@ -29,5 +33,5 @@ pub struct ExecutionResult {
 pub const METHOD_ETH_TXN: &'static str = "ethereum_transaction";
 
 runtime_api! {
-    pub fn ethereum_transaction(Vec<u8>) -> ExecutionResult;
+    pub fn ethereum_transaction(ByteBuf) -> ExecutionResult;
 }
