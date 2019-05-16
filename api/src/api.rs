@@ -1,5 +1,6 @@
 use ekiden_runtime::runtime_api;
 use ethereum_types::{Address, Bloom, H256, U256};
+use serde_bytes::ByteBuf;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -29,5 +30,5 @@ pub struct ExecutionResult {
 pub const METHOD_ETH_TXN: &'static str = "ethereum_transaction";
 
 runtime_api! {
-    pub fn ethereum_transaction(Vec<u8>) -> ExecutionResult;
+    pub fn ethereum_transaction(ByteBuf) -> ExecutionResult;
 }

@@ -48,6 +48,7 @@ extern crate parity_reactor;
 extern crate parity_rpc;
 extern crate prometheus;
 extern crate rlp_compress;
+extern crate serde_bytes;
 extern crate serde_cbor;
 extern crate slog;
 extern crate tokio;
@@ -74,6 +75,7 @@ pub mod util;
 
 use std::sync::Arc;
 
+use serde_bytes::ByteBuf;
 use clap::{value_t_or_exit, ArgMatches};
 use ekiden_client::{create_txn_api_client, Node, TxnClient};
 use ekiden_runtime::common::runtime::RuntimeId;

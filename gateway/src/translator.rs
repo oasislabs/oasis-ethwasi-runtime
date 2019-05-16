@@ -38,6 +38,8 @@ use runtime_ethereum_api::{ExecutionResult, METHOD_ETH_TXN};
 use runtime_ethereum_common::{
     genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC, TAG_ETH_TX_HASH,
 };
+
+use serde_bytes::ByteBuf;
 use serde_cbor;
 use slog::{error, Logger};
 use tokio_threadpool::{Builder as ThreadPoolBuilder, ThreadPool};
@@ -201,7 +203,7 @@ impl Translator {
 
             Box::new(
                 client
-                    .ethereum_transaction(raw)
+                    .ethereum_transaction(ByteBuf::from(raw))
                     .map(move |_result| decoded.hash()),
             )
         })

@@ -10,6 +10,9 @@ extern crate io_context;
 extern crate lazy_static;
 extern crate runtime_ethereum_api;
 extern crate runtime_ethereum_common;
+extern crate serde_bytes;
+
+use serde_bytes::ByteBuf;
 
 use std::sync::Arc;
 
