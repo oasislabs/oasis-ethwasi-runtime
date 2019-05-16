@@ -122,6 +122,8 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
+    env:
+      DEPLOYMENT_VARIANT: beta
 
   - wait
 
