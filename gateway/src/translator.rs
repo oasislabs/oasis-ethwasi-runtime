@@ -342,7 +342,7 @@ impl Translator {
                 }
 
                 // We know that arguments are raw Ethereum transaction bytes.
-                let raw: Vec<u8> = match serde_cbor::from_value(txn.input.args.clone()) {
+                let raw: ByteBuf = match serde_cbor::from_value(txn.input.args.clone()) {
                     Ok(raw) => raw,
                     Err(err) => {
                         error!(logger, "Error while decoding ethereum transaction input";
@@ -435,7 +435,7 @@ impl EthereumTransaction {
         }
 
         // We know that arguments are raw Ethereum transaction bytes.
-        let raw: Vec<u8> = serde_cbor::from_value(self.snapshot.input.args.clone())?;
+        let raw: ByteBuf = serde_cbor::from_value(self.snapshot.input.args.clone())?;
         let signed: UnverifiedTransaction = rlp::decode(&raw)?;
 
         Ok(LocalizedTransaction {
