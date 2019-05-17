@@ -29,7 +29,7 @@ docker_plugin: &docker_plugin_configuration
 
 steps:
   - label: Build artifacts
-    branches: master
+    branches: master beta
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
