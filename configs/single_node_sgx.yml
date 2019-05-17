@@ -36,18 +36,21 @@ worker:
     backend: sandboxed
     runtime_loader: .ekiden/target/debug/ekiden-runtime-loader
     runtime:
-      id: "0000000000000000000000000000000000000000000000000000000000000000"
       binary: .runtime/target/x86_64-fortanix-unknown-sgx/debug/runtime-ethereum.sgxs
       sgx_ids:
         - "0000000000000000000000000000000000000000000000000000000000000000"
+  runtime:
+    id: "0000000000000000000000000000000000000000000000000000000000000000"
+  storage:
+    enabled: true
+  txnscheduler:
+    enabled: true
   client:
     port: 9200
     addresses:
       - "127.0.0.1:9200"
   p2p:
     port: 9100
-  storage:
-    enabled: true
 
 # IAS configuration.
 ias:
@@ -92,11 +95,19 @@ registry:
 # Roothash backend.
 roothash:
   backend: tendermint
+  tendermint:
+    index_blocks: true
 
 # Tendermint backend configuration.
 tendermint:
   consensus:
     timeout_commit: 1s
+
+# Client configuration.
+client:
+  indexer:
+    runtimes:
+      - "0000000000000000000000000000000000000000000000000000000000000000"
 
 # Tracing settings.
 #tracing:
