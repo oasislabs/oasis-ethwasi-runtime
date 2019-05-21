@@ -5,7 +5,7 @@
 use ekiden_keymanager_client::{PrivateKey, PublicKey};
 use ekiden_runtime::common::crypto::mrae::{
     nonce::{Nonce, NONCE_SIZE},
-    sivaessha2,
+    deoxysii,
 };
 use failure::{format_err, Fallible, ResultExt};
 
@@ -21,12 +21,12 @@ pub fn encrypt(
     public_key: PublicKey,
     secret_key: PrivateKey,
 ) -> Fallible<Vec<u8>> {
-    let ciphertext = sivaessha2::box_seal(
-        nonce.clone().to_vec(),
+    let ciphertext = deoxysii::box_seal(
+        &nonce.clone(),
         plaintext.clone(),
         vec![],
-        peer_public_key.into(),
-        secret_key.into(),
+        &peer_public_key.into(),
+        &secret_key.into(),
     )?;
     Ok(encode_encryption(ciphertext, nonce, public_key))
 }
@@ -44,12 +44,12 @@ pub fn decrypt(data: Option<Vec<u8>>, secret_key: PrivateKey) -> Fallible<Decryp
         });
     }
     let (nonce, peer_public_key, cipher) = split_encrypted_payload(data.unwrap())?;
-    let plaintext = sivaessha2::box_open(
-        nonce.to_vec(),
+    let plaintext = deoxysii::box_open(
+        &nonce,
         cipher,
         vec![],
-        peer_public_key.into(),
-        secret_key.into(),
+        &peer_public_key.into(),
+        &secret_key.into(),
     )
     .with_context(|e| format!("payload open failed: {}", e))?;
     Ok(Decryption {
