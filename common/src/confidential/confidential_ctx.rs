@@ -4,8 +4,8 @@ use std::sync::Arc;
 use ekiden_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
 use ekiden_runtime::{
     common::crypto::mrae::{
+        deoxysii::{DeoxysII, KEY_SIZE, TAG_SIZE},
         nonce::{Nonce, NONCE_SIZE},
-        sivaessha2::{SivAesSha2, KEY_SIZE},
     },
     executor::Executor,
 };
@@ -14,6 +14,7 @@ use failure::ResultExt;
 use io_context::Context;
 use keccak_hash::keccak;
 use vm::{ConfidentialCtx as EthConfidentialCtx, Error, Result};
+use zeroize::Zeroize;
 
 use super::crypto;
 
@@ -171,14 +172,18 @@ impl EthConfidentialCtx for ConfidentialCtx {
             .1;
         let state_key = contract_key.state_key;
 
-        // TODO: This should not use a fixed nonce.
+        // TODO/performance: Reuse the d2 instance (Oh god, self.contract is pub).
+        let mut key = [0u8; KEY_SIZE];
+        key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
+        let d2 = DeoxysII::new(&key);
+        key.zeroize();
 
-        let key: Vec<u8> = state_key.as_ref()[..KEY_SIZE].to_vec();
-        let nonce: Vec<u8> = state_key.as_ref()[KEY_SIZE..KEY_SIZE + NONCE_SIZE].to_vec();
+        let nonce = [0u8; NONCE_SIZE]; // XXX: Use an actual nonce.
 
-        let mrae = SivAesSha2::new(key).unwrap();
+        let mut ciphertext = d2.seal(&nonce, data, vec![]);
+        ciphertext.extend_from_slice(&nonce); // ciphertext || tag || nonce
 
-        Ok(mrae.seal(nonce, data, vec![]).unwrap())
+        Ok(ciphertext)
     }
 
     fn decrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>> {
@@ -189,14 +194,23 @@ impl EthConfidentialCtx for ConfidentialCtx {
             .1;
         let state_key = contract_key.state_key;
 
-        // TODO: This should not use a fixed nonce.
+        if data.len() < TAG_SIZE + NONCE_SIZE {
+            return Err(Error::Confidential("truncated ciphertext".to_string()));
+        }
 
-        let key: Vec<u8> = state_key.as_ref()[..KEY_SIZE].to_vec();
-        let nonce: Vec<u8> = state_key.as_ref()[KEY_SIZE..KEY_SIZE + NONCE_SIZE].to_vec();
+        // Split out the nonce from the tail of ciphertext || tag || nonce.
+        let nonce_offset = data.len() - NONCE_SIZE;
+        let mut nonce = [0u8; NONCE_SIZE];
+        nonce.copy_from_slice(&data[nonce_offset..]);
+        let ciphertext = &data[..nonce_offset];
 
-        let mrae = SivAesSha2::new(key).unwrap();
+        // TODO/performance: Reuse the d2 instance (Oh god, self.contract is pub).
+        let mut key = [0u8; KEY_SIZE];
+        key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
+        let d2 = DeoxysII::new(&key);
+        key.zeroize();
 
-        Ok(mrae.open(nonce, data, vec![]).unwrap())
+        Ok(d2.open(&nonce, ciphertext.to_vec(), vec![]).unwrap())
     }
 
     fn create_long_term_public_key(&mut self, contract: Address) -> Result<(Vec<u8>, Vec<u8>)> {

@@ -67,7 +67,7 @@ fn tx_contract_storage_encryption_no_constructor() {
         .decrypt_storage(encrypted_storage_counter.clone())
         .unwrap();
     // Encrypted storage's length should be expanded from the original value.
-    assert_eq!(encrypted_storage_counter.len(), 48);
+    assert_eq!(encrypted_storage_counter.len(), 63);
     // Decryption should be of size H256.
     assert_eq!(ctx_decrypted_storage_counter.len(), 32);
     // Finally ensure the correct value of 1 is stored.
@@ -115,7 +115,7 @@ fn test_deploy_contract_storage_encryption_with_constructor() {
         .decrypt_storage(encrypted_storage_counter.clone())
         .unwrap();
     // Encrypted storage's length should be expanded from the original value.
-    assert_eq!(encrypted_storage_counter.len(), 48);
+    assert_eq!(encrypted_storage_counter.len(), 63);
     // Decryption should be of size H256.
     assert_eq!(ctx_decrypted_storage_counter.len(), 32);
     // Finally ensure the correct value of 1 is stored.

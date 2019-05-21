@@ -2590,6 +2590,7 @@ dependencies = [
  "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "zeroize 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

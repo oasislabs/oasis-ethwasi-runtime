@@ -10,6 +10,7 @@ extern crate io_context;
 extern crate keccak_hash;
 extern crate lazy_static;
 extern crate vm;
+extern crate zeroize;
 
 pub mod confidential;
 pub mod genesis;
