@@ -4,8 +4,8 @@
 
 use ekiden_keymanager_client::{PrivateKey, PublicKey};
 use ekiden_runtime::common::crypto::mrae::{
-    nonce::{Nonce, NONCE_SIZE},
     deoxysii,
+    nonce::{Nonce, NONCE_SIZE},
 };
 use failure::{format_err, Fallible, ResultExt};
 
