@@ -36,16 +36,19 @@ worker:
     backend: sandboxed
     runtime_loader: .ekiden/target/debug/ekiden-runtime-loader
     runtime:
-      id: "0000000000000000000000000000000000000000000000000000000000000000"
       binary: .runtime/target/debug/runtime-ethereum
+  runtime:
+    id: "0000000000000000000000000000000000000000000000000000000000000000"
+  storage:
+    enabled: true
+  txnscheduler:
+    enabled: true
   client:
     port: 9200
     addresses:
       - "127.0.0.1:9200"
   p2p:
     port: 9100
-  storage:
-    enabled: true
 
 # Key manager configuration.
 keymanager:

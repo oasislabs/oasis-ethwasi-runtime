@@ -12,8 +12,8 @@ fi
 
 # Detect current ekiden branch.
 # TODO: Make this more robust.
-EKIDEN_REPO=$(grep 'ekiden-runtime =' Cargo.toml | grep -Eo 'git = "(.+)"' | cut -d '"' -f 2)
-EKIDEN_BRANCH=$(grep 'ekiden-runtime =' Cargo.toml | grep -Eo 'branch = "(.+)"' | cut -d '"' -f 2)
+: ${EKIDEN_REPO:=$(grep 'ekiden-runtime =' Cargo.toml | grep -Eo 'git = "(.+)"' | cut -d '"' -f 2)}
+: ${EKIDEN_BRANCH:=$(grep 'ekiden-runtime =' Cargo.toml | grep -Eo 'branch = "(.+)"' | cut -d '"' -f 2)}
 if [ "$EKIDEN_BRANCH" == "" ]; then
     echo "ERROR: Unable to determine the ekiden branch."
     exit 1
