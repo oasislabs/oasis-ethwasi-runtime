@@ -1,8 +1,12 @@
 //! Storage wrappers.
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
-use ekiden_runtime::storage::StorageContext;
+use ekiden_runtime::storage::{KeyValue, StorageContext};
 use ethcore;
+use failure::{format_err, Fallible};
 use io_context::Context;
 
 /// MKVS implementation which uses the thread-local MKVS provided by
@@ -20,17 +24,19 @@ impl ThreadLocalMKVS {
 
 impl ethcore::mkvs::MKVS for ThreadLocalMKVS {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-        StorageContext::with_current(|_cas, mkvs| mkvs.get(Context::create_child(&self.ctx), key))
+        StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
+            mkvs.get(Context::create_child(&self.ctx), key)
+        })
     }
 
     fn insert(&mut self, key: &[u8], value: &[u8]) -> Option<Vec<u8>> {
-        StorageContext::with_current(|_cas, mkvs| {
+        StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
             mkvs.insert(Context::create_child(&self.ctx), key, value)
         })
     }
 
     fn remove(&mut self, key: &[u8]) -> Option<Vec<u8>> {
-        StorageContext::with_current(|_cas, mkvs| {
+        StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
             mkvs.remove(Context::create_child(&self.ctx), key)
         })
     }
@@ -39,5 +45,30 @@ impl ethcore::mkvs::MKVS for ThreadLocalMKVS {
         Box::new(ThreadLocalMKVS {
             ctx: self.ctx.clone(),
         })
+    }
+}
+
+/// In-memory trivial key/value storage.
+pub struct MemoryKeyValue(Mutex<HashMap<Vec<u8>, Vec<u8>>>);
+
+impl MemoryKeyValue {
+    pub fn new() -> Self {
+        MemoryKeyValue(Mutex::new(HashMap::new()))
+    }
+}
+
+impl KeyValue for MemoryKeyValue {
+    fn get(&self, key: Vec<u8>) -> Fallible<Vec<u8>> {
+        self.0
+            .lock()
+            .unwrap()
+            .get(&key)
+            .cloned()
+            .ok_or(format_err!("not found"))
+    }
+
+    fn insert(&self, key: Vec<u8>, value: Vec<u8>) -> Fallible<()> {
+        self.0.lock().unwrap().insert(key, value);
+        Ok(())
     }
 }

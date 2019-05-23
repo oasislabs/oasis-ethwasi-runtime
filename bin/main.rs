@@ -17,7 +17,8 @@ use std::sync::Arc;
 use serde_bytes::ByteBuf;
 
 use ekiden_runtime::{
-    rak::RAK, register_runtime_txn_methods, Protocol, RpcDispatcher, TxnDispatcher,
+    common::runtime::RuntimeId, rak::RAK, register_runtime_txn_methods, Protocol, RpcDispatcher,
+    TxnDispatcher,
 };
 use runtime_ethereum::block::EthereumBatchHandler;
 #[cfg(target_env = "sgx")]
@@ -37,6 +38,7 @@ fn main() {
 
         // Create the key manager client.
         let km_client = Arc::new(ekiden_keymanager_client::RemoteClient::new_runtime(
+            RuntimeId::default(), // HACK: This is what's deployed.
             #[cfg(target_env = "sgx")]
             Some(KM_ENCLAVE_HASH),
             #[cfg(not(target_env = "sgx"))]

@@ -18,7 +18,10 @@ use ekiden_runtime::storage::{
 };
 use ethcore::spec::Spec;
 use io_context::Context;
-use runtime_ethereum_common::{parity::NullBackend, storage::ThreadLocalMKVS};
+use runtime_ethereum_common::{
+    parity::NullBackend,
+    storage::{MemoryKeyValue, ThreadLocalMKVS},
+};
 
 fn main() {
     let matches = App::new("Genesis state generator")
@@ -44,11 +47,12 @@ fn main() {
 
     // Populate MKVS with state required at genesis.
     let cas = Arc::new(MemoryCAS::new());
+    let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = UrkelTree::make()
         .new(Context::background(), Box::new(NoopReadSyncer {}))
         .unwrap();
 
-    StorageContext::enter(cas, &mut mkvs, || {
+    StorageContext::enter(cas, &mut mkvs, untrusted_local, || {
         spec.ensure_db_good(
             Box::new(ThreadLocalMKVS::new(Context::background())),
             NullBackend,

@@ -31,7 +31,10 @@ use io_context::Context as IoContext;
 use keccak_hash::keccak;
 use runtime_ethereum_api::ExecutionResult;
 use runtime_ethereum_common::{
-    confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
+    confidential::ConfidentialCtx,
+    genesis,
+    parity::NullBackend,
+    storage::{MemoryKeyValue, ThreadLocalMKVS},
 };
 use serde_json::map::Map;
 
@@ -72,7 +75,8 @@ impl Client {
             .unwrap();
 
         // Initialize genesis.
-        StorageContext::enter(cas.clone(), &mut mkvs, || {
+        let untrusted_local = Arc::new(MemoryKeyValue::new());
+        StorageContext::enter(cas.clone(), &mut mkvs, untrusted_local, || {
             genesis::SPEC
                 .ensure_db_good(
                     Box::new(ThreadLocalMKVS::new(IoContext::background())),
@@ -95,7 +99,7 @@ impl Client {
                 .unwrap(),
             )
             .unwrap(),
-            ephemeral_key: ContractKey::generate(),
+            ephemeral_key: ContractKey::generate_mock(),
             gas_price: U256::from(1000000000),
             gas_limit: U256::from(1000000),
             cas,
@@ -119,8 +123,9 @@ impl Client {
         let header = self.header.clone();
         let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, false);
         let handler = EthereumBatchHandler::new(self.km_client.clone());
+        let untrusted_local = Arc::new(MemoryKeyValue::new());
 
-        let result = StorageContext::enter(self.cas.clone(), &mut mkvs, || {
+        let result = StorageContext::enter(self.cas.clone(), &mut mkvs, untrusted_local, || {
             handler.start_batch(&mut ctx);
             let result = f(self, &mut ctx);
             handler.end_batch(&mut ctx);
