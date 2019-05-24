@@ -23,7 +23,6 @@ use ekiden_client::{transaction::api::storage, Node};
 use ekiden_runtime::{
     common::{crypto::hash::Hash, roothash},
     storage::{
-        cas::MemoryCAS,
         mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
         StorageContext,
     },
@@ -185,7 +184,6 @@ fn main() {
     let node = Node::new(env, node_address);
     let storage = storage::StorageClient::new(node.channel());
 
-    let cas = Arc::new(MemoryCAS::new());
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = UrkelTree::make()
         .new(Context::background(), Box::new(NoopReadSyncer {}))
@@ -195,7 +193,7 @@ fn main() {
     let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");
     let spec = Spec::load(Cursor::new(genesis_json)).expect("failed to load Ethereum genesis file");
 
-    StorageContext::enter(cas, &mut mkvs, untrusted_local, || {
+    StorageContext::enter(&mut mkvs, untrusted_local, || {
         // Initialize state with genesis block.
         spec.ensure_db_good(
             Box::new(ThreadLocalMKVS::new(Context::background())),
@@ -218,11 +216,10 @@ fn main() {
         let mut commit = |state: &mut State<_>| {
             state.commit().unwrap();
 
-            let (write_log, state_root) =
-                StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
-                    mkvs.commit(Context::background())
-                        .expect("mkvs commit must succeed")
-                });
+            let (write_log, state_root) = StorageContext::with_current(|mkvs, _untrusted_local| {
+                mkvs.commit(Context::background())
+                    .expect("mkvs commit must succeed")
+            });
 
             // Push to storage.
             let mut request = storage::ApplyRequest::new();

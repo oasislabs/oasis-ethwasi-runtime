@@ -24,19 +24,19 @@ impl ThreadLocalMKVS {
 
 impl ethcore::mkvs::MKVS for ThreadLocalMKVS {
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-        StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
+        StorageContext::with_current(|mkvs, _untrusted_local| {
             mkvs.get(Context::create_child(&self.ctx), key)
         })
     }
 
     fn insert(&mut self, key: &[u8], value: &[u8]) -> Option<Vec<u8>> {
-        StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
+        StorageContext::with_current(|mkvs, _untrusted_local| {
             mkvs.insert(Context::create_child(&self.ctx), key, value)
         })
     }
 
     fn remove(&mut self, key: &[u8]) -> Option<Vec<u8>> {
-        StorageContext::with_current(|_cas, mkvs, _untrusted_local| {
+        StorageContext::with_current(|mkvs, _untrusted_local| {
             mkvs.remove(Context::create_child(&self.ctx), key)
         })
     }

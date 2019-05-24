@@ -11,9 +11,8 @@ use ekiden_runtime::{
     executor::Executor,
     runtime_context,
     storage::{
-        cas::MemoryCAS,
         mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
-        StorageContext, CAS,
+        StorageContext,
     },
     transaction::{dispatcher::BatchHandler, Context as TxnContext},
 };
@@ -56,8 +55,6 @@ pub struct Client {
     pub gas_price: U256,
     /// Header.
     pub header: Header,
-    /// In-memory CAS.
-    pub cas: Arc<CAS>,
     /// In-memory MKVS.
     pub mkvs: Option<UrkelTree>,
     /// Key manager client.
@@ -69,14 +66,13 @@ pub struct Client {
 impl Client {
     pub fn new() -> Self {
         let km_client = Arc::new(ekiden_keymanager_client::mock::MockClient::new());
-        let cas = Arc::new(MemoryCAS::new());
         let mut mkvs = UrkelTree::make()
             .new(IoContext::background(), Box::new(NoopReadSyncer {}))
             .unwrap();
 
         // Initialize genesis.
         let untrusted_local = Arc::new(MemoryKeyValue::new());
-        StorageContext::enter(cas.clone(), &mut mkvs, untrusted_local, || {
+        StorageContext::enter(&mut mkvs, untrusted_local, || {
             genesis::SPEC
                 .ensure_db_good(
                     Box::new(ThreadLocalMKVS::new(IoContext::background())),
@@ -102,7 +98,6 @@ impl Client {
             ephemeral_key: ContractKey::generate_mock(),
             gas_price: U256::from(1000000000),
             gas_limit: U256::from(1000000),
-            cas,
             mkvs: Some(mkvs),
             km_client,
             header: Header {
@@ -125,7 +120,7 @@ impl Client {
         let handler = EthereumBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
-        let result = StorageContext::enter(self.cas.clone(), &mut mkvs, untrusted_local, || {
+        let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
             handler.start_batch(&mut ctx);
             let result = f(self, &mut ctx);
             handler.end_batch(&mut ctx);
