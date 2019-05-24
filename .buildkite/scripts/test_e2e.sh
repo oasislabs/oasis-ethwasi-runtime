@@ -61,8 +61,12 @@ scenario_basic() {
     run_compute_node 3 ${runtime}
     run_compute_node 4 ${runtime}
 
+    # Initialize storage nodes.
+    run_storage_node 1
+    run_storage_node 2
+
     # Wait for all compute nodes to start.
-    wait_nodes 5 # 4 + storage
+    wait_nodes 6 # 4 + 2 storage
 
     # Advance epoch to elect a new committee.
     set_epoch 1
