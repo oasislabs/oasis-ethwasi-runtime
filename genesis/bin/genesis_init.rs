@@ -12,7 +12,6 @@ use std::{fs::File, sync::Arc};
 
 use clap::{crate_authors, crate_version, App, Arg};
 use ekiden_runtime::storage::{
-    cas::MemoryCAS,
     mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
     StorageContext,
 };
@@ -46,13 +45,12 @@ fn main() {
     let spec = Spec::load(eth_genesis).expect("failed to load Ethereum genesis file");
 
     // Populate MKVS with state required at genesis.
-    let cas = Arc::new(MemoryCAS::new());
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = UrkelTree::make()
         .new(Context::background(), Box::new(NoopReadSyncer {}))
         .unwrap();
 
-    StorageContext::enter(cas, &mut mkvs, untrusted_local, || {
+    StorageContext::enter(&mut mkvs, untrusted_local, || {
         spec.ensure_db_good(
             Box::new(ThreadLocalMKVS::new(Context::background())),
             NullBackend,
