@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate assert_matches;
 extern crate ethcore;
 extern crate ethereum_types;
 extern crate ethkey;
@@ -5,6 +7,7 @@ extern crate hex;
 extern crate runtime_ethereum;
 extern crate runtime_ethereum_common;
 
+use ekiden_runtime::transaction::dispatcher::CheckOnlySuccess;
 use ethcore::{
     rlp,
     transaction::{Action, Transaction as EthcoreTransaction},
@@ -119,7 +122,7 @@ fn test_signature_verification() {
         data: vec![],
     }
     .fake_sign(client.keypair.address());
-    let bad_result = client.execute_batch(|_client, ctx| {
+    let check_should_fail = client.check_batch(|_client, ctx| {
         methods::execute::ethereum_transaction(&rlp::encode(&bad_sig).into_vec(), ctx)
     });
     let good_sig = EthcoreTransaction {
@@ -131,9 +134,24 @@ fn test_signature_verification() {
         data: vec![],
     }
     .sign(client.keypair.secret(), None);
-    let good_result = client.execute_batch(|_client, ctx| {
+    let check_should_pass = client.check_batch(|_client, ctx| {
         methods::execute::ethereum_transaction(&rlp::encode(&good_sig).into_vec(), ctx)
     });
-    assert!(bad_result.is_err());
-    assert!(good_result.is_ok());
+
+    // Expected result: Err(InvalidSignature).
+    match check_should_fail {
+        Err(error) => {
+            let ethkey_error = error.downcast::<ethkey::Error>().unwrap();
+            assert_matches!(ethkey_error, ethkey::Error::InvalidSignature);
+        }
+        _ => assert!(false),
+    }
+
+    // Expected result: Err(CheckOnlySuccess).
+    match check_should_pass {
+        Err(error) => {
+            assert!(error.downcast_ref::<CheckOnlySuccess>().is_some());
+        }
+        _ => assert!(false),
+    }
 }
