@@ -1,5 +1,8 @@
 //! Methods exported to Ekiden clients.
-use ekiden_runtime::{runtime_context, transaction::Context as TxnContext};
+use ekiden_runtime::{
+    runtime_context,
+    transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
+};
 use ethcore::{
     rlp,
     transaction::{SignedTransaction, UnverifiedTransaction},
@@ -52,6 +55,11 @@ pub mod execute {
     pub fn ethereum_transaction(tx: &Vec<u8>, ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
         // Perform transaction checks.
         let tx = super::check::ethereum_transaction(tx, ctx)?;
+
+        // If this is a check txn request, return success.
+        if ctx.check_only {
+            return Err(CheckOnlySuccess.into());
+        }
 
         let ectx = runtime_context!(ctx, BlockContext);
 

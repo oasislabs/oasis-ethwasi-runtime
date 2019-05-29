@@ -49,6 +49,7 @@ slog = "2.4.1"
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 [dev-dependencies]
+assert_matches = "1.3.0"
 time = "0.1"
 
 [features]

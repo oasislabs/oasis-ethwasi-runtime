@@ -110,6 +110,28 @@ impl Client {
         }
     }
 
+    pub fn check_batch<F, R>(&mut self, f: F) -> R
+    where
+        F: FnOnce(&mut Self, &mut TxnContext) -> R,
+    {
+        let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
+        let header = self.header.clone();
+        let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, true);
+        let handler = EthereumBatchHandler::new(self.km_client.clone());
+        let untrusted_local = Arc::new(MemoryKeyValue::new());
+
+        let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
+            handler.start_batch(&mut ctx);
+            let result = f(self, &mut ctx);
+            handler.end_batch(&mut ctx);
+
+            result
+        });
+        self.mkvs = Some(mkvs);
+
+        result
+    }
+
     pub fn execute_batch<F, R>(&mut self, f: F) -> R
     where
         F: FnOnce(&mut Self, &mut TxnContext) -> R,
