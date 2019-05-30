@@ -552,7 +552,7 @@ impl EthereumBlock {
     ) -> impl Future<Item = impl Iterator<Item = TxnCall>, Error = Error> {
         self.client
             .txn_client()
-            .get_transactions(self.snapshot.block.header.input_hash)
+            .get_transactions(self.snapshot.block.header.io_root)
             .map(|txns| {
                 txns.0.into_iter().filter_map(|txn| {
                     let txn: TxnCall = serde_cbor::from_slice(&txn).ok()?;
@@ -594,8 +594,9 @@ impl EthereumBlock {
                 author: Default::default(),
                 miner: Default::default(),
                 state_root: header.state_root.as_ref().into(),
-                transactions_root: header.input_hash.as_ref().into(),
-                receipts_root: header.output_hash.as_ref().into(),
+                // TODO: Transactions/receipts roots.
+                transactions_root: Default::default(),
+                receipts_root: Default::default(),
                 number: Some(header.round.into()),
                 // TODO: Gas used.
                 gas_used: Default::default(),
