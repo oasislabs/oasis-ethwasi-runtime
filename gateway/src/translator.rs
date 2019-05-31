@@ -594,7 +594,6 @@ impl EthereumBlock {
                 author: Default::default(),
                 miner: Default::default(),
                 state_root: header.state_root.as_ref().into(),
-                // TODO: Transactions/receipts roots.
                 transactions_root: Default::default(),
                 receipts_root: Default::default(),
                 number: Some(header.round.into()),
