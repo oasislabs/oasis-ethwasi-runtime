@@ -45,6 +45,7 @@ fn main() {
             None,
             protocol.clone(),
             rak.clone(),
+            1024, // TODO: How big should this cache be?
         ));
 
         txn.set_batch_handler(EthereumBatchHandler::new(km_client));

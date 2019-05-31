@@ -188,7 +188,7 @@ impl Listener for ChainNotificationHandler {
 
     fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>) {
         for &(ref subscriber, ref filter) in self.tx_subscribers.read().values() {
-            let mut filter = filter.clone();
+            let filter = filter.clone();
 
             if !filter.matches(entry) {
                 continue;

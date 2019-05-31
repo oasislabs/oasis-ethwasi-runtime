@@ -113,6 +113,7 @@ pub fn start(
         runtime_id,
         None,
         node.channel(),
+        1024, // TODO: How big should this cache be?
     ));
 
     run::execute(
