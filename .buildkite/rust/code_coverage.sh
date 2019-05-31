@@ -62,6 +62,9 @@ export CARGO_TARGET_DIR=/tmp/coverage_target
 # https://github.com/xd009642/tarpaulin/issues/35
 export RAYON_NUM_THREADS=1
 
+# Name the current commit so Tarpaulin can detect it correctly.
+git checkout -B ${BUILDKITE_BRANCH}
+
 # Calculate coverage
 set +x
 cargo tarpaulin \
