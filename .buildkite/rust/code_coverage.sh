@@ -65,7 +65,7 @@ export RAYON_NUM_THREADS=1
 # Name the current commit so Tarpaulin can detect it correctly.
 git checkout -B ${BUILDKITE_BRANCH}
 
-# Calculate coverage
+# Calculate coverage.
 set +x
 cargo tarpaulin \
   --packages runtime-ethereum \
