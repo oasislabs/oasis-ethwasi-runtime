@@ -115,18 +115,16 @@ impl Oasis for OasisClient {
         )
     }
 
-    fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<RpcExecutionPayload> {
-        OASIS_RPC_CALLS
-            .with(&labels! {"call" => "sendRawTransaction",})
-            .inc();
+    fn invoke(&self, raw: Bytes) -> BoxFuture<RpcExecutionPayload> {
+        OASIS_RPC_CALLS.with(&labels! {"call" => "invoke",}).inc();
         let timer = OASIS_RPC_CALL_TIME
-            .with(&labels! {"call" => "sendRawTransaction",})
+            .with(&labels! {"call" => "invoke",})
             .start_timer();
 
         if log_enabled!(log::LogLevel::Debug) {
-            debug!(self.logger, "oasis_sendRawTransaction"; "data" => ?raw);
+            debug!(self.logger, "oasis_invoke"; "data" => ?raw);
         } else {
-            info!(self.logger, "oasis_sendRawTransaction")
+            info!(self.logger, "oasis_invoke")
         }
 
         Box::new(

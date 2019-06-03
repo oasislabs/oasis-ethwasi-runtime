@@ -17,9 +17,10 @@ build_rpc_trait! {
         #[rpc(name = "oasis_getExpiry")]
         fn get_expiry(&self, H160, Trailing<BlockNumber>) -> BoxFuture<u64>;
 
-        /// Sends a signed transaction, returns its output.
-        #[rpc(name = "oasis_sendRawTransaction")]
-        fn send_raw_transaction(&self, Bytes) -> BoxFuture<RpcExecutionPayload>;
+        /// Sends a signed transaction, and returns the transaction hash,
+        /// status code and return value.
+        #[rpc(name = "oasis_invoke")]
+        fn invoke(&self, Bytes) -> BoxFuture<RpcExecutionPayload>;
     }
 }
 
