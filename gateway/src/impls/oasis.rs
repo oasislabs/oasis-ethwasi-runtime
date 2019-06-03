@@ -21,7 +21,7 @@ use prometheus::{
 use slog::{debug, info, Logger};
 
 use crate::{
-    traits::oasis::{Oasis, RpcPublicKeyPayload},
+    traits::oasis::{Oasis, RpcExecutionPayload, RpcPublicKeyPayload},
     translator::Translator,
     util::{block_number_to_id, execution_error, jsonrpc_error},
 };
@@ -115,7 +115,7 @@ impl Oasis for OasisClient {
         )
     }
 
-    fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<Bytes> {
+    fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<RpcExecutionPayload> {
         OASIS_RPC_CALLS
             .with(&labels! {"call" => "sendRawTransaction",})
             .inc();
@@ -132,11 +132,15 @@ impl Oasis for OasisClient {
         Box::new(
             self.translator
                 .send_raw_transaction(raw.into())
-                .map(|(_hash, result)| result.output.into())
                 .map_err(execution_error)
-                .then(move |result| {
+                .then(move |maybe_result| {
                     drop(timer);
-                    result
+
+                    maybe_result.map(|(hash, result)| RpcExecutionPayload {
+                        transaction_hash: hash.into(),
+                        status_code: (result.status_code as u64).into(),
+                        output: result.output.into(),
+                    })
                 }),
         )
     }

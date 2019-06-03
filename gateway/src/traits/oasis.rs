@@ -3,7 +3,7 @@ use ethereum_types::Address;
 use jsonrpc_core::BoxFuture;
 use jsonrpc_macros::Trailing;
 
-use parity_rpc::v1::types::{BlockNumber, Bytes, H160};
+use parity_rpc::v1::types::{BlockNumber, Bytes, H160, H256, U64};
 
 build_rpc_trait! {
     pub trait Oasis {
@@ -19,13 +19,25 @@ build_rpc_trait! {
 
         /// Sends a signed transaction, returns its output.
         #[rpc(name = "oasis_sendRawTransaction")]
-        fn send_raw_transaction(&self, Bytes) -> BoxFuture<Bytes>;
+        fn send_raw_transaction(&self, Bytes) -> BoxFuture<RpcExecutionPayload>;
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct RpcExecutionPayload {
+    /// Transaction hash.
+    #[serde(rename = "transactionHash")]
+    pub transaction_hash: H256,
+    /// Status code.
+    #[serde(rename = "status")]
+    pub status_code: U64,
+    /// Return value.
+    pub output: Bytes,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct RpcPublicKeyPayload {
-    /// Public key of the contract
+    /// Public key of the contract.
     pub public_key: Bytes,
     /// Time at which the key expires.
     pub timestamp: u64,
