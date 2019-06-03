@@ -12,10 +12,14 @@ build_rpc_trait! {
         #[rpc(name = "oasis_getPublicKey")]
         fn public_key(&self, Address) -> BoxFuture<Option<RpcPublicKeyPayload>>;
 
-        /// Get expiration timestamp for a contract.
+        /// Gets the expiration timestamp for a contract.
         /// The value is a Unix timestamp (seconds since the epoch).
         #[rpc(name = "oasis_getExpiry")]
         fn get_expiry(&self, H160, Trailing<BlockNumber>) -> BoxFuture<u64>;
+
+        /// Sends a signed transaction, returns its output.
+        #[rpc(name = "oasis_sendRawTransaction")]
+        fn send_raw_transaction(&self, Bytes) -> BoxFuture<Bytes>;
     }
 }
 

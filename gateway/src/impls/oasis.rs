@@ -18,12 +18,12 @@ use prometheus::{
     __register_counter_vec, histogram_opts, labels, opts, register_histogram_vec,
     register_int_counter_vec, HistogramVec, IntCounterVec,
 };
-use slog::{info, Logger};
+use slog::{debug, info, Logger};
 
 use crate::{
     traits::oasis::{Oasis, RpcPublicKeyPayload},
     translator::Translator,
-    util::{block_number_to_id, jsonrpc_error},
+    util::{block_number_to_id, execution_error, jsonrpc_error},
 };
 
 // Metrics.
@@ -112,6 +112,32 @@ impl Oasis for OasisClient {
                 .get_block_unwrap(block_number_to_id(num))
                 .and_then(move |blk| Ok(blk.state()?.storage_expiry(&address)?.into()))
                 .map_err(jsonrpc_error),
+        )
+    }
+
+    fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<Bytes> {
+        OASIS_RPC_CALLS
+            .with(&labels! {"call" => "sendRawTransaction",})
+            .inc();
+        let timer = OASIS_RPC_CALL_TIME
+            .with(&labels! {"call" => "sendRawTransaction",})
+            .start_timer();
+
+        if log_enabled!(log::LogLevel::Debug) {
+            debug!(self.logger, "oasis_sendRawTransaction"; "data" => ?raw);
+        } else {
+            info!(self.logger, "oasis_sendRawTransaction")
+        }
+
+        Box::new(
+            self.translator
+                .send_raw_transaction(raw.into())
+                .map(|(_hash, result)| result.output.into())
+                .map_err(execution_error)
+                .then(move |result| {
+                    drop(timer);
+                    result
+                }),
         )
     }
 }
