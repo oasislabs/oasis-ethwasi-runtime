@@ -582,7 +582,7 @@ impl Eth for EthClient {
         Box::new(
             self.translator
                 .send_raw_transaction(raw.into())
-                .map(Into::into)
+                .map(|(hash, _result)| hash.into())
                 .map_err(execution_error)
                 .then(move |result| {
                     drop(timer);

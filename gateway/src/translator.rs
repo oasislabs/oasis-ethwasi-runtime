@@ -191,10 +191,13 @@ impl Translator {
     }
 
     /// Submit a raw Ethereum transaction to the chain.
-    pub fn send_raw_transaction(&self, raw: Vec<u8>) -> impl Future<Item = H256, Error = Error> {
+    pub fn send_raw_transaction(
+        &self,
+        raw: Vec<u8>,
+    ) -> impl Future<Item = (H256, ExecutionResult), Error = Error> {
         let client = self.client.clone();
 
-        future::lazy(move || -> BoxFuture<H256> {
+        future::lazy(move || -> BoxFuture<(H256, ExecutionResult)> {
             // TODO: Perform more checks.
             let decoded: UnverifiedTransaction = match rlp::decode(&raw) {
                 Ok(decoded) => decoded,
@@ -204,7 +207,7 @@ impl Translator {
             Box::new(
                 client
                     .ethereum_transaction(ByteBuf::from(raw))
-                    .map(move |_result| decoded.hash()),
+                    .map(move |result| (decoded.hash(), result)),
             )
         })
     }
