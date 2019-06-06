@@ -17,8 +17,8 @@ use std::sync::Arc;
 use serde_bytes::ByteBuf;
 
 use ekiden_runtime::{
-    common::runtime::RuntimeId, rak::RAK, register_runtime_txn_methods, Protocol, RpcDispatcher,
-    TxnDispatcher,
+    common::runtime::RuntimeId, rak::RAK, register_runtime_txn_methods, Protocol, RpcDemux,
+    RpcDispatcher, TxnDispatcher,
 };
 use runtime_ethereum::block::EthereumBatchHandler;
 #[cfg(target_env = "sgx")]
@@ -29,6 +29,7 @@ fn main() {
     // Initializer.
     let init = |protocol: &Arc<Protocol>,
                 rak: &Arc<RAK>,
+                _rpc_demux: &mut RpcDemux,
                 _rpc: &mut RpcDispatcher,
                 txn: &mut TxnDispatcher| {
         {
