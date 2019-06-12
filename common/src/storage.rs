@@ -41,7 +41,7 @@ impl ethcore::mkvs::MKVS for ThreadLocalMKVS {
         })
     }
 
-    fn boxed_clone(&self) -> Box<ethcore::mkvs::MKVS> {
+    fn boxed_clone(&self) -> Box<dyn ethcore::mkvs::MKVS> {
         Box::new(ThreadLocalMKVS {
             ctx: self.ctx.clone(),
         })
