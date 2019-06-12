@@ -41,13 +41,13 @@ pub struct ConfidentialCtx {
     /// a confidnetial contract at any point in the call hierarchy.
     pub activated: bool,
     /// Key manager client.
-    pub key_manager: Arc<KeyManagerClient>,
+    pub key_manager: Arc<dyn KeyManagerClient>,
     /// IO context (needed for the key manager client).
     pub io_ctx: Arc<Context>,
 }
 
 impl ConfidentialCtx {
-    pub fn new(io_ctx: Arc<Context>, key_manager: Arc<KeyManagerClient>) -> Self {
+    pub fn new(io_ctx: Arc<Context>, key_manager: Arc<dyn KeyManagerClient>) -> Self {
         Self {
             peer_public_key: None,
             contract: None,

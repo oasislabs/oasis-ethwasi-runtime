@@ -503,8 +503,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "deoxysii"
-version = "0.1.0"
-source = "git+https://github.com/oasislabs/deoxysii-rust#42e8215d877ee3e867bc586b6f9535c12506b534"
+version = "0.2.0"
+source = "git+https://github.com/oasislabs/deoxysii-rust#4687841cc6bd090e39a5f2908f34f49d64046200"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "subtle 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -558,7 +558,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ekiden-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4978645eb19f8892cb241bf0bf1b5c155ea9ca15"
+source = "git+https://github.com/oasislabs/ekiden#fb9da3747080cd3c073ea42fbe97775562c3ba6e"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -581,7 +581,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-api"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4978645eb19f8892cb241bf0bf1b5c155ea9ca15"
+source = "git+https://github.com/oasislabs/ekiden#fb9da3747080cd3c073ea42fbe97775562c3ba6e"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -596,7 +596,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4978645eb19f8892cb241bf0bf1b5c155ea9ca15"
+source = "git+https://github.com/oasislabs/ekiden#fb9da3747080cd3c073ea42fbe97775562c3ba6e"
 dependencies = [
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-api 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
@@ -611,14 +611,14 @@ dependencies = [
 [[package]]
 name = "ekiden-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4978645eb19f8892cb241bf0bf1b5c155ea9ca15"
+source = "git+https://github.com/oasislabs/ekiden#fb9da3747080cd3c073ea42fbe97775562c3ba6e"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "deoxysii 0.1.0 (git+https://github.com/oasislabs/deoxysii-rust)",
+ "deoxysii 0.2.0 (git+https://github.com/oasislabs/deoxysii-rust)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "intrusive-collections 0.7.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -654,7 +654,7 @@ dependencies = [
 [[package]]
 name = "ekiden-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4978645eb19f8892cb241bf0bf1b5c155ea9ca15"
+source = "git+https://github.com/oasislabs/ekiden#fb9da3747080cd3c073ea42fbe97775562c3ba6e"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3845,7 +3845,7 @@ dependencies = [
 "checksum crunchy 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7a81dae078cea95a014a339291cec439d2f232ebe854a9d672b796c6afafa9b7"
 "checksum curve25519-dalek 1.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "750226d75fc2f5a8daec6e7477624e258674023eb73d8d647f63b943ca182a4a"
 "checksum custom_derive 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "ef8ae57c4978a2acd8b869ce6b9ca1dfe817bff704c220209fdef2c0b75a01b9"
-"checksum deoxysii 0.1.0 (git+https://github.com/oasislabs/deoxysii-rust)" = "<none>"
+"checksum deoxysii 0.2.0 (git+https://github.com/oasislabs/deoxysii-rust)" = "<none>"
 "checksum derive-new 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)" = "6ca414e896ae072546f4d789f452daaecf60ddee4c9df5dc6d5936d769e3d87c"
 "checksum digest 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e5b29bf156f3f4b3c4f610a25ff69370616ae6e0657d416de22645483e72af0a"
 "checksum digest 0.7.6 (registry+https://github.com/rust-lang/crates.io-index)" = "03b072242a8cbaf9c145665af9d250c59af3b958f83ed6824e13533cf76d5b90"

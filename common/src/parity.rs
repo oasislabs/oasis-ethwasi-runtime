@@ -12,11 +12,11 @@ use hashdb::HashDB;
 pub struct NullBackend;
 
 impl ethcore::state::backend::Backend for NullBackend {
-    fn as_hashdb(&self) -> &HashDB {
+    fn as_hashdb(&self) -> &dyn HashDB {
         unimplemented!("HashDB should never be used");
     }
 
-    fn as_hashdb_mut(&mut self) -> &mut HashDB {
+    fn as_hashdb_mut(&mut self) -> &mut dyn HashDB {
         unimplemented!("HashDB should never be used");
     }
 
