@@ -86,7 +86,7 @@ impl Oasis for OasisClient {
 
                     maybe_payload.map(|pk_payload| RpcPublicKeyPayload {
                         public_key: Bytes::from(pk_payload.key.as_ref().to_vec()),
-                        timestamp: pk_payload.timestamp.unwrap_or(0),
+                        checksum: Bytes::from(pk_payload.checksum),
                         signature: Bytes::from(pk_payload.signature.as_ref().to_vec()),
                     })
                 }),

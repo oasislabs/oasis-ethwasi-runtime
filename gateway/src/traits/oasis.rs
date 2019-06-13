@@ -40,8 +40,8 @@ pub struct RpcExecutionPayload {
 pub struct RpcPublicKeyPayload {
     /// Public key of the contract.
     pub public_key: Bytes,
-    /// Time at which the key expires.
-    pub timestamp: u64,
+    /// Checksum of the key manager state.
+    pub checksum: Bytes,
     /// Signature from the key manager authenticating the public key,
     /// i.e., Sign(ssk, (pk, t).
     pub signature: Bytes,
