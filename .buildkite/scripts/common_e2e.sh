@@ -14,7 +14,7 @@ run_gateway() {
     let prometheus_port=id+3000
 
     ${RUNTIME_GATEWAY} \
-        --node-address unix:${EKIDEN_VALIDATOR_SOCKET} \
+        --node-address unix:${EKIDEN_CLIENT_SOCKET} \
         --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port ${http_port} \
         --ws-port ${ws_port} 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/gateway-$id.log | sed "s/^/[gateway-${id}] /" &

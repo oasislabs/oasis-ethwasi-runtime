@@ -216,6 +216,13 @@ impl EthConfidentialCtx for ConfidentialCtx {
     fn create_long_term_public_key(&mut self, contract: Address) -> Result<(Vec<u8>, Vec<u8>)> {
         let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
         let pk = Executor::with_current(|executor| {
+            // Fetching the keys for the contract, will derive a new key if
+            // one does not exist yet.  With the current key manager design,
+            // there's also no notion of a short term key or long term key,
+            // there is just the keys.
+            //
+            // TODO: Just a get_public_key call will suffice for actual key
+            // manager, but the mock one requires 2 calls still (ekiden#1814).
             executor
                 .block_on(
                     self.key_manager
@@ -227,7 +234,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
             executor
                 .block_on(
                     self.key_manager
-                        .get_long_term_public_key(Context::create_child(&self.io_ctx), contract_id),
+                        .get_public_key(Context::create_child(&self.io_ctx), contract_id),
                 )
                 .context("failed to fetch long term key")
                 .map_err(|err| Error::Confidential(err.to_string()))?
@@ -268,7 +275,7 @@ mod tests {
         let public_key = PublicKey::default();
         let private_key = PrivateKey::default();
         let state_key = StateKey::default();
-        let contract_key = ContractKey::new(public_key, private_key, state_key);
+        let contract_key = ContractKey::new(public_key, private_key, state_key, vec![]);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let address = Address::default();
         let ctx = ConfidentialCtx {
@@ -294,7 +301,7 @@ mod tests {
         let public_key = PublicKey::default();
         let private_key = PrivateKey::default();
         let state_key = StateKey::default();
-        let contract_key = ContractKey::new(public_key, private_key, state_key);
+        let contract_key = ContractKey::new(public_key, private_key, state_key, vec![]);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let address = Address::default();
         assert_eq!(
@@ -329,7 +336,7 @@ mod tests {
         let public_key = PublicKey::default();
         let private_key = PrivateKey::default();
         let state_key = StateKey::default();
-        let contract_key = ContractKey::new(public_key, private_key, state_key);
+        let contract_key = ContractKey::new(public_key, private_key, state_key, vec![]);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let address = Address::default();
         let mut ctx = ConfidentialCtx {
