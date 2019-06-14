@@ -21,7 +21,9 @@ context=$3
 ###############
 # Optional args
 ###############
-base_image_tag=${4:-latest}
+#base_image_tag=${4:-latest}
+# hardcoded kryha base image
+base_image_tag=3da9bcc332b4cb04ebf13d36ca90e7487959a512-testing
 
 #################
 # Local variables

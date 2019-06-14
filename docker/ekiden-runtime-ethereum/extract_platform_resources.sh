@@ -11,7 +11,9 @@ set -euxo pipefail
 # Required args
 ###############
 dst_dir=$1
-base_image_tag=${2:-latest}
+#base_image_tag=${2:-latest}
+# hardcoded kryha base image
+base_image_tag=3da9bcc332b4cb04ebf13d36ca90e7487959a512-testing
 
 mkdir -p "$dst_dir"
 
