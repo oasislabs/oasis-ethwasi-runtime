@@ -28,7 +28,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_TARGET_DIR=/tmp/artifacts"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
-      - "EKIDEN_BRANCH=peterjgilbert/test"
+      - "EKIDEN_BRANCH=kryha"
       - "E2E_TESTS_BRANCH=kryha"
     propagate-environment: true
     unconfined: true
@@ -163,7 +163,7 @@ steps:
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
     async: true
-    branches: "master beta"
+    branches: "master beta kryha"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
