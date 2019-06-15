@@ -23,7 +23,7 @@ context=$3
 ###############
 #base_image_tag=${4:-latest}
 # hardcoded kryha base image
-base_image_tag=a686c03603e60385ea6c2c26fe50b33eb1ce55a0-testing
+base_image_tag=master-20190426120905-testing
 
 #################
 # Local variables
