@@ -105,6 +105,28 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  - wait
+
+  # End-to-end tests
+  - label: End-to-end tests (%n)
+    parallelism: 6
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/scripts/download_ekiden_test_scripts.sh
+      - rm -rf tests/e2e-tests
+      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
+    timeout_in_minutes: 25
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - wait
+
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
     async: true
