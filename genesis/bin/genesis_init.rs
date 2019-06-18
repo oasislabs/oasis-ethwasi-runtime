@@ -47,6 +47,7 @@ fn main() {
     // Populate MKVS with state required at genesis.
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = UrkelTree::make()
+        .with_capacity(0, 0)
         .new(Context::background(), Box::new(NoopReadSyncer {}))
         .unwrap();
 
