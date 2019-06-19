@@ -48,3 +48,9 @@ download_runtime_sgx() {
 	local out_dir=$1
 	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build runtime" runtime-ethereum.sgxs $out_dir
 }
+
+download_developer_gateway() {
+	local out_dir=$1
+	.buildkite/scripts/download_artifact.sh developer-gateway $DEVELOPER_GATEWAY_BRANCH "Build" developer-gateway $out_dir
+	chmod +x $out_dir/developer-gateway
+}

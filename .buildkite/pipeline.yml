@@ -29,7 +29,8 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
       - "EKIDEN_BRANCH=master"
-      - "E2E_TESTS_BRANCH=master"
+      - "E2E_TESTS_BRANCH=armani/client"
+      - "DEVELOPER_GATEWAY_BRANCH=armani/upload"
     propagate-environment: true
     unconfined: true
 
