@@ -24,18 +24,18 @@ jsonrpc-macros = { git = "https://github.com/paritytech/jsonrpc.git", branch = "
 jsonrpc-pubsub = { git = "https://github.com/paritytech/jsonrpc.git", branch = "parity-1.11" }
 lazy_static = "1.3.0"
 wasmi = "0.4"
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+ethcore-transaction = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-kvdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-mem = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+rlp_compress = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+parity-reactor = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+parity-rpc = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+kvdb = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+mem = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "clementfung/wasmer" }
 
 ## Common functionality between runtime and gateway
 runtime-ethereum-common = { path = "../common" }
