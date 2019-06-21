@@ -334,8 +334,9 @@ impl Translator {
         // Decode logs from resulting transactions.
         let filter = f;
         let logger = self.logger.clone();
-        let logs = txns.map(move |txns| {
-            txns.into_iter().flat_map(|txn| {
+        let logs = txns
+            .map(move |txns| {
+                txns.into_iter().flat_map(|txn| {
                 // This should not happen as such transactions should not emit tags.
                 if txn.input.method != METHOD_ETH_TXN {
                     error!(logger, "Query returned non-ethereum transaction";
@@ -412,7 +413,12 @@ impl Translator {
                     _ => vec![],
                 }
             }).collect()
-        });
+            })
+            .and_then(|logs: Vec<LocalizedLogEntry>| {
+                let mut logs = logs;
+                logs.sort_by(|a, b| a.block_number.partial_cmp(&b.block_number).unwrap());
+                future::ok(logs)
+            });
 
         Box::new(logs)
     }
