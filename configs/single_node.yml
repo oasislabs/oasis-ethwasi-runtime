@@ -8,6 +8,14 @@
 #
 datadir: /tmp/runtime-ethereum-single_node
 
+# Debug.
+#
+# Enable test keys, and the built in test entity to reduce config maintenance
+# burden.
+debug:
+  allow_test_keys: true
+  test_entity: true
+
 # Logging.
 # Per-module log levels are defined below. If you prefer just one unified log level, you can use:
 # log:
@@ -43,22 +51,21 @@ worker:
     enabled: true
   txnscheduler:
     enabled: true
+  merge:
+    enabled: true
   client:
     port: 9200
     addresses:
       - "127.0.0.1:9200"
   p2p:
     port: 9100
-
-# Key manager configuration.
-keymanager:
-  enabled: true
-  loader: .ekiden/target/debug/ekiden-runtime-loader
-  runtime: .ekiden/target/debug/ekiden-keymanager-runtime
-  port: 9003
-  client:
-    address: "127.0.0.1:9003"
-    certificate: /tmp/runtime-ethereum-single_node/tls_identity_cert.pem
+  keymanager:
+    enabled: true
+    may_generate: true
+    runtime:
+      id: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      binary: .ekiden/target/debug/ekiden-keymanager-runtime
+      loader: .ekiden/target/debug/ekiden-runtime-loader
 
 # Epochtime backend.
 epochtime:
@@ -95,6 +102,10 @@ roothash:
 tendermint:
   consensus:
     timeout_commit: 1s
+
+# Key manager backend configuration.
+keymanager:
+  backend: tendermint
 
 # Client configuration.
 client:
