@@ -9,13 +9,13 @@ license = "GPL-3.0"
 elastic-array = "0.10"
 log = "0.3"
 # rand = "0.4"
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-triehash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-memorydb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
+triehash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
+memorydb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
 
 [dev-dependencies]
-trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/feature/mkvs_keys" }
