@@ -64,7 +64,7 @@ fn tx_contract_storage_encryption_no_constructor() {
     // Will error if not encrypted.
     let ctx_decrypted_storage_counter = client
         .key_manager_confidential_ctx(contract.clone())
-        .decrypt_storage(encrypted_storage_counter.clone())
+        .decrypt_storage_value(encrypted_storage_counter.clone())
         .unwrap();
     // Encrypted storage's length should be expanded from the original value.
     assert_eq!(encrypted_storage_counter.len(), 63);
@@ -112,7 +112,7 @@ fn test_deploy_contract_storage_encryption_with_constructor() {
     // Will error if not encrypted.
     let ctx_decrypted_storage_counter = client
         .key_manager_confidential_ctx(contract.clone())
-        .decrypt_storage(encrypted_storage_counter.clone())
+        .decrypt_storage_value(encrypted_storage_counter.clone())
         .unwrap();
     // Encrypted storage's length should be expanded from the original value.
     assert_eq!(encrypted_storage_counter.len(), 63);

@@ -243,7 +243,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(ciphertext)
     }
 
-    fn decrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>> {
+    fn decrypt_storage_value(&self, data: Vec<u8>) -> Result<Vec<u8>> {
         let contract_key = &self
             .contract
             .as_ref()
