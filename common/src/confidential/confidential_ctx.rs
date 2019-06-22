@@ -283,6 +283,7 @@ mod tests {
     #[test]
     fn test_decrypt_with_no_contract_key() {
         let ctx = ConfidentialCtx::new(
+            H256::default(),
             Context::background().freeze(),
             Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
         );
