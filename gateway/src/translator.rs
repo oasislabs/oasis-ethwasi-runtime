@@ -243,8 +243,14 @@ impl Translator {
                         author: Default::default(),
                         timestamp: blk.snapshot.block.header.timestamp,
                         difficulty: Default::default(),
-                        // TODO: Get last hashes.
-                        last_hashes: Arc::new(vec![]),
+                        // TODO: Get 256 last hashes.
+                        last_hashes: Arc::new(vec![blk
+                            .snapshot
+                            .block
+                            .header
+                            .previous_hash
+                            .as_ref()
+                            .into()]),
                         gas_used: Default::default(),
                         gas_limit: U256::max_value(),
                     };

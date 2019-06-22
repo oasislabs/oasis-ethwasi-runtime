@@ -63,8 +63,8 @@ impl BatchHandler for EthereumBatchHandler {
             timestamp: ctx.header.timestamp,
             difficulty: Default::default(),
             gas_limit: *genesis::GAS_LIMIT,
-            // TODO: Get last_hashes.
-            last_hashes: Arc::new(vec![]),
+            // TODO: Get 256 last_hashes.
+            last_hashes: Arc::new(vec![ctx.header.previous_hash.as_ref().into()]),
             gas_used: Default::default(),
         };
 
