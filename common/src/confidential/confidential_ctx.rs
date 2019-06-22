@@ -177,7 +177,12 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(decryption.plaintext)
     }
 
-    fn encrypt_storage(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
+    fn encrypt_storage_key(&self, data: Vec<u8>) -> Result<Vec<u8>> {
+        // TODO: encrypt with AES-ECB
+        Ok(data)
+    }
+
+    fn encrypt_storage_value(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
         let contract_key = &self
             .contract
             .as_ref()

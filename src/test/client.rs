@@ -394,7 +394,7 @@ impl Client {
         let km_confidential_ctx = self.key_manager_confidential_ctx(contract);
         keccak(
             &km_confidential_ctx
-                .encrypt_storage(storage_key.to_vec())
+                .encrypt_storage_key(storage_key.to_vec())
                 .unwrap(),
         )
     }
