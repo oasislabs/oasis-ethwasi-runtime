@@ -20,9 +20,9 @@ runtime-ethereum-api = { path = "./api" }
 runtime-ethereum-common = { path = "./common" }
 
 # Ekiden.
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
+ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
 
 # Parity.
 common-types = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
@@ -46,7 +46,7 @@ io-context = "0.2.0"
 slog = "2.4.1"
 
 [build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
 
 [dev-dependencies]
 assert_matches = "1.3.0"

@@ -5,8 +5,8 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 # Ekiden.
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
 
 # Parity.
 ethcore = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
