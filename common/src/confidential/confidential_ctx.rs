@@ -193,8 +193,22 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn encrypt_storage_key(&self, data: Vec<u8>) -> Result<Vec<u8>> {
-        // TODO: encrypt with AES-ECB
-        Ok(data)
+        // TODO: Use AES-ECB rather than Deoxys-II with a 0 nonce.
+        let contract_key = &self
+            .contract
+            .as_ref()
+            .expect("Should always have a contract key to encrypt storage")
+            .1;
+        let state_key = contract_key.state_key;
+
+        let mut key = [0u8; KEY_SIZE];
+        key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
+        let d2 = DeoxysII::new(&key);
+        key.zeroize();
+
+        let nonce = [0u8; NONCE_SIZE];
+
+        Ok(d2.seal(&nonce, data, vec![]))
     }
 
     fn encrypt_storage_value(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
