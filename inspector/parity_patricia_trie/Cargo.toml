@@ -9,13 +9,13 @@ license = "GPL-3.0"
 elastic-array = "0.10"
 log = "0.3"
 # rand = "0.4"
-ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+ethcore-bytes = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-rlp = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-triehash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-memorydb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
+rlp = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
+triehash = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
+memorydb = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
 
 [dev-dependencies]
-trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+trie-standardmap = { git = "https://github.com/oasislabs/parity", branch = "peterjgilbert/confidential_ctx" }
