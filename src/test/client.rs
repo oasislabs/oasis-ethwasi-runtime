@@ -367,7 +367,7 @@ impl Client {
         ConfidentialCtx {
             peer_public_key: Some(peer_key),
             contract: Some((contract, contract_key)),
-            next_nonce: Some(nonce),
+            next_nonce: Some(nonce.clone()),
             activated: true,
             // TODO: Previous block hash.
             prev_block_hash: Default::default(),
