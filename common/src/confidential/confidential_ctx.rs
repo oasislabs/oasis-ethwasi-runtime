@@ -9,7 +9,7 @@ use ekiden_runtime::{
     },
     executor::Executor,
 };
-use ethereum_types::Address;
+use ethereum_types::{Address, H256};
 use failure::ResultExt;
 use io_context::Context;
 use keccak_hash::keccak;
@@ -38,8 +38,12 @@ pub struct ConfidentialCtx {
     /// time a message is encrypted to the `peer_public_key`.
     pub next_nonce: Option<Nonce>,
     /// True iff the confidential context is activated, i.e., if we've executed
-    /// a confidnetial contract at any point in the call hierarchy.
+    /// a confidential contract at any point in the call hierarchy.
     pub activated: bool,
+    /// Hash of previous block, used to construct storage encryption nonce.
+    pub prev_block_hash: H256,
+    /// The next nonce to use when encrypting a storage value.
+    pub next_storage_nonce: Option<Nonce>,
     /// Key manager client.
     pub key_manager: Arc<dyn KeyManagerClient>,
     /// IO context (needed for the key manager client).
@@ -47,12 +51,18 @@ pub struct ConfidentialCtx {
 }
 
 impl ConfidentialCtx {
-    pub fn new(io_ctx: Arc<Context>, key_manager: Arc<dyn KeyManagerClient>) -> Self {
+    pub fn new(
+        prev_block_hash: H256,
+        io_ctx: Arc<Context>,
+        key_manager: Arc<dyn KeyManagerClient>,
+    ) -> Self {
         Self {
             peer_public_key: None,
             contract: None,
             next_nonce: None,
             activated: false,
+            prev_block_hash,
+            next_storage_nonce: None,
             key_manager,
             io_ctx,
         }
@@ -72,6 +82,8 @@ impl ConfidentialCtx {
     fn swap_contract(&mut self, contract: Option<(Address, ContractKey)>) -> Option<Address> {
         let old_contract_address = self.contract.as_ref().map(|c| c.0);
         self.contract = contract;
+        // TODO: Storage nonce <- H(prev_block_hash || address)[:11] || 0[:4]
+        self.next_storage_nonce = self.contract.as_ref().map(|_c| Nonce::new([0; NONCE_SIZE]));
         old_contract_address
     }
 }
@@ -117,6 +129,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         self.contract = None;
         self.next_nonce = None;
         self.activated = false;
+        self.next_storage_nonce = None;
     }
 
     fn encrypt_session(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
@@ -164,7 +177,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(decryption.plaintext)
     }
 
-    fn encrypt_storage(&self, data: Vec<u8>) -> Result<Vec<u8>> {
+    fn encrypt_storage(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
         let contract_key = &self
             .contract
             .as_ref()
@@ -178,10 +191,22 @@ impl EthConfidentialCtx for ConfidentialCtx {
         let d2 = DeoxysII::new(&key);
         key.zeroize();
 
-        let nonce = [0u8; NONCE_SIZE]; // XXX: Use an actual nonce.
+        let mut nonce = [0u8; NONCE_SIZE];
+        nonce.copy_from_slice(
+            &self
+                .next_storage_nonce
+                .as_ref()
+                .expect("Should always have a storage encryption nonce.")[..NONCE_SIZE],
+        );
 
         let mut ciphertext = d2.seal(&nonce, data, vec![]);
         ciphertext.extend_from_slice(&nonce); // ciphertext || tag || nonce
+
+        self.next_storage_nonce
+            .as_mut()
+            .unwrap()
+            .increment()
+            .map_err(|err| Error::Confidential(err.to_string()))?;
 
         Ok(ciphertext)
     }
@@ -282,6 +307,8 @@ mod tests {
             peer_public_key: Some(peer_public_key),
             contract: Some((address, contract_key)),
             next_nonce: Some(nonce),
+            prev_block_hash: H256::default(),
+            next_storage_nonce: None,
             key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
             activated: true,
@@ -309,6 +336,8 @@ mod tests {
                 peer_public_key: Some(peer_public_key),
                 contract: Some((address, contract_key)),
                 next_nonce: Some(nonce),
+                prev_block_hash: H256::default(),
+                next_storage_nonce: None,
                 key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
                 activated: true,
@@ -321,6 +350,8 @@ mod tests {
                 peer_public_key: None,
                 contract: None,
                 next_nonce: None,
+                prev_block_hash: H256::default(),
+                next_storage_nonce: None,
                 key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
                 activated: false,
@@ -343,6 +374,8 @@ mod tests {
             peer_public_key: Some(peer_public_key),
             contract: Some((address, contract_key)),
             next_nonce: Some(nonce),
+            prev_block_hash: H256::default(),
+            next_storage_nonce: None,
             key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
             activated: false,

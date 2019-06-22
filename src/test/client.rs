@@ -369,6 +369,10 @@ impl Client {
             contract: Some((contract, contract_key)),
             next_nonce: Some(nonce),
             activated: true,
+            // TODO: Previous block hash.
+            prev_block_hash: Default::default(),
+            // TODO: Storage nonce.
+            next_storage_nonce: Some(nonce),
             key_manager: self.km_client.clone(),
             io_ctx: IoContext::background().freeze(),
         }
