@@ -45,7 +45,10 @@ pub struct ConfidentialCtx {
     pub activated: bool,
     /// Hash of previous block, used to construct storage encryption nonce.
     pub prev_block_hash: H256,
-    /// The next nonce to use when encrypting a storage value.
+    /// The next nonce to use when encrypting a storage value. When we start
+    /// executing a confidential transaction, its value is set to
+    /// H(prev_block_hash || contract_address)[:11] || 0x00000000. The value is
+    /// incremented after each encrypt operation.
     pub next_storage_nonce: Option<Nonce>,
     /// Key manager client.
     pub key_manager: Arc<dyn KeyManagerClient>,
@@ -85,7 +88,7 @@ impl ConfidentialCtx {
     fn swap_contract(&mut self, contract: Option<(Address, ContractKey)>) -> Option<Address> {
         let old_contract_address = self.contract.as_ref().map(|c| c.0);
         self.contract = contract;
-        // Storage encryption nonce <- H(prev_block_hash || address)[:11] || 0[:4]
+        // Storage encryption nonce <- H(prev_block_hash || address)[:11] || 0x00000000
         self.next_storage_nonce = self.contract.as_ref().map(|c| {
             let mut buffer = self.prev_block_hash.to_vec();
             buffer.extend_from_slice(&c.0);
