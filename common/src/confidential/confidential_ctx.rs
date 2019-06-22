@@ -3,9 +3,12 @@ use std::sync::Arc;
 
 use ekiden_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
 use ekiden_runtime::{
-    common::crypto::mrae::{
-        deoxysii::{DeoxysII, KEY_SIZE, TAG_SIZE},
-        nonce::{Nonce, NONCE_SIZE},
+    common::crypto::{
+        hash::Hash,
+        mrae::{
+            deoxysii::{DeoxysII, KEY_SIZE, TAG_SIZE},
+            nonce::{Nonce, NONCE_SIZE},
+        },
     },
     executor::Executor,
 };
@@ -82,8 +85,20 @@ impl ConfidentialCtx {
     fn swap_contract(&mut self, contract: Option<(Address, ContractKey)>) -> Option<Address> {
         let old_contract_address = self.contract.as_ref().map(|c| c.0);
         self.contract = contract;
-        // TODO: Storage nonce <- H(prev_block_hash || address)[:11] || 0[:4]
-        self.next_storage_nonce = self.contract.as_ref().map(|_c| Nonce::new([0; NONCE_SIZE]));
+        // Storage encryption nonce <- H(prev_block_hash || address)[:11] || 0[:4]
+        self.next_storage_nonce = self.contract.as_ref().map(|c| {
+            let mut buffer = self.prev_block_hash.to_vec();
+            buffer.extend_from_slice(&c.0);
+            let hash = Hash::digest_bytes(&buffer);
+
+            let mut nonce = [0u8; NONCE_SIZE];
+            // TODO: make Nonce TAG_SIZE public
+            const TAG_SIZE: usize = 11;
+            nonce[..TAG_SIZE].copy_from_slice(&hash.as_ref()[..TAG_SIZE]);
+
+            Nonce::new(nonce)
+        });
+
         old_contract_address
     }
 }
