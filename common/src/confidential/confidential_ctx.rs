@@ -7,7 +7,7 @@ use ekiden_runtime::{
         hash::Hash,
         mrae::{
             deoxysii::{DeoxysII, KEY_SIZE, TAG_SIZE},
-            nonce::{Nonce, NONCE_SIZE},
+            nonce::{Nonce, NONCE_SIZE, TAG_SIZE as NONCE_TAG_SIZE},
         },
     },
     executor::Executor,
@@ -92,9 +92,7 @@ impl ConfidentialCtx {
             let hash = Hash::digest_bytes(&buffer);
 
             let mut nonce = [0u8; NONCE_SIZE];
-            // TODO: make Nonce TAG_SIZE public
-            const TAG_SIZE: usize = 11;
-            nonce[..TAG_SIZE].copy_from_slice(&hash.as_ref()[..TAG_SIZE]);
+            nonce[..NONCE_TAG_SIZE].copy_from_slice(&hash.as_ref()[..NONCE_TAG_SIZE]);
 
             Nonce::new(nonce)
         });
