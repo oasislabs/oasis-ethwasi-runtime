@@ -5,7 +5,10 @@ use byteorder::{BigEndian, ByteOrder};
 use ekiden_keymanager_client::{self, ContractId, ContractKey, KeyManagerClient};
 use ekiden_runtime::{
     common::{
-        crypto::mrae::nonce::{Nonce, NONCE_SIZE},
+        crypto::{
+            hash::Hash,
+            mrae::nonce::{Nonce, NONCE_SIZE},
+        },
         roothash::Header,
     },
     executor::Executor,
@@ -102,6 +105,7 @@ impl Client {
             km_client,
             header: Header {
                 round: 0,
+                previous_hash: Hash::empty_hash(),
                 timestamp: 0xcafedeadbeefc0de,
                 state_root,
                 ..Default::default()
@@ -154,6 +158,8 @@ impl Client {
             .commit(IoContext::background())
             .expect("mkvs commit must succeed");
         self.header.state_root = new_state_root;
+        // Just want a deterministic, random-looking value for block hash.
+        self.header.previous_hash = Hash::digest_bytes(self.header.previous_hash.as_ref());
         self.header.round += 1;
         self.mkvs = Some(mkvs);
 
@@ -355,7 +361,7 @@ impl Client {
     /// Do not use this if you're trying to access *unencrypted* state.
     pub fn key_manager_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
         let mut ctx = ConfidentialCtx::new(
-            H256::default(),
+            self.header.previous_hash.as_ref().into(),
             IoContext::background().freeze(),
             self.km_client.clone(),
         );
