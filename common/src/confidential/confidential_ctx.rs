@@ -43,9 +43,10 @@ pub struct ConfidentialCtx {
     /// True iff the confidential context is activated, i.e., if we've executed
     /// a confidential contract at any point in the call hierarchy.
     pub activated: bool,
-    pub d2: Option<DeoxysII>,
     /// Hash of previous block, used to construct storage encryption nonce.
     pub prev_block_hash: H256,
+    /// Deoxys-II instance used for encrypting and decrypting contract storage.
+    pub d2: Option<DeoxysII>,
     /// The next nonce to use when encrypting a storage value. When we start
     /// executing a confidential transaction, its value is set to
     /// H(prev_block_hash || contract_address)[:11] || 0x00000000. The value is
@@ -91,6 +92,7 @@ impl ConfidentialCtx {
         let old_contract_address = self.contract.as_ref().map(|c| c.0);
         self.contract = contract;
 
+        // If this is a confidential contract, initialize Deoxys-II instance.
         self.d2 = self.contract.as_ref().map(|c| {
             let state_key = c.1.state_key;
             let mut key = [0u8; KEY_SIZE];
