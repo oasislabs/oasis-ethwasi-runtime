@@ -42,9 +42,9 @@ runtime-ethereum-common = { path = "../common" }
 
 ## Ekiden client dependencies
 clap = "2.29.1"
-ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "peterjgilbert/nonce_tag_size" }
+ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 runtime-ethereum-api = { path = "../api" }
 rand = "0.4"
 grpcio = "0.4.4"
