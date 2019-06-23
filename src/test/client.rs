@@ -326,22 +326,6 @@ impl Client {
     /// injected into the parity State, because such a confidential context should be
     /// from the perspective of the keymanager. See `key_manager_confidential_ctx`.
     pub fn confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
-        self.make_ctx(contract, false)
-    }
-
-    /// Returns an *open* confidential context. Using this with a parity State object will
-    /// transparently encrypt/decrypt everything going into and out of contract storage.
-    /// Do not use this if you're trying to access *unencrypted* state.
-    pub fn key_manager_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
-        self.make_ctx(contract, true)
-    }
-
-    /// Returns a new, open ConfidentialCtx. Here we use such a context in two ways: 1)
-    /// from the "perspective" of the client and 2) from the perspective of the key manager,
-    /// i.e., a contract execution inside an enclave. The former can be used to encrypt/decrypt
-    /// to web3c. The latter can be used to encrypt/decrypt inside web3c (just as a compute node
-    /// would).
-    fn make_ctx(&self, contract: Address, is_key_manager: bool) -> ConfidentialCtx {
         let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
         let mut executor = Executor::new();
         let contract_key = executor
@@ -351,31 +335,33 @@ impl Client {
             )
             .unwrap();
 
-        // Note that what key is used as the "peer" switches depending upon `is_key_manager`.
-        // From the perspective of the client, the "peer" is the contract (i.e. the key
-        // manager), and vice versa. This is a result of our mrae's symmetric key derivation.
-        let (peer_key, contract_key) = if is_key_manager {
-            (self.ephemeral_key.input_keypair.get_pk(), contract_key)
-        } else {
-            (
-                contract_key.input_keypair.get_pk(),
-                self.ephemeral_key.clone(),
-            )
-        };
         // No need to save the Nonce on the Client (for now).
         let nonce = Nonce::new([0; NONCE_SIZE]);
         ConfidentialCtx {
-            peer_public_key: Some(peer_key),
-            contract: Some((contract, contract_key)),
+            peer_public_key: Some(contract_key.input_keypair.get_pk()),
+            contract: Some((contract, self.ephemeral_key.clone())),
             next_nonce: Some(nonce.clone()),
             activated: true,
-            // TODO: Previous block hash.
+            d2: None,
             prev_block_hash: Default::default(),
-            // TODO: Storage nonce.
-            next_storage_nonce: Some(nonce),
+            next_storage_nonce: None,
             key_manager: self.km_client.clone(),
             io_ctx: IoContext::background().freeze(),
         }
+    }
+
+    /// Returns an *open* confidential context. Using this with a parity State object will
+    /// transparently encrypt/decrypt everything going into and out of contract storage.
+    /// Do not use this if you're trying to access *unencrypted* state.
+    pub fn key_manager_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
+        let mut ctx = ConfidentialCtx::new(
+            H256::default(),
+            IoContext::background().freeze(),
+            self.km_client.clone(),
+        );
+        ctx.activate(Some(contract))
+            .expect("ConfidentialCtx activate must succeed");
+        ctx
     }
 
     /// Returns the raw underlying storage for the given `contract`--without

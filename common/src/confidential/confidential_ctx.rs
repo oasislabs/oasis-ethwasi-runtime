@@ -43,6 +43,7 @@ pub struct ConfidentialCtx {
     /// True iff the confidential context is activated, i.e., if we've executed
     /// a confidential contract at any point in the call hierarchy.
     pub activated: bool,
+    pub d2: Option<DeoxysII>,
     /// Hash of previous block, used to construct storage encryption nonce.
     pub prev_block_hash: H256,
     /// The next nonce to use when encrypting a storage value. When we start
@@ -67,6 +68,7 @@ impl ConfidentialCtx {
             contract: None,
             next_nonce: None,
             activated: false,
+            d2: None,
             prev_block_hash,
             next_storage_nonce: None,
             key_manager,
@@ -88,6 +90,16 @@ impl ConfidentialCtx {
     fn swap_contract(&mut self, contract: Option<(Address, ContractKey)>) -> Option<Address> {
         let old_contract_address = self.contract.as_ref().map(|c| c.0);
         self.contract = contract;
+
+        self.d2 = self.contract.as_ref().map(|c| {
+            let state_key = c.1.state_key;
+            let mut key = [0u8; KEY_SIZE];
+            key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
+            let d2 = DeoxysII::new(&key);
+            key.zeroize();
+            d2
+        });
+
         // Storage encryption nonce <- H(prev_block_hash || address)[:11] || 0x00000000
         self.next_storage_nonce = self.contract.as_ref().map(|c| {
             let mut buffer = self.prev_block_hash.to_vec();
@@ -145,6 +157,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         self.contract = None;
         self.next_nonce = None;
         self.activated = false;
+        self.d2 = None;
         self.next_storage_nonce = None;
     }
 
@@ -195,37 +208,15 @@ impl EthConfidentialCtx for ConfidentialCtx {
 
     fn encrypt_storage_key(&self, data: Vec<u8>) -> Result<Vec<u8>> {
         // TODO: Use AES-ECB rather than Deoxys-II with a 0 nonce.
-        let contract_key = &self
-            .contract
-            .as_ref()
-            .expect("Should always have a contract key to encrypt storage")
-            .1;
-        let state_key = contract_key.state_key;
-
-        let mut key = [0u8; KEY_SIZE];
-        key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
-        let d2 = DeoxysII::new(&key);
-        key.zeroize();
-
         let nonce = [0u8; NONCE_SIZE];
-
-        Ok(d2.seal(&nonce, data, vec![]))
+        Ok(self
+            .d2
+            .as_ref()
+            .expect("Should always have a Deoxys-II instance to encrypt storage")
+            .seal(&nonce, data, vec![]))
     }
 
     fn encrypt_storage_value(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
-        let contract_key = &self
-            .contract
-            .as_ref()
-            .expect("Should always have a contract key to encrypt storage")
-            .1;
-        let state_key = contract_key.state_key;
-
-        // TODO/performance: Reuse the d2 instance (Oh god, self.contract is pub).
-        let mut key = [0u8; KEY_SIZE];
-        key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
-        let d2 = DeoxysII::new(&key);
-        key.zeroize();
-
         let mut nonce = [0u8; NONCE_SIZE];
         nonce.copy_from_slice(
             &self
@@ -234,7 +225,11 @@ impl EthConfidentialCtx for ConfidentialCtx {
                 .expect("Should always have a storage encryption nonce.")[..NONCE_SIZE],
         );
 
-        let mut ciphertext = d2.seal(&nonce, data, vec![]);
+        let mut ciphertext = self
+            .d2
+            .as_ref()
+            .expect("Should always have a Deoxys-II instance to encrypt storage")
+            .seal(&nonce, data, vec![]);
         ciphertext.extend_from_slice(&nonce); // ciphertext || tag || nonce
 
         self.next_storage_nonce
@@ -247,13 +242,6 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn decrypt_storage_value(&self, data: Vec<u8>) -> Result<Vec<u8>> {
-        let contract_key = &self
-            .contract
-            .as_ref()
-            .expect("Should always have a contract key to decrypt storage")
-            .1;
-        let state_key = contract_key.state_key;
-
         if data.len() < TAG_SIZE + NONCE_SIZE {
             return Err(Error::Confidential("truncated ciphertext".to_string()));
         }
@@ -264,13 +252,12 @@ impl EthConfidentialCtx for ConfidentialCtx {
         nonce.copy_from_slice(&data[nonce_offset..]);
         let ciphertext = &data[..nonce_offset];
 
-        // TODO/performance: Reuse the d2 instance (Oh god, self.contract is pub).
-        let mut key = [0u8; KEY_SIZE];
-        key.copy_from_slice(&state_key.as_ref()[..KEY_SIZE]);
-        let d2 = DeoxysII::new(&key);
-        key.zeroize();
-
-        Ok(d2.open(&nonce, ciphertext.to_vec(), vec![]).unwrap())
+        Ok(self
+            .d2
+            .as_ref()
+            .expect("Should always have a Deoxys-II instance to decrypt storage")
+            .open(&nonce, ciphertext.to_vec(), vec![])
+            .unwrap())
     }
 
     fn create_long_term_public_key(&mut self, contract: Address) -> Result<(Vec<u8>, Vec<u8>)> {
@@ -342,9 +329,11 @@ mod tests {
         let ctx = ConfidentialCtx {
             peer_public_key: Some(peer_public_key),
             contract: Some((address, contract_key)),
-            next_nonce: Some(nonce),
+            next_nonce: Some(nonce.clone()),
             prev_block_hash: H256::default(),
-            next_storage_nonce: None,
+            next_storage_nonce: Some(nonce),
+            // TODO
+            d2: None,
             key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
             activated: true,
@@ -374,6 +363,8 @@ mod tests {
                 next_nonce: Some(nonce),
                 prev_block_hash: H256::default(),
                 next_storage_nonce: None,
+                // TODO
+                d2: None,
                 key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
                 activated: true,
@@ -388,6 +379,8 @@ mod tests {
                 next_nonce: None,
                 prev_block_hash: H256::default(),
                 next_storage_nonce: None,
+                // TODO
+                d2: None,
                 key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
                 activated: false,
@@ -412,6 +405,8 @@ mod tests {
             next_nonce: Some(nonce),
             prev_block_hash: H256::default(),
             next_storage_nonce: None,
+            // TODO
+            d2: None,
             key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
             activated: false,
