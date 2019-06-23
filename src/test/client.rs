@@ -340,7 +340,7 @@ impl Client {
         ConfidentialCtx {
             peer_public_key: Some(contract_key.input_keypair.get_pk()),
             contract: Some((contract, self.ephemeral_key.clone())),
-            next_nonce: Some(nonce.clone()),
+            next_nonce: Some(nonce),
             activated: true,
             d2: None,
             prev_block_hash: Default::default(),

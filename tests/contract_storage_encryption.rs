@@ -72,7 +72,7 @@ fn tx_contract_storage_encryption_no_constructor() {
     assert_eq!(ctx_decrypted_storage_counter.len(), 32);
     // Finally ensure the correct value of 1 is stored.
     assert_eq!(
-        H256::from_slice(&ctx_decrypted_storage_counter[..32]),
+        H256::from(&ctx_decrypted_storage_counter[..32]),
         H256::from(1)
     );
 }
@@ -120,7 +120,7 @@ fn test_deploy_contract_storage_encryption_with_constructor() {
     assert_eq!(ctx_decrypted_storage_counter.len(), 32);
     // Finally ensure the correct value of 1 is stored.
     assert_eq!(
-        H256::from_slice(&ctx_decrypted_storage_counter[..32]),
+        H256::from(&ctx_decrypted_storage_counter[..32]),
         H256::from(5)
     );
 }
