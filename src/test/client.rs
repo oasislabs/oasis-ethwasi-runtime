@@ -183,7 +183,7 @@ impl Client {
 
         let contract_addr = contract.unwrap();
         let enc_data = self
-            .confidential_ctx(contract_addr.clone())
+            .client_confidential_ctx(contract_addr.clone())
             .encrypt_session(data)
             .unwrap();
 
@@ -322,7 +322,7 @@ impl Client {
         let enc_data = self.confidential_data(Some(contract), data);
         let (hash, _) = self.send(Some(contract), enc_data, value);
         let result = self.result(hash);
-        self.confidential_ctx(*contract)
+        self.client_confidential_ctx(*contract)
             .decrypt(result.output)
             .unwrap()
     }
@@ -331,7 +331,7 @@ impl Client {
     /// so that it can encrypt/decrypt transactions to/from web3c. This should not be
     /// injected into the parity State, because such a confidential context should be
     /// from the perspective of the keymanager. See `key_manager_confidential_ctx`.
-    pub fn confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
+    pub fn client_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
         let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
         let mut executor = Executor::new();
         let contract_key = executor
@@ -348,9 +348,11 @@ impl Client {
             contract: Some((contract, self.ephemeral_key.clone())),
             next_nonce: Some(nonce),
             activated: true,
+            // Not to be used for storage encryption, so no need for a Deoxys-II instance
+            // or storage nonce.
             d2: None,
-            prev_block_hash: Default::default(),
             next_storage_nonce: None,
+            prev_block_hash: Default::default(),
             key_manager: self.km_client.clone(),
             io_ctx: IoContext::background().freeze(),
         }
