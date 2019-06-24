@@ -113,10 +113,12 @@ install_e2e_tests() {
     pushd ${WORKDIR}/tests
         if [ ! -d e2e-tests ]; then
             git clone https://github.com/oasislabs/e2e-tests.git -b ${e2e_tests_branch} --depth 1
-
             pushd e2e-tests
                 npm install > /dev/null
-
+                # Needed to install and build oasis-client within e2e-tests.
+                npm install -g lerna
+                npm install -g yarn
+                ./scripts/oasis-client.sh
                 # If the Buildkite access token is available, download pre-compiled contracts
                 # from the e2e-tests pipeline.
                 if [ "${BUILDKITE:-}" == "true" ]; then
@@ -150,6 +152,14 @@ install_e2e_tests() {
 scenario_e2e_tests() {
     scenario_basic $*
 
+    echo "Starting the developer-gateway"
+    ./go/developer-gateway/developer-gateway \
+        --config.path configs/developer-gateway/testing.toml \
+        --bind_private.tls_certificate_path configs/developer-gateway/tls/cert.pem \
+        --bind_private.tls_private_key_path configs/developer-gateway/tls/private.pem \
+        --bind_public.tls_certificate_path configs/developer-gateway/tls/cert.pem \
+        --bind_public.tls_private_key_path configs/developer-gateway/tls/private.pem &
+
     echo "Running E2E tests from e2e-tests repository."
     pushd ${WORKDIR}/tests/e2e-tests
         # Ensures we don't try to compile the contracts a second time.
@@ -163,9 +173,43 @@ scenario_e2e_tests() {
         export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
         # See https://github.com/oasislabs/ekiden/blob/master/key-manager/dummy/enclave/src/lib.rs
         export KEY_MANAGER_PUBLIC_KEY="0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f"
+        export DEVELOPER_GATEWAY_URL="http://localhost:1234"
         # Cleanup persisted long-term keys.
         rm -rf .web3c
         npm run test:development 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-e2e-tests.log
+    popd
+}
+
+# TODO: Remove this in favor of `scenario_e2e_tests` once we have enabled the
+#       rest of the e2e-tests.
+scenario_developer_gateway_tests() {
+    scenario_basic $*
+
+    echo "Starting the developer-gateway"
+    ./go/developer-gateway/developer-gateway \
+        --config.path configs/developer-gateway/testing.toml \
+        --bind_private.tls_certificate_path configs/developer-gateway/tls/cert.pem \
+        --bind_private.tls_private_key_path configs/developer-gateway/tls/private.pem \
+        --bind_public.tls_certificate_path configs/developer-gateway/tls/cert.pem \
+        --bind_public.tls_private_key_path configs/developer-gateway/tls/private.pem &
+
+    echo "Running the developer gateway tests."
+    pushd ${WORKDIR}/tests/e2e-tests
+        # Ensures we don't try to compile the contracts a second time.
+        export SKIP_OASIS_COMPILE=true
+        # Re-export parallelism parameters so that they can be read by the e2e-tests.
+        export E2E_PARALLELISM=${BUILDKITE_PARALLEL_JOB_COUNT:-""}
+        export E2E_PARALLELISM_BUCKET=${BUILDKITE_PARALLEL_JOB:-""}
+        # Define the environment variables that are required for the e2e tests.
+        export HTTPS_PROVIDER_URL="http://localhost:8545"
+        export WS_PROVIDER_URL="ws://localhost:8555"
+        export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
+        # See https://github.com/oasislabs/ekiden/blob/master/key-manager/dummy/enclave/src/lib.rs
+        export KEY_MANAGER_PUBLIC_KEY="0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f"
+        export DEVELOPER_GATEWAY_URL="http://localhost:1234"
+        # Cleanup persisted keys.
+        rm -rf .oasis
+        npm run test:development test/13_test_oasis_client.js 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-e2e-tests.log
     popd
 }
 
@@ -198,6 +242,15 @@ test_suite() {
     #    backend_runner=$backend_runner \
     #    runtime=runtime-ethereum \
     #    client_runner=run_no_client
+
+    # TODO: Remove once we re-enable the above e2e-tests.
+    run_test \
+        pre_init_hook=install_e2e_tests \
+        scenario=scenario_developer_gateway_tests \
+        name="e2e-${backend_name}-e2e-tests" \
+        backend_runner=$backend_runner \
+        runtime=runtime-ethereum \
+        client_runner=run_no_client
 }
 
 ##########################################

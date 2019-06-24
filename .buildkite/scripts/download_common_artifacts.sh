@@ -22,6 +22,7 @@ source .buildkite/scripts/download_utils.sh
 # Create directory to put artifacts into.
 mkdir -p \
     go/ekiden \
+    go/developer-gateway \
     target/debug \
     target/x86_64-fortanix-unknown-sgx/debug
 
@@ -32,6 +33,7 @@ download_ekiden_node go/ekiden
 download_ekiden_runtime_loader target/debug
 download_keymanager_runtime target/debug
 download_keymanager_runtime_sgx target/x86_64-fortanix-unknown-sgx/debug
+download_developer_gateway go/developer-gateway
 
 ###########################
 # Download runtime-ethereum
