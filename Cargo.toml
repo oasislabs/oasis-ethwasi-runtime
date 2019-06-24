@@ -25,11 +25,11 @@ ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "master"
 ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 # Parity.
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden-beta" }
+common-types = { git = "https://github.com/oasislabs/parity", branch = "wasi" }
+ethcore = { git = "https://github.com/oasislabs/parity", branch = "wasi" }
+ethkey = { git = "https://github.com/oasislabs/parity", branch = "wasi" }
+hashdb = { git = "https://github.com/oasislabs/parity", branch = "wasi" }
+keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "wasi" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 
 # Others.
