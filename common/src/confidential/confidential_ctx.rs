@@ -334,7 +334,7 @@ mod tests {
             next_nonce: Some(nonce.clone()),
             prev_block_hash: H256::default(),
             next_storage_nonce: Some(nonce),
-            // TODO
+            // No storage encryption, so don't need a Deoxys-II instance.
             d2: None,
             key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
@@ -365,7 +365,7 @@ mod tests {
                 next_nonce: Some(nonce),
                 prev_block_hash: H256::default(),
                 next_storage_nonce: None,
-                // TODO
+                // No storage encryption, so don't need a Deoxys-II instance.
                 d2: None,
                 key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
@@ -381,7 +381,7 @@ mod tests {
                 next_nonce: None,
                 prev_block_hash: H256::default(),
                 next_storage_nonce: None,
-                // TODO
+                // No storage encryption, so don't need a Deoxys-II instance.
                 d2: None,
                 key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
@@ -407,7 +407,7 @@ mod tests {
             next_nonce: Some(nonce),
             prev_block_hash: H256::default(),
             next_storage_nonce: None,
-            // TODO
+            // No storage encryption, so don't need a Deoxys-II instance.
             d2: None,
             key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
