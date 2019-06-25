@@ -50,6 +50,7 @@ impl BatchHandler for EthereumBatchHandler {
             U256::zero(),       /* account_start_nonce */
             Default::default(), /* factories */
             Some(Box::new(ConfidentialCtx::new(
+                ctx.header.previous_hash.as_ref().into(),
                 ctx.io_ctx.clone(),
                 self.key_manager.clone(),
             ))),
