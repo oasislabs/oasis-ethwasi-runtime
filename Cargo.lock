@@ -209,7 +209,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "bloomchain"
 version = "0.2.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ethbloom 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -330,15 +330,15 @@ dependencies = [
 [[package]]
 name = "common-types"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp_derive 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp_derive 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -724,11 +724,11 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "crunchy 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "memmap 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -750,61 +750,61 @@ dependencies = [
 [[package]]
 name = "ethcore"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "bloomchain 0.2.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "bloomchain 0.2.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "bn 0.4.4 (git+https://github.com/paritytech/bn)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethabi 5.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethabi-contract 5.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethabi-derive 5.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethcore-bloom-journal 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-crypto 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore-bloom-journal 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-crypto 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "evm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "evm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
  "itertools 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "journaldb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "kvdb-memorydb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "journaldb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "kvdb-memorydb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "lru-cache 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "memory-cache 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "memory-cache 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "num-bigint 0.1.44 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.1.43 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-machine 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "parity-machine 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp_compress 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp_derive 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp_compress 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp_derive 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "siphasher 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "triehash 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "unexpected 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "util-error 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "wasm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "triehash 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "unexpected 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "util-error 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "wasm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
 name = "ethcore-bloom-journal"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "siphasher 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -812,12 +812,12 @@ dependencies = [
 [[package]]
 name = "ethcore-bytes"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 
 [[package]]
 name = "ethcore-crypto"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -829,12 +829,12 @@ dependencies = [
 [[package]]
 name = "ethcore-devtools"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 
 [[package]]
 name = "ethcore-io"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "crossbeam 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -849,7 +849,7 @@ dependencies = [
 [[package]]
 name = "ethcore-logger"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ansi_term 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "arrayvec 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -865,16 +865,16 @@ dependencies = [
 [[package]]
 name = "ethcore-transaction"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "evm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "evm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "unexpected 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "unexpected 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -915,7 +915,7 @@ dependencies = [
 [[package]]
 name = "ethjson"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -927,14 +927,14 @@ dependencies = [
 [[package]]
 name = "ethkey"
 version = "0.3.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "edit-distance 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "mem 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "mem 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "secp256k1-plus 0.5.7 (git+https://github.com/oasislabs/rust-secp256k1?branch=feature/rand_optional)",
@@ -944,16 +944,16 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "bit-set 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "memory-cache 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "memory-cache 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -1089,14 +1089,14 @@ dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
- "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "filebuffer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "grpcio 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "io-context 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "runtime-ethereum-common 0.3.0",
  "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1175,7 +1175,7 @@ dependencies = [
 [[package]]
 name = "hashdb"
 version = "0.1.1"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1328,18 +1328,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "journaldb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
- "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "util-error 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "util-error 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -1430,7 +1430,7 @@ dependencies = [
 [[package]]
 name = "keccak-hash"
 version = "0.1.2"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1448,19 +1448,19 @@ dependencies = [
 [[package]]
 name = "kvdb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
 name = "kvdb-memorydb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
- "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -1532,7 +1532,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 
 [[package]]
 name = "mantle-types"
@@ -1552,7 +1552,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "mem"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 
 [[package]]
 name = "memchr"
@@ -1576,7 +1576,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "memory-cache"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
  "lru-cache 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1590,15 +1590,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "memorydb"
 version = "0.1.1"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -1722,13 +1722,13 @@ dependencies = [
 [[package]]
 name = "node-health"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-cpupool 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "ntp 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "parking_lot 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1843,7 +1843,7 @@ dependencies = [
 [[package]]
 name = "parity-machine"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1851,7 +1851,7 @@ dependencies = [
 [[package]]
 name = "parity-reactor"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-core 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1860,21 +1860,21 @@ dependencies = [
 [[package]]
 name = "parity-rpc"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "ansi_term 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cid 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethash 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-crypto 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-devtools 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-io 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-logger 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethash 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-crypto 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-devtools 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-io 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-logger 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-cpupool 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1884,28 +1884,28 @@ dependencies = [
  "jsonrpc-macros 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)",
  "jsonrpc-pubsub 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)",
  "jsonrpc-ws-server 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "multihash 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-health 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "node-health 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "order-stat 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "parity-version 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "parity-version 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "parking_lot 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
- "stats 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "stats 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "tempdir 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-timer 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "transient-hashmap 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -1929,10 +1929,10 @@ dependencies = [
 [[package]]
 name = "parity-version"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "target_info 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2012,17 +2012,17 @@ dependencies = [
 [[package]]
 name = "patricia-trie"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "triehash 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "triehash 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -2051,7 +2051,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "plain_hasher"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "crunchy 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2540,7 +2540,7 @@ dependencies = [
 [[package]]
 name = "rlp"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2551,17 +2551,17 @@ dependencies = [
 [[package]]
 name = "rlp_compress"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
 name = "rlp_derive"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "quote 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.13.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2574,20 +2574,20 @@ dependencies = [
  "assert_matches 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
- "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-tools 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "io-context 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "runtime-ethereum-api 0.2.0",
  "runtime-ethereum-common 0.3.0",
@@ -2616,14 +2616,14 @@ dependencies = [
  "ekiden-keymanager-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "io-context 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "zeroize 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -3005,7 +3005,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "stats"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -3459,12 +3459,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "triehash"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
 ]
 
 [[package]]
@@ -3511,7 +3511,7 @@ dependencies = [
 [[package]]
 name = "unexpected"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 
 [[package]]
 name = "unicase"
@@ -3583,12 +3583,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "util-error"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -3614,19 +3614,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "vm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "mantle-types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.39 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -3653,28 +3653,28 @@ dependencies = [
 [[package]]
 name = "wasm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "bcfs 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "mantle-types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-wasm 0.31.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "pwasm-utils 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "wasi-types 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasm-macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "wasm-macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "wasmi 0.4.5 (git+https://github.com/oasislabs/wasmi)",
 ]
 
 [[package]]
 name = "wasm-macros"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx#026dd84a7e71179844b2327b909ec2cafbd74891"
+source = "git+https://github.com/oasislabs/parity?branch=ekiden-beta#b34b7cbaa6d4e5bd4f89a1bf03acd3263b6302e1"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-quote 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3723,13 +3723,13 @@ name = "web3-gateway"
 version = "0.3.0"
 dependencies = [
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
- "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "fdlimit 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3742,19 +3742,19 @@ dependencies = [
  "jsonrpc-macros 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)",
  "jsonrpc-pubsub 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)",
  "jsonrpc-ws-server 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)",
- "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "mem 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "parity-rpc 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "mem 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "parity-rpc 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "parking_lot 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "prometheus 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
- "rlp_compress 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)",
+ "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
+ "rlp_compress 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)",
  "runtime-ethereum-api 0.2.0",
  "runtime-ethereum-common 0.3.0",
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3906,7 +3906,7 @@ dependencies = [
 "checksum block-buffer 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c0940dc441f31689269e10ac70eb1002a3a1d3ad1390e030043662eb7fe4688b"
 "checksum block-padding 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "6d4dc3af3ee2e12f3e5d224e5e1e3d73668abbeb69e566d361f7d5563a4fdf09"
 "checksum blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "68dc7a5e89744bf8b7f8ac3035715be0c8529d56381c85d3070cbc10f88c9b4f"
-"checksum bloomchain 0.2.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum bloomchain 0.2.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum bn 0.4.4 (git+https://github.com/paritytech/bn)" = "<none>"
 "checksum byte-tools 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "560c32574a12a89ecd91f5e742165893f86e3ab98d21f8ea548658eb9eef5f40"
 "checksum byte-tools 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"
@@ -3921,7 +3921,7 @@ dependencies = [
 "checksum clear_on_drop 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "97276801e127ffb46b66ce23f35cc96bd454fa311294bced4bbace7baa8b1d17"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum cmake 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)" = "2ca4386c8954b76a8415b63959337d940d724b336cabd3afe189c2b51a7e1ff0"
-"checksum common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum common-types 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum constant_time_eq 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8ff012e225ce166d4422e0e78419d901719760f62ae2b7969ca6b564d1b54a9e"
 "checksum conv 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "78ff10625fd0ac447827aa30ea8b861fead473bb60aeb73af6c1c58caf0d1299"
 "checksum cookie 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "0e3d6405328b6edb412158b3b7710e2634e23f3614b9bb1c412df7952489a626"
@@ -3959,22 +3959,22 @@ dependencies = [
 "checksum ethabi 5.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "cf28f7a4a82229af21a4b2233eb411c459034010ad524976c4fb4556c5969b5b"
 "checksum ethabi-contract 5.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7311354f2a46a4b564004047bf8dce9a57cbd8d7ce30021a56bd1a975baaf2f9"
 "checksum ethabi-derive 5.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "7caf91e5d37033970be4a66cdef1e5e267af1c999e48b78d6ba86564c1081fab"
-"checksum ethash 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum ethash 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum ethbloom 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a6294da962646baa738414e8e718d1a1f0360a51d92de89ccbf91870418f5360"
-"checksum ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-bloom-journal 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-crypto 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-devtools 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-io 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-logger 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum ethcore 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-bloom-journal 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-crypto 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-devtools 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-io 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-logger 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethcore-transaction 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9c48729b8aea8aedb12cf4cb2e5cef439fdfe2dda4a89e47eeebd15778ef53b6"
 "checksum ethereum-types 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e742184dc63a01c8ea0637369f8faa27c40f537949908a237f95c05e68d2c96"
 "checksum ethereum-types-serialize 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1873d77b32bc1891a79dad925f2acbc318ee942b38b9110f9dbc5fbeffcea350"
-"checksum ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum evm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum ethkey 0.3.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum evm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "795bd83d3abeb9220f257e597aa0080a508b27533824adf336529648f6abf7e2"
 "checksum failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ea1063915fd7ef4309e222a5a07cf9c319fb9c7836b1f89b85458672dbb127e1"
 "checksum fake-simd 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
@@ -3999,7 +3999,7 @@ dependencies = [
 "checksum half 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9353c2a89d550b58fa0061d8ed8d002a7d8cdf2494eb0e432859bd3a9e543836"
 "checksum hamming 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "65043da274378d68241eb9a8f8f8aa54e349136f7b8e12f63e3ef44043cc30e1"
 "checksum hashbrown 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "3bae29b6653b3412c2e71e9d486db9f9df5d701941d86683005efb9f2d28e3da"
-"checksum hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum hashdb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)" = "<none>"
 "checksum heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "20564e78d53d2bb135c343b3f47714a56af2061f1c928fdb541dc7b9fdd94205"
 "checksum hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "805026a5d0141ffc30abb3be3173848ad46a1b1664fe632428479619a3644d77"
@@ -4016,7 +4016,7 @@ dependencies = [
 "checksum itertools 0.5.10 (registry+https://github.com/rust-lang/crates.io-index)" = "4833d6978da405305126af4ac88569b5d71ff758581ce5a987dbfa3755f694fc"
 "checksum itertools 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5b8467d9c1cebe26feb08c640139247fac215782d35371ade9a2136ed6085358"
 "checksum itoa 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "501266b7edd0174f8530248f87f99c88fbe60ca4ef3dd486835b8d8d53136f7f"
-"checksum journaldb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum journaldb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum jsonrpc-core 8.0.1 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)" = "<none>"
 "checksum jsonrpc-http-server 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)" = "<none>"
 "checksum jsonrpc-ipc-server 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)" = "<none>"
@@ -4024,10 +4024,10 @@ dependencies = [
 "checksum jsonrpc-pubsub 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)" = "<none>"
 "checksum jsonrpc-server-utils 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)" = "<none>"
 "checksum jsonrpc-ws-server 8.0.0 (git+https://github.com/paritytech/jsonrpc.git?branch=parity-1.11)" = "<none>"
-"checksum keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum keccak-hash 0.1.2 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7507624b29483431c0ba2d82aece8ca6cdba9382bff4ddd0f7490560c056098d"
-"checksum kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum kvdb-memorydb 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum kvdb-memorydb 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum language-tags 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "a91d884b6667cd606bb5a69aa0c99ba811a115fc68915e7056ec08a46e93199a"
 "checksum lazy_static 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)" = "76f033c7ad61445c5b347c7382dd1237847eb1bce590fe50365dcb33d546be73"
 "checksum lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bc5729f27f159ddd61f4df6228e827e86643d4d3e7c32183cb30a1c08f604a14"
@@ -4038,16 +4038,16 @@ dependencies = [
 "checksum log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c84ec4b527950aa83a329754b01dbe3f58361d1c5efacd1f6d68c494d08a17c6"
 "checksum lru 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)" = "276235bb6b60773280b44b65e93815de82da5b6279ef175004fca03f4d06770a"
 "checksum lru-cache 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "31e24f1ad8321ca0e8a1e0ac13f23cb668e6f5466c2c57319f6a5cf1cc8e3b1c"
-"checksum macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum mantle-types 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ab19d470295ee390768226fe4525c9942d562d68b524f0fafc1de854adedce10"
 "checksum matches 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)" = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
-"checksum mem 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum mem 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum memchr 2.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2efc7bc57c883d4a4d6e3246905283d8dae951bb3bd32f49d6ef297f546e1c39"
 "checksum memmap 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e2ffa2c986de11a9df78620c01eeaaf27d94d3ff02bf81bfcca953102dd0c6ff"
 "checksum memoffset 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0f9dc261e2b62d7a622bf416ea3c5245cdd5d9a7fcc428c0d06804dfce1775b3"
-"checksum memory-cache 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum memory-cache 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum memory_units 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "71d96e3f3c0b6325d8ccd83c33b28acb183edcb6c67938ba104ec546854b0882"
-"checksum memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum memorydb 0.1.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum mime 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)" = "ba626b8a6de5da682e1caa06bdb42a335aee5a84db8e5046a3e8ab17ba0a3ae0"
 "checksum mime 0.3.13 (registry+https://github.com/rust-lang/crates.io-index)" = "3e27ca21f40a310bd06d9031785f4801710d566c184a6e15bad4f1d9b65f9425"
 "checksum mio 0.6.19 (registry+https://github.com/rust-lang/crates.io-index)" = "83f51996a3ed004ef184e16818edc51fadffe8e7ca68be67f9dee67d84d0ff23"
@@ -4060,7 +4060,7 @@ dependencies = [
 "checksum multihash 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c62469025f45dee2464ef9fc845f4683c543993792c1993e7d903c17a4546b74"
 "checksum multimap 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2eb04b9f127583ed176e163fb9ec6f3e793b87e21deedd5734a69386a18a0151"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
-"checksum node-health 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum node-health 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
 "checksum nom 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e9761d859320e381010a4f7f8ed425f2c924de33ad121ace447367c713ad561b"
 "checksum ntp 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "143149743832c6543b60a8ef2a26cd9122dfecec2b767158e852a7beecf6d7a0"
@@ -4075,11 +4075,11 @@ dependencies = [
 "checksum order-stat 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "efa535d5117d3661134dbf1719b6f0ffe06f2375843b13935db186cd094105eb"
 "checksum owning_ref 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "cdf84f41639e037b484f93433aa3897863b561ed65c6e59c7073d7c561710f37"
 "checksum owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "49a4b8ea2179e6a2e27411d3bca09ca6dd630821cf6894c6c7c8467a8ee7ef13"
-"checksum parity-machine 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum parity-rpc 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum parity-machine 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum parity-reactor 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum parity-rpc 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum parity-tokio-ipc 0.1.5 (git+https://github.com/nikvolf/parity-tokio-ipc?rev=c0f80b40399d7f08ef1e6869569640eb28645f56)" = "<none>"
-"checksum parity-version 1.12.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum parity-version 1.12.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum parity-wasm 0.31.3 (registry+https://github.com/rust-lang/crates.io-index)" = "511379a8194230c2395d2f5fa627a5a7e108a9f976656ce723ae68fca4097bfc"
 "checksum parking_lot 0.5.5 (registry+https://github.com/rust-lang/crates.io-index)" = "d4d05f1349491390b1730afba60bb20d55761bef489a954546b58b4b34e1e2ac"
 "checksum parking_lot 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)" = "f0802bff09003b291ba756dc7e79313e51cc31667e94afbe847def490424cde5"
@@ -4087,12 +4087,12 @@ dependencies = [
 "checksum parking_lot_core 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)" = "4db1a8ccf734a7bce794cc19b3df06ed87ab2f3907036b693c68f56b4d4537fa"
 "checksum parking_lot_core 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "ad7f7e6ebdc79edff6fdcb87a55b620174f7a989e3eb31b65231f4af57f00b8c"
 "checksum parking_lot_core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "94c8c7923936b28d546dfd14d4472eaf34c99b14e1c973a32b3e6d4eb04298c9"
-"checksum patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum pem-iterator 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "45c9da00a53e290cb077ad80326fb5df6d790f7bc2bfad5e5ad1cf9fa0c67f26"
 "checksum percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
 "checksum petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)" = "9c3659d1ee90221741f65dd128d9998311b0e40c5d3c23a62445938214abce4f"
 "checksum pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "676e8eb2b1b4c9043511a9b7bea0915320d7e502b0a079fb03f9635a5252b18c"
-"checksum plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum primal 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "0e31b86efadeaeb1235452171a66689682783149a6249ff334a2c5d8218d00a4"
 "checksum primal-bit 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "686a64e2f50194c64942992af5799e6b6e8775b8f88c607d72ed0a2fd58b9b21"
 "checksum primal-check 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8e65f96c0a171f887198c274392c99a116ef65aa7f53f3b6d4902f493965c2d1"
@@ -4144,9 +4144,9 @@ dependencies = [
 "checksum remove_dir_all 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "4a83fa3702a688b9359eccba92d153ac33fd2e8462f9e0e3fdf155239ea7792e"
 "checksum ring 0.14.5 (git+https://github.com/akash-fortanix/ring?branch=sgx-target)" = "<none>"
 "checksum ripemd160 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ad5112e0dbbb87577bfbc56c42450235e3012ce336e29c5befd7807bd626da4a"
-"checksum rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum rlp_compress 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum rlp_derive 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum rlp_compress 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum rlp_derive 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum rust-crypto 0.2.36 (registry+https://github.com/rust-lang/crates.io-index)" = "f76d05d3993fd5f4af9434e8e436db163a12a9d40e1a58a726f27a01dfd12a2a"
 "checksum rustc-demangle 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)" = "a7f4dccf6f4891ebcc0c39f9b6eb1a83b9bf5d747cb439ec6fba4f3b977038af"
 "checksum rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "0ceb8ce7a5e520de349e1fa172baeba4a9e8d5ef06c47471863530bc4972ee1e"
@@ -4194,7 +4194,7 @@ dependencies = [
 "checksum spin 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "44363f6f51401c34e7be73db0db371c04705d35efbe9f7d6082e03a921a32c55"
 "checksum stable_deref_trait 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "dba1a27d3efae4351c8051072d619e3ade2820635c3958d826bfea39d59b54c8"
 "checksum static_slice 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "92a7e0c5e3dfb52e8fbe0e63a1b947bbb17b4036408b151353c4491374931362"
-"checksum stats 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum stats 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum strsim 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 "checksum subtle 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "01dca13cf6c3b179864ab3292bd794e757618d35a7766b7c46050c614ba00829"
 "checksum syn 0.12.15 (registry+https://github.com/rust-lang/crates.io-index)" = "c97c05b8ebc34ddd6b967994d5c6e9852fa92f8b82b3858c39451f97346dcce5"
@@ -4238,14 +4238,14 @@ dependencies = [
 "checksum trackable_derive 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "0f4062d54dd240bde289717d6b4af18048c3dd552f01a0fd93824f5fc4d2d084"
 "checksum traitobject 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "07eaeb7689bb7fca7ce15628319635758eda769fed481ecfe6686ddef2600616"
 "checksum transient-hashmap 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "aeb4b191d033a35edfce392a38cdcf9790b6cebcb30fa690c312c29da4dc433e"
-"checksum triehash 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum triehash 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum try-lock 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ee2aa4715743892880f70885373966c83d73ef1b0838a664ef0c76fffd35e7c2"
 "checksum typeable 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1410f6f91f21d1612654e7cc69193b0334f909dcf2c790c4826254fbb86f8887"
 "checksum typenum 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)" = "612d636f949607bdf9b123b4a6f6d966dedf3ff669f7f045890d3a4a73948169"
 "checksum ucd-util 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "535c204ee4d8434478593480b8f86ab45ec9aae0e83c568ca81abf0fd0e88f86"
 "checksum uint 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "38051a96565903d81c9a9210ce11076b2218f3b352926baa1f5f6abbdfce8273"
 "checksum uint 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "754ba11732b9161b94c41798e5197e5e75388d012f760c42adb5000353e98646"
-"checksum unexpected 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum unexpected 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum unicase 1.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7f4765f83163b74f957c797ad9253caf97f103fb064d3999aea9568d09fc8a33"
 "checksum unicase 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a84e5511b2a947f3ae965dcb29b13b7b1691b6e7332cf5dbc1744138d5acb7f6"
 "checksum unicode-bidi 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)" = "49f2bd0c6468a8230e1db229cff8029217cf623c767ea5d60bfbd42729ea54d5"
@@ -4256,15 +4256,15 @@ dependencies = [
 "checksum untrusted 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "55cd1f4b4e96b46aeb8d4855db4a7a9bd96eeeb5c6a1ab54593328761642ce2f"
 "checksum url 1.7.2 (registry+https://github.com/rust-lang/crates.io-index)" = "dd4e7c0d531266369519a4aa4f399d748bd37043b00bde1e4ff1f60a120b355a"
 "checksum utf8-ranges 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "9d50aa7650df78abf942826607c62468ce18d9019673d4a2ebe1865dbb96ffde"
-"checksum util-error 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum util-error 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum vec_map 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "05c78687fb1a80548ae3250346c3db86a80a7cdd77bda190189f2d0a0987c81a"
 "checksum vergen 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8c3365f36c57e5df714a34be40902b27a992eeddb9996eca52d0584611cf885d"
 "checksum version_check 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "914b1a6776c4c929a602fafd8bc742e06365d4bcbe48c30f9cca5824f70dc9dd"
-"checksum vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum vm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum want 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "a05d9d966753fa4b5c8db73fcab5eed4549cfe0e1e4e66911e5564a0085c35d1"
 "checksum wasi-types 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "c6afc0458bebee11e1eafbd0a11c6b0cbc975d29c9df286c0496b3cb5541823a"
-"checksum wasm 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
-"checksum wasm-macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=peterjgilbert/confidential_ctx)" = "<none>"
+"checksum wasm 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
+"checksum wasm-macros 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum wasmi 0.4.5 (git+https://github.com/oasislabs/wasmi)" = "<none>"
 "checksum wasmi 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)" = "aebbaef470840d157a5c47c8c49f024da7b1b80e90ff729ca982b2b80447e78b"
 "checksum wasmi-validation 0.1.0 (git+https://github.com/oasislabs/wasmi)" = "<none>"
