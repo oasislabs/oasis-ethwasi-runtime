@@ -209,7 +209,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "bloomchain"
 version = "0.2.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethbloom 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -329,7 +329,7 @@ dependencies = [
 [[package]]
 name = "common-types"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -723,7 +723,7 @@ dependencies = [
 [[package]]
 name = "ethash"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "crunchy 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "either 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -749,7 +749,7 @@ dependencies = [
 [[package]]
 name = "ethcore"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "bloomchain 0.2.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
@@ -803,7 +803,7 @@ dependencies = [
 [[package]]
 name = "ethcore-bloom-journal"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "siphasher 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -811,12 +811,12 @@ dependencies = [
 [[package]]
 name = "ethcore-bytes"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 
 [[package]]
 name = "ethcore-crypto"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -828,12 +828,12 @@ dependencies = [
 [[package]]
 name = "ethcore-devtools"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 
 [[package]]
 name = "ethcore-io"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "crossbeam 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -848,7 +848,7 @@ dependencies = [
 [[package]]
 name = "ethcore-logger"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ansi_term 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "arrayvec 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -864,7 +864,7 @@ dependencies = [
 [[package]]
 name = "ethcore-transaction"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethjson 0.1.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
@@ -914,7 +914,7 @@ dependencies = [
 [[package]]
 name = "ethjson"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -926,7 +926,7 @@ dependencies = [
 [[package]]
 name = "ethkey"
 version = "0.3.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "edit-distance 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -943,7 +943,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "bit-set 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1174,7 +1174,7 @@ dependencies = [
 [[package]]
 name = "hashdb"
 version = "0.1.1"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1327,7 +1327,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "journaldb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1429,7 +1429,7 @@ dependencies = [
 [[package]]
 name = "keccak-hash"
 version = "0.1.2"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 1.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1447,7 +1447,7 @@ dependencies = [
 [[package]]
 name = "kvdb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1457,7 +1457,7 @@ dependencies = [
 [[package]]
 name = "kvdb-memorydb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "kvdb 0.1.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
 ]
@@ -1531,7 +1531,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 
 [[package]]
 name = "mantle-types"
@@ -1551,7 +1551,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "mem"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 
 [[package]]
 name = "memchr"
@@ -1575,7 +1575,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "memory-cache"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
  "lru-cache 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1589,7 +1589,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "memorydb"
 version = "0.1.1"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1721,7 +1721,7 @@ dependencies = [
 [[package]]
 name = "node-health"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-cpupool 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1842,7 +1842,7 @@ dependencies = [
 [[package]]
 name = "parity-machine"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1850,7 +1850,7 @@ dependencies = [
 [[package]]
 name = "parity-reactor"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "futures 0.1.27 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-core 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1859,7 +1859,7 @@ dependencies = [
 [[package]]
 name = "parity-rpc"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ansi_term 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cid 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1928,7 +1928,7 @@ dependencies = [
 [[package]]
 name = "parity-version"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
  "rlp 0.2.1 (git+https://github.com/oasislabs/parity?branch=wasi)",
@@ -2011,7 +2011,7 @@ dependencies = [
 [[package]]
 name = "patricia-trie"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/parity?branch=wasi)",
@@ -2050,7 +2050,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "plain_hasher"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "crunchy 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2539,7 +2539,7 @@ dependencies = [
 [[package]]
 name = "rlp"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2550,7 +2550,7 @@ dependencies = [
 [[package]]
 name = "rlp_compress"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2560,7 +2560,7 @@ dependencies = [
 [[package]]
 name = "rlp_derive"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "quote 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.13.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3004,7 +3004,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "stats"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -3458,7 +3458,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "triehash"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3510,7 +3510,7 @@ dependencies = [
 [[package]]
 name = "unexpected"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 
 [[package]]
 name = "unicase"
@@ -3582,7 +3582,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "util-error"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3613,7 +3613,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "vm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3652,7 +3652,7 @@ dependencies = [
 [[package]]
 name = "wasm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "bcfs 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blockchain-traits 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3673,7 +3673,7 @@ dependencies = [
 [[package]]
 name = "wasm-macros"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/parity?branch=wasi#79f97d04da656ce0428e3409091dd673fe759e04"
+source = "git+https://github.com/oasislabs/parity?branch=wasi#997cb50d94bf2f0b30a0b084041668b4d8c973c5"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-quote 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
