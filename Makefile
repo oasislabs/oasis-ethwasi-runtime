@@ -124,12 +124,12 @@ benchmark: genesis
 run-gateway:
 	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway...$(OFF)"
 	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
-		scripts/gateway.sh single_node
+		scripts/gateway.sh single_node 2>&1 | python scripts/color-log.py
 
 run-gateway-sgx:
 	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
 	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
-		scripts/gateway.sh single_node_sgx
+		scripts/gateway.sh single_node_sgx 2>&1 | python scripts/color-log.py
 
 test: test-unit test-e2e
 
