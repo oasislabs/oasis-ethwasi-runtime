@@ -190,6 +190,33 @@ impl Translator {
         txn
     }
 
+    /// Submit a raw Ethereum transaction to the chain and wait for the block to be indexed.
+    pub fn invoke(
+        &self,
+        raw: Vec<u8>,
+    ) -> impl Future<Item = (H256, ExecutionResult), Error = Error> {
+        let client = self.client.clone();
+
+        future::lazy(move || -> BoxFuture<(H256, ExecutionResult)> {
+            // TODO: Perform more checks.
+            let decoded: UnverifiedTransaction = match rlp::decode(&raw) {
+                Ok(decoded) => decoded,
+                Err(err) => return Box::new(future::err(err.into())),
+            };
+
+            Box::new(
+                client
+                    .ethereum_transaction(ByteBuf::from(raw))
+                    .and_then(move |result| {
+                        client
+                            .txn_client()
+                            .wait_block_indexed(result.block_number)
+                            .and_then(move |_| future::ok((decoded.hash(), result)))
+                    }),
+            )
+        })
+    }
+
     /// Submit a raw Ethereum transaction to the chain.
     pub fn send_raw_transaction(
         &self,
