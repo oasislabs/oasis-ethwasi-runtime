@@ -23,39 +23,37 @@ use super::crypto;
 
 /// Facade for the underlying confidential contract services to be injected into
 /// the parity state. Manages the confidential state--i.e., encryption keys and
-/// nonce to use--to be encrypting under for a *single* transaction. Each
-/// transaction for a confidential contract should have it's own ConfidentialCtx
-/// that is closed at the end of the transaction's execution.
+/// nonce to use--for a block.
 pub struct ConfidentialCtx {
-    /// The peer public key used for encryption. This should not change for an
-    /// open confidential context. This is implicitly set by the `open` method.
-    pub peer_public_key: Option<PublicKey>,
+    /// The peer public key used for encryption. This is implicitly set by the
+    /// `decrypt_session` method, establishing an encrypted channel to the peer.
+    peer_public_key: Option<PublicKey>,
     /// The contract address and keys used for encryption. These keys may be
     /// swapped or set to None in an open confidential context, facilitating
-    /// a confidential context switch to encrypt for the *same user* but under
+    /// a confidential context switch to encrypt for the *same peer* but under
     /// a different contract.
-    pub contract: Option<(Address, ContractKey)>,
+    contract: Option<(Address, ContractKey)>,
     /// The next nonce to use when encrypting a message to `peer_public_key`.
     /// This starts at the nonce+1 given by the `encrypted_tx_data` param in the
-    /// `open_tx_data` fn. Then, throughout the context, is incremented each
-    /// time a message is encrypted to the `peer_public_key`.
-    pub next_nonce: Option<Nonce>,
+    /// `decrypt_session` fn. Then, throughout the transaction, is incremented each
+    /// time a message is encrypted to the `peer_public_key` via `encrypt_session`.
+    next_nonce: Option<Nonce>,
     /// True iff the confidential context is activated, i.e., if we've executed
     /// a confidential contract at any point in the call hierarchy.
-    pub activated: bool,
+    activated: bool,
     /// Hash of previous block, used to construct storage encryption nonce.
-    pub prev_block_hash: H256,
+    prev_block_hash: H256,
     /// Deoxys-II instance used for encrypting and decrypting contract storage.
-    pub d2: Option<DeoxysII>,
+    d2: Option<DeoxysII>,
     /// The next nonce to use when encrypting a storage value. When we start
     /// executing a confidential transaction, its value is set to
     /// H(prev_block_hash || contract_address)[:11] || 0x00000000. The value is
     /// incremented after each encrypt operation.
-    pub next_storage_nonce: Option<Nonce>,
+    next_storage_nonce: Option<Nonce>,
     /// Key manager client.
-    pub key_manager: Arc<dyn KeyManagerClient>,
+    key_manager: Arc<dyn KeyManagerClient>,
     /// IO context (needed for the key manager client).
-    pub io_ctx: Arc<Context>,
+    io_ctx: Arc<Context>,
 }
 
 impl ConfidentialCtx {
@@ -72,6 +70,32 @@ impl ConfidentialCtx {
             d2: None,
             prev_block_hash,
             next_storage_nonce: None,
+            key_manager,
+            io_ctx,
+        }
+    }
+
+    /// Constructor to be used for testing only.
+    #[cfg(feature = "test")]
+    pub fn new_test(
+        peer_public_key: Option<PublicKey>,
+        contract: Option<(Address, ContractKey)>,
+        next_nonce: Option<Nonce>,
+        activated: bool,
+        prev_block_hash: H256,
+        d2: Option<DeoxysII>,
+        next_storage_nonce: Option<Nonce>,
+        key_manager: Arc<dyn KeyManagerClient>,
+        io_ctx: Arc<Context>,
+    ) -> Self {
+        Self {
+            peer_public_key,
+            contract,
+            next_nonce,
+            activated,
+            d2,
+            prev_block_hash,
+            next_storage_nonce,
             key_manager,
             io_ctx,
         }
@@ -260,37 +284,6 @@ impl EthConfidentialCtx for ConfidentialCtx {
             .expect("Should always have a Deoxys-II instance to decrypt storage")
             .open(&nonce, ciphertext.to_vec(), vec![])
             .unwrap())
-    }
-
-    fn create_long_term_public_key(&mut self, contract: Address) -> Result<(Vec<u8>, Vec<u8>)> {
-        let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
-        let pk = Executor::with_current(|executor| {
-            // Fetching the keys for the contract, will derive a new key if
-            // one does not exist yet.  With the current key manager design,
-            // there's also no notion of a short term key or long term key,
-            // there is just the keys.
-            //
-            // TODO: Just a get_public_key call will suffice for actual key
-            // manager, but the mock one requires 2 calls still (ekiden#1814).
-            executor
-                .block_on(
-                    self.key_manager
-                        .get_or_create_keys(Context::create_child(&self.io_ctx), contract_id),
-                )
-                .context("failed to create keys")
-                .map_err(|err| Error::Confidential(err.to_string()))?;
-
-            executor
-                .block_on(
-                    self.key_manager
-                        .get_public_key(Context::create_child(&self.io_ctx), contract_id),
-                )
-                .context("failed to fetch long term key")
-                .map_err(|err| Error::Confidential(err.to_string()))?
-                .ok_or(Error::Confidential("failed to create keys".to_string()))
-        })?;
-
-        Ok((pk.key.as_ref().to_vec(), pk.signature.as_ref().to_vec()))
     }
 
     fn peer(&self) -> Option<Vec<u8>> {
