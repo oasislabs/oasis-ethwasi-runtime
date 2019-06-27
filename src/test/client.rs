@@ -343,19 +343,19 @@ impl Client {
 
         // No need to save the Nonce on the Client (for now).
         let nonce = Nonce::new([0; NONCE_SIZE]);
-        ConfidentialCtx {
-            peer_public_key: Some(contract_key.input_keypair.get_pk()),
-            contract: Some((contract, self.ephemeral_key.clone())),
-            next_nonce: Some(nonce),
-            activated: true,
+        ConfidentialCtx::new_test(
+            Some(contract_key.input_keypair.get_pk()),
+            Some((contract, self.ephemeral_key.clone())),
+            Some(nonce),
+            true,
+            Default::default(),
             // Not to be used for storage encryption, so no need for a Deoxys-II instance
             // or storage nonce.
-            d2: None,
-            next_storage_nonce: None,
-            prev_block_hash: Default::default(),
-            key_manager: self.km_client.clone(),
-            io_ctx: IoContext::background().freeze(),
-        }
+            None,
+            None,
+            self.km_client.clone(),
+            IoContext::background().freeze(),
+        )
     }
 
     /// Returns an *open* confidential context. Using this with a parity State object will
