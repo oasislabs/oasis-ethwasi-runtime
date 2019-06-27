@@ -59,6 +59,7 @@ confidential = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
 test = ["runtime-ethereum-common/test"]
+benchmarking = ["runtime-ethereum-common/benchmarking"]
 production-genesis = ["runtime-ethereum-common/production-genesis"]
 
 [profile.release]
