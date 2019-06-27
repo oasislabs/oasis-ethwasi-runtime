@@ -25,6 +25,7 @@ pub struct ExecutionResult {
     pub log_bloom: Bloom,
     pub logs: Vec<LogEntry>,
     pub status_code: u8,
+    pub block_number: u64,
     #[serde(with = "serde_bytes")]
     pub output: Vec<u8>,
 }

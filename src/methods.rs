@@ -90,6 +90,8 @@ pub mod execute {
         let gas_used = outcome.receipt.gas_used - ectx.env_info.gas_used;
         ectx.env_info.gas_used = outcome.receipt.gas_used;
 
+        let block_number = ectx.env_info.number;
+
         // Emit the Ekiden transaction hash so that we can query it.
         #[cfg(not(feature = "test"))]
         {
@@ -120,6 +122,7 @@ pub mod execute {
                 TransactionOutcome::StatusCode(code) => code,
                 _ => unreachable!("we always use EIP-658 semantics"),
             },
+            block_number: block_number,
             output: outcome.output.into(),
         })
     }

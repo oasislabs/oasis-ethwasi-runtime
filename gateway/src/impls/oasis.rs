@@ -129,7 +129,7 @@ impl Oasis for OasisClient {
 
         Box::new(
             self.translator
-                .send_raw_transaction(raw.into())
+                .invoke(raw.into())
                 .map_err(execution_error)
                 .then(move |maybe_result| {
                     drop(timer);
