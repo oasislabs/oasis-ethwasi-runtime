@@ -64,7 +64,7 @@ hex = "0.3"
 [features]
 default = ["pubsub"]
 pubsub = []
-production-genesis = []
+production-genesis = ["runtime-ethereum-common/production-genesis"]
 
 [[bin]]
 name = "gateway"
