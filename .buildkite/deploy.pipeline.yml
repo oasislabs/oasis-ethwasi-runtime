@@ -77,6 +77,22 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  - label: Build benchmarking artifacts
+    branches: master beta
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - eval $(ssh-agent -s)
+      - ssh-add
+      - .buildkite/scripts/build_deployment_context.sh platform context-bench.tar.gz
+    env:
+      BUILD_BENCHMARKING: "1"
+    artifact_paths:
+      - context-bench.tar.gz
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
   - label: Build production-track artifacts
     branches: master beta
     command:
@@ -108,6 +124,22 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-testing-beta
+    env:
+      DEPLOYMENT_VARIANT: testing
+
+  - label: Update benchmarking docker image tags (master branches only)
+    branches: master
+    command:
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
+      - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking
+    env:
+      DEPLOYMENT_VARIANT: testing
+
+  - label: Update benchmarking docker image tags (beta branch only)
+    branches: beta
+    command:
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
+      - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking-beta
     env:
       DEPLOYMENT_VARIANT: testing
 
