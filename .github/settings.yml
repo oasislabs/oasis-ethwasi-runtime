@@ -38,3 +38,23 @@ collaborators:
 
   - username: kostko
     permission: admin
+
+  # External Auditors. We cannot add a github team to our account with limited
+  # read access at this time so this is required to allow for auditors to have
+  # access
+  
+  # Hind
+  - username: habuamr
+    permission: pull
+
+  # Dylan
+  - username: dylanlott
+    permission: pull
+
+  # Emery
+  - username: emeryrose
+    permission: pull
+
+  # Ram
+  - username: vu3rdd
+    permission: pull
