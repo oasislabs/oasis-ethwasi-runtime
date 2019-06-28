@@ -85,6 +85,14 @@ storage:
   debug:
     mock_signing_key: true
 
+# Scheduler backend.
+scheduler:
+  backend: tendermint
+
+# Registry backend.
+registry:
+  backend: tendermint
+
 # Roothash backend.
 roothash:
   tendermint:
