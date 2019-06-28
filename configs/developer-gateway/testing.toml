@@ -1,8 +1,5 @@
 title = "Local configuration"
 
-[wallet]
-private_key = "c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179"
-
 [bind_public]
 http_interface = "127.0.0.1"
 http_port = 1234
@@ -21,6 +18,9 @@ https_enabled = false
 
 [eth]
 url = "ws://localhost:8555"
+
+[eth.wallet]
+private_keys = ["c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179"]
 
 [mailbox]
 provider = "mem"
