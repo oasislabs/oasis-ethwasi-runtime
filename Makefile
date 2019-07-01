@@ -138,9 +138,7 @@ test-unit: check-ekiden
 	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
 		cargo test \
 			--features test \
-			-p runtime-ethereum-common \
-			-p runtime-ethereum \
-			-p web3-gateway
+			-p runtime-ethereum wasi -- --nocapture
 	@make -C benchmark test
 
 test-e2e: check-ekiden

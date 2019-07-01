@@ -1,0 +1,10 @@
+[package]
+name = "mantle-counter"
+version = "0.1.0"
+authors = ["Armani Ferrante <armaniferrante@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+failure = "0.1"
+mantle = "0.2"
+serde = { version = "1.0", features = ["derive"] }
