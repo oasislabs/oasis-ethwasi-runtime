@@ -13,12 +13,18 @@ lazy_static! {
 
     /// Genesis spec.
     pub static ref SPEC: Spec = {
+        #[cfg(all(feature = "production-genesis", feature = "benchmarking"))]
+        compile_error!("Cannot use \"production-genesis\" and \"benchmarking\" features together!");
+
         #[cfg(feature = "production-genesis")]
         let spec_json = include_str!("../../resources/genesis/genesis.json");
 
-        #[cfg(not(feature = "production-genesis"))]
+        #[cfg(feature = "benchmarking")]
+        let spec_json = include_str!("../../resources/genesis/genesis_benchmarking.json");
+
+        #[cfg(not(feature = "benchmarking"))]
         let spec_json = include_str!("../../resources/genesis/genesis_testing.json");
 
-        Spec::load(Cursor::new(spec_json)).unwrap()
+        Spec::load(Cursor::new(spec_json)).expect("must have a valid genesis spec")
     };
 }

@@ -24,5 +24,6 @@ zeroize = "0.6"
 
 [features]
 default = []
+benchmarking = []
 production-genesis = []
 test = []
