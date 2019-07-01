@@ -82,8 +82,8 @@ epochtime:
     # This makes each epoch last for 30 tendermint blocks.
     interval: 30
 
-# Random beacon backend.
-beacon:
+# Conesensus backend.
+consensus:
   backend: tendermint
 
 # Storage backend.
@@ -92,17 +92,8 @@ storage:
   debug:
     mock_signing_key: true
 
-# Scheduler backend.
-scheduler:
-  backend: trivial
-
-# Registry backend.
-registry:
-  backend: tendermint
-
 # Roothash backend.
 roothash:
-  backend: tendermint
   tendermint:
     index_blocks: true
 
@@ -110,10 +101,6 @@ roothash:
 tendermint:
   consensus:
     timeout_commit: 1s
-
-# Key manager backend configuration.
-keymanager:
-  backend: tendermint
 
 # Client configuration.
 client:
