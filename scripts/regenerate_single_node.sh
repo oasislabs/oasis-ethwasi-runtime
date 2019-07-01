@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# TODO: share this script with ekiden
+
 DATADIR=$(mktemp -d --tmpdir ekiden-regenerate-XXXXXXXXXX)
 
 EKIDEN_BINARY="${EKIDEN_ROOT_PATH}/go/ekiden/ekiden"
