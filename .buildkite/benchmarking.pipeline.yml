@@ -47,12 +47,12 @@ steps:
   - label: Update benchmarking docker image tags (master branches only)
     branches: master
     command:
-      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-testing benchmarking-latest
+      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-benchmarking benchmarking-latest
 
   - label: Update benchmarking docker image tags (beta branches only)
     branches: beta
     command:
-      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-testing-beta benchmarking-latest-beta
+      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-benchmarking-beta benchmarking-latest-beta
 
   - wait
 
