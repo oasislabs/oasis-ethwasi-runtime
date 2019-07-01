@@ -42,7 +42,7 @@ steps:
     artifact_paths:
       - platform/*
     env:
-      DEPLOYMENT_VARIANT: beta
+      BASE_VARIANT: beta
 
   - label: Extract production-track platform resources (master branches only)
     branches: master
@@ -117,6 +117,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-testing
     env:
+      BASE_VARIANT: testing
       DEPLOYMENT_VARIANT: testing
 
   - label: Update testing docker image tags (beta branch only)
@@ -125,6 +126,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-testing-beta
     env:
+      BASE_VARIANT: testing
       DEPLOYMENT_VARIANT: testing
 
   - label: Update benchmarking docker image tags (master branches only)
@@ -133,6 +135,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking
     env:
+      BASE_VARIANT: testing
       DEPLOYMENT_VARIANT: benchmarking
 
   - label: Update benchmarking docker image tags (beta branch only)
@@ -141,6 +144,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking-beta
     env:
+      BASE_VARIANT: testing
       DEPLOYMENT_VARIANT: benchmarking
 
   - label: Update staging docker image tags (master branches only)
@@ -155,6 +159,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
     env:
+      BASE_VARIANT: beta
       DEPLOYMENT_VARIANT: beta
 
   - wait
