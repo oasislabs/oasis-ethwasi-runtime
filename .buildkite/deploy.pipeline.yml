@@ -133,7 +133,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking
     env:
-      DEPLOYMENT_VARIANT: testing
+      DEPLOYMENT_VARIANT: benchmarking
 
   - label: Update benchmarking docker image tags (beta branch only)
     branches: beta
@@ -141,7 +141,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking-beta
     env:
-      DEPLOYMENT_VARIANT: testing
+      DEPLOYMENT_VARIANT: benchmarking
 
   - label: Update staging docker image tags (master branches only)
     branches: master
