@@ -193,7 +193,9 @@ impl Client {
     /// Creates a non-confidential contract, return the transaction hash for the deploy
     /// and the address of the contract.
     pub fn create_contract(&mut self, code: Vec<u8>, balance: &U256) -> (H256, Address) {
-        let (hash, address) = self.send(None, code, balance);
+        let (hash, address) = self
+            .send(None, code, balance, None)
+            .expect("deployment should succeed");
         (hash, address.unwrap())
     }
 
@@ -208,7 +210,9 @@ impl Client {
     ) -> (H256, Address) {
         let mut data = Self::make_header(expiry, confidentiality);
         data.extend(code);
-        let (hash, address) = self.send(None, data, balance);
+        let (hash, address) = self
+            .send(None, data, balance, None)
+            .expect("deployment should succeed");
         (hash, address.unwrap())
     }
 
@@ -246,7 +250,9 @@ impl Client {
 
     /// Returns the return value of the contract's method.
     pub fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> Vec<u8> {
-        let (hash, _) = self.send(Some(contract), data, value);
+        let (hash, _) = self
+            .send(Some(contract), data, value, None)
+            .expect("call should succeed");
         let result = self.result(hash);
         result.output
     }
@@ -257,7 +263,8 @@ impl Client {
         contract: Option<&Address>,
         data: Vec<u8>,
         value: &U256,
-    ) -> (H256, Option<Address>) {
+        nonce: Option<U256>,
+    ) -> Result<(H256, Option<Address>), String> {
         self.execute_batch(|client, ctx| {
             let ectx = runtime_context!(ctx, BlockContext);
             let tx = EthcoreTransaction {
@@ -266,7 +273,7 @@ impl Client {
                 } else {
                     Action::Call(*contract.unwrap())
                 },
-                nonce: ectx.state.nonce(&client.keypair.address()).unwrap(),
+                nonce: nonce.unwrap_or(ectx.state.nonce(&client.keypair.address()).unwrap()),
                 gas_price: client.gas_price,
                 gas: client.gas_limit,
                 value: *value,
@@ -276,7 +283,7 @@ impl Client {
 
             let raw = rlp::encode(&tx);
             let result = methods::execute::ethereum_transaction(&raw.into_vec(), ctx)
-                .expect("transaction execution must succeed");
+                .map_err(|err| err.to_string())?;
             client.results.insert(tx.hash(), result);
 
             let address = if contract == None {
@@ -293,7 +300,7 @@ impl Client {
                 None
             };
 
-            (tx.hash(), address)
+            Ok((tx.hash(), address))
         })
     }
 
@@ -308,11 +315,12 @@ impl Client {
         value: &U256,
     ) -> (H256, Option<Address>) {
         let enc_data = self.confidential_data(contract.clone(), data);
-        self.send(contract, enc_data, value)
+        self.send(contract, enc_data, value, None)
+            .expect("confidential send should succeed")
     }
 
     /// Performs a confidential call, i.e., a simulated transaction that doesn't update
-    /// blockchaian state. Returns the return value of the contract's functions.
+    /// blockchain state. Returns the return value of the contract's functions.
     pub fn confidential_call(
         &mut self,
         contract: &Address,
@@ -320,7 +328,9 @@ impl Client {
         value: &U256,
     ) -> Vec<u8> {
         let enc_data = self.confidential_data(Some(contract), data);
-        let (hash, _) = self.send(Some(contract), enc_data, value);
+        let (hash, _) = self
+            .send(Some(contract), enc_data, value, None)
+            .expect("confidential call should succeed");
         let result = self.result(hash);
         self.client_confidential_ctx(*contract)
             .decrypt(result.output)

@@ -110,6 +110,35 @@ fn test_redeploy() {
 }
 
 #[test]
+fn test_nonce_checking() {
+    let mut client = test::Client::new();
+
+    // Nonce should start at 0.
+    let nonce = client.nonce(&client.keypair.address());
+    assert_eq!(nonce, U256::zero());
+
+    // Send a transaction with nonce 0.
+    let (tx_hash, _) = client
+        .send(None, vec![], &U256::zero(), Some(U256::zero()))
+        .expect("transaction should succeed");
+    let receipt = client.result(tx_hash);
+    let status = receipt.status_code;
+    assert_eq!(status, 1);
+
+    // Nonce should be 1 after a successful transaction.
+    let nonce = client.nonce(&client.keypair.address());
+    assert_eq!(nonce, U256::from(1));
+
+    // Try to send a transaction with invalid nonce (should fail).
+    let result = client.send(None, vec![], &U256::zero(), Some(U256::from(100)));
+    assert!(result.is_err());
+
+    // Nonce should still be 1 after a failed transaction.
+    let nonce = client.nonce(&client.keypair.address());
+    assert_eq!(nonce, U256::from(1));
+}
+
+#[test]
 fn test_signature_verification() {
     let mut client = test::Client::new();
 
