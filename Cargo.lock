@@ -552,7 +552,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ekiden-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
+source = "git+https://github.com/oasislabs/ekiden#83ad2b06cd9c2a9bb4c34256b456ac016129c35d"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -575,7 +575,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-api"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
+source = "git+https://github.com/oasislabs/ekiden#83ad2b06cd9c2a9bb4c34256b456ac016129c35d"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -590,7 +590,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
+source = "git+https://github.com/oasislabs/ekiden#83ad2b06cd9c2a9bb4c34256b456ac016129c35d"
 dependencies = [
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-api 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
@@ -605,7 +605,7 @@ dependencies = [
 [[package]]
 name = "ekiden-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
+source = "git+https://github.com/oasislabs/ekiden#83ad2b06cd9c2a9bb4c34256b456ac016129c35d"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -648,7 +648,7 @@ dependencies = [
 [[package]]
 name = "ekiden-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
+source = "git+https://github.com/oasislabs/ekiden#83ad2b06cd9c2a9bb4c34256b456ac016129c35d"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1160,6 +1160,7 @@ dependencies = [
  "runtime-ethereum-common 0.3.0",
  "serde 1.0.94 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_cbor 0.9.0 (git+https://github.com/pyfisch/cbor?rev=114ecaeac53799d0bf81ca8d1b980c7c419d76fe)",
  "serde_derive 1.0.94 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

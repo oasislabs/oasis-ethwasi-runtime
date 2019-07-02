@@ -14,6 +14,7 @@ extern crate grpcio;
 extern crate io_context;
 extern crate runtime_ethereum_common;
 extern crate serde_bytes;
+extern crate serde_cbor;
 extern crate serde_json;
 
 use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
@@ -161,6 +162,15 @@ fn main() {
                 .required(true),
         )
         .arg(
+            Arg::with_name("runtime-id")
+                .help("Target runtime ID")
+                .long("runtime-id")
+                .takes_value(true)
+                .required(true)
+                // TODO: Remove this default value to discourage use (see ekiden#1693).
+                .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
+        )
+        .arg(
             Arg::with_name("node-address")
                 .help("Storage node address")
                 .long("node-address")
@@ -178,6 +188,7 @@ fn main() {
 
     let node_address = matches.value_of("node-address").unwrap();
     let commit_every = value_t_or_exit!(matches, "commit-every", usize);
+    let runtime_id = value_t_or_exit!(matches, "runtime-id", roothash::Namespace);
 
     // Initialize connection to the storage node.
     let env = Arc::new(EnvBuilder::new().build());
@@ -218,14 +229,17 @@ fn main() {
             state.commit().unwrap();
 
             let (write_log, state_root) = StorageContext::with_current(|mkvs, _untrusted_local| {
-                mkvs.commit(Context::background())
+                mkvs.commit(Context::background(), runtime_id, 0)
                     .expect("mkvs commit must succeed")
             });
 
             // Push to storage.
             let mut request = storage::ApplyRequest::new();
-            request.set_root(root.as_ref().to_vec());
-            request.set_expected_new_root(state_root.as_ref().to_vec());
+            request.set_namespace(runtime_id.as_ref().to_vec());
+            request.set_src_round(0);
+            request.set_src_root(root.as_ref().to_vec());
+            request.set_dst_round(0);
+            request.set_dst_root(state_root.as_ref().to_vec());
             request.set_log(
                 write_log
                     .into_iter()
@@ -283,14 +297,14 @@ fn main() {
     });
 
     let (_, state_root) = mkvs
-        .commit(Context::background())
+        .commit(Context::background(), runtime_id, 0)
         .expect("mkvs commit must succeed");
-    println!("Done, genesis state root is {:?}.", state_root,);
+    println!("Done, genesis state root is {:?}.", state_root);
 
     // Generate genesis roothash block file.
     let mut block = roothash::Block::default();
+    block.header.namespace = runtime_id;
     block.header.state_root = state_root;
-    // TODO: Take runtime identifier as an argument.
     let blocks = vec![block];
 
     // Save to file.
