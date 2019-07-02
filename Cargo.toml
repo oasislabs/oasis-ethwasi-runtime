@@ -83,5 +83,6 @@ members = [
     "common",
     "gateway",
     "genesis",
+    "t",
 ]
 exclude = ["tests"]

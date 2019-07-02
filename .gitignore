@@ -3,7 +3,6 @@
 
 # Build.
 tests/build
-target/
 **/*.rs.bk
 *.a
 *.o

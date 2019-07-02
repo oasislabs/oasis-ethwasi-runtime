@@ -143,6 +143,11 @@ test-unit: check-ekiden
 			-p web3-gateway
 	@make -C benchmark test
 
+run-t: check-ekiden
+	@$(ECHO) "$(CYAN)*** Running unit tests...$(OFF)"
+	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
+		cargo run -p t --features test
+
 test-e2e: check-ekiden
 	@$(ECHO) "$(CYAN)*** Running E2E tests...$(OFF)"
 	@.buildkite/scripts/download_ekiden_test_scripts.sh

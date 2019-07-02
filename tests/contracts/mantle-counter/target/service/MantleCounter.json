@@ -1,0 +1,38 @@
+{
+  "name": "MantleCounter",
+  "namespace": "mantle_counter",
+  "constructor": {
+    "inputs": []
+  },
+  "functions": [
+    {
+      "name": "get_count",
+      "mutability": "mutable",
+      "inputs": [],
+      "output": {
+        "type": "u64"
+      }
+    },
+    {
+      "name": "get_count2",
+      "mutability": "mutable",
+      "inputs": [
+        {
+          "type": "u64"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "output": {
+        "type": "bytes"
+      }
+    },
+    {
+      "name": "increment_count",
+      "mutability": "mutable",
+      "inputs": []
+    }
+  ],
+  "mantle_build_version": "0.2.0"
+}
