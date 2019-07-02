@@ -552,7 +552,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ekiden-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#6fa9667692a08ed0d94b4466fb0001a2d12682c8"
+source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -575,7 +575,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-api"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#6fa9667692a08ed0d94b4466fb0001a2d12682c8"
+source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -590,7 +590,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#6fa9667692a08ed0d94b4466fb0001a2d12682c8"
+source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
 dependencies = [
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-api 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
@@ -605,7 +605,7 @@ dependencies = [
 [[package]]
 name = "ekiden-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#6fa9667692a08ed0d94b4466fb0001a2d12682c8"
+source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -648,7 +648,7 @@ dependencies = [
 [[package]]
 name = "ekiden-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#6fa9667692a08ed0d94b4466fb0001a2d12682c8"
+source = "git+https://github.com/oasislabs/ekiden#ee87094cd765a8de445a9986ad0c181030108702"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2365,7 +2365,7 @@ dependencies = [
 
 [[package]]
 name = "protoc"
-version = "2.6.2"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2380,7 +2380,7 @@ dependencies = [
  "grpcio-compiler 0.5.0-alpha (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf-codegen 2.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "protoc 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protoc 2.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -4311,7 +4311,7 @@ dependencies = [
 "checksum prost-types 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1de482a366941c8d56d19b650fac09ca08508f2a696119ee7513ad590c8bac6f"
 "checksum protobuf 2.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "524d165d95627ddebba768db728216c4429bbb62882f7e6ab1a6c3c54a7ed830"
 "checksum protobuf-codegen 2.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e142c5972a0736674d647714ac7a454f20aef31b09902d330583b8d8a96401a1"
-"checksum protoc 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3af92747f855ff848a46713c8207642609287422f9b27d51d86e0e9a32cac26d"
+"checksum protoc 2.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f26e88abedb402073b87981faecc3b973dd5b19b7002821ed47c457bc5b367a4"
 "checksum protoc-grpcio 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "da4389258ed4b768438edec1e1e813cc7fa29e70c1b1cb4eb2f8fc341dc562dd"
 "checksum pwasm-utils 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "90d2b3c5bf24275fc77db6b14ec00a7a085d8ff9d1c4215fb6f6263e8d7b01bc"
 "checksum quick-error 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7ac990ab4e038dd8481a5e3fd00641067fcfc674ad663f3222752ed5284e05d4"
