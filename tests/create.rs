@@ -52,7 +52,14 @@ fn create_and_set_storage() {
         ])
         .unwrap();
 
-        let (tx_hash, _) = client.send(Some(&factory_address), deploy_contract_data, &0.into());
+        let (tx_hash, _) = client
+            .send(
+                Some(&factory_address),
+                deploy_contract_data,
+                &0.into(),
+                None,
+            )
+            .expect("deployment should succeed");
 
         // Ensure it didn't revert.
         let receipt = client.result(tx_hash);

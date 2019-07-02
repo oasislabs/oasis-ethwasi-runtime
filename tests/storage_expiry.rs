@@ -22,7 +22,9 @@ fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> U256 {
 /// Invokes the `incrementCounter` method on the contract, returns the receipt.
 fn increment_counter<'a>(contract: Address, client: &mut test::Client) -> ExecutionResult {
     let sighash_data = contracts::counter::increment_counter_sighash();
-    let (tx_hash, _) = client.send(Some(&contract), sighash_data, &U256::zero());
+    let (tx_hash, _) = client
+        .send(Some(&contract), sighash_data, &U256::zero(), None)
+        .expect("incrementing counter should succeed");
     client.result(tx_hash)
 }
 
