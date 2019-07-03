@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 runtime-ethereum = { path = "../" }
+serde = { version = "1.0", features = ["derive"] }
+serde_cbor = "0.10"
