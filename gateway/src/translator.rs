@@ -567,7 +567,10 @@ impl EthereumBlock {
     ) -> impl Future<Item = impl Iterator<Item = TxnCall>, Error = Error> {
         self.client
             .txn_client()
-            .get_transactions(self.snapshot.block.header.io_root)
+            .get_transactions(
+                self.snapshot.block.header.round,
+                self.snapshot.block.header.io_root,
+            )
             .map(|txns| {
                 txns.0.into_iter().filter_map(|txn| {
                     let txn: TxnCall = serde_cbor::from_slice(&txn).ok()?;

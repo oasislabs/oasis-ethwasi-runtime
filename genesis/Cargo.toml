@@ -20,6 +20,8 @@ serde_bytes = "~0.10"
 grpcio = "0.4.4"
 failure = "0.1.5"
 io-context = "0.2.0"
+# TODO: Change to released version when 0.10.0 is released.
+serde_cbor = { git = "https://github.com/pyfisch/cbor", rev = "114ecaeac53799d0bf81ca8d1b980c7c419d76fe" }
 
 [[bin]]
 name = "genesis-init"

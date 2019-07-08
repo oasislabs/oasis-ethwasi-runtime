@@ -86,7 +86,7 @@ impl Client {
         });
 
         let (_, state_root) = mkvs
-            .commit(IoContext::background())
+            .commit(IoContext::background(), Default::default(), 0)
             .expect("mkvs commit must succeed");
 
         Self {
@@ -155,7 +155,11 @@ impl Client {
         });
 
         let (_, new_state_root) = mkvs
-            .commit(IoContext::background())
+            .commit(
+                IoContext::background(),
+                Default::default(),
+                self.header.round + 1,
+            )
             .expect("mkvs commit must succeed");
         self.header.state_root = new_state_root;
         // Just want a deterministic, random-looking value for block hash.

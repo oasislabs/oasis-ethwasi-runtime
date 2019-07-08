@@ -61,9 +61,10 @@ fn main() {
     });
 
     let (write_log, _) = mkvs
-        .commit(Context::background())
+        .commit(Context::background(), Default::default(), 0)
         .expect("mkvs commit must succeed");
 
+    // Serialize genesis state.
     let mut output = File::create(matches.value_of("output_file").unwrap()).unwrap();
     serde_json::to_writer_pretty(&mut output, &write_log).unwrap();
 }
