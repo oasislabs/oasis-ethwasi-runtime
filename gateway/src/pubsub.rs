@@ -65,8 +65,14 @@ impl Broker {
                 inner.translator.get_latest_block().map(move |blk| {
                     let last_notified_block = inner.last_notified_block.load(Ordering::SeqCst);
                     let listeners = inner.listeners.read().unwrap();
-                    let from = last_notified_block + 1;
+
                     let to = blk.number_u64();
+
+                    if to <= last_notified_block {
+                        return;
+                    }
+
+                    let from = last_notified_block + 1;
 
                     for listener in listeners.iter() {
                         if let Some(listener) = listener.upgrade() {
