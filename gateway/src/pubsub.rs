@@ -68,6 +68,7 @@ impl Broker {
 
                     let to = blk.number_u64();
 
+                    // If there are no new blocks, return early.
                     if to <= last_notified_block {
                         return;
                     }
