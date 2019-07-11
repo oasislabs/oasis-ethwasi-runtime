@@ -14,6 +14,24 @@ SINGLE_NODE_SGX_DIR=${SINGLE_NODE_SGX_DIR:-"./configs/single_node_sgx/"}
 GENESIS_DIR=${GENESIS_DIR:-"./resources/genesis/"}
 
 #
+# Use the same validator.
+#
+
+${EKIDEN_BINARY}\
+    genesis provision_validator \
+    --datadir ${DATADIR} \
+    --debug.allow_test_keys \
+    --debug.test_entity \
+    --node_name single-node \
+    --node_addr 127.0.0.1:26656
+
+rm ${DATADIR}/tls_identity*
+cp ${DATADIR}/*.pem ${SINGLE_NODE_DIR}/
+cp ${DATADIR}/validator-*.json ${SINGLE_NODE_DIR}/validator.json
+cp ${DATADIR}/*.pem ${SINGLE_NODE_SGX_DIR}/
+cp ${DATADIR}/validator-*.json ${SINGLE_NODE_SGX_DIR}/validator.json
+
+#
 # Non-SGX config.
 #
 
@@ -45,11 +63,10 @@ ${EKIDEN_BINARY} \
     --datadir ${DATADIR} \
     --debug.allow_test_keys \
     --debug.test_entity \
-    --storage ${GENESIS_DIR}/ekiden_genesis_testing.json \
     --genesis_file ${DATADIR}/genesis_nosgx.json \
     --runtime ${DATADIR}/keymanager_genesis_nosgx.json \
     --runtime ${DATADIR}/runtime_genesis_nosgx.json \
-    --validator ${SINGLE_NODE_DIR}/validator-44f1c4b3a161a889e6876ba92c20c3f63dd1ecf204adab6ca436566497b01628.json
+    --validator ${SINGLE_NODE_DIR}/validator.json
 
 cp ${DATADIR}/genesis_nosgx.json ${SINGLE_NODE_DIR}/genesis.json
 
@@ -87,10 +104,9 @@ ${EKIDEN_BINARY} \
     --datadir ${DATADIR} \
     --debug.allow_test_keys \
     --debug.test_entity \
-    --storage ${GENESIS_DIR}/ekiden_genesis_testing.json \
     --genesis_file ${DATADIR}/genesis_sgx.json \
     --runtime ${DATADIR}/keymanager_genesis_sgx.json \
     --runtime ${DATADIR}/runtime_genesis_sgx.json \
-    --validator ${SINGLE_NODE_SGX_DIR}/validator-44f1c4b3a161a889e6876ba92c20c3f63dd1ecf204adab6ca436566497b01628.json
+    --validator ${SINGLE_NODE_SGX_DIR}/validator.json
 
 cp ${DATADIR}/genesis_sgx.json ${SINGLE_NODE_SGX_DIR}/genesis.json
