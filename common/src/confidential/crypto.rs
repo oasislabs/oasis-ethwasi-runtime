@@ -1,6 +1,9 @@
-//! Encryption utilties for Web3(c).
-//! Wraps the ekiden_core::mrae::sivaessha2 primitives with a set of encryption
-//! methods that transparently encodes/decodes the Web3(c) wire format.
+//! Encryption utilties to wrap the ekiden mrae box, transparently
+//! encoding/decoding the ciphertext layout:
+//!
+//! PUBLIC_KEY || CIPHER_LEN || AAD_LEN || CIPHER || AAD || NONCE.
+
+use std::convert::TryInto;
 
 use ekiden_keymanager_client::{PrivateKey, PublicKey};
 use ekiden_runtime::common::crypto::mrae::{
@@ -18,9 +21,9 @@ const AAD_LEN_SIZE: usize = 8;
 
 /// Encrypts the given plaintext using the symmetric key derived from
 /// peer_public_key and secret_key. Uses the given public_key to return
-/// an encrypted payload of the form:
+/// an encrypted payload with the following layout:
 ///
-/// public_key || cipher_len || aad_len || cipher || aad || nonce.
+/// PUBLIC_KEY || CIPHER_LEN || AAD_LEN || CIPHER || AAD || NONCE.
 ///
 /// Allowing the receipient of the encrypted payload to decrypt with
 /// the given nonce and public_key.
@@ -55,10 +58,6 @@ pub fn decrypt(data: Option<Vec<u8>>, secret_key: PrivateKey) -> Fallible<Decryp
         });
     }
     let (peer_public_key, _, _, cipher, aad, nonce) = split_encrypted_payload(data.unwrap())?;
-    println!("peer public key = {:?}", peer_public_key);
-    println!("cipher = {:?}", cipher);
-    println!("aad = {:?}", aad);
-    println!("nonce = {:?}", nonce);
     let plaintext = deoxysii::box_open(
         &nonce,
         cipher,
@@ -85,7 +84,7 @@ pub struct Decryption {
     pub aad: Vec<u8>,
 }
 
-/// Packs the given paramaters into a Vec of the form nonce || public_key || ciphertext.
+/// Packs the given paramaters into the encoded ciphertext layout.
 fn encode_encryption(
     mut ciphertext: Vec<u8>,
     nonce: Nonce,
@@ -102,13 +101,14 @@ fn encode_encryption(
     encryption
 }
 
-/// Assumes data is of the form  IV || PK || CIPHER.
+/// Assumes data is of the form:
+///
+/// PUBLIC_KEY || CIPHER_LEN || AAD_LEN || CIPHER || AAD || NONCE.
+///
 /// Returns a tuple of each component.
 fn split_encrypted_payload(
     data: Vec<u8>
 ) -> Fallible<(PublicKey, u64, u64, Vec<u8>, Vec<u8>, Nonce)> {
-    println!("split payload***************************");
-    println!("data = {:?}", data);
     if data.len() < PublicKey::len() + NONCE_SIZE + CIPHER_LEN_SIZE + AAD_LEN_SIZE {
         return Err(format_err!("invalid nonce or public key"));
     }
@@ -119,28 +119,27 @@ fn split_encrypted_payload(
     let cipher_len_end = cipher_len_start + CIPHER_LEN_SIZE;
     let mut cipher_array = [0u8; 8];
     cipher_array.copy_from_slice(&data[cipher_len_start..cipher_len_end]);
-    println!("cipiher array  = {:?}", cipher_array.to_vec());
-    let cipher_len = u64::from_le_bytes(cipher_array);
-    println!("cipher len = {:?}", cipher_len);
+    let cipher_len: usize = u64::from_le_bytes(cipher_array).try_into()?;
 
     let aad_len_start = cipher_len_end;
     let aad_len_end = aad_len_start + AAD_LEN_SIZE;
     let mut aad_array = [0u8; 8];
     aad_array.copy_from_slice(&data[aad_len_start..aad_len_end]);
-    let aad_len = u64::from_le_bytes(aad_array);
-    println!("aad_len = {:?}", aad_len);
+    let aad_len: usize = u64::from_le_bytes(aad_array).try_into()?;
+
+    let expected_data_length
+        = PublicKey::len() + CIPHER_LEN_SIZE + AAD_LEN_SIZE + cipher_len + aad_len + NONCE_SIZE;
+    if data.len() != expected_data_length {
+        return Err(format_err!("invalid size for ciphertext"));
+    }
 
     let cipher_start = aad_len_end;
-    let cipher_end = cipher_start + cipher_len as usize;
+    let cipher_end = cipher_start + cipher_len;
     let cipher = data[cipher_start..cipher_end].to_vec();
 
-    println!("cipher = {:?}", cipher);
-
     let aad_start = cipher_end;
-    let aad_end = aad_start + aad_len as usize;
+    let aad_end = aad_start + aad_len;
     let aad = data[aad_start..aad_end].to_vec();
-
-    println!("aad = {:?}", aad);
 
     let nonce_start = aad_end;
     let nonce_end = nonce_start + NONCE_SIZE;
@@ -148,9 +147,5 @@ fn split_encrypted_payload(
     nonce_inner.copy_from_slice(&data[nonce_start..nonce_end]);
     let nonce = Nonce::new(nonce_inner);
 
-    println!("nonce = {:?}", nonce);
-
-    println!("*********************************");
-
-    Ok((peer_public_key, cipher_len, aad_len, cipher, aad, nonce))
+    Ok((peer_public_key, cipher_len as u64, aad_len as u64, cipher, aad, nonce))
 }
