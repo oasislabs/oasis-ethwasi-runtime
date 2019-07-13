@@ -65,7 +65,7 @@ pub fn decrypt(data: Option<Vec<u8>>, secret_key: PrivateKey) -> Fallible<Decryp
         &peer_public_key.into(),
         &secret_key.into(),
     )
-        .with_context(|e| format!("payload open failed: {}", e))?;
+    .with_context(|e| format!("payload open failed: {}", e))?;
     Ok(Decryption {
         plaintext,
         peer_public_key,
@@ -107,7 +107,7 @@ fn encode_encryption(
 ///
 /// Returns a tuple of each component.
 fn split_encrypted_payload(
-    data: Vec<u8>
+    data: Vec<u8>,
 ) -> Fallible<(PublicKey, u64, u64, Vec<u8>, Vec<u8>, Nonce)> {
     if data.len() < PublicKey::len() + NONCE_SIZE + CIPHER_LEN_SIZE + AAD_LEN_SIZE {
         return Err(format_err!("invalid nonce or public key"));
@@ -127,8 +127,8 @@ fn split_encrypted_payload(
     aad_array.copy_from_slice(&data[aad_len_start..aad_len_end]);
     let aad_len: usize = u64::from_le_bytes(aad_array).try_into()?;
 
-    let expected_data_length
-        = PublicKey::len() + CIPHER_LEN_SIZE + AAD_LEN_SIZE + cipher_len + aad_len + NONCE_SIZE;
+    let expected_data_length =
+        PublicKey::len() + CIPHER_LEN_SIZE + AAD_LEN_SIZE + cipher_len + aad_len + NONCE_SIZE;
     if data.len() != expected_data_length {
         return Err(format_err!("invalid size for ciphertext"));
     }
@@ -147,5 +147,12 @@ fn split_encrypted_payload(
     nonce_inner.copy_from_slice(&data[nonce_start..nonce_end]);
     let nonce = Nonce::new(nonce_inner);
 
-    Ok((peer_public_key, cipher_len as u64, aad_len as u64, cipher, aad, nonce))
+    Ok((
+        peer_public_key,
+        cipher_len as u64,
+        aad_len as u64,
+        cipher,
+        aad,
+        nonce,
+    ))
 }
