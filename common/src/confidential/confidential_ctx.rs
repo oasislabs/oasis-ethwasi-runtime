@@ -204,6 +204,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
             self.peer_public_key.clone().unwrap(),
             contract_pk,
             contract_sk,
+            vec![],
         )
         .map_err(|err| Error::Confidential(err.to_string()))?;
 
