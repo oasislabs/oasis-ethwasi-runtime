@@ -10,7 +10,7 @@ use ekiden_client::{
     BoxFuture,
 };
 use ekiden_runtime::{
-    common::{crypto::hash::Hash, logger::get_logger},
+    common::{cbor, crypto::hash::Hash, logger::get_logger},
     storage::MKVS,
     transaction::types::{TxnCall, TxnOutput},
 };
@@ -40,7 +40,6 @@ use runtime_ethereum_common::{
 };
 
 use serde_bytes::ByteBuf;
-use serde_cbor;
 use slog::{error, Logger};
 use tokio_threadpool::{Builder as ThreadPoolBuilder, ThreadPool};
 
@@ -352,7 +351,7 @@ impl Translator {
                 }
 
                 // We know that arguments are raw Ethereum transaction bytes.
-                let raw: ByteBuf = match serde_cbor::from_value(txn.input.args.clone()) {
+                let raw: ByteBuf = match cbor::from_value(txn.input.args.clone()) {
                     Ok(raw) => raw,
                     Err(err) => {
                         error!(logger, "Error while decoding ethereum transaction input";
@@ -380,7 +379,7 @@ impl Translator {
                 match txn.output {
                     TxnOutput::Success(value) => {
                         // We know that output is ExecutionResult.
-                        let result: ExecutionResult = match serde_cbor::from_value(value) {
+                        let result: ExecutionResult = match cbor::from_value(value) {
                             Ok(result) => result,
                             Err(err) => {
                                 error!(logger, "Error while decoding ethereum transaction output";
@@ -450,7 +449,7 @@ impl EthereumTransaction {
         }
 
         // We know that arguments are raw Ethereum transaction bytes.
-        let raw: ByteBuf = serde_cbor::from_value(self.snapshot.input.args.clone())?;
+        let raw: ByteBuf = cbor::from_value(self.snapshot.input.args.clone())?;
         let signed: UnverifiedTransaction = rlp::decode(&raw)?;
 
         Ok(LocalizedTransaction {
@@ -467,7 +466,7 @@ impl EthereumTransaction {
         match self.snapshot.output {
             TxnOutput::Success(ref value) => {
                 // We know that output is ExecutionResult.
-                let result: ExecutionResult = serde_cbor::from_value(value.clone())?;
+                let result: ExecutionResult = cbor::from_value(value.clone())?;
                 // Decode input transaction.
                 let mut tx = self.transaction()?;
 
@@ -573,7 +572,7 @@ impl EthereumBlock {
             )
             .map(|txns| {
                 txns.0.into_iter().filter_map(|txn| {
-                    let txn: TxnCall = serde_cbor::from_slice(&txn).ok()?;
+                    let txn: TxnCall = cbor::from_slice(&txn).ok()?;
                     if txn.method != METHOD_ETH_TXN {
                         return None;
                     }
@@ -589,7 +588,7 @@ impl EthereumBlock {
     ) -> impl Future<Item = impl Iterator<Item = UnverifiedTransaction>, Error = Error> {
         self.raw_transactions().and_then(|txns| {
             Ok(txns.filter_map(|txn| {
-                let raw: ByteBuf = serde_cbor::from_value(txn.args).ok()?;
+                let raw: ByteBuf = cbor::from_value(txn.args).ok()?;
                 let signed: UnverifiedTransaction = rlp::decode(&raw).ok()?;
 
                 Some(signed)
