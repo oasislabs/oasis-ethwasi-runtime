@@ -123,15 +123,25 @@ install_e2e_tests() {
                 # from the e2e-tests pipeline.
                 if [ "${BUILDKITE:-}" == "true" ]; then
                     echo "Downloading compiled contracts from the e2e-tests pipeline."
+                    # Solidity contracts.
                     ${WORKDIR}/.buildkite/scripts/download_artifact.sh \
                         e2e-tests \
                         ${e2e_tests_branch} \
                         "Lint and Compile Contracts" \
                         build.zip \
                         "$(pwd)"
-
                     unzip build.zip
                     rm build.zip
+                    # Mantle contracts.
+                    ${WORKDIR}/.buildkite/scripts/download_artifact.sh \
+                        e2e-tests \
+                        ${e2e_tests_branch} \
+                        "Lint and Compile Contracts" \
+                        mantle.zip \
+                        "$(pwd)"
+                    rm -rf mantle
+                    unzip mantle.zip
+                    rm mantle.zip
                 else
                     # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
                     # correct rust contract artifacts. Can remove this once the following is
