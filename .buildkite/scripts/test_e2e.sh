@@ -181,6 +181,7 @@ scenario_e2e_tests() {
         export HTTPS_PROVIDER_URL="http://localhost:8545"
         export WS_PROVIDER_URL="ws://localhost:8555"
         export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
+        export OASIS_CLIENT_SK="533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c"
         export DEVELOPER_GATEWAY_URL="http://localhost:1234"
         # Cleanup persisted long-term keys.
         rm -rf .oasis
