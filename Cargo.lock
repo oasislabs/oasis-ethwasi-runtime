@@ -112,7 +112,7 @@ dependencies = [
 [[package]]
 name = "bcfs"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/oasis-rs#260e5391fcc41f4bdc58ff4be67194d6ad6e2557"
+source = "git+https://github.com/oasislabs/oasis-rs#ae0c87decc1d31e5f5e81019b64a79c36062a61d"
 dependencies = [
  "blockchain-traits 0.2.1 (git+https://github.com/oasislabs/oasis-rs)",
  "nom 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -202,7 +202,7 @@ dependencies = [
 [[package]]
 name = "blockchain-traits"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/oasis-rs#260e5391fcc41f4bdc58ff4be67194d6ad6e2557"
+source = "git+https://github.com/oasislabs/oasis-rs#ae0c87decc1d31e5f5e81019b64a79c36062a61d"
 
 [[package]]
 name = "bloomchain"
@@ -526,7 +526,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ekiden-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4823bdecd90097057e9f2bd396d7d7fbc57b0963"
+source = "git+https://github.com/oasislabs/ekiden#fa6d5c763c3d5ca2ef9cd4c26181f51d06e3e5a9"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -548,7 +548,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-api"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4823bdecd90097057e9f2bd396d7d7fbc57b0963"
+source = "git+https://github.com/oasislabs/ekiden#fa6d5c763c3d5ca2ef9cd4c26181f51d06e3e5a9"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -563,7 +563,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4823bdecd90097057e9f2bd396d7d7fbc57b0963"
+source = "git+https://github.com/oasislabs/ekiden#fa6d5c763c3d5ca2ef9cd4c26181f51d06e3e5a9"
 dependencies = [
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-api 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
@@ -578,7 +578,7 @@ dependencies = [
 [[package]]
 name = "ekiden-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4823bdecd90097057e9f2bd396d7d7fbc57b0963"
+source = "git+https://github.com/oasislabs/ekiden#fa6d5c763c3d5ca2ef9cd4c26181f51d06e3e5a9"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -621,7 +621,7 @@ dependencies = [
 [[package]]
 name = "ekiden-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4823bdecd90097057e9f2bd396d7d7fbc57b0963"
+source = "git+https://github.com/oasislabs/ekiden#fa6d5c763c3d5ca2ef9cd4c26181f51d06e3e5a9"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1170,7 +1170,7 @@ dependencies = [
  "cc 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
  "cmake 0.1.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.60 (registry+https://github.com/rust-lang/crates.io-index)",
- "pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pkg-config 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1811,7 +1811,7 @@ dependencies = [
 [[package]]
 name = "oasis-types"
 version = "0.2.0"
-source = "git+https://github.com/oasislabs/oasis-rs#260e5391fcc41f4bdc58ff4be67194d6ad6e2557"
+source = "git+https://github.com/oasislabs/oasis-rs#ae0c87decc1d31e5f5e81019b64a79c36062a61d"
 dependencies = [
  "blockchain-traits 0.2.1 (git+https://github.com/oasislabs/oasis-rs)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2053,7 +2053,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.14"
+version = "0.3.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -4080,7 +4080,7 @@ dependencies = [
 "checksum patricia-trie 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum pem-iterator 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "45c9da00a53e290cb077ad80326fb5df6d790f7bc2bfad5e5ad1cf9fa0c67f26"
 "checksum percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
-"checksum pkg-config 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)" = "676e8eb2b1b4c9043511a9b7bea0915320d7e502b0a079fb03f9635a5252b18c"
+"checksum pkg-config 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "a7c1d2cfa5a714db3b5f24f0915e74fcdf91d09d496ba61329705dda7774d2af"
 "checksum plain_hasher 0.1.0 (git+https://github.com/oasislabs/parity?branch=ekiden-beta)" = "<none>"
 "checksum ppv-lite86 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e3cbf9f658cdb5000fcf6f362b8ea2ba154b9f146a61c7a20d647034c6b6561b"
 "checksum primitive-types 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2288eb2a39386c4bc817974cc413afe173010dc80e470fcb1e9a35580869f024"
