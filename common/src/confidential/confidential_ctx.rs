@@ -16,7 +16,7 @@ use ethereum_types::{Address, H256};
 use failure::ResultExt;
 use io_context::Context;
 use keccak_hash::keccak;
-use vm::{ConfidentialCtx as EthConfidentialCtx, Error, Result};
+use vm::{AuthenticatedPayload, ConfidentialCtx as EthConfidentialCtx, Error, Result};
 use zeroize::Zeroize;
 
 use super::crypto;
@@ -217,7 +217,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(encrypted_payload)
     }
 
-    fn decrypt_session(&mut self, encrypted_payload: Vec<u8>) -> Result<Vec<u8>> {
+    fn decrypt_session(&mut self, encrypted_payload: Vec<u8>) -> Result<AuthenticatedPayload> {
         let contract_secret_key = self.contract.as_ref().unwrap().1.input_keypair.get_sk();
 
         let decryption = crypto::decrypt(Some(encrypted_payload), contract_secret_key)
@@ -230,7 +230,10 @@ impl EthConfidentialCtx for ConfidentialCtx {
             .map_err(|err| Error::Confidential(err.to_string()))?;
         self.next_nonce = Some(nonce);
 
-        Ok(decryption.plaintext)
+        Ok(AuthenticatedPayload {
+            decrypted_data: decryption.plaintext,
+            additional_data: decryption.aad,
+        })
     }
 
     fn encrypt_storage_key(&self, data: Vec<u8>) -> Result<Vec<u8>> {
