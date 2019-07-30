@@ -8,6 +8,7 @@ use ethcore::{
     transaction::{SignedTransaction, UnverifiedTransaction},
     types::receipt::TransactionOutcome,
 };
+use ethereum_types::U256;
 use failure::{format_err, Fallible};
 use runtime_ethereum_api::{ExecutionResult, LogEntry};
 #[cfg_attr(feature = "test", allow(unused))]
@@ -68,6 +69,12 @@ pub mod execute {
         if ectx.transaction_set.contains(&tx_hash) {
             // TODO: Proper errors.
             return Err(format_err!("duplicate transaction"));
+        }
+
+        // Check whether transaction fits in the block.
+        let gas_remaining = U256::from(BLOCK_GAS_LIMIT) - ectx.env_info.gas_used;
+        if tx.gas > gas_remaining {
+            return Err(format_err!("block gas limit reached"));
         }
 
         // Create Ethereum state instance and apply the transaction.
