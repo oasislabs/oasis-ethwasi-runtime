@@ -165,10 +165,7 @@ scenario_e2e_tests() {
     echo "Starting the developer-gateway"
     ./go/developer-gateway/developer-gateway \
         --config.path configs/developer-gateway/testing.toml \
-        --bind_private.tls_certificate_path configs/developer-gateway/tls/cert.pem \
-        --bind_private.tls_private_key_path configs/developer-gateway/tls/private.pem \
-        --bind_public.tls_certificate_path configs/developer-gateway/tls/cert.pem \
-        --bind_public.tls_private_key_path configs/developer-gateway/tls/private.pem &
+        --bind_public.max_body_bytes 16777216 &
 
     echo "Running E2E tests from e2e-tests repository."
     pushd ${WORKDIR}/tests/e2e-tests
