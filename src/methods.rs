@@ -10,7 +10,7 @@ use ethcore::{
 };
 use ethereum_types::U256;
 use failure::{format_err, Fallible};
-use runtime_ethereum_api::{ExecutionResult, LogEntry};
+use runtime_ethereum_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
 use runtime_ethereum_common::{
     genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC,
@@ -32,8 +32,7 @@ pub mod check {
 
         // Check that gas < block gas limit.
         if decoded.as_unsigned().gas > BLOCK_GAS_LIMIT.into() {
-            // TODO: Define error in API.
-            return Err(format_err!("Requested gas greater than block gas limit"));
+            return Err(TransactionError::TooMuchGas.into());
         }
 
         // Check signature.
@@ -41,7 +40,7 @@ pub mod check {
 
         // Check gas price.
         if signed.gas_price < MIN_GAS_PRICE_GWEI.into() {
-            return Err(format_err!("Insufficient gas price"));
+            return Err(TransactionError::GasPrice.into());
         }
 
         Ok(signed)
@@ -67,14 +66,13 @@ pub mod execute {
         // Check if current block already contains the transaction. Reject if so.
         let tx_hash = tx.hash();
         if ectx.transaction_set.contains(&tx_hash) {
-            // TODO: Proper errors.
-            return Err(format_err!("duplicate transaction"));
+            return Err(TransactionError::DuplicateTransaction.into());
         }
 
         // Check whether transaction fits in the block.
         let gas_remaining = U256::from(BLOCK_GAS_LIMIT) - ectx.env_info.gas_used;
         if tx.gas > gas_remaining {
-            return Err(format_err!("block gas limit reached"));
+            return Err(TransactionError::BlockGasLimitReached.into());
         }
 
         // Create Ethereum state instance and apply the transaction.

@@ -1,5 +1,6 @@
 use ekiden_runtime::runtime_api;
 use ethereum_types::{Address, Bloom, H256, U256};
+use failure::Fail;
 use serde_derive::{Deserialize, Serialize};
 
 // used in runtime_api! macro
@@ -27,6 +28,19 @@ pub struct ExecutionResult {
     pub status_code: u8,
     #[serde(with = "serde_bytes")]
     pub output: Vec<u8>,
+}
+
+/// Ethereum transaction error.
+#[derive(Debug, Fail)]
+pub enum TransactionError {
+    #[fail(display = "block gas limit reached")]
+    BlockGasLimitReached,
+    #[fail(display = "duplicate transaction")]
+    DuplicateTransaction,
+    #[fail(display = "insufficient gas price")]
+    GasPrice,
+    #[fail(display = "requested gas greater than block gas limit")]
+    TooMuchGas,
 }
 
 /// Name of the method which executes an ethereum transaction.
