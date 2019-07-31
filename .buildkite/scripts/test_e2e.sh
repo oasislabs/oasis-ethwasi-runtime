@@ -165,7 +165,8 @@ scenario_e2e_tests() {
     echo "Starting the developer-gateway"
     ./go/developer-gateway/developer-gateway \
         --config.path configs/developer-gateway/testing.toml \
-        --bind_public.max_body_bytes 16777216 &
+        --bind_public.max_body_bytes 16777216 \
+        --bind_public.http_write_timeout_ms 100000 &
 
     echo "Running E2E tests from e2e-tests repository."
     pushd ${WORKDIR}/tests/e2e-tests
