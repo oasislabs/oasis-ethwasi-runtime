@@ -34,7 +34,7 @@ use parity_rpc::v1::types::{
     Block as EthRpcBlock, BlockTransactions as EthRpcBlockTransactions, Header as EthRpcHeader,
     RichBlock as EthRpcRichBlock, RichHeader as EthRpcRichHeader, Transaction as EthRpcTransaction,
 };
-use runtime_ethereum_api::{ExecutionResult, METHOD_ETH_TXN};
+use runtime_ethereum_api::{ExecutionResult, TransactionError, METHOD_ETH_TXN};
 use runtime_ethereum_common::{
     genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC, TAG_ETH_TX_HASH,
 };
@@ -190,25 +190,45 @@ impl Translator {
     }
 
     /// Submit a raw Ethereum transaction to the chain.
-    pub fn send_raw_transaction(
-        &self,
-        raw: Vec<u8>,
-    ) -> impl Future<Item = (H256, ExecutionResult), Error = Error> {
-        let client = self.client.clone();
+    pub fn send_raw_transaction(&self, raw: Vec<u8>) -> BoxFuture<(H256, ExecutionResult)> {
+        // TODO: Perform more checks.
+        let decoded: UnverifiedTransaction = match rlp::decode(&raw) {
+            Ok(decoded) => decoded,
+            Err(err) => return Box::new(future::err(err.into())),
+        };
 
-        future::lazy(move || -> BoxFuture<(H256, ExecutionResult)> {
-            // TODO: Perform more checks.
-            let decoded: UnverifiedTransaction = match rlp::decode(&raw) {
-                Ok(decoded) => decoded,
-                Err(err) => return Box::new(future::err(err.into())),
-            };
+        // If we get a BlockGasLimitReached error, retry up to 5 times.
+        const MAX_RETRIES: usize = 5;
 
-            Box::new(
+        Box::new(future::loop_fn(
+            (
+                MAX_RETRIES,
+                self.client.clone(),
+                ByteBuf::from(raw),
+                decoded,
+            ),
+            move |(retries, client, payload, decoded)| {
                 client
-                    .ethereum_transaction(ByteBuf::from(raw))
-                    .map(move |result| (decoded.hash(), result)),
-            )
-        })
+                    .ethereum_transaction(payload.clone())
+                    .then(move |maybe_result| match maybe_result {
+                        Ok(result) => return Ok(future::Loop::Break((decoded.hash(), result))),
+                        Err(err) => {
+                            if let Some(txn_err) = err.downcast_ref::<TransactionError>() {
+                                if let TransactionError::BlockGasLimitReached = txn_err {
+                                    if retries == 0 {
+                                        return Err(err.into());
+                                    }
+                                    let retries = retries - 1;
+                                    return Ok(future::Loop::Continue((
+                                        retries, client, payload, decoded,
+                                    )));
+                                }
+                            }
+                            return Err(err.into());
+                        }
+                    })
+            },
+        ))
     }
 
     /// Simulate a transaction against a given block.
