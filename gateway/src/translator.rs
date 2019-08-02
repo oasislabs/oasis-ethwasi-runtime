@@ -201,10 +201,15 @@ impl Translator {
         const MAX_RETRIES: usize = 5;
 
         Box::new(future::loop_fn(
-            (MAX_RETRIES, self.client.clone(), raw, decoded),
-            move |(retries, client, raw, decoded)| {
+            (
+                MAX_RETRIES,
+                self.client.clone(),
+                ByteBuf::from(raw),
+                decoded,
+            ),
+            move |(retries, client, payload, decoded)| {
                 client
-                    .ethereum_transaction(ByteBuf::from(raw.clone()))
+                    .ethereum_transaction(payload.clone())
                     .then(move |maybe_result| match maybe_result {
                         Ok(result) => return Ok(future::Loop::Break((decoded.hash(), result))),
                         Err(err) => {
@@ -215,7 +220,7 @@ impl Translator {
                                     }
                                     let retries = retries - 1;
                                     return Ok(future::Loop::Continue((
-                                        retries, client, raw, decoded,
+                                        retries, client, payload, decoded,
                                     )));
                                 }
                             }
