@@ -49,7 +49,6 @@ extern crate parity_rpc;
 extern crate prometheus;
 extern crate rlp_compress;
 extern crate serde_bytes;
-extern crate serde_cbor;
 extern crate slog;
 extern crate tokio;
 extern crate tokio_threadpool;

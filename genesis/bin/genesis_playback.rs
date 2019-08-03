@@ -14,7 +14,6 @@ extern crate grpcio;
 extern crate io_context;
 extern crate runtime_ethereum_common;
 extern crate serde_bytes;
-extern crate serde_cbor;
 extern crate serde_json;
 
 use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};

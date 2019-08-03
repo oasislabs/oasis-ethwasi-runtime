@@ -112,7 +112,7 @@ dependencies = [
 [[package]]
 name = "bcfs"
 version = "0.2.2"
-source = "git+https://github.com/oasislabs/oasis-rs#23a2d5bf6781fad5f9f1a9fa27adb8617ab7ee7f"
+source = "git+https://github.com/oasislabs/oasis-rs#2f633d247eddc940e0c5a259dfd348a3459655a9"
 dependencies = [
  "blockchain-traits 0.2.1 (git+https://github.com/oasislabs/oasis-rs)",
  "nom 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -202,7 +202,7 @@ dependencies = [
 [[package]]
 name = "blockchain-traits"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/oasis-rs#23a2d5bf6781fad5f9f1a9fa27adb8617ab7ee7f"
+source = "git+https://github.com/oasislabs/oasis-rs#2f633d247eddc940e0c5a259dfd348a3459655a9"
 
 [[package]]
 name = "bloomchain"
@@ -1113,7 +1113,6 @@ dependencies = [
  "runtime-ethereum-common 0.3.0",
  "serde 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_cbor 0.9.0 (git+https://github.com/pyfisch/cbor?rev=114ecaeac53799d0bf81ca8d1b980c7c419d76fe)",
  "serde_derive 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1808,7 +1807,7 @@ dependencies = [
 [[package]]
 name = "oasis-types"
 version = "0.2.0"
-source = "git+https://github.com/oasislabs/oasis-rs#23a2d5bf6781fad5f9f1a9fa27adb8617ab7ee7f"
+source = "git+https://github.com/oasislabs/oasis-rs#2f633d247eddc940e0c5a259dfd348a3459655a9"
 dependencies = [
  "blockchain-traits 0.2.1 (git+https://github.com/oasislabs/oasis-rs)",
  "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2734,16 +2733,6 @@ name = "serde_bytes"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "serde 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "serde_cbor"
-version = "0.9.0"
-source = "git+https://github.com/pyfisch/cbor?rev=114ecaeac53799d0bf81ca8d1b980c7c419d76fe#114ecaeac53799d0bf81ca8d1b980c7c419d76fe"
-dependencies = [
- "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "half 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -3750,7 +3739,6 @@ dependencies = [
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_bytes 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_cbor 0.9.0 (git+https://github.com/pyfisch/cbor?rev=114ecaeac53799d0bf81ca8d1b980c7c419d76fe)",
  "serde_derive 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "signal-hook 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4144,7 +4132,6 @@ dependencies = [
 "checksum serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)" = "defbb8a83d7f34cc8380751eeb892b825944222888aff18996ea7901f24aec88"
 "checksum serde_bytes 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)" = "aaff47db6ef8771cca5d88febef2f22f47f645420e51226374049f68c6b08569"
 "checksum serde_cbor 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = "318690c4f04ae6553665f3846c0614c9995bb1ea51a2f1c5c4b4ed338c248b49"
-"checksum serde_cbor 0.9.0 (git+https://github.com/pyfisch/cbor?rev=114ecaeac53799d0bf81ca8d1b980c7c419d76fe)" = "<none>"
 "checksum serde_derive 1.0.98 (registry+https://github.com/rust-lang/crates.io-index)" = "01e69e1b8a631f245467ee275b8c757b818653c6d704cdbcaeb56b56767b529c"
 "checksum serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)" = "051c49229f282f7c6f3813f8286cc1e3323e8051823fce42c7ea80fe13521704"
 "checksum sgx-isa 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2df74e26e738f5dcf66574a188026fec224a75012fd74cd7bc877b46ce5cdb3"
