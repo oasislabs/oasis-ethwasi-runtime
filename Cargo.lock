@@ -3762,7 +3762,7 @@ dependencies = [
 [[package]]
 name = "ws"
 version = "0.7.9"
-source = "git+https://github.com/oasislabs/ws-rs?branch=ekiden#3ec60d3f1b0de1bd922b537c0dbaab722498af68"
+source = "git+https://github.com/oasislabs/ws-rs?branch=ekiden#e3b6f81efc8d8602fb06157ef481f324b7304f2c"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
