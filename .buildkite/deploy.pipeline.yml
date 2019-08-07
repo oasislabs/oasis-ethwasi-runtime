@@ -42,7 +42,7 @@ steps:
     artifact_paths:
       - platform/*
     env:
-      DEPLOYMENT_VARIANT: beta
+      BASE_VARIANT: beta
 
   - label: Extract production-track platform resources (master branches only)
     branches: master
@@ -77,6 +77,22 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  - label: Build benchmarking artifacts
+    branches: master beta
+    command:
+      - .buildkite/scripts/setup_gitconfig.sh
+      - eval $(ssh-agent -s)
+      - ssh-add
+      - .buildkite/scripts/build_deployment_context.sh platform context-bench.tar.gz
+    env:
+      BUILD_BENCHMARKING: "1"
+    artifact_paths:
+      - context-bench.tar.gz
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
   - label: Build production-track artifacts
     branches: master beta
     command:
@@ -101,6 +117,7 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-testing
     env:
+      BASE_VARIANT: testing
       DEPLOYMENT_VARIANT: testing
 
   - label: Update testing docker image tags (beta branch only)
@@ -109,7 +126,26 @@ steps:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh latest-testing-beta
     env:
+      BASE_VARIANT: testing
       DEPLOYMENT_VARIANT: testing
+
+  - label: Update benchmarking docker image tags (master branches only)
+    branches: master
+    command:
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
+      - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking
+    env:
+      BASE_VARIANT: testing
+      DEPLOYMENT_VARIANT: benchmarking
+
+  - label: Update benchmarking docker image tags (beta branch only)
+    branches: beta
+    command:
+      - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
+      - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking-beta
+    env:
+      BASE_VARIANT: testing
+      DEPLOYMENT_VARIANT: benchmarking
 
   - label: Update staging docker image tags (master branches only)
     branches: master
@@ -122,6 +158,9 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
       - .buildkite/scripts/promote_deployment_image_to.sh staging-beta
+    env:
+      BASE_VARIANT: beta
+      DEPLOYMENT_VARIANT: beta
 
   - wait
 
@@ -134,7 +173,7 @@ steps:
       branch: master
 
   - label: "Trigger staging beta deployment (beta branch only)"
-    trigger: private-ops-deploy-ekiden-staging-beta
+    trigger: private-ops-deploy-ekiden-devnet2-staging
     branches: beta
     build:
       message: "${BUILDKITE_MESSAGE}"

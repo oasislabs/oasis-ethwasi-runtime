@@ -19,12 +19,9 @@
 use std::{collections::BTreeMap, sync::Arc};
 
 use ekiden_runtime::common::logger::get_logger;
-use ethcore::{
-    filter::Filter as EthcoreFilter,
-    ids::{BlockId, TransactionId},
-};
+use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use ethereum_types::{Address, H256, H64, U256};
-use failure::format_err;
+use failure::Error;
 use jsonrpc_core::{
     futures::{future, Future},
     BoxFuture, Result,
@@ -32,24 +29,25 @@ use jsonrpc_core::{
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
 use parity_rpc::v1::{
-    helpers::{errors, fake_sign, limit_logs},
+    helpers::{errors, fake_sign},
     metadata::Metadata,
     traits::Eth,
     types::{
-        block_number_to_id, Block, BlockNumber, BlockTransactions, Bytes, CallRequest, Filter,
-        Index, Log as RpcLog, Receipt as RpcReceipt, RichBlock, Transaction as RpcTransaction,
-        Work, H160 as RpcH160, H256 as RpcH256, H64 as RpcH64, U256 as RpcU256,
+        BlockNumber, Bytes, CallRequest, Filter, Index, Log as RpcLog, Receipt as RpcReceipt,
+        RichBlock, Transaction as RpcTransaction, Work, H160 as RpcH160, H256 as RpcH256,
+        H64 as RpcH64, U256 as RpcU256,
     },
 };
 use prometheus::{
     __register_counter_vec, histogram_opts, labels, opts, register_histogram_vec,
     register_int_counter_vec, HistogramVec, IntCounterVec,
 };
+use runtime_ethereum_common::genesis;
 use slog::{debug, info, Logger};
 
 use crate::{
-    client::Client,
-    util::{execution_error, jsonrpc_error},
+    translator::Translator,
+    util::{block_number_to_id, execution_error, jsonrpc_error},
 };
 
 // Metrics.
@@ -93,8 +91,7 @@ lazy_static! {
 /// Eth rpc implementation.
 pub struct EthClient {
     logger: Logger,
-    client: Arc<Client>,
-    eip86_transition: u64,
+    translator: Arc<Translator>,
 }
 
 #[derive(Debug)]
@@ -115,122 +112,12 @@ impl From<BlockNumber> for BlockNumberOrId {
     }
 }
 
-enum PendingOrBlock {
-    Block(BlockId),
-    Pending,
-}
-
-enum PendingTransactionId {
-    Hash(H256),
-    Location(PendingOrBlock, usize),
-}
-
 impl EthClient {
     /// Creates new EthClient.
-    pub fn new(client: &Arc<Client>) -> Self {
+    pub fn new(translator: Arc<Translator>) -> Self {
         EthClient {
             logger: get_logger("gateway/impls/eth"),
-            client: client.clone(),
-            eip86_transition: client.eip86_transition(),
-        }
-    }
-
-    fn rich_block(&self, id: BlockNumberOrId, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
-        let block = match id {
-            BlockNumberOrId::Number(num) => {
-                // for "pending", just use latest block
-                let id = match num {
-                    BlockNumber::Latest => BlockId::Latest,
-                    BlockNumber::Earliest => BlockId::Earliest,
-                    BlockNumber::Num(n) => BlockId::Number(n),
-                    BlockNumber::Pending => BlockId::Latest,
-                };
-
-                self.client.block(id)
-            }
-
-            BlockNumberOrId::Id(id) => self.client.block(id),
-        };
-
-        let eip86_transition = self.eip86_transition;
-
-        Box::new(block.map_err(jsonrpc_error).map(move |block| match block {
-            Some(block) => {
-                let view = block.header_view();
-                Some(RichBlock {
-                    inner: Block {
-                        hash: Some(view.hash().into()),
-                        size: Some(block.rlp().as_raw().len().into()),
-                        parent_hash: view.parent_hash().into(),
-                        uncles_hash: view.uncles_hash().into(),
-                        author: view.author().into(),
-                        miner: view.author().into(),
-                        state_root: view.state_root().into(),
-                        transactions_root: view.transactions_root().into(),
-                        receipts_root: view.receipts_root().into(),
-                        number: Some(view.number().into()),
-                        gas_used: view.gas_used().into(),
-                        gas_limit: view.gas_limit().into(),
-                        logs_bloom: Some(view.log_bloom().into()),
-                        timestamp: view.timestamp().into(),
-                        difficulty: view.difficulty().into(),
-                        total_difficulty: Some(RpcU256::from(0)),
-                        seal_fields: view.seal().into_iter().map(Into::into).collect(),
-                        uncles: block.uncle_hashes().into_iter().map(Into::into).collect(),
-                        transactions: match include_txs {
-                            true => BlockTransactions::Full(
-                                block
-                                    .view()
-                                    .localized_transactions()
-                                    .into_iter()
-                                    .map(|t| RpcTransaction::from_localized(t, eip86_transition))
-                                    .collect(),
-                            ),
-                            false => BlockTransactions::Hashes(
-                                block
-                                    .transaction_hashes()
-                                    .into_iter()
-                                    .map(Into::into)
-                                    .collect(),
-                            ),
-                        },
-                        extra_data: Bytes::new(view.extra_data()),
-                    },
-                    extra_info: BLOCK_EXTRA_INFO.clone(),
-                })
-            }
-            _ => None,
-        }))
-    }
-
-    fn transaction(&self, id: PendingTransactionId) -> Result<Option<RpcTransaction>> {
-        let client_transaction = |id| match self.client.transaction(id) {
-            Some(t) => Ok(Some(RpcTransaction::from_localized(
-                t,
-                self.eip86_transition,
-            ))),
-            None => Ok(None),
-        };
-
-        match id {
-            PendingTransactionId::Hash(hash) => client_transaction(TransactionId::Hash(hash)),
-            PendingTransactionId::Location(PendingOrBlock::Block(block), index) => {
-                client_transaction(TransactionId::Location(block, index))
-            }
-            PendingTransactionId::Location(PendingOrBlock::Pending, _index) => {
-                // we don't have pending blocks
-                Ok(None)
-            }
-        }
-    }
-
-    pub fn get_block_id(number: BlockNumber) -> BlockId {
-        // for "pending", just use latest block
-        match number {
-            BlockNumber::Num(num) => BlockId::Number(num),
-            BlockNumber::Earliest => BlockId::Earliest,
-            BlockNumber::Latest => BlockId::Latest,
-            BlockNumber::Pending => BlockId::Latest,
+            translator,
         }
     }
 }
@@ -268,7 +155,7 @@ impl Eth for EthClient {
 
     fn gas_price(&self) -> Result<RpcU256> {
         ETH_RPC_CALLS.with(&labels! {"call" => "gasPrice",}).inc();
-        Ok(RpcU256::from(self.client.gas_price()))
+        Ok(self.translator.gas_price().into())
     }
 
     fn accounts(&self, _meta: Metadata) -> Result<Vec<RpcH160>> {
@@ -276,24 +163,31 @@ impl Eth for EthClient {
         Ok(vec![])
     }
 
-    fn block_number(&self) -> Result<RpcU256> {
+    fn block_number(&self) -> BoxFuture<RpcU256> {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "blockNumber",})
             .inc();
-        Ok(RpcU256::from(self.client.best_block_number()))
+
+        Box::new(
+            self.translator
+                .get_latest_block()
+                .map(|blk| RpcU256::from(blk.number()))
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn balance(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<RpcU256> {
         ETH_RPC_CALLS.with(&labels! {"call" => "getBalance",}).inc();
+
         let address = address.into();
         let num = num.unwrap_or_default();
 
         info!(self.logger, "eth_getBalance"; "address" => ?address, "num" => ?num);
 
         Box::new(
-            self.client
-                .balance(&address, Self::get_block_id(num))
-                .map(|balance| balance.into())
+            self.translator
+                .get_block_unwrap(block_number_to_id(num))
+                .and_then(move |blk| Ok(blk.state()?.balance(&address)?.into()))
                 .map_err(jsonrpc_error),
         )
     }
@@ -307,22 +201,25 @@ impl Eth for EthClient {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getStorageAt",})
             .inc();
-        let address: Address = RpcH160::into(address);
-        let position: U256 = RpcU256::into(pos);
+
+        let address = address.into();
+        let pos: U256 = RpcU256::into(pos);
         let num = num.unwrap_or_default();
 
         info!(
             self.logger,
             "eth_getStorageAt";
                 "address" => ?address,
-                "position" => ?position,
+                "position" => ?pos,
                 "num" => ?num
         );
 
+        let pos = pos.into();
+
         Box::new(
-            self.client
-                .storage_at(&address, &H256::from(position), Self::get_block_id(num))
-                .map(|hash| hash.into())
+            self.translator
+                .get_block_unwrap(block_number_to_id(num))
+                .and_then(move |blk| Ok(blk.state()?.storage_at(&address, &pos)?.into()))
                 .map_err(jsonrpc_error),
         )
     }
@@ -335,6 +232,7 @@ impl Eth for EthClient {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getTransactionCount",})
             .inc();
+
         let address: Address = RpcH160::into(address);
         let num = num.unwrap_or_default();
 
@@ -345,20 +243,12 @@ impl Eth for EthClient {
                 "num" => ?num
         );
 
-        let result: BoxFuture<U256> = match num {
-            BlockNumber::Pending => Box::new(
-                self.client
-                    .nonce(&address, BlockId::Latest)
-                    .map_err(|_error| errors::database("latest nonce missing")),
-            ),
-            number => Box::new(
-                self.client
-                    .nonce(&address, block_number_to_id(number))
-                    .map_err(jsonrpc_error),
-            ),
-        };
-
-        Box::new(result.map(|nonce| nonce.into()))
+        Box::new(
+            self.translator
+                .get_block_unwrap(block_number_to_id(num))
+                .and_then(move |blk| Ok(blk.state()?.nonce(&address)?.into()))
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn block_transaction_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
@@ -368,10 +258,17 @@ impl Eth for EthClient {
         info!(self.logger, "eth_getBlockTransactionCountByHash"; "hash" => ?hash);
 
         Box::new(
-            self.client
-                .block(BlockId::Hash(hash.into()))
-                .map_err(jsonrpc_error)
-                .map(|block| block.map(|block| block.transactions_count().into())),
+            self.translator
+                .get_block_by_hash(hash.into())
+                .and_then(|blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                    match blk {
+                        Some(blk) => {
+                            Box::new(blk.raw_transactions().map(|txns| Some(txns.count().into())))
+                        }
+                        None => Box::new(future::ok(None)),
+                    }
+                })
+                .map_err(jsonrpc_error),
         )
     }
 
@@ -381,58 +278,61 @@ impl Eth for EthClient {
             .inc();
         info!(self.logger, "eth_getBlockTransactionCountByNumber"; "num" => ?num);
 
-        match num {
-            // we don't have pending blocks
-            BlockNumber::Pending => Box::new(future::ok(Some(RpcU256::from(0)))),
-            _ => Box::new(
-                self.client
-                    .block(block_number_to_id(num))
-                    .map_err(jsonrpc_error)
-                    .map(|block| block.map(|block| block.transactions_count().into())),
-            ),
+        // We don't have pending transactions.
+        if let BlockNumber::Pending = num {
+            return Box::new(future::ok(Some(0.into())));
         }
+
+        Box::new(
+            self.translator
+                .get_block(block_number_to_id(num))
+                .and_then(|blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                    match blk {
+                        Some(blk) => {
+                            Box::new(blk.raw_transactions().map(|txns| Some(txns.count().into())))
+                        }
+                        None => Box::new(future::ok(None)),
+                    }
+                })
+                .map_err(jsonrpc_error),
+        )
     }
 
-    fn block_uncles_count_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
+    fn block_uncles_count_by_hash(&self, _hash: RpcH256) -> BoxFuture<Option<RpcU256>> {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getUncleCountByBlockHash",})
             .inc();
 
-        Box::new(
-            self.client
-                .block(BlockId::Hash(hash.into()))
-                .map_err(jsonrpc_error)
-                .map(|block| block.map(|block| block.uncles_count().into())),
-        )
+        // We do not have uncles.
+        Box::new(future::ok(None))
     }
 
-    fn block_uncles_count_by_number(&self, num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
+    fn block_uncles_count_by_number(&self, _num: BlockNumber) -> BoxFuture<Option<RpcU256>> {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getUncleCountByBlockNumber",})
             .inc();
 
-        match num {
-            BlockNumber::Pending => Box::new(future::ok(Some(0.into()))),
-            _ => Box::new(
-                self.client
-                    .block(block_number_to_id(num))
-                    .map_err(jsonrpc_error)
-                    .map(|block| block.map(|block| block.uncles_count().into())),
-            ),
-        }
+        // We do not have uncles.
+        Box::new(future::ok(None))
     }
 
     fn code_at(&self, address: RpcH160, num: Trailing<BlockNumber>) -> BoxFuture<Bytes> {
         ETH_RPC_CALLS.with(&labels! {"call" => "getCode",}).inc();
+
         let address: Address = RpcH160::into(address);
         let num = num.unwrap_or_default();
 
         info!(self.logger, "eth_getCode"; "address" => ?address, "num" => ?num);
 
         Box::new(
-            self.client
-                .code(&address, Self::get_block_id(num))
-                .map(|code| code.map_or_else(Bytes::default, Bytes::new))
+            self.translator
+                .get_block_unwrap(block_number_to_id(num))
+                .and_then(move |blk| {
+                    Ok(blk
+                        .state()?
+                        .code(&address)?
+                        .map_or_else(Bytes::default, |b| Bytes::new((&*b).clone())))
+                })
                 .map_err(jsonrpc_error),
         )
     }
@@ -448,7 +348,17 @@ impl Eth for EthClient {
                 "include_txs" => ?include_txs
         );
 
-        self.rich_block(BlockId::Hash(hash.into()).into(), include_txs)
+        Box::new(
+            self.translator
+                .get_block_by_hash(hash.into())
+                .and_then(move |blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                    match blk {
+                        Some(blk) => Box::new(blk.rich_block(include_txs).map(|blk| Some(blk))),
+                        None => Box::new(future::ok(None)),
+                    }
+                })
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn block_by_number(&self, num: BlockNumber, include_txs: bool) -> BoxFuture<Option<RichBlock>> {
@@ -462,7 +372,17 @@ impl Eth for EthClient {
                 "include_txs" => ?include_txs
         );
 
-        self.rich_block(num.into(), include_txs)
+        Box::new(
+            self.translator
+                .get_block(block_number_to_id(num))
+                .and_then(move |blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                    match blk {
+                        Some(blk) => Box::new(blk.rich_block(include_txs).map(|blk| Some(blk))),
+                        None => Box::new(future::ok(None)),
+                    }
+                })
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn transaction_by_hash(&self, hash: RpcH256) -> BoxFuture<Option<RpcTransaction>> {
@@ -471,9 +391,23 @@ impl Eth for EthClient {
             .inc();
         info!(self.logger, "eth_getTransactionByHash"; "hash" => ?hash);
 
-        let hash: H256 = hash.into();
-        let tx = try_bf!(self.transaction(PendingTransactionId::Hash(hash)));
-        Box::new(future::ok(tx))
+        let hash = hash.into();
+        let eip86_transition = genesis::SPEC.params().eip86_transition;
+
+        Box::new(
+            self.translator
+                .get_txn_by_hash(hash)
+                .and_then(move |txn| {
+                    txn.map(|txn| {
+                        Ok(RpcTransaction::from_localized(
+                            txn.transaction()?,
+                            eip86_transition,
+                        ))
+                    })
+                    .transpose()
+                })
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn transaction_by_block_hash_and_index(
@@ -491,11 +425,23 @@ impl Eth for EthClient {
                 "index" => ?index
         );
 
-        let id = PendingTransactionId::Location(
-            PendingOrBlock::Block(BlockId::Hash(hash.into())),
-            index.value(),
-        );
-        Box::new(future::done(self.transaction(id)))
+        let hash = hash.into();
+        let eip86_transition = genesis::SPEC.params().eip86_transition;
+
+        Box::new(
+            self.translator
+                .get_txn_by_block_hash_and_index(hash, index.value() as u32)
+                .and_then(move |txn| {
+                    txn.map(|txn| {
+                        Ok(RpcTransaction::from_localized(
+                            txn.transaction()?,
+                            eip86_transition,
+                        ))
+                    })
+                    .transpose()
+                })
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn transaction_by_block_number_and_index(
@@ -513,26 +459,43 @@ impl Eth for EthClient {
                 "index" => ?index
         );
 
-        let block_id = match num {
-            BlockNumber::Latest => PendingOrBlock::Block(BlockId::Latest),
-            BlockNumber::Earliest => PendingOrBlock::Block(BlockId::Earliest),
-            BlockNumber::Num(num) => PendingOrBlock::Block(BlockId::Number(num)),
-            BlockNumber::Pending => PendingOrBlock::Pending,
-        };
+        // We don't have pending transactions.
+        if let BlockNumber::Pending = num {
+            return Box::new(future::ok(None));
+        }
 
-        let transaction_id = PendingTransactionId::Location(block_id, index.value());
-        Box::new(future::done(self.transaction(transaction_id)))
+        let eip86_transition = genesis::SPEC.params().eip86_transition;
+
+        Box::new(
+            self.translator
+                .get_txn(block_number_to_id(num), index.value() as u32)
+                .and_then(move |txn| {
+                    txn.map(|txn| {
+                        Ok(RpcTransaction::from_localized(
+                            txn.transaction()?,
+                            eip86_transition,
+                        ))
+                    })
+                    .transpose()
+                })
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn transaction_receipt(&self, hash: RpcH256) -> BoxFuture<Option<RpcReceipt>> {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getTransactionReceipt",})
             .inc();
+
         let hash: H256 = hash.into();
         info!(self.logger, "eth_getTransactionReceipt"; "hash" => ?hash);
 
-        let receipt = self.client.transaction_receipt(hash);
-        Box::new(future::ok(receipt.map(Into::into)))
+        Box::new(
+            self.translator
+                .get_txn_by_hash(hash)
+                .and_then(|txn| txn.map(|txn| Ok(txn.receipt()?.into())).transpose())
+                .map_err(jsonrpc_error),
+        )
     }
 
     fn uncle_by_block_hash_and_index(
@@ -543,7 +506,8 @@ impl Eth for EthClient {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getUncleByBlockHashAndIndex",})
             .inc();
-        // we dont' have uncles
+
+        // We do not have uncles.
         Box::new(future::ok(None))
     }
 
@@ -555,7 +519,8 @@ impl Eth for EthClient {
         ETH_RPC_CALLS
             .with(&labels! {"call" => "getUncleByBlockNumberAndIndex",})
             .inc();
-        // we dont' have uncles
+
+        // We do not have uncles.
         Box::new(future::ok(None))
     }
 
@@ -574,21 +539,13 @@ impl Eth for EthClient {
 
         let filter: EthcoreFilter = filter.into();
 
-        // Temporary mitigation for #397: check filter block range
-        if !self.client.check_filter_range(filter.clone()) {
-            return Box::new(future::err(jsonrpc_error(format_err!(
-                "Filter exceeds allowed block range"
-            ))));
-        }
-
-        let logs = self
-            .client
-            .logs(filter.clone())
-            .into_iter()
-            .map(From::from)
-            .collect::<Vec<RpcLog>>();
-        let logs = limit_logs(logs, filter.limit);
-        Box::new(future::ok(logs))
+        Box::new(
+            self.translator
+                .clone()
+                .logs(filter)
+                .map_err(jsonrpc_error)
+                .map(|logs| logs.into_iter().map(Into::into).collect()),
+        )
     }
 
     fn work(&self, _no_new_work_timeout: Trailing<u64>) -> Result<Work> {
@@ -623,9 +580,9 @@ impl Eth for EthClient {
         }
 
         Box::new(
-            self.client
+            self.translator
                 .send_raw_transaction(raw.into())
-                .map(Into::into)
+                .map(|(hash, _result)| hash.into())
                 .map_err(execution_error)
                 .then(move |result| {
                     drop(timer);
@@ -653,30 +610,26 @@ impl Eth for EthClient {
         let timer = ETH_RPC_CALL_TIME
             .with(&labels! {"call" => "call",})
             .start_timer();
+
         let num = num.unwrap_or_default();
 
         info!(self.logger, "eth_call"; "request" => ?request, "num" => ?num);
 
-        let request = CallRequest::into(request);
-        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
-
-        let client = self.client.clone();
+        let signed = try_bf!(fake_sign::sign_call(request.into(), meta.is_dapp()));
 
         Box::new(
-            future::lazy(move || {
-                client
-                    .call(&signed, Self::get_block_id(num))
-                    .map_err(errors::call)
-                    .and_then(|executed| match executed.exception {
-                        Some(ref exception) => Err(errors::vm(exception, &executed.output)),
-                        None => Ok(executed),
-                    })
-                    .map(|b| b.output.into())
-            })
-            .then(move |result| {
-                drop(timer);
-                result
-            }),
+            self.translator
+                .simulate_transaction(signed, block_number_to_id(num))
+                .map_err(errors::call)
+                .and_then(|executed| match executed.exception {
+                    Some(ref exception) => Err(errors::vm(exception, &executed.output)),
+                    None => Ok(executed),
+                })
+                .map(|executed| executed.output.into())
+                .then(move |result| {
+                    drop(timer);
+                    result
+                }),
         )
     }
 
@@ -692,44 +645,23 @@ impl Eth for EthClient {
         let timer = ETH_RPC_CALL_TIME
             .with(&labels! {"call" => "estimateGas",})
             .start_timer();
+
         let num = num.unwrap_or_default();
 
         info!(self.logger, "eth_estimateGas"; "request" => ?request, "num" => ?num);
 
-        let request = CallRequest::into(request);
-        let signed = try_bf!(fake_sign::sign_call(request, meta.is_dapp()));
+        let signed = try_bf!(fake_sign::sign_call(request.into(), meta.is_dapp()));
 
-        let is_confidential = match self.client.is_confidential(&signed) {
-            Ok(conf) => conf,
-            Err(e) => return Box::new(future::err(execution_error(e))),
-        };
-
-        if is_confidential {
-            Box::new(
-                self.client
-                    .confidential_estimate_gas(&signed)
-                    .map(Into::into)
-                    .map_err(execution_error)
-                    .then(move |result| {
-                        drop(timer);
-                        result
-                    }),
-            )
-        } else {
-            let client = self.client.clone();
-            Box::new(
-                future::lazy(move || {
-                    client
-                        .estimate_gas(&signed, Self::get_block_id(num))
-                        .map_err(execution_error)
-                        .map(Into::into)
-                })
+        Box::new(
+            self.translator
+                .estimate_gas(signed, block_number_to_id(num))
+                .map_err(execution_error)
+                .map(Into::into)
                 .then(move |result| {
                     drop(timer);
                     result
                 }),
-            )
-        }
+        )
     }
 
     fn compile_lll(&self, _: String) -> Result<Bytes> {

@@ -22,6 +22,7 @@ deployment_image_tag=$(buildkite-agent meta-data \
                        "deployment_image_tag"
                      )
 tag_suffix=${DEPLOYMENT_VARIANT:+-$DEPLOYMENT_VARIANT}
+base_tag_suffix=${BASE_VARIANT:+-$BASE_VARIANT}
 context=$1
 
 buildkite-agent artifact download "$context" .
@@ -30,4 +31,4 @@ docker/ekiden-runtime-ethereum/docker_build_and_push.sh \
   ${BUILDKITE_COMMIT} \
   ${deployment_image_tag}${tag_suffix} \
   "$context" \
-  latest${tag_suffix}
+  latest${base_tag_suffix}

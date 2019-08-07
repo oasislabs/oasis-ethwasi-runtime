@@ -1,6 +1,6 @@
 [package]
 name = "runtime-ethereum"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
 edition = "2018"
@@ -21,24 +21,22 @@ runtime-ethereum-common = { path = "./common" }
 
 # Ekiden.
 ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 # Parity.
-common-types = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/parity", branch = "ekiden" }
+common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethkey = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 
 # Others.
-bytes = "0.4"
 byteorder = "1.0"
 elastic-array = "0.10"
 hex = "0.3"
-lazy_static = "1.3.0"
 serde_json = "1.0"
+serde_bytes = "0.11"
 sha3 = "0.6"
 failure = "0.1.5"
 io-context = "0.2.0"
@@ -48,15 +46,18 @@ slog = "2.4.1"
 ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
 
 [dev-dependencies]
+assert_matches = "1.3.0"
 time = "0.1"
+ethabi = "8.0.0"
 
 [features]
 default = ["confidential"]
 confidential = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
-test = []
-production-genesis = []
+test = ["runtime-ethereum-common/test"]
+benchmarking = ["runtime-ethereum-common/benchmarking"]
+production-genesis = ["runtime-ethereum-common/production-genesis"]
 
 [profile.release]
 panic = "abort"

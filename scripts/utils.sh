@@ -134,14 +134,11 @@ run_backend_tendermint_committee() {
             --log.file ${TEST_BASE_DIR}/validator-${idx}.log \
             --grpc.log.verbose_debug \
             --epochtime.backend tendermint_mock \
-            --beacon.backend tendermint \
+            --consensus.backend tendermint \
             --metrics.mode none \
             --storage.backend cachingclient \
             --storage.cachingclient.file ${datadir}/storage-cache \
             --storage.client.address 127.0.0.1:${storage_port} \
-            --scheduler.backend trivial \
-            --registry.backend tendermint \
-            --roothash.backend tendermint \
             --tendermint.core.genesis_file ${genesis_file} \
             --tendermint.core.listen_address tcp://0.0.0.0:${tm_port} \
             --tendermint.consensus.timeout_commit 250ms \
@@ -194,11 +191,8 @@ run_compute_node() {
         --storage.cachingclient.file ${data_dir}/storage-cache \
         --storage.client.address 127.0.0.1:${EKIDEN_STORAGE_PORT} \
         --epochtime.backend tendermint_mock \
-        --beacon.backend tendermint \
+        --consensus.backend tendermint \
         --metrics.mode none \
-        --scheduler.backend trivial \
-        --registry.backend tendermint \
-        --roothash.backend tendermint \
         --tendermint.core.genesis_file ${EKIDEN_TM_GENESIS_FILE} \
         --tendermint.core.listen_address tcp://0.0.0.0:${tm_port} \
         --tendermint.consensus.timeout_commit 250ms \

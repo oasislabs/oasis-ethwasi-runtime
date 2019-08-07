@@ -81,11 +81,11 @@ export KM_ENCLAVE_PATH="$src_dir/target/x86_64-fortanix-unknown-sgx/debug/ekiden
 case $variant in
     elf)
         # Build non-SGX runtime.
-        cargo build -p runtime-ethereum
+        cargo build --locked -p runtime-ethereum
         ;;
     sgxs)
         # Build SGX runtime.
-        cargo build -p runtime-ethereum --target x86_64-fortanix-unknown-sgx
+        cargo build --locked -p runtime-ethereum --target x86_64-fortanix-unknown-sgx
         cargo elf2sgxs
         ;;
 esac

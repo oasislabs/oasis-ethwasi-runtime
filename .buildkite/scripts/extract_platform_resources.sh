@@ -10,6 +10,6 @@
 set -euxo pipefail
 
 dst_dir=$1
-tag_suffix=${DEPLOYMENT_VARIANT:+-$DEPLOYMENT_VARIANT}
+tag_suffix=${BASE_VARIANT:+-$BASE_VARIANT}
 
 docker/ekiden-runtime-ethereum/extract_platform_resources.sh "$dst_dir" "latest$tag_suffix"

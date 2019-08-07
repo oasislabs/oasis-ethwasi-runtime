@@ -8,17 +8,30 @@
 #
 datadir: /tmp/runtime-ethereum-single_node
 
+# Debug.
+#
+# Enable test keys, and the built in test entity to reduce config maintenance
+# burden.
+debug:
+  allow_test_keys: true
+  test_entity: true
+
 # Logging.
 # Per-module log levels are defined below. If you prefer just one unified log level, you can use:
 # log:
 #   level: debug
 log:
+  format: json
   file: ekiden.log
   level:
     # Per-module log levels. Longest prefix match will be taken. Fallback to "default", if no match.
     default: debug
     tendermint: warn
     tendermint/context: error
+
+# Genesis.
+genesis:
+  file: /tmp/runtime-ethereum-single_node/genesis.json
 
 # Internal gRPC services.
 grpc:
@@ -32,26 +45,28 @@ worker:
     backend: sandboxed
     runtime_loader: .ekiden/target/debug/ekiden-runtime-loader
     runtime:
-      id: "0000000000000000000000000000000000000000000000000000000000000000"
       binary: .runtime/target/debug/runtime-ethereum
+  runtime:
+    id: "0000000000000000000000000000000000000000000000000000000000000000"
+  storage:
+    enabled: true
+  txnscheduler:
+    enabled: true
+  merge:
+    enabled: true
   client:
     port: 9200
     addresses:
       - "127.0.0.1:9200"
   p2p:
     port: 9100
-  storage:
+  keymanager:
     enabled: true
-
-# Key manager configuration.
-keymanager:
-  enabled: true
-  loader: .ekiden/target/debug/ekiden-runtime-loader
-  runtime: .ekiden/target/debug/ekiden-keymanager-runtime
-  port: 9003
-  client:
-    address: "127.0.0.1:9003"
-    certificate: /tmp/runtime-ethereum-single_node/tls_identity_cert.pem
+    may_generate: true
+    runtime:
+      id: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      binary: .ekiden/target/debug/ekiden-keymanager-runtime
+      loader: .ekiden/target/debug/ekiden-runtime-loader
 
 # Epochtime backend.
 epochtime:
@@ -60,8 +75,8 @@ epochtime:
     # This makes each epoch last for 30 tendermint blocks.
     interval: 30
 
-# Random beacon backend.
-beacon:
+# Conesensus backend.
+consensus:
   backend: tendermint
 
 # Storage backend.
@@ -70,24 +85,21 @@ storage:
   debug:
     mock_signing_key: true
 
-# Scheduler backend.
-scheduler:
-  backend: trivial
-
-# Registry backend.
-registry:
-  backend: tendermint
-
 # Roothash backend.
 roothash:
-  backend: tendermint
+  tendermint:
+    index_blocks: true
 
 # Tendermint backend configuration.
 tendermint:
-  core:
-    genesis_file: /tmp/runtime-ethereum-single_node/genesis.json
   consensus:
     timeout_commit: 1s
+
+# Client configuration.
+client:
+  indexer:
+    runtimes:
+      - "0000000000000000000000000000000000000000000000000000000000000000"
 
 # Tracing settings.
 #tracing:

@@ -6,26 +6,24 @@ use ethereum_types::Address;
 use futures::prelude::*;
 use hash::keccak;
 use io_context::Context;
-use jsonrpc_core::{BoxFuture, Error, ErrorCode};
+use jsonrpc_core::BoxFuture;
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
 use parity_rpc::v1::{
     helpers::errors,
     metadata::Metadata,
-    types::{BlockNumber, Bytes, CallRequest, H160 as RpcH160},
+    types::{BlockNumber, Bytes, H160 as RpcH160},
 };
 use prometheus::{
     __register_counter_vec, histogram_opts, labels, opts, register_histogram_vec,
     register_int_counter_vec, HistogramVec, IntCounterVec,
 };
-use runtime_ethereum_api::TransactionRequest;
-use slog::{info, Logger};
+use slog::{debug, info, Logger};
 
 use crate::{
-    client::Client,
-    impls::eth::EthClient,
-    traits::oasis::{Oasis, RpcPublicKeyPayload},
-    util::execution_error,
+    traits::oasis::{Oasis, RpcExecutionPayload, RpcPublicKeyPayload},
+    translator::Translator,
+    util::{block_number_to_id, execution_error, jsonrpc_error},
 };
 
 // Metrics.
@@ -48,16 +46,16 @@ lazy_static! {
 /// Eth rpc implementation
 pub struct OasisClient {
     logger: Logger,
-    client: Arc<Client>,
+    translator: Arc<Translator>,
     km_client: Arc<KeyManagerClient>,
 }
 
 impl OasisClient {
     /// Creates new OasisClient.
-    pub fn new(client: Arc<Client>, km_client: Arc<KeyManagerClient>) -> Self {
+    pub fn new(translator: Arc<Translator>, km_client: Arc<KeyManagerClient>) -> Self {
         OasisClient {
             logger: get_logger("gateway/impls/oasis"),
-            client,
+            translator,
             km_client,
         }
     }
@@ -70,6 +68,9 @@ impl Oasis for OasisClient {
         OASIS_RPC_CALLS
             .with(&labels! {"call" => "publicKey",})
             .inc();
+        let timer = OASIS_RPC_CALL_TIME
+            .with(&labels! {"call" => "publicKey",})
+            .start_timer();
 
         info!(self.logger, "oasis_getPublicKey"; "contract" => ?contract);
 
@@ -80,48 +81,14 @@ impl Oasis for OasisClient {
             self.km_client
                 .get_public_key(Context::background(), contract_id)
                 .map_err(move |err| errors::invalid_params(&contract.to_string(), err))
-                .map(|maybe_payload| {
+                .map(move |maybe_payload| {
+                    drop(timer);
+
                     maybe_payload.map(|pk_payload| RpcPublicKeyPayload {
                         public_key: Bytes::from(pk_payload.key.as_ref().to_vec()),
-                        timestamp: pk_payload.timestamp.unwrap_or(0),
+                        checksum: Bytes::from(pk_payload.checksum),
                         signature: Bytes::from(pk_payload.signature.as_ref().to_vec()),
                     })
-                }),
-        )
-    }
-
-    fn call_enc(
-        &self,
-        _meta: Self::Metadata,
-        request: CallRequest,
-        tag: Trailing<BlockNumber>,
-    ) -> BoxFuture<Bytes> {
-        OASIS_RPC_CALLS.with(&labels! {"call" => "callEnc",}).inc();
-        let timer = OASIS_RPC_CALL_TIME
-            .with(&labels! {"call" => "callEnc",})
-            .start_timer();
-        let num = tag.unwrap_or_default();
-
-        info!(self.logger, "oasis_call_enc"; "request" => ?request, "num" => ?num);
-
-        let request = TransactionRequest {
-            nonce: request.nonce.map(Into::into),
-            caller: request.from.map(Into::into),
-            is_call: request.to.is_some(),
-            address: request.to.map(Into::into),
-            input: request.data.map(Into::into),
-            value: request.value.map(Into::into),
-            gas: request.gas.map(Into::into),
-        };
-
-        Box::new(
-            self.client
-                .call_enc(request, EthClient::get_block_id(num))
-                .map_err(execution_error)
-                .map(Into::into)
-                .then(move |result| {
-                    drop(timer);
-                    result
                 }),
         )
     }
@@ -141,9 +108,38 @@ impl Oasis for OasisClient {
         );
 
         Box::new(
-            self.client
-                .storage_expiry(&address, EthClient::get_block_id(num))
-                .map_err(|_| Error::new(ErrorCode::InternalError)),
+            self.translator
+                .get_block_unwrap(block_number_to_id(num))
+                .and_then(move |blk| Ok(blk.state()?.storage_expiry(&address)?.into()))
+                .map_err(jsonrpc_error),
+        )
+    }
+
+    fn invoke(&self, raw: Bytes) -> BoxFuture<RpcExecutionPayload> {
+        OASIS_RPC_CALLS.with(&labels! {"call" => "invoke",}).inc();
+        let timer = OASIS_RPC_CALL_TIME
+            .with(&labels! {"call" => "invoke",})
+            .start_timer();
+
+        if log_enabled!(log::LogLevel::Debug) {
+            debug!(self.logger, "oasis_invoke"; "data" => ?raw);
+        } else {
+            info!(self.logger, "oasis_invoke")
+        }
+
+        Box::new(
+            self.translator
+                .send_raw_transaction(raw.into())
+                .map_err(execution_error)
+                .then(move |maybe_result| {
+                    drop(timer);
+
+                    maybe_result.map(|(hash, result)| RpcExecutionPayload {
+                        transaction_hash: hash.into(),
+                        status_code: (result.status_code as u64).into(),
+                        output: result.output.into(),
+                    })
+                }),
         )
     }
 }

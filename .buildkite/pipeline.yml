@@ -29,7 +29,8 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
       - "EKIDEN_BRANCH=master"
-      - "E2E_TESTS_BRANCH=master"
+      - "E2E_TESTS_BRANCH=beta"
+      - "DEVELOPER_GATEWAY_BRANCH=master"
     propagate-environment: true
     unconfined: true
 
@@ -43,16 +44,6 @@ steps:
       buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
-
-  # TODO: Update and build again when we start using the new storage interface.
-  # - label: Build inspector
-  #   command:
-  #     - .buildkite/scripts/setup_gitconfig.sh
-  #     - .buildkite/rust/build_generic.sh /workdir -p inspector
-  #   agents:
-  #     buildkite_agent_size: large
-  #   plugins:
-  #     <<: *docker_plugin_configuration
 
   - label: Build web3 gateway
     command:
@@ -156,7 +147,7 @@ steps:
       <<: *docker_plugin_configuration
 
   - label: End-to-end tests (%n)
-    parallelism: 6
+    parallelism: 4
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh

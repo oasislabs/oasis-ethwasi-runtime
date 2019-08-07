@@ -43,7 +43,9 @@ nvm_script="${NVM_DIR:-${HOME}/.nvm}/nvm.sh"
 ###################
 run_backend_tendermint_committee_custom() {
     run_backend_tendermint_committee \
-        replica_group_size=3
+        epochtime_backend=tendermint_mock \
+        replica_group_size=3 \
+        runtime_genesis=${WORKDIR}/resources/genesis/ekiden_genesis_testing.json
 }
 
 run_no_client() {
@@ -59,8 +61,12 @@ scenario_basic() {
     run_compute_node 3 ${runtime}
     run_compute_node 4 ${runtime}
 
+    # Initialize storage nodes.
+    run_storage_node 1
+    run_storage_node 2
+
     # Wait for all compute nodes to start.
-    wait_nodes 5 # 4 + storage
+    wait_nodes 6 # 4 + 2 storage
 
     # Advance epoch to elect a new committee.
     set_epoch 1
@@ -107,23 +113,35 @@ install_e2e_tests() {
     pushd ${WORKDIR}/tests
         if [ ! -d e2e-tests ]; then
             git clone https://github.com/oasislabs/e2e-tests.git -b ${e2e_tests_branch} --depth 1
-
             pushd e2e-tests
                 npm install > /dev/null
-
+                # Needed to install and build oasis-client within e2e-tests.
+                npm install -g lerna
+                npm install -g yarn
+                ./scripts/oasis-client.sh
                 # If the Buildkite access token is available, download pre-compiled contracts
                 # from the e2e-tests pipeline.
                 if [ "${BUILDKITE:-}" == "true" ]; then
                     echo "Downloading compiled contracts from the e2e-tests pipeline."
+                    # Solidity contracts.
                     ${WORKDIR}/.buildkite/scripts/download_artifact.sh \
                         e2e-tests \
                         ${e2e_tests_branch} \
                         "Lint and Compile Contracts" \
                         build.zip \
                         "$(pwd)"
-
                     unzip build.zip
                     rm build.zip
+                    # Mantle contracts.
+                    ${WORKDIR}/.buildkite/scripts/download_artifact.sh \
+                        e2e-tests \
+                        ${e2e_tests_branch} \
+                        "Lint and Compile Contracts" \
+                        mantle.zip \
+                        "$(pwd)"
+                    rm -rf mantle
+                    unzip mantle.zip
+                    rm mantle.zip
                 else
                     # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
                     # correct rust contract artifacts. Can remove this once the following is
@@ -144,6 +162,12 @@ install_e2e_tests() {
 scenario_e2e_tests() {
     scenario_basic $*
 
+    echo "Starting the developer-gateway"
+    ./go/developer-gateway/developer-gateway \
+        --config.path configs/developer-gateway/testing.toml \
+        --bind_public.max_body_bytes 16777216 \
+        --bind_public.http_write_timeout_ms 100000 &
+
     echo "Running E2E tests from e2e-tests repository."
     pushd ${WORKDIR}/tests/e2e-tests
         # Ensures we don't try to compile the contracts a second time.
@@ -155,10 +179,10 @@ scenario_e2e_tests() {
         export HTTPS_PROVIDER_URL="http://localhost:8545"
         export WS_PROVIDER_URL="ws://localhost:8555"
         export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
-        # See https://github.com/oasislabs/ekiden/blob/master/key-manager/dummy/enclave/src/lib.rs
-        export KEY_MANAGER_PUBLIC_KEY="0x9d41a874b80e39a40c9644e964f0e4f967100c91654bfd7666435fe906af060f"
+        export OASIS_CLIENT_SK="533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c"
+        export DEVELOPER_GATEWAY_URL="http://localhost:1234"
         # Cleanup persisted long-term keys.
-        rm -rf .web3c
+        rm -rf .oasis
         npm run test:development 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-e2e-tests.log
     popd
 }

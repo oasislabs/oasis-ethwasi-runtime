@@ -7,7 +7,7 @@ mod contracts;
 
 use ethereum_types::{Address, U256};
 use runtime_ethereum::test;
-use runtime_ethereum_api::Receipt;
+use runtime_ethereum_api::ExecutionResult;
 
 /// Makes a call to the `getCounter()` method.
 fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> U256 {
@@ -20,10 +20,12 @@ fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> U256 {
 }
 
 /// Invokes the `incrementCounter` method on the contract, returns the receipt.
-fn increment_counter<'a>(contract: Address, client: &mut test::Client) -> Receipt {
+fn increment_counter<'a>(contract: Address, client: &mut test::Client) -> ExecutionResult {
     let sighash_data = contracts::counter::increment_counter_sighash();
-    let tx_hash = client.send(Some(&contract), sighash_data, &U256::zero());
-    client.receipt(tx_hash)
+    let (tx_hash, _) = client
+        .send(Some(&contract), sighash_data, &U256::zero(), None)
+        .expect("incrementing counter should succeed");
+    client.result(tx_hash)
 }
 
 #[test]
@@ -61,7 +63,7 @@ fn test_invalid_expiry() {
     );
 
     // check that deploy failed (0 status code)
-    let status = client.receipt(tx_hash).status_code.unwrap();
+    let status = client.result(tx_hash).status_code;
     assert_eq!(status, 0);
 }
 
@@ -101,14 +103,14 @@ fn test_expiry() {
     assert_eq!(counter_post, counter_pre + U256::from(1));
 
     // check that gas cost is cheaper
-    assert!(receipt_2.gas_used.unwrap() < receipt_1.gas_used.unwrap());
+    assert!(receipt_2.gas_used < receipt_1.gas_used);
 
     // increment counter (expired)
     client.set_timestamp(deploy_time + duration + 1);
     let receipt_3 = increment_counter(contract.clone(), &mut client);
 
     // check that transaction failed (0 status code)
-    assert_eq!(receipt_3.status_code.unwrap(), 0);
+    assert_eq!(receipt_3.status_code, 0);
 
     let expired_counter = get_counter(&contract, &mut client);
     assert_eq!(expired_counter, U256::from(0));
