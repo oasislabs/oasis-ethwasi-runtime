@@ -29,7 +29,7 @@ docker_plugin: &docker_plugin_configuration
 
 steps:
   - label: Build artifacts
-    branches: master beta
+    branches: master devnet2
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
@@ -49,11 +49,6 @@ steps:
     command:
       - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-benchmarking benchmarking-latest
 
-  - label: Update benchmarking docker image tags (beta branches only)
-    branches: beta
-    command:
-      - .buildkite/scripts/build_tag_push_benchmark_image.sh context.tar.gz latest-benchmarking-beta benchmarking-latest-beta
-
   - wait
 
   - label: "Trigger benchmark run (master branches only)"
@@ -65,13 +60,3 @@ steps:
       branch: master
       env:
         BENCHMARK_IMAGE: oasislabs/ekiden-runtime-ethereum:benchmarking-latest
-
-  - label: "Trigger benchmark run (beta branches only)"
-    branches: beta
-    trigger: private-ops-run-benchmarks
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: master
-      env:
-        BENCHMARK_IMAGE: oasislabs/ekiden-runtime-ethereum:benchmarking-latest-beta

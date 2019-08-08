@@ -7,7 +7,7 @@
 
 steps:
   - label: "Trigger e2e tests"
-    branches: beta
+    branches: master
     trigger: runtime-ethereum-e2e-tests
     async: true
     build:
@@ -16,7 +16,7 @@ steps:
       branch: "${BUILDKITE_BRANCH}"
 
   - label: "Trigger benchmark run"
-    branches: beta
+    branches: master
     trigger: runtime-ethereum-benchmarks
     async: true
     build:
