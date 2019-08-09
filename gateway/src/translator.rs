@@ -28,6 +28,7 @@ use ethcore::{
 use ethereum_types::{H256, H64, U256};
 use failure::{format_err, Error, Fallible};
 use futures::{future, prelude::*};
+use hash::KECCAK_EMPTY_LIST_RLP;
 use io_context::Context;
 use lazy_static::lazy_static;
 use parity_rpc::v1::types::{
@@ -627,7 +628,7 @@ impl EthereumBlock {
                 hash: Some(block_hash.as_ref().into()),
                 size: None,
                 parent_hash: header.previous_hash.as_ref().into(),
-                uncles_hash: Default::default(),
+                uncles_hash: KECCAK_EMPTY_LIST_RLP.into(), /* empty list */
                 author: Default::default(),
                 miner: Default::default(),
                 state_root: header.state_root.as_ref().into(),
