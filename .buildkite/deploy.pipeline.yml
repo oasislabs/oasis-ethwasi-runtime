@@ -171,14 +171,6 @@ steps:
       commit: HEAD
       branch: master
 
-  - label: "Trigger hardware staging deployment (master branches only)"
-    trigger: private-ops-deploy-ekiden-hardware-staging
-    branches: master
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: master
-
   - label: "Build and push all-in-one image (master branches only)"
     branches: master
     command:
