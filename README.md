@@ -16,7 +16,7 @@ To do this, you can either:
   process completes you can then run `make && make symlink-artifacts EKIDEN_SRC_PATH=/path/to/ekiden`
   and all the required artifacts will be symlinked under `.ekiden` and `.runtime`.
 
-* Download Ekiden artifacts from CI by running `make download-artifacts`. You need to have
+* (Coming soon...) Download Ekiden artifacts from CI by running `make download-artifacts`. You need to have
   the correct `BUILDKITE_ACCESS_TOKEN` set up to do this.
 
 * Manually provide the required artifacts in a custom directory and specify
@@ -31,7 +31,6 @@ where the code has been checked out.
 To build everything required for running the runtime, simply execute in the
 top-level directory:
 ```bash
-$ cd /code/
 $ make
 ```
 
@@ -39,7 +38,6 @@ $ make
 
 To run a local single-node Ekiden "cluster" and a development version of the gateway, run:
 ```bash
-$ cd /code/
 $ make run-gateway
 ```
 
@@ -63,23 +61,21 @@ make devtools
 
 To build the benchmarking version of the runtime (release build, logging suppressed, nonce checking disabled):
 ```bash
-$ cd /code/
 $ CARGO_TARGET_DIR=target_benchmark cargo build --release --features benchmark
 ```
 
 Release builds of `gateway` and `genesis` are also used for benchmarking. To build, for each component:
 ```bash
-$ cd /code/
 $ cargo build -p <component> --release
 ```
 
 Finally, to build the benchmarking go client with benchmarks and Rust smart
 contracts:
 ```bash
-$ cd /code/benchmark
+$ cd benchmark
 $ make
 ```
 
 Run benchmarks by first spinning up the gateway (see previous chapter) and then
-executing `/code/benchmark/benchmark -b <benchmark_name>`. Benchmarks results
+executing `benchmark/benchmark -b <benchmark_name>`. Benchmarks results
 will be reported to STDOUT in JSON format.
