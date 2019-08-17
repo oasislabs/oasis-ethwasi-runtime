@@ -1,6 +1,0 @@
-{
-  "id": 9999999999,
-  "jsonrpc": "2.0",
-  "method": "net_listening",
-  "params": []
-}
