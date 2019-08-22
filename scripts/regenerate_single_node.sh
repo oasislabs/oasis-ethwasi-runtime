@@ -7,6 +7,8 @@ DATADIR=$(mktemp -d --tmpdir ekiden-regenerate-XXXXXXXXXX)
 EKIDEN_BINARY="${EKIDEN_ROOT_PATH}/go/ekiden/ekiden"
 EKIDEN_RUNTIME_ID=${EKIDEN_RUNTIME_ID:-"0000000000000000000000000000000000000000000000000000000000000000"}
 EKIDEN_KM_RUNTIME_ID=${EKIDEN_KM_RUNTIME_ID:-"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"}
+EKIDEN_RUNTIME_VERSION=${EKIDEN_RUNTIME_VERSION:-"0x0000000000030000"}
+EKIDEN_KM_RUNTIME_VERSION=${EKIDEN_KM_RUNTIME_VERSION:-"0x0000000000030000"}
 
 SINGLE_NODE_DIR=${SINGLE_NODE_DIR:-"./configs/single_node/"}
 SINGLE_NODE_SGX_DIR=${SINGLE_NODE_SGX_DIR:-"./configs/single_node_sgx/"}
@@ -23,7 +25,6 @@ ${EKIDEN_BINARY}\
     --debug.allow_test_keys \
     --debug.test_entity \
     --node.consensus_address 127.0.0.1:26656 \
-    --node.expiration 1000000 \
     --node.role validator
 
 rm ${DATADIR}/tls_identity*
@@ -48,7 +49,8 @@ ${EKIDEN_BINARY}\
     --runtime.keymanager ${EKIDEN_KM_RUNTIME_ID} \
     --runtime.kind compute \
     --runtime.genesis.state ${GENESIS_DIR}/ekiden_genesis_testing.json \
-    --runtime.genesis.file runtime_genesis_nosgx.json
+    --runtime.genesis.file runtime_genesis_nosgx.json \
+    --runtime.version ${EKIDEN_RUNTIME_VERSION}
 
 ${EKIDEN_BINARY} \
     registry runtime init_genesis \
@@ -57,7 +59,8 @@ ${EKIDEN_BINARY} \
     --debug.test_entity \
     --runtime.id ${EKIDEN_KM_RUNTIME_ID} \
     --runtime.kind keymanager \
-    --runtime.genesis.file keymanager_genesis_nosgx.json
+    --runtime.genesis.file keymanager_genesis_nosgx.json \
+    --runtime.version ${EKIDEN_KM_RUNTIME_VERSION}
 
 ${EKIDEN_BINARY} \
     genesis init \
@@ -88,7 +91,8 @@ ${EKIDEN_BINARY}\
     --runtime.kind compute \
     --runtime.genesis.state ${GENESIS_DIR}/ekiden_genesis_testing.json \
     --runtime.tee_hardware intel-sgx \
-    --runtime.genesis.file runtime_genesis_sgx.json
+    --runtime.genesis.file runtime_genesis_sgx.json \
+    --runtime.version ${EKIDEN_RUNTIME_VERSION}
 
 ${EKIDEN_BINARY} \
     registry runtime init_genesis \
@@ -98,7 +102,8 @@ ${EKIDEN_BINARY} \
     --runtime.id ${EKIDEN_KM_RUNTIME_ID} \
     --runtime.kind keymanager \
     --runtime.tee_hardware intel-sgx \
-    --runtime.genesis.file keymanager_genesis_sgx.json
+    --runtime.genesis.file keymanager_genesis_sgx.json \
+    --runtime.version ${EKIDEN_KM_RUNTIME_VERSION}
 
 ${EKIDEN_BINARY} \
     genesis init \
