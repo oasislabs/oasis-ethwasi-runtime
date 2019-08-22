@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, sync::Arc};
 use ekiden_client::{
     transaction::{
         snapshot::{BlockSnapshot, TransactionSnapshot},
-        Query, QueryCondition, ROUND_LATEST, TAG_BLOCK_HASH,
+        Query, QueryCondition, ROUND_LATEST,
     },
     BoxFuture,
 };
@@ -132,7 +132,7 @@ impl Translator {
         let client = self.client.clone();
         self.client
             .txn_client()
-            .query_block(TAG_BLOCK_HASH, hash)
+            .query_block(Hash::from(hash.as_ref() as &[u8]))
             .map(|snapshot| snapshot.map(|snapshot| EthereumBlock::new(snapshot, client)))
     }
 
