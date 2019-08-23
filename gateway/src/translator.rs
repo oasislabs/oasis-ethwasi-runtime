@@ -370,6 +370,11 @@ impl Translator {
         let logs = txns
             .map(move |txns| {
                 txns.into_iter().flat_map(|txn| {
+                error!(logger,
+                    "log query";
+                    "result.input" => ?txn.input,
+                    "result.output" => ?txn.output,
+                );
                 // This should not happen as such transactions should not emit tags.
                 if txn.input.method != METHOD_ETH_TXN {
                     error!(logger, "Query returned non-ethereum transaction";
