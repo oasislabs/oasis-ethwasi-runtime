@@ -107,7 +107,7 @@ fn main() -> Fallible<()> {
             Arg::with_name("pubsub-interval")
                 .long("pubsub-interval")
                 .help("Time interval used for pub/sub notifications (in sec).")
-                .default_value("3")
+                .default_value("20")
                 .takes_value(true),
         )
         .arg(
