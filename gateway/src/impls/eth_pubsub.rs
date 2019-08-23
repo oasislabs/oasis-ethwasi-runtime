@@ -155,7 +155,7 @@ impl ChainNotificationHandler {
             let mut filter = filter.clone();
 
             // Limit query range.
-            filter.from_block = BlockId::Number(from_block);
+            filter.from_block = BlockId::Number(0);
             filter.to_block = BlockId::Number(to_block);
 
             let subscriber = subscriber.clone();
