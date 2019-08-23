@@ -326,11 +326,11 @@ impl Translator {
             error!(logger,
                 "log query";
                 "filter" => ?filter,
-                "round_min" => blks[0].snapshot.block.header.round,
+                "round_min" => 0,
                 "round_max" => blks[1].snapshot.block.header.round,
             );
             client.txn_client().query_txns(Query {
-                round_min: blks[0].snapshot.block.header.round,
+                round_min: 0,
                 round_max: blks[1].snapshot.block.header.round,
                 conditions: {
                     let mut c = vec![];
