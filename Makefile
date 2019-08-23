@@ -19,7 +19,8 @@ KM_ENCLAVE_PATH ?= $(EKIDEN_CARGO_TARGET_DIR)/x86_64-fortanix-unknown-sgx/debug/
 GENESIS_ROOT_PATH ?= resources/genesis
 GENESIS_FILES ?= \
 	genesis.json \
-	genesis_testing.json
+	genesis_testing.json \
+	genesis_benchmarking.json
 
 # Extra build args.
 EXTRA_BUILD_ARGS := $(if $(RELEASE),--release,)
