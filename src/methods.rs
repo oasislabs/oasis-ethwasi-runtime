@@ -1,5 +1,6 @@
 //! Methods exported to Ekiden clients.
 use ekiden_runtime::{
+    common::logger::get_logger,
     runtime_context,
     transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
 };
@@ -16,6 +17,7 @@ use runtime_ethereum_common::{
     genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC,
     TAG_ETH_TX_HASH,
 };
+use slog::info;
 
 use crate::block::BlockContext;
 
@@ -98,10 +100,14 @@ pub mod execute {
         // Emit the Ekiden transaction hash so that we can query it.
         #[cfg(not(feature = "test"))]
         {
+            let logger = get_logger("ethereum/transaction");
+            info!(logger, "Emitting transaction hash"; "tx_hash" => ?tx_hash);
             ctx.emit_txn_tag(TAG_ETH_TX_HASH, tx_hash);
             for log in &outcome.receipt.logs {
+                info!(logger, "Emitting log address"; "address" => ?log.address);
                 ctx.emit_txn_tag(TAG_ETH_LOG_ADDRESS, log.address);
                 for topic in &log.topics {
+                    info!(logger, "Emitting log topic"; "topic" => ?topic);
                     ctx.emit_txn_tag(TAG_ETH_LOG_TOPIC, topic);
                 }
             }
