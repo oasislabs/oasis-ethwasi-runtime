@@ -321,7 +321,14 @@ impl Translator {
         // Look up matching transactions.
         let f = filter.clone();
         let client = self.client.clone();
+        let logger = self.logger.clone();
         let txns = blocks.and_then(move |blks| {
+            error!(logger,
+                "log query";
+                "filter" => ?filter,
+                "round_min" => blks[0].snapshot.block.header.round,
+                "round_max" => blks[1].snapshot.block.header.round,
+            );
             client.txn_client().query_txns(Query {
                 round_min: blks[0].snapshot.block.header.round,
                 round_max: blks[1].snapshot.block.header.round,
