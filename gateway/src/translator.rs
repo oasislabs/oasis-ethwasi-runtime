@@ -338,16 +338,16 @@ impl Translator {
                         });
                     }
                     // Transaction must emit logs for all of the given topics.
-                    for (index, topic) in filter.topics.iter().enumerate() {
-                        topic.as_ref().map(|t| {
+                    for index in 0..std::cmp::min(filter.topics.len(), 4) {
+                        if let Some(ref topic) = filter.topics[index] {
                             c.push(QueryCondition {
                                 key: TAG_ETH_LOG_TOPICS[index].to_vec(),
-                                values: t
+                                values: topic
                                     .into_iter()
                                     .map(|x| <[u8]>::as_ref(&x).to_vec().into())
                                     .collect(),
                             });
-                        });
+                        }
                     }
 
                     c

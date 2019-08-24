@@ -101,8 +101,8 @@ pub mod execute {
             ctx.emit_txn_tag(TAG_ETH_TX_HASH, tx_hash);
             for log in &outcome.receipt.logs {
                 ctx.emit_txn_tag(TAG_ETH_LOG_ADDRESS, log.address);
-                for (index, topic) in log.topics.iter().enumerate() {
-                    ctx.emit_txn_tag(TAG_ETH_LOG_TOPICS[index], topic);
+                for index in 0..std::cmp::min(log.topics.len(), 4) {
+                    ctx.emit_txn_tag(TAG_ETH_LOG_TOPICS[index], log.topics[index]);
                 }
             }
         }
