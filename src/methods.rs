@@ -13,7 +13,7 @@ use failure::{format_err, Fallible};
 use runtime_ethereum_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
 use runtime_ethereum_common::{
-    genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC,
+    genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS,
     TAG_ETH_TX_HASH,
 };
 
@@ -101,8 +101,8 @@ pub mod execute {
             ctx.emit_txn_tag(TAG_ETH_TX_HASH, tx_hash);
             for log in &outcome.receipt.logs {
                 ctx.emit_txn_tag(TAG_ETH_LOG_ADDRESS, log.address);
-                for topic in &log.topics {
-                    ctx.emit_txn_tag(TAG_ETH_LOG_TOPIC, topic);
+                for (index, topic) in log.topics.iter().enumerate() {
+                    ctx.emit_txn_tag(TAG_ETH_LOG_TOPICS[index], topic);
                 }
             }
         }

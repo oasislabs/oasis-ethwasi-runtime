@@ -37,7 +37,7 @@ use parity_rpc::v1::types::{
 };
 use runtime_ethereum_api::{ExecutionResult, TransactionError, METHOD_ETH_TXN};
 use runtime_ethereum_common::{
-    genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPIC, TAG_ETH_TX_HASH,
+    genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS, TAG_ETH_TX_HASH,
 };
 
 use serde_bytes::ByteBuf;
@@ -337,19 +337,18 @@ impl Translator {
                                 .collect(),
                         });
                     }
-                    // Transaction must emit logs for any of the given topics.
-                    c.push(QueryCondition {
-                        key: TAG_ETH_LOG_TOPIC.to_vec(),
-                        values: filter
-                            .topics
-                            .into_iter()
-                            .flat_map(|t| {
-                                t.unwrap_or_default()
+                    // Transaction must emit logs for all of the given topics.
+                    for (index, topic) in filter.topics.iter().enumerate() {
+                        topic.as_ref().map(|t| {
+                            c.push(QueryCondition {
+                                key: TAG_ETH_LOG_TOPICS[index].to_vec(),
+                                values: t
                                     .into_iter()
                                     .map(|x| <[u8]>::as_ref(&x).to_vec().into())
-                            })
-                            .collect(),
-                    });
+                                    .collect(),
+                            });
+                        });
+                    }
 
                     c
                 },

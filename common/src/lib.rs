@@ -26,5 +26,5 @@ pub const MIN_GAS_PRICE_GWEI: usize = 1;
 pub const TAG_ETH_TX_HASH: &'static [u8] = b"heth";
 /// Ethereum log address tag.
 pub const TAG_ETH_LOG_ADDRESS: &'static [u8] = b"ladd";
-/// Ethereum log topic tag.
-pub const TAG_ETH_LOG_TOPIC: &'static [u8] = b"ltop";
+/// Ethereum log topic tags.
+pub const TAG_ETH_LOG_TOPICS: &'static [&[u8]; 4] = &[b"ltp1", b"ltp2", b"ltp3", b"ltp4"];
