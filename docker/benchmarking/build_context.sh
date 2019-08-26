@@ -25,7 +25,7 @@ popd
 
 # Install cargo wasm32-unknown-unknown target and wasm build utilities.
 rustup target add wasm32-unknown-unknown
-cargo install owasm-utils-cli --bin wasm-build
+cargo install owasm-utils-cli --force --bin wasm-build
 apt install -y xxd
 
 # Compile genesis tool.
