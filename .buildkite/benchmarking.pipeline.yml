@@ -24,6 +24,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_TARGET_DIR=/workdir/target"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
+      - "GOPROXY=https://athens.ops.oasiscloud.io/"
     propagate-environment: true
     unconfined: true
 
