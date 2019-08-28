@@ -143,16 +143,8 @@ install_e2e_tests() {
                     unzip mantle.zip
                     rm mantle.zip
                 else
-                    # Ensure the CARGO_TARGET_DIR is not set so that oasis-compile can generate the
-                    # correct rust contract artifacts. Can remove this once the following is
-                    # addressed: https://github.com/oasislabs/oasis-compile/issues/44
-                    unset CARGO_TARGET_DIR
                     # Ensure no special compiler flags are in effect.
                     unset RUSTFLAGS
-                    # Do not build TVM tests.
-                    rm -r contracts/tvm-basic
-                    rm test/10_test_tvm_basic.js
-                    npm run compile
                 fi
             popd
         fi
@@ -170,8 +162,6 @@ scenario_e2e_tests() {
 
     echo "Running E2E tests from e2e-tests repository."
     pushd ${WORKDIR}/tests/e2e-tests
-        # Ensures we don't try to compile the contracts a second time.
-        export SKIP_OASIS_COMPILE=true
         # Re-export parallelism parameters so that they can be read by the e2e-tests.
         export E2E_PARALLELISM=${BUILDKITE_PARALLEL_JOB_COUNT:-""}
         export E2E_PARALLELISM_BUCKET=${BUILDKITE_PARALLEL_JOB:-""}
@@ -181,7 +171,7 @@ scenario_e2e_tests() {
         export MNEMONIC="patient oppose cotton portion chair gentle jelly dice supply salmon blast priority"
         export OASIS_CLIENT_SK="533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c"
         export DEVELOPER_GATEWAY_URL="http://localhost:1234"
-        # Cleanup persisted long-term keys.
+        # Cleanup persisted keys.
         rm -rf .oasis
         npm run test:development 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-e2e-tests.log
     popd
