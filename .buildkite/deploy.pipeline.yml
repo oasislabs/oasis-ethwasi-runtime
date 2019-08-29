@@ -36,7 +36,7 @@ steps:
       - platform/*
 
   - label: Extract platform resources (devnet2 branch only)
-    branches: devnet2
+    branches: david-yan/gas-benchmarks
     command:
       - .buildkite/scripts/extract_platform_resources.sh platform
     artifact_paths:
@@ -52,7 +52,7 @@ steps:
       - platform-prod/*
 
   - label: Extract production-track platform resources (devnet2 branch only)
-    branches: devnet2
+    branches: david-yan/gas-benchmarks
     command:
       - .buildkite/scripts/extract_platform_resources.sh platform-prod latest-devnet2
     artifact_paths:
@@ -64,7 +64,7 @@ steps:
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
 
   - label: Build artifacts
-    branches: master devnet2
+    branches: master david-yan/gas-benchmarks
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
@@ -77,24 +77,8 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Build benchmarking artifacts
-    branches: master devnet2
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - eval $(ssh-agent -s)
-      - ssh-add
-      - .buildkite/scripts/build_deployment_context.sh platform context-bench.tar.gz
-    env:
-      BUILD_BENCHMARKING: "1"
-    artifact_paths:
-      - context-bench.tar.gz
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
   - label: Build production-track artifacts
-    branches: master devnet2
+    branches: master david-yan/gas-benchmarks
     command:
       - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
@@ -109,78 +93,11 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - wait
-
-  - label: Update testing docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh latest-testing
-    env:
-      BASE_VARIANT: testing
-      DEPLOYMENT_VARIANT: testing
-
-  - label: Update testing docker image tags (devnet2 branch only)
-    branches: devnet2
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh latest-testing-devnet2
-    env:
-      BASE_VARIANT: testing
-      DEPLOYMENT_VARIANT: testing
-
-  - label: Update benchmarking docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking
-    env:
-      BASE_VARIANT: testing
-      DEPLOYMENT_VARIANT: benchmarking
-
-  - label: Update staging docker image tags (master branches only)
-    branches: master
+  - label: Building docker image
+    branches: david-yan/gas-benchmarks
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh staging
-
-  - label: Update staging devnet2 docker image tags (devnet2 branch only)
-    branches: devnet2
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh staging-devnet2
     env:
       BASE_VARIANT: devnet2
       DEPLOYMENT_VARIANT: devnet2
 
-  - wait
-
-  - label: "Trigger staging deployment (master branches only)"
-    trigger: private-ops-deploy-ekiden-staging
-    branches: master
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: master
-
-  - label: "Trigger staging devnet2 deployment (devnet2 branch only)"
-    trigger: private-ops-deploy-ekiden-devnet2-staging
-    branches: devnet2
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: master
-
-  - label: "Build and push all-in-one image (master branches only)"
-    branches: master
-    command:
-      - ./docker/all-in-one/build.sh
-      - docker tag local-aio:latest oasislabs/private-all-in-one:latest
-      - docker push oasislabs/private-all-in-one:latest
-
-  - label: "Build and push all-in-one image (devnet2 branch only)"
-    branches: devnet2
-    command:
-      - ./docker/all-in-one/build.sh
-      - docker tag local-aio:latest oasislabs/private-all-in-one:latest-devnet2
-      - docker push oasislabs/private-all-in-one:latest-devnet2
