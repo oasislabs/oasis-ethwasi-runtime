@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use ekiden_keymanager_client::{ContractId, KeyManagerClient};
 use ekiden_runtime::common::logger::get_logger;
@@ -116,6 +116,7 @@ impl Oasis for OasisClient {
     }
 
     fn invoke(&self, raw: Bytes) -> BoxFuture<RpcExecutionPayload> {
+        let start = Instant::now();
         OASIS_RPC_CALLS.with(&labels! {"call" => "invoke",}).inc();
         let timer = OASIS_RPC_CALL_TIME
             .with(&labels! {"call" => "invoke",})
@@ -133,6 +134,7 @@ impl Oasis for OasisClient {
                 .map_err(execution_error)
                 .then(move |maybe_result| {
                     drop(timer);
+                    info!("invoke time: {:?}", start.elapsed());
 
                     maybe_result.map(|(hash, result)| RpcExecutionPayload {
                         transaction_hash: hash.into(),

@@ -16,7 +16,7 @@
 
 //! Eth rpc implementation.
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{collections::BTreeMap, sync::Arc, time::Instant};
 
 use ekiden_runtime::common::logger::get_logger;
 use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
@@ -566,6 +566,7 @@ impl Eth for EthClient {
     }
 
     fn send_raw_transaction(&self, raw: Bytes) -> BoxFuture<RpcH256> {
+        let start = Instant::now();
         ETH_RPC_CALLS
             .with(&labels! {"call" => "sendRawTransaction",})
             .inc();
@@ -586,6 +587,7 @@ impl Eth for EthClient {
                 .map_err(execution_error)
                 .then(move |result| {
                     drop(timer);
+                    info!("send_raw_transaction time: {:?}", start.elapsed());
                     result
                 }),
         )
