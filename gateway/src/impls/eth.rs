@@ -587,7 +587,8 @@ impl Eth for EthClient {
                 .map_err(execution_error)
                 .then(move |result| {
                     drop(timer);
-                    info!("send_raw_transaction time: {:?}", start.elapsed());
+                    let logger = get_logger("gateway/impls/eth");
+                    info!(logger, "send_raw_transaction"; "time" => ?start.elapsed());
                     result
                 }),
         )

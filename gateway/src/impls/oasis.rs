@@ -134,7 +134,8 @@ impl Oasis for OasisClient {
                 .map_err(execution_error)
                 .then(move |maybe_result| {
                     drop(timer);
-                    info!("invoke time: {:?}", start.elapsed());
+                    let logger = get_logger("gateway/impls/oasis");
+                    info!(logger, "invoke"; "time" => ?start.elapsed());
 
                     maybe_result.map(|(hash, result)| RpcExecutionPayload {
                         transaction_hash: hash.into(),
