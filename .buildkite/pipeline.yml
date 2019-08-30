@@ -168,7 +168,7 @@ steps:
   - label: ":rocket: Deploy"
     trigger: runtime-ethereum-deploy-to-staging
     async: true
-    branches: "master devnet2"
+    branches: "david-yan/gas-benchmarks"
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
