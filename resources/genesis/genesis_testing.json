@@ -15,6 +15,7 @@
     "eip86Transition": "0xffffffffffffffff",
     "eip98Transition": "0xffffffffffffffff",
     "eip140Transition": "0x0",
+    "eip145Transition": "0x0",
     "eip150Transition": "0x0",
     "eip155Transition": "0x0",
     "eip160Transition": "0x0",
