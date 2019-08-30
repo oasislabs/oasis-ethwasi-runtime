@@ -93,6 +93,8 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  - wait
+
   - label: Building docker image
     branches: david-yan/gas-benchmarks
     command:
