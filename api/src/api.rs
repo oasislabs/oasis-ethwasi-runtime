@@ -37,6 +37,8 @@ pub enum TransactionError {
     BlockGasLimitReached,
     #[fail(display = "duplicate transaction")]
     DuplicateTransaction,
+    #[fail(display = "execution failed: {}", message)]
+    ExecutionFailure { message: String },
     #[fail(display = "insufficient gas price")]
     GasPrice,
     #[fail(display = "requested gas greater than block gas limit")]
