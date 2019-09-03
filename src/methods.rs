@@ -9,7 +9,7 @@ use ethcore::{
     types::receipt::TransactionOutcome,
 };
 use ethereum_types::U256;
-use failure::{format_err, Fallible};
+use failure::Fallible;
 use runtime_ethereum_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
 use runtime_ethereum_common::{
@@ -85,8 +85,9 @@ pub mod execute {
                 false,
                 true,
             )
-            .map_err(|err| format_err!("{}", err))?;
-        // TODO: Properly map errors.
+            .map_err(|err| TransactionError::ExecutionFailure {
+                message: format!("{}", err),
+            })?;
 
         // Add to set of executed transactions.
         ectx.transaction_set.insert(tx_hash);
