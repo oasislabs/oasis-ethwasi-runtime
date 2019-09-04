@@ -64,7 +64,7 @@ panic = "abort"
 
 # temporary fix for incompatibility between jsonrpc and ws-rs
 [patch."https://github.com/tomusdrw/ws-rs"]
-ws = { git = "https://github.com/oasislabs/ws-rs", branch = "ekiden" }
+ws = { git = "https://github.com/oasislabs/ws-rs", branch = "david-yan/benchmarks" }
 
 [patch.crates-io]
 # TODO: Remove when merged upstream (briansmith/ring#738).
