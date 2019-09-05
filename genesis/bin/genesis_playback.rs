@@ -304,6 +304,7 @@ fn main() {
     let mut block = roothash::Block::default();
     block.header.namespace = runtime_id;
     block.header.state_root = state_root;
+    block.header.io_root = Hash::empty_hash();
     let blocks = vec![block];
 
     // Save to file.
