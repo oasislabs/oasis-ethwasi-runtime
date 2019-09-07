@@ -69,3 +69,4 @@ steps:
     branches: ravenac95/testing/custom-build
     command:
       - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
+      - .buildkite/scripts/promote_deployment_image_to.sh ravenac95-testing
