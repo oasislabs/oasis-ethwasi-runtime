@@ -4,7 +4,7 @@
 # Simple wrapper script to call
 # docker/ekiden-runtime-ethereum/docker_build_and_push.sh
 # with the correct arguments.
-# 
+#
 # This script is intended to have buildkite
 # specific things, like env vars and calling
 # the buildkite-agent binary. Keeping this
@@ -31,4 +31,4 @@ docker/ekiden-runtime-ethereum/docker_build_and_push.sh \
   ${BUILDKITE_COMMIT} \
   ${deployment_image_tag}${tag_suffix} \
   "$context" \
-  latest${base_tag_suffix}
+  ravenac95-testing${base_tag_suffix}
