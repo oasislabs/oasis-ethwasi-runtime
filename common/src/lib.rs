@@ -18,7 +18,7 @@ pub mod parity;
 pub mod storage;
 
 /// Block gas limit.
-pub const BLOCK_GAS_LIMIT: usize = 10_000_000_000;
+pub const BLOCK_GAS_LIMIT: usize = 1_000_000_000_000;
 /// Minimum gas price (in gwei).
 pub const MIN_GAS_PRICE_GWEI: usize = 1;
 
