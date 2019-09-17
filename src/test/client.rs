@@ -69,9 +69,7 @@ pub struct Client {
 impl Client {
     pub fn new() -> Self {
         let km_client = Arc::new(ekiden_keymanager_client::mock::MockClient::new());
-        let mut mkvs = UrkelTree::make()
-            .new(IoContext::background(), Box::new(NoopReadSyncer {}))
-            .unwrap();
+        let mut mkvs = UrkelTree::make().new(Box::new(NoopReadSyncer {}));
 
         // Initialize genesis.
         let untrusted_local = Arc::new(MemoryKeyValue::new());
