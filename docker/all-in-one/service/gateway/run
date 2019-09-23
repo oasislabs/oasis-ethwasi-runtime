@@ -1,0 +1,16 @@
+#!/bin/sh -e
+exec 2>&1
+
+sv start node
+
+if [ -z "$AIO_NOSGX" ]; then
+    data_dir=/var/ekiden/all-in-one-hw
+else
+    data_dir=/var/ekiden/all-in-one-sw
+fi
+
+sleep 1
+
+exec /ekiden/bin/gateway \
+    --node-address "unix:$data_dir/internal.sock" \
+    --runtime-id 0000000000000000000000000000000000000000000000000000000000000000

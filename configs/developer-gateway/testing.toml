@@ -1,0 +1,29 @@
+title = "Local configuration"
+
+[bind_public]
+http_interface = "127.0.0.1"
+http_port = 1234
+http_read_timeout_ms = 10000
+http_write_timeout_ms = 10000
+http_max_header_bytes = 8192
+https_enabled = false
+
+[bind_private]
+http_interface = "127.0.0.1"
+http_port = 1235
+http_read_timeout_ms = 10000
+http_write_timeout_ms = 10000
+http_max_header_bytes = 8192
+https_enabled = false
+
+[eth]
+url = "ws://localhost:8555"
+
+[eth.wallet]
+private_keys = ["c61675c22aee77da8f6e19444ece45557dc80e1482aa848f541e94e3e5d91179"]
+
+[mailbox]
+provider = "mem"
+
+[auth]
+provider = "insecure"

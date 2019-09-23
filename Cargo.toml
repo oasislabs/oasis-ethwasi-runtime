@@ -1,0 +1,84 @@
+[package]
+name = "runtime-ethereum"
+version = "0.3.0"
+authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
+build = "build.rs"
+edition = "2018"
+
+[package.metadata.fortanix-sgx]
+heap-size = 134217728
+stack-size = 2097152
+threads = 2
+
+[[bin]]
+name = "runtime-ethereum"
+path ="bin/main.rs"
+
+[dependencies]
+# Internal.
+runtime-ethereum-api = { path = "./api" }
+runtime-ethereum-common = { path = "./common" }
+
+# Ekiden.
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+
+# Parity.
+common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethkey = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
+
+# Others.
+byteorder = "1.0"
+elastic-array = "0.10"
+hex = "0.3"
+serde_json = "1.0"
+serde_bytes = "0.11"
+sha3 = "0.6"
+failure = "0.1.5"
+io-context = "0.2.0"
+slog = "2.4.1"
+
+[build-dependencies]
+ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+
+[dev-dependencies]
+assert_matches = "1.3.0"
+time = "0.1"
+ethabi = "8.0.0"
+
+[features]
+default = ["confidential"]
+confidential = []
+# Use test feature flag since Rust doesn't support conditional compilation using
+# cfg(test) on dependent crates.
+test = ["runtime-ethereum-common/test"]
+benchmarking = ["runtime-ethereum-common/benchmarking"]
+production-genesis = ["runtime-ethereum-common/production-genesis"]
+
+[profile.release]
+panic = "abort"
+
+# temporary fix for incompatibility between jsonrpc and ws-rs
+[patch."https://github.com/tomusdrw/ws-rs"]
+ws = { git = "https://github.com/oasislabs/ws-rs", branch = "ekiden" }
+
+[patch.crates-io]
+# TODO: Remove when merged upstream (briansmith/ring#738).
+ring = { git = "https://github.com/akash-fortanix/ring", branch = "sgx-target" }
+# TODO: Remove when merged upstream (rust-lang-deprecated/rustc-serialize#195).
+rustc-serialize = { git = "https://github.com/jethrogb/rustc-serialize", branch = "portability" }
+# NOTE: Required because heapsize doesn't work on SGX due to a different allocator.
+heapsize = { git = "https://github.com/oasislabs/heapsize", branch = "sgx-target" }
+
+[workspace]
+members = [
+    "api",
+    "common",
+    "gateway",
+    "genesis",
+]
+exclude = ["tests"]
