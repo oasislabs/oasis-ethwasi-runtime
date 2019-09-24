@@ -321,41 +321,45 @@ impl Translator {
         // Look up matching transactions.
         let f = filter.clone();
         let client = self.client.clone();
-        let txns =
-            blocks.and_then(move |blks| {
-                client.txn_client().query_txns(Query {
-                    round_min: blks[0].snapshot.block.header.round,
-                    round_max: blks[1].snapshot.block.header.round,
-                    conditions: {
-                        let mut c = vec![];
-                        // Transaction must emit logs for any of the given addresses.
-                        if let Some(ref addresses) = filter.address {
-                            c.push(QueryCondition {
-                                key: TAG_ETH_LOG_ADDRESS.to_vec(),
-                                values: addresses
-                                    .iter()
-                                    .map(|x| <[u8]>::as_ref(x).to_vec().into())
-                                    .collect(),
-                            });
-                        }
-                        // Transaction must emit logs for all of the given topics.
-                        c.extend(filter.topics.iter().take(4).enumerate().filter_map(
-                            |(i, topic)| {
+        let txns = blocks.and_then(move |blks| {
+            client.txn_client().query_txns(Query {
+                round_min: blks[0].snapshot.block.header.round,
+                round_max: blks[1].snapshot.block.header.round,
+                conditions: {
+                    let mut c = vec![];
+                    // Transaction must emit logs for any of the given addresses.
+                    if let Some(ref addresses) = filter.address {
+                        c.push(QueryCondition {
+                            key: TAG_ETH_LOG_ADDRESS.to_vec(),
+                            values: addresses
+                                .iter()
+                                .map(|x| <[u8]>::as_ref(x).to_vec().into())
+                                .collect(),
+                        });
+                    }
+                    // Transaction must emit logs for all of the given topics.
+                    c.extend(
+                        filter
+                            .topics
+                            .iter()
+                            .zip(TAG_ETH_LOG_TOPICS.iter())
+                            .take(4)
+                            .filter_map(|(topic, tag)| {
                                 topic.as_ref().map(|topic| QueryCondition {
-                                    key: TAG_ETH_LOG_TOPICS[i].to_vec(),
+                                    key: tag.to_vec(),
                                     values: topic
                                         .iter()
                                         .map(|x| <[u8]>::as_ref(&x).to_vec().into())
                                         .collect(),
                                 })
-                            },
-                        ));
+                            }),
+                    );
 
-                        c
-                    },
-                    limit: filter.limit.map(|l| l as u64).unwrap_or_default(),
-                })
-            });
+                    c
+                },
+                limit: filter.limit.map(|l| l as u64).unwrap_or_default(),
+            })
+        });
 
         // Decode logs from resulting transactions.
         let filter = f;

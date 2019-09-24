@@ -101,10 +101,10 @@ pub mod execute {
                 ctx.emit_txn_tag(TAG_ETH_LOG_ADDRESS, log.address);
                 log.topics
                     .iter()
+                    .zip(TAG_ETH_LOG_TOPICS.iter())
                     .take(4)
-                    .enumerate()
-                    .for_each(|(i, topic)| {
-                        ctx.emit_txn_tag(TAG_ETH_LOG_TOPICS[i], topic);
+                    .for_each(|(topic, tag)| {
+                        ctx.emit_txn_tag(tag, topic);
                     })
             }
         }
