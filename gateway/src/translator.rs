@@ -83,7 +83,7 @@ impl Translator {
         let block: BoxFuture<Option<EthereumBlock>> = match id {
             BlockId::Hash(hash) => Box::new(self.get_block_by_hash(hash)),
             BlockId::Number(round) => Box::new(self.get_block_by_round(round)),
-            BlockId::Latest => Box::new(self.get_latest_block().map(|blk| Some(blk))),
+            BlockId::Latest => Box::new(self.get_latest_block().map(Some)),
             BlockId::Earliest => Box::new(self.get_block_by_round(0)),
         };
 
@@ -144,7 +144,7 @@ impl Translator {
         self.client
             .txn_client()
             .query_txn(TAG_ETH_TX_HASH, hash)
-            .map(|txn| txn.map(|txn| EthereumTransaction::new(txn)))
+            .map(|txn| txn.map(EthereumTransaction::new))
     }
 
     /// Retrieve a specific Ethereum transaction, identified by the block round and
@@ -157,7 +157,7 @@ impl Translator {
         self.client
             .txn_client()
             .get_txn(round, index)
-            .map(|txn| txn.map(|txn| EthereumTransaction::new(txn)))
+            .map(|txn| txn.map(EthereumTransaction::new))
     }
 
     /// Retrieve a specific Ethereum transaction, identified by the block hash and
@@ -170,7 +170,7 @@ impl Translator {
         self.client
             .txn_client()
             .get_txn_by_block_hash(Hash::from(block_hash.as_ref() as &[u8]), index)
-            .map(|txn| txn.map(|txn| EthereumTransaction::new(txn)))
+            .map(|txn| txn.map(EthereumTransaction::new))
     }
 
     /// Retrieve a specific Ethereum transaction, identified by a block identifier
@@ -212,12 +212,12 @@ impl Translator {
                 client
                     .ethereum_transaction(payload.clone())
                     .then(move |maybe_result| match maybe_result {
-                        Ok(result) => return Ok(future::Loop::Break((decoded.hash(), result))),
+                        Ok(result) => Ok(future::Loop::Break((decoded.hash(), result))),
                         Err(err) => {
                             if let Some(txn_err) = err.downcast_ref::<TransactionError>() {
                                 if let TransactionError::BlockGasLimitReached = txn_err {
                                     if retries == 0 {
-                                        return Err(err.into());
+                                        return Err(err);
                                     }
                                     let retries = retries - 1;
                                     return Ok(future::Loop::Continue((
@@ -225,7 +225,7 @@ impl Translator {
                                     )));
                                 }
                             }
-                            return Err(err.into());
+                            Err(err)
                         }
                     })
             },
@@ -338,17 +338,22 @@ impl Translator {
                         });
                     }
                     // Transaction must emit logs for all of the given topics.
-                    for index in 0..std::cmp::min(filter.topics.len(), 4) {
-                        if let Some(ref topic) = filter.topics[index] {
-                            c.push(QueryCondition {
-                                key: TAG_ETH_LOG_TOPICS[index].to_vec(),
-                                values: topic
-                                    .into_iter()
-                                    .map(|x| <[u8]>::as_ref(&x).to_vec().into())
-                                    .collect(),
-                            });
-                        }
-                    }
+                    c.extend(
+                        filter
+                            .topics
+                            .iter()
+                            .zip(TAG_ETH_LOG_TOPICS.iter())
+                            .take(4)
+                            .filter_map(|(topic, tag)| {
+                                topic.as_ref().map(|topic| QueryCondition {
+                                    key: tag.to_vec(),
+                                    values: topic
+                                        .iter()
+                                        .map(|x| <[u8]>::as_ref(&x).to_vec().into())
+                                        .collect(),
+                                })
+                            }),
+                    );
 
                     c
                 },
@@ -742,7 +747,7 @@ impl ethcore::mkvs::MKVS for BlockSnapshotMKVS {
         MKVS::remove(&mut self.0, Context::background(), key)
     }
 
-    fn boxed_clone(&self) -> Box<ethcore::mkvs::MKVS> {
+    fn boxed_clone(&self) -> Box<dyn ethcore::mkvs::MKVS> {
         Box::new(self.clone())
     }
 }

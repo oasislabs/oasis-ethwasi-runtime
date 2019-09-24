@@ -54,7 +54,7 @@ struct BatchSizeErrGen {}
 
 impl ErrGen for BatchSizeErrGen {
     fn generate(&self) -> rpc::Error {
-        return error_batch_size();
+        error_batch_size()
     }
 }
 
@@ -62,13 +62,13 @@ struct RateLimitedErrGen {}
 
 impl ErrGen for RateLimitedErrGen {
     fn generate(&self) -> rpc::Error {
-        return error_rate_limited();
+        error_rate_limited()
     }
 }
 
 /// Given a single call it generates an error response
 /// from the error generator.
-fn generate_error_response_call(call: &rpc::Call, gen: &ErrGen) -> rpc::Output {
+fn generate_error_response_call(call: &rpc::Call, gen: &dyn ErrGen) -> rpc::Output {
     match call {
         rpc::Call::MethodCall(method) => {
             rpc::Output::from(Err(gen.generate()), method.id.clone(), method.jsonrpc)
@@ -82,7 +82,7 @@ fn generate_error_response_call(call: &rpc::Call, gen: &ErrGen) -> rpc::Output {
 
 /// Given a batch of rpc calls it generates the appropriate
 /// error for each of the calls.
-fn generate_error_response_calls(calls: &Vec<rpc::Call>, gen: &ErrGen) -> Vec<rpc::Output> {
+fn generate_error_response_calls(calls: &[rpc::Call], gen: &dyn ErrGen) -> Vec<rpc::Output> {
     calls
         .iter()
         .map(|ref call| generate_error_response_call(&call, gen))
@@ -90,7 +90,7 @@ fn generate_error_response_calls(calls: &Vec<rpc::Call>, gen: &ErrGen) -> Vec<rp
 }
 
 /// Given a request it generates an error response for that request.
-fn generate_error_response(request: rpc::Request, gen: &ErrGen) -> rpc::FutureResponse {
+fn generate_error_response(request: rpc::Request, gen: &dyn ErrGen) -> rpc::FutureResponse {
     Box::new(rpc::futures::finished(Some(match request {
         rpc::Request::Single(call) => {
             rpc::Response::Single(generate_error_response_call(&call, gen))
@@ -154,8 +154,8 @@ impl WsDispatcher {
     /// Create new `WsDispatcher` with given full handler.
     pub fn new(stats: Arc<RpcStats>, max_req_per_sec: usize) -> Self {
         WsDispatcher {
-            stats: stats,
-            max_req_per_sec: max_req_per_sec,
+            stats,
+            max_req_per_sec,
         }
     }
 }
@@ -169,19 +169,13 @@ impl rpc::Middleware<Metadata> for WsDispatcher {
         X: rpc::futures::Future<Item = Option<rpc::Response>, Error = ()> + Send + 'static,
     {
         // Check request rate for session, and respond with an error if it exceeds max_req_per_sec.
-        match meta.origin {
-            Origin::Ws {
-                ref session,
-                dapp: _,
-            } => {
-                if self.stats.count_request(session) as usize > self.max_req_per_sec {
-                    WS_RATE_LIMITED.inc();
-                    error!("Rejecting WS request");
-                    return generate_error_response(request, &RateLimitedErrGen {});
-                }
+        if let Origin::Ws { ref session, .. } = meta.origin {
+            if self.stats.count_request(session) as usize > self.max_req_per_sec {
+                WS_RATE_LIMITED.inc();
+                error!("Rejecting WS request");
+                return generate_error_response(request, &RateLimitedErrGen {});
             }
-            _ => (),
-        };
+        }
 
         Box::new(process(request, meta))
     }
@@ -195,7 +189,7 @@ pub struct WsStats {
 impl WsStats {
     /// Creates new WS usage tracker.
     pub fn new(stats: Arc<RpcStats>) -> Self {
-        WsStats { stats: stats }
+        WsStats { stats }
     }
 }
 

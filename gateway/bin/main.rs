@@ -43,8 +43,8 @@ use ekiden_runtime::common::logger::{get_logger, init_logger};
 use runtime_ethereum_common::MIN_GAS_PRICE_GWEI;
 use web3_gateway::util;
 
-const METRICS_MODE_PULL: &'static str = "pull";
-const METRICS_MODE_PUSH: &'static str = "push";
+const METRICS_MODE_PULL: &str = "pull";
+const METRICS_MODE_PUSH: &str = "push";
 
 fn main() -> Fallible<()> {
     // TODO: is this needed?

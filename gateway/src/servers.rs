@@ -58,8 +58,8 @@ where
                 request.into()
             }
         })
-        .cors(cors_domains.into())
-        .allowed_hosts(allowed_hosts.into());
+        .cors(cors_domains)
+        .allowed_hosts(allowed_hosts);
 
     Ok(builder.start_http(addr)?)
 }

@@ -28,11 +28,11 @@ pub struct BlockContext {
 
 /// Ethereum runtime batch handler.
 pub struct EthereumBatchHandler {
-    key_manager: Arc<KeyManagerClient>,
+    key_manager: Arc<dyn KeyManagerClient>,
 }
 
 impl EthereumBatchHandler {
-    pub fn new(key_manager: Arc<KeyManagerClient>) -> Self {
+    pub fn new(key_manager: Arc<dyn KeyManagerClient>) -> Self {
         Self { key_manager }
     }
 }

@@ -27,7 +27,7 @@ use servers;
 
 pub use parity_rpc::{ws::Server as WsServer, HttpServer, RequestMiddleware};
 
-pub const DAPPS_DOMAIN: &'static str = "web3.site";
+pub const DAPPS_DOMAIN: &str = "web3.site";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct HttpConfiguration {

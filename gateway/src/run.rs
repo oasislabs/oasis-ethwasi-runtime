@@ -34,7 +34,7 @@ use crate::{pubsub::Broker, translator::Translator, EthereumRuntimeClient};
 
 pub fn execute(
     client: EthereumRuntimeClient,
-    km_client: Arc<KeyManagerClient>,
+    km_client: Arc<dyn KeyManagerClient>,
     pubsub_interval_secs: u64,
     http_port: u16,
     num_threads: usize,
@@ -129,7 +129,7 @@ pub struct RunningGateway {
     logger: Logger,
     runtime: tokio::runtime::Runtime,
     translator: Arc<Translator>,
-    km_client: Arc<KeyManagerClient>,
+    km_client: Arc<dyn KeyManagerClient>,
     event_loop: EventLoop,
     http_server: Option<jsonrpc_http_server::Server>,
     ws_server: Option<jsonrpc_ws_server::Server>,

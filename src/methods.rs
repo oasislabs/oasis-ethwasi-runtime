@@ -24,10 +24,7 @@ pub mod check {
     use super::*;
 
     /// Check ethereum transaction.
-    pub fn ethereum_transaction(
-        tx: &Vec<u8>,
-        _ctx: &mut TxnContext,
-    ) -> Fallible<SignedTransaction> {
+    pub fn ethereum_transaction(tx: &[u8], _ctx: &mut TxnContext) -> Fallible<SignedTransaction> {
         let decoded: UnverifiedTransaction = rlp::decode(tx)?;
 
         // Check that gas < block gas limit.
@@ -52,7 +49,7 @@ pub mod execute {
     use super::*;
 
     /// Execute an Ethereum transaction.
-    pub fn ethereum_transaction(tx: &Vec<u8>, ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
+    pub fn ethereum_transaction(tx: &[u8], ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
         // Perform transaction checks.
         let tx = super::check::ethereum_transaction(tx, ctx)?;
 
@@ -102,9 +99,13 @@ pub mod execute {
             ctx.emit_txn_tag(TAG_ETH_TX_HASH, tx_hash);
             for log in &outcome.receipt.logs {
                 ctx.emit_txn_tag(TAG_ETH_LOG_ADDRESS, log.address);
-                for index in 0..std::cmp::min(log.topics.len(), 4) {
-                    ctx.emit_txn_tag(TAG_ETH_LOG_TOPICS[index], log.topics[index]);
-                }
+                log.topics
+                    .iter()
+                    .zip(TAG_ETH_LOG_TOPICS.iter())
+                    .take(4)
+                    .for_each(|(topic, tag)| {
+                        ctx.emit_txn_tag(tag, topic);
+                    })
             }
         }
 
@@ -119,14 +120,14 @@ pub mod execute {
                 .map(|log| LogEntry {
                     address: log.address,
                     topics: log.topics,
-                    data: log.data.into(),
+                    data: log.data,
                 })
                 .collect(),
             status_code: match outcome.receipt.outcome {
                 TransactionOutcome::StatusCode(code) => code,
                 _ => unreachable!("we always use EIP-658 semantics"),
             },
-            output: outcome.output.into(),
+            output: outcome.output,
         })
     }
 }
