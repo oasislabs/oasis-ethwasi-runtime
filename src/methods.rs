@@ -80,8 +80,8 @@ pub mod execute {
                 &ectx.env_info,
                 genesis::SPEC.engine.machine(),
                 &tx,
-                false,
-                true,
+                false, /* tracing */
+                true,  /* should_return_value */
             )
             .map_err(|err| TransactionError::ExecutionFailure {
                 message: format!("{}", err),
