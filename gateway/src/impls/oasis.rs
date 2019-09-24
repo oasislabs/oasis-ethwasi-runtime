@@ -47,12 +47,12 @@ lazy_static! {
 pub struct OasisClient {
     logger: Logger,
     translator: Arc<Translator>,
-    km_client: Arc<KeyManagerClient>,
+    km_client: Arc<dyn KeyManagerClient>,
 }
 
 impl OasisClient {
     /// Creates new OasisClient.
-    pub fn new(translator: Arc<Translator>, km_client: Arc<KeyManagerClient>) -> Self {
+    pub fn new(translator: Arc<Translator>, km_client: Arc<dyn KeyManagerClient>) -> Self {
         OasisClient {
             logger: get_logger("gateway/impls/oasis"),
             translator,
@@ -110,7 +110,7 @@ impl Oasis for OasisClient {
         Box::new(
             self.translator
                 .get_block_unwrap(block_number_to_id(num))
-                .and_then(move |blk| Ok(blk.state()?.storage_expiry(&address)?.into()))
+                .and_then(move |blk| Ok(blk.state()?.storage_expiry(&address)?))
                 .map_err(jsonrpc_error),
         )
     }
@@ -136,7 +136,7 @@ impl Oasis for OasisClient {
 
                     maybe_result.map(|(hash, result)| RpcExecutionPayload {
                         transaction_hash: hash.into(),
-                        status_code: (result.status_code as u64).into(),
+                        status_code: u64::from(result.status_code).into(),
                         output: result.output.into(),
                     })
                 }),

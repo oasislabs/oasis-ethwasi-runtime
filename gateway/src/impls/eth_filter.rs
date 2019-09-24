@@ -148,7 +148,7 @@ impl EthFilter for EthFilterClient {
                                     .map(|blk| RpcH256::from(blk.hash()))
                                     .collect()
                                     .map_err(jsonrpc_error)
-                                    .map(|hashes| FilterChanges::Hashes(hashes)),
+                                    .map(FilterChanges::Hashes),
                             );
 
                             *number = blk.number_u64();

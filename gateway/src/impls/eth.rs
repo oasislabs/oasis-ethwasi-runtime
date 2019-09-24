@@ -260,7 +260,7 @@ impl Eth for EthClient {
         Box::new(
             self.translator
                 .get_block_by_hash(hash.into())
-                .and_then(|blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                .and_then(|blk| -> Box<dyn Future<Item = _, Error = Error> + Send> {
                     match blk {
                         Some(blk) => {
                             Box::new(blk.raw_transactions().map(|txns| Some(txns.count().into())))
@@ -286,7 +286,7 @@ impl Eth for EthClient {
         Box::new(
             self.translator
                 .get_block(block_number_to_id(num))
-                .and_then(|blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                .and_then(|blk| -> Box<dyn Future<Item = _, Error = Error> + Send> {
                     match blk {
                         Some(blk) => {
                             Box::new(blk.raw_transactions().map(|txns| Some(txns.count().into())))
@@ -351,9 +351,9 @@ impl Eth for EthClient {
         Box::new(
             self.translator
                 .get_block_by_hash(hash.into())
-                .and_then(move |blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                .and_then(move |blk| -> Box<dyn Future<Item = _, Error = Error> + Send> {
                     match blk {
-                        Some(blk) => Box::new(blk.rich_block(include_txs).map(|blk| Some(blk))),
+                        Some(blk) => Box::new(blk.rich_block(include_txs).map(Some)),
                         None => Box::new(future::ok(None)),
                     }
                 })
@@ -375,9 +375,9 @@ impl Eth for EthClient {
         Box::new(
             self.translator
                 .get_block(block_number_to_id(num))
-                .and_then(move |blk| -> Box<Future<Item = _, Error = Error> + Send> {
+                .and_then(move |blk| -> Box<dyn Future<Item = _, Error = Error> + Send> {
                     match blk {
-                        Some(blk) => Box::new(blk.rich_block(include_txs).map(|blk| Some(blk))),
+                        Some(blk) => Box::new(blk.rich_block(include_txs).map(Some)),
                         None => Box::new(future::ok(None)),
                     }
                 })
