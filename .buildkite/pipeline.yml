@@ -35,7 +35,6 @@ docker_plugin: &docker_plugin_configuration
     unconfined: true
 
 steps:
-
   - label: Build genesis
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -131,7 +130,7 @@ steps:
   #       parallel jobs to finish, just the ones we need
   #       to run the tests...
 
-    # End-to-end tests
+  # End-to-end tests
   - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
@@ -146,22 +145,23 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: End-to-end tests (%n)
-    parallelism: 4
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/download_ekiden_test_scripts.sh
-      - rm -rf tests/e2e-tests
-      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
-    timeout_in_minutes: 25
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
+  # https://github.com/oasislabs/runtime-ethereum/issues/908
+  # - label: End-to-end tests (%n)
+  #   parallelism: 4
+  #   command:
+  #     - .buildkite/scripts/download_common_artifacts.sh
+  #     - .buildkite/scripts/setup_gitconfig.sh
+  #     - .buildkite/scripts/download_ekiden_test_scripts.sh
+  #     - rm -rf tests/e2e-tests
+  #     - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
+  #   timeout_in_minutes: 25
+  #   # use default: exit-status: "*" and retry limit of 2
+  #   retry:
+  #     automatic: true
+  #   agents:
+  #     buildkite_agent_size: large
+  #   plugins:
+  #     <<: *docker_plugin_configuration
 
   - wait
 
