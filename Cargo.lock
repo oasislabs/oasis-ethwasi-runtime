@@ -133,7 +133,7 @@ dependencies = [
 [[package]]
 name = "bcfs"
 version = "0.2.3"
-source = "git+https://github.com/oasislabs/oasis-rs#a0ddc98802695b59b71ae58e6a6caef82edd50b6"
+source = "git+https://github.com/oasislabs/oasis-rs#efe369b7fc0b7e6f7901ebeb564e3c6e5777fd07"
 dependencies = [
  "blockchain-traits 0.2.2 (git+https://github.com/oasislabs/oasis-rs)",
  "nom 5.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -223,7 +223,7 @@ dependencies = [
 [[package]]
 name = "blockchain-traits"
 version = "0.2.2"
-source = "git+https://github.com/oasislabs/oasis-rs#a0ddc98802695b59b71ae58e6a6caef82edd50b6"
+source = "git+https://github.com/oasislabs/oasis-rs#efe369b7fc0b7e6f7901ebeb564e3c6e5777fd07"
 dependencies = [
  "oasis-types 0.2.1 (git+https://github.com/oasislabs/oasis-rs)",
 ]
@@ -1850,7 +1850,7 @@ dependencies = [
 [[package]]
 name = "oasis-types"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/oasis-rs#a0ddc98802695b59b71ae58e6a6caef82edd50b6"
+source = "git+https://github.com/oasislabs/oasis-rs#efe369b7fc0b7e6f7901ebeb564e3c6e5777fd07"
 dependencies = [
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2621,7 +2621,7 @@ dependencies = [
  "keccak-hash 0.1.2 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "vm 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
- "zeroize 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "zeroize 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3882,6 +3882,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "zeroize"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "zeroize_derive"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4297,5 +4302,6 @@ dependencies = [
 "checksum ws 0.7.9 (git+https://github.com/oasislabs/ws-rs?branch=ekiden)" = "<none>"
 "checksum ws2_32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d59cefebd0c892fa2dd6de581e937301d8552cb44489cdff035c6187cb63fa5e"
 "checksum x25519-dalek 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7ee1585dc1484373cbc1cee7aafda26634665cf449436fd6e24bfd1fad230538"
+"checksum zeroize 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4090487fa66630f7b166fba2bbb525e247a5449f41c468cc1d98f8ae6ac03120"
 "checksum zeroize 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e68403b858b6af538b11614e62dfe9ab2facba9f13a0cafb974855cfb495ec95"
 "checksum zeroize_derive 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b3f07490820219949839d0027b965ffdd659d75be9220c00798762e36c6cd281"
