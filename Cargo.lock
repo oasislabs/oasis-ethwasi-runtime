@@ -133,7 +133,7 @@ dependencies = [
 [[package]]
 name = "bcfs"
 version = "0.2.3"
-source = "git+https://github.com/oasislabs/oasis-rs#fcda21b6a37ea4b26c505e718103e2817c75c515"
+source = "git+https://github.com/oasislabs/oasis-rs#a0ddc98802695b59b71ae58e6a6caef82edd50b6"
 dependencies = [
  "blockchain-traits 0.2.2 (git+https://github.com/oasislabs/oasis-rs)",
  "nom 5.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -223,7 +223,7 @@ dependencies = [
 [[package]]
 name = "blockchain-traits"
 version = "0.2.2"
-source = "git+https://github.com/oasislabs/oasis-rs#fcda21b6a37ea4b26c505e718103e2817c75c515"
+source = "git+https://github.com/oasislabs/oasis-rs#a0ddc98802695b59b71ae58e6a6caef82edd50b6"
 dependencies = [
  "oasis-types 0.2.1 (git+https://github.com/oasislabs/oasis-rs)",
 ]
@@ -231,7 +231,7 @@ dependencies = [
 [[package]]
 name = "bloomchain"
 version = "0.2.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethbloom 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -361,7 +361,7 @@ dependencies = [
 [[package]]
 name = "common-types"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -579,7 +579,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "ekiden-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4e9f4a306ea0e76a3daf459e040dd517b801e985"
+source = "git+https://github.com/oasislabs/ekiden#e07c4fd53a8467580dffb4f7a983bb4860787280"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -601,7 +601,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-api"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4e9f4a306ea0e76a3daf459e040dd517b801e985"
+source = "git+https://github.com/oasislabs/ekiden#e07c4fd53a8467580dffb4f7a983bb4860787280"
 dependencies = [
  "ekiden-runtime 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -616,7 +616,7 @@ dependencies = [
 [[package]]
 name = "ekiden-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4e9f4a306ea0e76a3daf459e040dd517b801e985"
+source = "git+https://github.com/oasislabs/ekiden#e07c4fd53a8467580dffb4f7a983bb4860787280"
 dependencies = [
  "ekiden-client 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
  "ekiden-keymanager-api 0.3.0-alpha (git+https://github.com/oasislabs/ekiden)",
@@ -631,7 +631,7 @@ dependencies = [
 [[package]]
 name = "ekiden-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4e9f4a306ea0e76a3daf459e040dd517b801e985"
+source = "git+https://github.com/oasislabs/ekiden#e07c4fd53a8467580dffb4f7a983bb4860787280"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -676,7 +676,7 @@ dependencies = [
 [[package]]
 name = "ekiden-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/ekiden#4e9f4a306ea0e76a3daf459e040dd517b801e985"
+source = "git+https://github.com/oasislabs/ekiden#e07c4fd53a8467580dffb4f7a983bb4860787280"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -798,7 +798,7 @@ dependencies = [
 [[package]]
 name = "ethcore"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "blockchain-traits 0.2.2 (git+https://github.com/oasislabs/oasis-rs)",
  "bloomchain 0.2.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
@@ -853,7 +853,7 @@ dependencies = [
 [[package]]
 name = "ethcore-bloom-journal"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "siphasher 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -861,12 +861,12 @@ dependencies = [
 [[package]]
 name = "ethcore-bytes"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 
 [[package]]
 name = "ethcore-crypto"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -878,12 +878,12 @@ dependencies = [
 [[package]]
 name = "ethcore-devtools"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 
 [[package]]
 name = "ethcore-logger"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ansi_term 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "arrayvec 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -899,7 +899,7 @@ dependencies = [
 [[package]]
 name = "ethcore-transaction"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethjson 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
@@ -962,7 +962,7 @@ dependencies = [
 [[package]]
 name = "ethjson"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -974,7 +974,7 @@ dependencies = [
 [[package]]
 name = "ethkey"
 version = "0.3.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -990,7 +990,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "bit-set 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1230,7 +1230,7 @@ dependencies = [
 [[package]]
 name = "hashdb"
 version = "0.1.1"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1424,7 +1424,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "journaldb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1526,7 +1526,7 @@ dependencies = [
 [[package]]
 name = "keccak-hash"
 version = "0.1.2"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tiny-keccak 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1544,7 +1544,7 @@ dependencies = [
 [[package]]
 name = "kvdb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1554,7 +1554,7 @@ dependencies = [
 [[package]]
 name = "kvdb-memorydb"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "kvdb 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
 ]
@@ -1628,7 +1628,7 @@ dependencies = [
 [[package]]
 name = "macros"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 
 [[package]]
 name = "matches"
@@ -1638,7 +1638,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "mem"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 
 [[package]]
 name = "memchr"
@@ -1656,7 +1656,7 @@ dependencies = [
 [[package]]
 name = "memory-cache"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "heapsize 0.4.2 (git+https://github.com/oasislabs/heapsize?branch=sgx-target)",
  "lru-cache 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1670,7 +1670,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "memorydb"
 version = "0.1.1"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1850,7 +1850,7 @@ dependencies = [
 [[package]]
 name = "oasis-types"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/oasis-rs#fcda21b6a37ea4b26c505e718103e2817c75c515"
+source = "git+https://github.com/oasislabs/oasis-rs#a0ddc98802695b59b71ae58e6a6caef82edd50b6"
 dependencies = [
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1900,7 +1900,7 @@ dependencies = [
 [[package]]
 name = "parity-machine"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1908,7 +1908,7 @@ dependencies = [
 [[package]]
 name = "parity-reactor"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-core 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1917,7 +1917,7 @@ dependencies = [
 [[package]]
 name = "parity-rpc"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ansi_term 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "cid 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1983,7 +1983,7 @@ dependencies = [
 [[package]]
 name = "parity-version"
 version = "1.12.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
  "rlp 0.2.1 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
@@ -2066,7 +2066,7 @@ dependencies = [
 [[package]]
 name = "patricia-trie"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethcore-bytes 0.1.0 (git+https://github.com/oasislabs/oasis-parity?branch=ekiden)",
@@ -2097,7 +2097,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "plain_hasher"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "crunchy 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2530,7 +2530,7 @@ dependencies = [
 [[package]]
 name = "rlp"
 version = "0.2.1"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2549,7 +2549,7 @@ dependencies = [
 [[package]]
 name = "rlp_compress"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2559,7 +2559,7 @@ dependencies = [
 [[package]]
 name = "rlp_derive"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "quote 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.13.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3027,7 +3027,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "stats"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -3463,7 +3463,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "triehash"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "elastic-array 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3526,7 +3526,7 @@ dependencies = [
 [[package]]
 name = "unexpected"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 
 [[package]]
 name = "unicase"
@@ -3603,7 +3603,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "util-error"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "error-chain 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ethereum-types 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3634,7 +3634,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "vm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "blockchain-traits 0.2.2 (git+https://github.com/oasislabs/oasis-rs)",
  "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3679,7 +3679,7 @@ dependencies = [
 [[package]]
 name = "wasm"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bcfs 0.2.3 (git+https://github.com/oasislabs/oasis-rs)",
@@ -3703,7 +3703,7 @@ dependencies = [
 [[package]]
 name = "wasm-macros"
 version = "0.1.0"
-source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#8c43d4c90ec16743d20be0e2a93ee901dc5d85e3"
+source = "git+https://github.com/oasislabs/oasis-parity?branch=ekiden#3d3eb4216eb527a0e9ee000a3d779210c11e08fe"
 dependencies = [
  "proc-macro2 1.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
