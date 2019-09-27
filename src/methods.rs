@@ -66,7 +66,8 @@ pub mod execute {
             return Err(TransactionError::DuplicateTransaction.into());
         }
 
-        // Check whether transaction fits in the block.
+        // Check whether the transaction fits in the current block. If not, return
+        // an error indicating that the client should retry.
         let gas_remaining = U256::from(BLOCK_GAS_LIMIT) - ectx.env_info.gas_used;
         if tx.gas > gas_remaining {
             return Err(TransactionError::BlockGasLimitReached.into());
@@ -79,8 +80,8 @@ pub mod execute {
                 &ectx.env_info,
                 genesis::SPEC.engine.machine(),
                 &tx,
-                false,
-                true,
+                false, /* tracing */
+                true,  /* should_return_value */
             )
             .map_err(|err| TransactionError::ExecutionFailure {
                 message: format!("{}", err),
@@ -89,7 +90,9 @@ pub mod execute {
         // Add to set of executed transactions.
         ectx.transaction_set.insert(tx_hash);
 
-        // Update the amount of gas used in the current batch.
+        // Calculate the amount of gas used by this transaction and update the
+        // cumulative gas used for the batch. Note: receipt.gas_used is the cumulative
+        // gas used after executing the given transaction.
         let gas_used = outcome.receipt.gas_used - ectx.env_info.gas_used;
         ectx.env_info.gas_used = outcome.receipt.gas_used;
 
