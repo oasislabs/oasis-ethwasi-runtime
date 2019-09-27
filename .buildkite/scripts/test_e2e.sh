@@ -195,7 +195,8 @@ test_suite() {
         name="e2e-${backend_name}-rpc-tests" \
         backend_runner=$backend_runner \
         runtime=runtime-ethereum \
-        client_runner=run_no_client
+        client_runner=run_no_client \
+        on_success_hook=assert_basic_gw_success
 
     # E2E tests from e2e-tests repository.
     run_test \
@@ -204,7 +205,8 @@ test_suite() {
         name="e2e-${backend_name}-e2e-tests" \
         backend_runner=$backend_runner \
         runtime=runtime-ethereum \
-        client_runner=run_no_client
+        client_runner=run_no_client \
+        on_success_hook=assert_basic_gw_success
 }
 
 ##########################################
