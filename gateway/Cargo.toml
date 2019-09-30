@@ -15,7 +15,7 @@ serde_derive = "1.0"
 futures = "0.1"
 fdlimit = "0.1"
 signal-hook = "0.1.8"
-prometheus = { version = "0.4.2", features = ["push"] }
+prometheus = { version = "0.7", features = ["push"] }
 jsonrpc-core = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "oasis-parity-1.11" }
 jsonrpc-http-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "oasis-parity-1.11" }
 jsonrpc-ws-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "oasis-parity-1.11" }
