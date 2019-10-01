@@ -42,12 +42,11 @@ grpc:
 worker:
   compute:
     enabled: true
-    backend: sandboxed
-    runtime_loader: .ekiden/target/debug/ekiden-runtime-loader
-    runtime:
-      binary: .runtime/target/debug/runtime-ethereum
   runtime:
+    backend: sandboxed
+    loader: .ekiden/target/debug/ekiden-runtime-loader
     id: "0000000000000000000000000000000000000000000000000000000000000000"
+    binary: .runtime/target/debug/runtime-ethereum
   storage:
     enabled: true
   txnscheduler:
@@ -78,6 +77,7 @@ epochtime:
 # Conesensus backend.
 consensus:
   backend: tendermint
+  validator: true
 
 # Storage backend.
 storage:
@@ -98,6 +98,11 @@ client:
   indexer:
     runtimes:
       - "0000000000000000000000000000000000000000000000000000000000000000"
+
+# Scheduler configuration.
+scheduler:
+  debug:
+    static_validators: true
 
 # Tracing settings.
 #tracing:
