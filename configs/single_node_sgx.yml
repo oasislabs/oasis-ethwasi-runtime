@@ -42,14 +42,13 @@ grpc:
 worker:
   compute:
     enabled: true
-    backend: sandboxed
-    runtime_loader: .ekiden/target/debug/ekiden-runtime-loader
-    runtime:
-      binary: .runtime/target/x86_64-fortanix-unknown-sgx/debug/runtime-ethereum.sgxs
-      sgx_ids:
-        - "0000000000000000000000000000000000000000000000000000000000000000"
   runtime:
+    backend: sandboxed
+    loader: .ekiden/target/debug/ekiden-runtime-loader
     id: "0000000000000000000000000000000000000000000000000000000000000000"
+    binary: .runtime/target/x86_64-fortanix-unknown-sgx/debug/runtime-ethereum.sgxs
+    sgx_ids:
+      - "0000000000000000000000000000000000000000000000000000000000000000"
   storage:
     enabled: true
   txnscheduler:
@@ -85,6 +84,7 @@ epochtime:
 # Conesensus backend.
 consensus:
   backend: tendermint
+  validator: true
 
 # Storage backend.
 storage:
@@ -105,6 +105,11 @@ client:
   indexer:
     runtimes:
       - "0000000000000000000000000000000000000000000000000000000000000000"
+
+# Scheduler configuration.
+scheduler:
+  debug:
+    static_validators: true
 
 # Tracing settings.
 #tracing:

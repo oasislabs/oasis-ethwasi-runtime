@@ -55,7 +55,7 @@ pub mod execute {
 
         // If this is a check txn request, return success.
         if ctx.check_only {
-            return Err(CheckOnlySuccess.into());
+            return Err(CheckOnlySuccess::default().into());
         }
 
         let ectx = runtime_context!(ctx, BlockContext);
