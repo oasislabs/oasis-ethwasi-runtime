@@ -36,6 +36,7 @@ pub fn execute(
     client: EthereumRuntimeClient,
     km_client: Arc<dyn KeyManagerClient>,
     pubsub_interval_secs: u64,
+    interface: &str,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -70,7 +71,7 @@ pub fn execute(
     let mut ws_conf = WsConfiguration::default();
     ws_conf.origins = None;
     ws_conf.hosts = None;
-    ws_conf.interface = "0.0.0.0".into();
+    ws_conf.interface = interface.into();
     ws_conf.port = ws_port;
     ws_conf.max_batch_size = jsonrpc_max_batch_size;
     ws_conf.max_req_per_sec = ws_rate_limit;
@@ -82,7 +83,7 @@ pub fn execute(
     let mut http_conf = HttpConfiguration::default();
     http_conf.cors = None;
     http_conf.hosts = None;
-    http_conf.interface = "0.0.0.0".into();
+    http_conf.interface = interface.into();
     http_conf.port = http_port;
     http_conf.server_threads = num_threads;
     http_conf.max_batch_size = jsonrpc_max_batch_size;
