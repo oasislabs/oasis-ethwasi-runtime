@@ -27,8 +27,6 @@ use servers;
 
 pub use parity_rpc::{ws::Server as WsServer, HttpServer, RequestMiddleware};
 
-pub const DAPPS_DOMAIN: &str = "web3.site";
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct HttpConfiguration {
     pub enabled: bool,
@@ -129,7 +127,6 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
         return Ok(None);
     }
 
-    let domain = DAPPS_DOMAIN;
     let url = format!("{}:{}", conf.interface, conf.port);
     let addr = url
         .parse()
@@ -147,8 +144,8 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
     };
 
     let remote = deps.remote.clone();
-    let allowed_origins = into_domains(with_domain(conf.origins, domain, &conf.dapps_address));
-    let allowed_hosts = into_domains(with_domain(conf.hosts, domain, &Some(url.clone().into())));
+    let allowed_origins = into_domains(collect_hosts(conf.origins, &conf.dapps_address));
+    let allowed_hosts = into_domains(collect_hosts(conf.hosts, &Some(url.clone().into())));
 
     let start_result = servers::start_ws(
         &addr,
@@ -182,7 +179,6 @@ pub fn new_http<D: rpc_apis::Dependencies>(
         return Ok(None);
     }
 
-    let domain = DAPPS_DOMAIN;
     let url = format!("{}:{}", conf.interface, conf.port);
     let addr = url
         .parse()
@@ -191,7 +187,7 @@ pub fn new_http<D: rpc_apis::Dependencies>(
     let remote = deps.remote.clone();
 
     let cors_domains = into_domains(conf.cors);
-    let allowed_hosts = into_domains(with_domain(conf.hosts, domain, &Some(url.clone().into())));
+    let allowed_hosts = into_domains(collect_hosts(conf.hosts, &Some(url.clone().into())));
 
     let start_result = servers::start_http(
         &addr,
@@ -221,15 +217,10 @@ fn into_domains<T: From<String>>(items: Option<Vec<String>>) -> DomainsValidatio
         .into()
 }
 
-fn with_domain(
+fn collect_hosts(
     items: Option<Vec<String>>,
-    domain: &str,
     dapps_address: &Option<rpc::Host>,
 ) -> Option<Vec<String>> {
-    fn extract_port(s: &str) -> Option<u16> {
-        s.split(':').nth(1).and_then(|s| s.parse().ok())
-    }
-
     items.map(move |items| {
         let mut items = items.into_iter().collect::<HashSet<_>>();
         {
@@ -237,10 +228,6 @@ fn with_domain(
                 if let Some(host) = address.clone() {
                     items.insert(host.to_string());
                     items.insert(host.replace("127.0.0.1", "localhost"));
-                    items.insert(format!("http://*.{}", domain)); //proxypac
-                    if let Some(port) = extract_port(&*host) {
-                        items.insert(format!("http://*.{}:{}", domain, port));
-                    }
                 }
             };
 
