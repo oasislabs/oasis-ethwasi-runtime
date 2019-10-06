@@ -39,7 +39,11 @@ impl EthereumBatchHandler {
 
 impl BatchHandler for EthereumBatchHandler {
     fn start_batch(&self, ctx: &mut TxnContext) {
-        let logger = get_logger("ethereum/block");
+        let logger = if cfg!(fuzzing) {
+            Logger::root(slog::Discard, slog::o!())
+        } else {
+            get_logger("ethereum/block")
+        };
 
         info!(logger, "Computing new block"; "round" => ctx.header.round + 1);
 

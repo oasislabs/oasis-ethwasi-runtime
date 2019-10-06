@@ -60,3 +60,7 @@ cobertura.xml
 # in case credentials are put in the repo for using
 # inside the docker container
 .git-credentials
+
+fuzz/Cargo.lock
+fuzz/artifacts
+fuzz/hfuzz_*

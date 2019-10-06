@@ -15,6 +15,7 @@ fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> U256 {
     U256::from(
         client
             .call(contract, sighash_data, &U256::zero())
+            .unwrap()
             .as_slice(),
     )
 }
@@ -55,12 +56,14 @@ fn test_invalid_expiry() {
 
     // attempt to deploy counter contract with invalid expiry
     let deploy_expiry = now - 1;
-    let (tx_hash, _) = client.create_contract_with_header(
-        contracts::counter::solidity_initcode(),
-        &U256::zero(),
-        Some(deploy_expiry),
-        None,
-    );
+    let (tx_hash, _) = client
+        .create_contract_with_header(
+            contracts::counter::solidity_initcode(),
+            &U256::zero(),
+            Some(deploy_expiry),
+            None,
+        )
+        .unwrap();
 
     // check that deploy failed (0 status code)
     let status = client.result(tx_hash).status_code;
@@ -77,12 +80,14 @@ fn test_expiry() {
 
     // deploy counter contract with expiry
     let duration = 31557600;
-    let (_, contract) = client.create_contract_with_header(
-        contracts::counter::solidity_initcode(),
-        &U256::zero(),
-        Some(deploy_time + duration),
-        None,
-    );
+    let (_, contract) = client
+        .create_contract_with_header(
+            contracts::counter::solidity_initcode(),
+            &U256::zero(),
+            Some(deploy_time + duration),
+            None,
+        )
+        .unwrap();
 
     // check expiry
     let expiry = client.storage_expiry(contract);

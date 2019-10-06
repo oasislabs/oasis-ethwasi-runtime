@@ -83,4 +83,4 @@ members = [
     "gateway",
     "genesis",
 ]
-exclude = ["tests"]
+exclude = ["tests", "fuzz"]
