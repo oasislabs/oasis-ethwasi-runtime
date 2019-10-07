@@ -123,9 +123,10 @@ benchmark: genesis
 
 run-gateway:
 	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
-		scripts/gateway.sh single_node 2>&1 | python scripts/color-log.py
+	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) GENESIS_ROOT_PATH=$(GENESIS_ROOT_PATH) && \
+		scripts/gateway.sh 2>&1 | python scripts/color-log.py
 
+# TODO: update run-gateway-sgx
 run-gateway-sgx:
 	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
 	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
@@ -161,8 +162,3 @@ clean-test-e2e:
 clean: clean-test-e2e
 	@$(ECHO) "$(CYAN)*** Cleaning up...$(OFF)"
 	@cargo clean
-
-regenerate-single-node:
-	@$(ECHO) "$(CYAN)*** Regenerating single node config artifacts...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) && \
-		./scripts/regenerate_single_node.sh

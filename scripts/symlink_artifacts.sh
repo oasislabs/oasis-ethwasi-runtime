@@ -36,6 +36,7 @@ symlink_artifact() {
 
 # Symlink all ekiden build artifacts.
 symlink_artifact ${ekiden_src_path} go/ekiden/ekiden ${ekiden_root_path}
+symlink_artifact ${ekiden_src_path} go/ekiden-net-runner/ekiden-net-runner ${ekiden_root_path}
 
 # For Rust, symlink against the CARGO_TARGET_DIR instead of EKIDEN_SRC_PATH, if set.
 set +u
