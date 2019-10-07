@@ -22,6 +22,7 @@ source .buildkite/scripts/download_utils.sh
 # Create directory to put artifacts into.
 mkdir -p \
     go/ekiden \
+    go/ekiden-net-runner \
     go/developer-gateway \
     target/debug \
     target/x86_64-fortanix-unknown-sgx/debug
