@@ -10,10 +10,28 @@
 
 # Temporary test base directory.
 TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)})
+CLIENT_SOCKET="${TEST_BASE_DIR}/net-runner/network/client-0/internal.sock"
 
 # Defaults.
 WORKDIR=$(pwd)
 TEST_FILTER=""
+
+# Path to Ekiden root.
+EKIDEN_ROOT_PATH=${EKIDEN_ROOT_PATH:-${WORKDIR}}
+# Path to the Ekiden node.
+EKIDEN_NODE=${EKIDEN_NODE:-${EKIDEN_ROOT_PATH}/go/ekiden/ekiden}
+# Path to ekiden-net-runner.
+EKIDEN_RUNNER=${EKIDEN_RUNNER:-${EKIDEN_ROOT_PATH}/go/ekiden-net-runner/ekiden-net-runner}
+# Path to the runtime loader.
+EKIDEN_RUNTIME_LOADER=${EKIDEN_RUNTIME_LOADER:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-runtime-loader}
+# Path to keymanager binary.
+EKIDEN_KM_BINARY=${EKIDEN_KM_BINARY:-${EKIDEN_ROOT_PATH}/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime}
+# Path to runtime binary.
+RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/runtime-ethereum}
+# Path to runtime genesis state.
+RUNTIME_GENESIS=${RUNTIME_GENESIS:-${WORKDIR}/resources/genesis/ekiden_genesis_testing.json}
+# Path to web3 gateway.
+RUNTIME_GATEWAY=${RUNTIME_GATEWAY:-${WORKDIR}/target/debug/gateway}
 
 #########################
 # Process test arguments.
@@ -94,8 +112,27 @@ run_test() {
 }
 
 scenario_basic() {
-    # TODO: port to ekiden-net-runner
-    echo "Scenario basic"
+    # Run the network.
+    ${EKIDEN_RUNNER} \
+        --net.ekiden.binary ${EKIDEN_NODE} \
+        --net.runtime.binary ${RUNTIME_BINARY} \
+        --net.runtime.loader ${EKIDEN_RUNTIME_LOADER} \
+        --net.runtime.genesis_state ${RUNTIME_GENESIS} \
+        --net.keymanager.binary ${EKIDEN_KM_BINARY} \
+        --basedir.no_temp_dir \
+        --basedir ${TEST_BASE_DIR} &
+
+    # Wait for the nodes to be registered.
+    ${EKIDEN_NODE} debug dummy wait-nodes \
+        --address unix:${CLIENT_SOCKET} \
+        --nodes 6
+
+    # Start the gateway.
+    ${RUNTIME_GATEWAY} \
+        --node-address unix:${CLIENT_SOCKET} \
+        --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
+        --http-port 8545 \
+        --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway-$id.log | sed "s/^/[gateway-${id}] /" &
 }
 
 ###########
