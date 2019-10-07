@@ -113,6 +113,7 @@ run_test() {
 
 scenario_basic() {
     # Run the network.
+    echo "Starting the test network."
     ${EKIDEN_RUNNER} \
         --net.ekiden.binary ${EKIDEN_NODE} \
         --net.runtime.binary ${RUNTIME_BINARY} \
@@ -123,11 +124,13 @@ scenario_basic() {
         --basedir ${TEST_BASE_DIR} &
 
     # Wait for the nodes to be registered.
+    echo "Waiting for nodes to register."
     ${EKIDEN_NODE} debug dummy wait-nodes \
         --address unix:${CLIENT_SOCKET} \
         --nodes 6
 
     # Start the gateway.
+    echo "Starting the web3 gateway."
     ${RUNTIME_GATEWAY} \
         --node-address unix:${CLIENT_SOCKET} \
         --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
