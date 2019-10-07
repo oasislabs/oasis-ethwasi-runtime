@@ -136,7 +136,6 @@ steps:
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/download_ekiden_test_scripts.sh
       - rm -rf tests/rpc-tests
       - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-rpc-tests
     timeout_in_minutes: 20
@@ -151,7 +150,6 @@ steps:
     command:
       - .buildkite/scripts/download_common_artifacts.sh
       - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/download_ekiden_test_scripts.sh
       - rm -rf tests/e2e-tests
       - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
     timeout_in_minutes: 25
