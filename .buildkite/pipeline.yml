@@ -131,37 +131,37 @@ steps:
   #       parallel jobs to finish, just the ones we need
   #       to run the tests...
 
-#    # End-to-end tests
-#  - label: RPC tests
-#    command:
-#      - .buildkite/scripts/download_common_artifacts.sh
-#      - .buildkite/scripts/setup_gitconfig.sh
-#      - .buildkite/scripts/download_ekiden_test_scripts.sh
-#      - rm -rf tests/rpc-tests
-#      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-rpc-tests
-#    timeout_in_minutes: 20
-#    # use default: exit-status: "*" and retry limit of 2
-#    retry:
-#      automatic: true
-#    plugins:
-#      <<: *docker_plugin_configuration
-#
-#  - label: End-to-end tests (%n)
-#    parallelism: 4
-#    command:
-#      - .buildkite/scripts/download_common_artifacts.sh
-#      - .buildkite/scripts/setup_gitconfig.sh
-#      - .buildkite/scripts/download_ekiden_test_scripts.sh
-#      - rm -rf tests/e2e-tests
-#      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
-#    timeout_in_minutes: 25
-#    # use default: exit-status: "*" and retry limit of 2
-#    retry:
-#      automatic: true
-#    agents:
-#      buildkite_agent_size: large
-#    plugins:
-#      <<: *docker_plugin_configuration
+    # End-to-end tests
+  - label: RPC tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/scripts/download_ekiden_test_scripts.sh
+      - rm -rf tests/rpc-tests
+      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-rpc-tests
+    timeout_in_minutes: 20
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: End-to-end tests (%n)
+    parallelism: 4
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - .buildkite/scripts/download_ekiden_test_scripts.sh
+      - rm -rf tests/e2e-tests
+      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
+    timeout_in_minutes: 25
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
 
   - wait
 
