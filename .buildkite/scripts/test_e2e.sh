@@ -135,7 +135,7 @@ scenario_basic() {
         --node-address unix:${CLIENT_SOCKET} \
         --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port 8545 \
-        --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway-$id.log | sed "s/^/[gateway] /" &
+        --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway.log | sed "s/^/[gateway] /" &
 }
 
 ###########
