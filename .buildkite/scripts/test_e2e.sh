@@ -7,6 +7,10 @@
 # test_e2e.sh [-w <workdir>] [-t <test-name>]
 ############################################################
 
+
+# Temporary test base directory.
+TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)})
+
 # Defaults.
 WORKDIR=$(pwd)
 TEST_FILTER=""
@@ -117,7 +121,7 @@ scenario_rpc_tests() {
 
     echo "Running RPC tests."
     pushd ${WORKDIR}/tests/rpc-tests
-        ./run_tests.sh 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-rpc-tests.log
+        ./run_tests.sh 2>&1 | tee ${TEST_BASE_DIR}/tests-rpc-tests.log
     popd
 }
 
@@ -191,7 +195,7 @@ scenario_e2e_tests() {
         export DEVELOPER_GATEWAY_URL="http://localhost:1234"
         # Cleanup persisted keys.
         rm -rf .oasis
-        npm run test:development 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-e2e-tests.log
+        npm run test:development 2>&1 | tee ${TEST_BASE_DIR}/tests-e2e-tests.log
     popd
 }
 
