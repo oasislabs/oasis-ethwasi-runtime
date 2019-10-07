@@ -25,7 +25,7 @@ EKIDEN_RUNNER=${EKIDEN_RUNNER:-${EKIDEN_ROOT_PATH}/go/ekiden-net-runner/ekiden-n
 # Path to the runtime loader.
 EKIDEN_RUNTIME_LOADER=${EKIDEN_RUNTIME_LOADER:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-runtime-loader}
 # Path to keymanager binary.
-EKIDEN_KM_BINARY=${EKIDEN_KM_BINARY:-${EKIDEN_ROOT_PATH}/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime}
+EKIDEN_KM_BINARY=${EKIDEN_KM_BINARY:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-keymanager-runtime}
 # Path to runtime binary.
 RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/runtime-ethereum}
 # Path to runtime genesis state.
