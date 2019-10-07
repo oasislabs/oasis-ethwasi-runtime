@@ -12,7 +12,7 @@ To begin fuzzing,
 1. install the hfuzz [dependencies](https://github.com/rust-fuzz/honggfuzz-rs#dependencies)
 2. `cargo install honggfuzz`
 3. ensure that runtime is buildable (i.e. build or otherwise obtain Ekiden enclaves)
-4. `./run.sh <target name>`
+4. `python3 fuzz.py <target name>`
 
 At the current time, both targets have been fuzzed for over 1m iterations with no crashes found.
 While encouraging, don't let this stop you from trying!

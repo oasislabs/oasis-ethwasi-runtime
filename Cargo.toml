@@ -80,7 +80,8 @@ heapsize = { git = "https://github.com/oasislabs/heapsize", branch = "sgx-target
 members = [
     "api",
     "common",
+    "fuzz",
     "gateway",
     "genesis",
 ]
-exclude = ["tests", "fuzz"]
+exclude = ["tests"]

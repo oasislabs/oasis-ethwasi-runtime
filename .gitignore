@@ -63,4 +63,4 @@ cobertura.xml
 
 fuzz/Cargo.lock
 fuzz/artifacts
-fuzz/hfuzz_*
+hfuzz_*
