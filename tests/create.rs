@@ -83,7 +83,9 @@ fn create_and_set_storage() {
         .encode_input(&[])
         .unwrap();
 
-        let result = client.call(&deployed_addr, retrieve_a_data, &0.into());
+        let result = client
+            .call(&deployed_addr, retrieve_a_data, &0.into())
+            .unwrap();
         U256::from(result.as_slice())
     };
 
@@ -101,7 +103,9 @@ fn create_and_set_storage() {
         .encode_input(&[])
         .unwrap();
 
-        let result = client.call(&deployed_addr, retrieve_a_data, &0.into());
+        let result = client
+            .call(&deployed_addr, retrieve_a_data, &0.into())
+            .unwrap();
         U256::from(result.as_slice())
     };
 
@@ -119,7 +123,9 @@ fn create_and_set_storage() {
         .encode_input(&[])
         .unwrap();
 
-        let result = client.call(&deployed_addr, retrieve_a_data, &0.into());
+        let result = client
+            .call(&deployed_addr, retrieve_a_data, &0.into())
+            .unwrap();
         (&ethabi::decode(
             &[ethabi::ParamType::Array(Box::new(ethabi::ParamType::Uint(
                 256,

@@ -28,7 +28,7 @@ use ethcore::{
 };
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
-
+use failure::Fallible;
 use io_context::Context as IoContext;
 use keccak_hash::keccak;
 use runtime_ethereum_api::ExecutionResult;
@@ -62,7 +62,7 @@ pub struct Client {
     /// In-memory MKVS.
     pub mkvs: Option<UrkelTree>,
     /// Key manager client.
-    pub km_client: Arc<KeyManagerClient>,
+    pub km_client: Arc<dyn KeyManagerClient>,
     /// Results.
     pub results: HashMap<H256, ExecutionResult>,
 }
@@ -210,13 +210,13 @@ impl Client {
         balance: &U256,
         expiry: Option<u64>,
         confidentiality: Option<bool>,
-    ) -> (H256, Address) {
+    ) -> Fallible<(H256, Address)> {
         let mut data = Self::make_header(expiry, confidentiality);
         data.extend(code);
         let (hash, address) = self
             .send(None, data, balance, None)
-            .expect("deployment should succeed");
-        (hash, address.unwrap())
+            .map_err(failure::err_msg)?;
+        Ok((hash, address.unwrap()))
     }
 
     /// Returns the receipt for the given transaction hash.
@@ -252,12 +252,12 @@ impl Client {
     }
 
     /// Returns the return value of the contract's method.
-    pub fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> Vec<u8> {
+    pub fn call(&mut self, contract: &Address, data: Vec<u8>, value: &U256) -> Fallible<Vec<u8>> {
         let (hash, _) = self
             .send(Some(contract), data, value, None)
-            .expect("call should succeed");
+            .map_err(failure::err_msg)?;
         let result = self.result(hash);
-        result.output
+        Ok(result.output)
     }
 
     /// Sends a transaction onchain that updates the blockchain, analagous to the web3.js send().

@@ -1,0 +1,13 @@
+[package]
+name = "fuzz"
+version = "0.1.0"
+authors = ["Oasis Labs <feedback@oasislabs.com>"]
+edition = "2018"
+publish = false
+
+[dependencies]
+runtime-ethereum = { path = "..", features = ["test"] }
+honggfuzz = "0.5"
+
+[patch.crates-io]
+ring = { git = "https://github.com/akash-fortanix/ring", branch = "sgx-target" }

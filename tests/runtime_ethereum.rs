@@ -81,7 +81,7 @@ fn test_solidity_x_contract_call() {
         contract_b
     ))
     .unwrap();
-    let output = client.call(&contract_a, data, &U256::zero());
+    let output = client.call(&contract_a, data, &U256::zero()).unwrap();
 
     // expected output is 42
     assert_eq!(
