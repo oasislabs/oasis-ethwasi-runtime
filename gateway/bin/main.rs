@@ -53,7 +53,7 @@ fn main() -> Fallible<()> {
 
     let gas_price = MIN_GAS_PRICE_GWEI.to_string();
 
-    let args = App::new("Ethereum Runtime Web3 Gateway")
+    let args = App::new("Oasis Runtime Web3 Gateway")
         .arg(
             Arg::with_name("runtime-id")
                 .long("runtime-id")

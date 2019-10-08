@@ -1,4 +1,4 @@
-//! Test client to interact with a runtime-ethereum blockchain.
+//! Test client to interact with an oasis-runtime blockchain.
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use byteorder::{BigEndian, ByteOrder};
@@ -41,7 +41,7 @@ use oasis_runtime_common::{
 use serde_json::map::Map;
 
 use crate::{
-    block::{BlockContext, EthereumBatchHandler},
+    block::{BlockContext, OasisBatchHandler},
     methods,
 };
 
@@ -120,7 +120,7 @@ impl Client {
         let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
         let header = self.header.clone();
         let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, true);
-        let handler = EthereumBatchHandler::new(self.km_client.clone());
+        let handler = OasisBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
         let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
@@ -142,7 +142,7 @@ impl Client {
         let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
         let header = self.header.clone();
         let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, false);
-        let handler = EthereumBatchHandler::new(self.km_client.clone());
+        let handler = OasisBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
         let result = StorageContext::enter(&mut mkvs, untrusted_local, || {

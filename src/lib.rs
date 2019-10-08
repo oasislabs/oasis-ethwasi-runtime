@@ -1,4 +1,4 @@
-//! Ethereum runtime.
+//! Oasis runtime.
 #[cfg(feature = "test")]
 extern crate byteorder;
 #[cfg(feature = "test")]
