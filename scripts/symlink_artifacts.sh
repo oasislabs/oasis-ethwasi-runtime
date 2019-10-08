@@ -51,4 +51,4 @@ symlink_artifact $ekiden_src_path target/debug/ekiden-keymanager-runtime $ekiden
 symlink_artifact $ekiden_src_path target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs $ekiden_root_path
 
 # Symlink the runtime artifacts.
-symlink_artifact $runtime_src_path target/debug/runtime-ethereum $runtime_root_path
+symlink_artifact $runtime_src_path target/debug/oasis-runtime $runtime_root_path
