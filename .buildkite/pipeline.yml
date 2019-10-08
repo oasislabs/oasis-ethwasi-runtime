@@ -132,18 +132,18 @@ steps:
   #       to run the tests...
 
     # End-to-end tests
-#  - label: RPC tests
-#    command:
-#      - .buildkite/scripts/download_common_artifacts.sh
-#      - .buildkite/scripts/setup_gitconfig.sh
-#      - rm -rf tests/rpc-tests
-#      - .buildkite/scripts/test_e2e.sh -t rpc-tests
-#    timeout_in_minutes: 20
-#    # use default: exit-status: "*" and retry limit of 2
-#    retry:
-#      automatic: true
-#    plugins:
-#      <<: *docker_plugin_configuration
+  - label: RPC tests
+    command:
+      - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/setup_gitconfig.sh
+      - rm -rf tests/rpc-tests
+      - .buildkite/scripts/test_e2e.sh -t rpc-tests
+    timeout_in_minutes: 20
+    # use default: exit-status: "*" and retry limit of 2
+    retry:
+      automatic: true
+    plugins:
+      <<: *docker_plugin_configuration
 
   - label: End-to-end tests (%n)
     parallelism: 4
