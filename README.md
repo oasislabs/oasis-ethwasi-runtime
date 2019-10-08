@@ -1,7 +1,15 @@
-# Ekiden Ethereum runtime
+# Oasis runtime
 
-[![Build status](https://badge.buildkite.com/e1de50bd91d01f6aaf2b9fba113ad48b0118459d7d2c5dd2bd.svg?branch=master)](https://buildkite.com/oasislabs/runtime-ethereum)
-[![Coverage Status](https://coveralls.io/repos/github/oasislabs/runtime-ethereum/badge.svg?branch=master&t=shmqoK)](https://coveralls.io/github/oasislabs/runtime-ethereum?branch=master)
+[![Build status](https://badge.buildkite.com/e1de50bd91d01f6aaf2b9fba113ad48b0118459d7d2c5dd2bd.svg?branch=master)](https://buildkite.com/oasislabs/oasis-runtime)
+[![Coverage Status](https://coveralls.io/repos/github/oasislabs/oasis-runtime/badge.svg?branch=master&t=shmqoK)](https://coveralls.io/github/oasislabs/oasis-runtime?branch=master)
+
+## Contributing
+
+See the [Ekiden Contributing Guidelines](https://github.com/oasislabs/ekiden/blob/master/CONTRIBUTING.md).
+
+## Security
+
+Read our [Security](https://github.com/oasislabs/ekiden/blob/master/SECURITY.md) document.
 
 ## Setting up the development environment
 
@@ -34,9 +42,9 @@ top-level directory:
 $ make
 ```
 
-## Running the gateway
+## Running the web3 gateway
 
-To run a local single-node Ekiden "cluster" and a development version of the gateway, run:
+To run a local Ekiden "cluster" and a development version of the web3 gateway, run:
 ```bash
 $ make run-gateway
 ```
