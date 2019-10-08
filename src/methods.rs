@@ -23,9 +23,9 @@ use crate::block::BlockContext;
 pub mod check {
     use super::*;
 
-    /// Check ethereum transaction.
-    pub fn ethereum_transaction(tx: &[u8], _ctx: &mut TxnContext) -> Fallible<SignedTransaction> {
-        let decoded: UnverifiedTransaction = rlp::decode(tx)?;
+    /// Check transaction.
+    pub fn tx(txn: &[u8], _ctx: &mut TxnContext) -> Fallible<SignedTransaction> {
+        let decoded: UnverifiedTransaction = rlp::decode(txn)?;
 
         // Check that gas < block gas limit.
         if decoded.as_unsigned().gas > BLOCK_GAS_LIMIT.into() {
@@ -49,9 +49,9 @@ pub mod execute {
     use super::*;
 
     /// Execute an Ethereum transaction.
-    pub fn ethereum_transaction(tx: &[u8], ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
+    pub fn tx(txn: &[u8], ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
         // Perform transaction checks.
-        let tx = super::check::ethereum_transaction(tx, ctx)?;
+        let txn = super::check::tx(txn, ctx)?;
 
         // If this is a check txn request, return success.
         if ctx.check_only {
@@ -61,15 +61,15 @@ pub mod execute {
         let ectx = runtime_context!(ctx, BlockContext);
 
         // Check if current block already contains the transaction. Reject if so.
-        let tx_hash = tx.hash();
-        if ectx.transaction_set.contains(&tx_hash) {
+        let txn_hash = txn.hash();
+        if ectx.transaction_set.contains(&txn_hash) {
             return Err(TransactionError::DuplicateTransaction.into());
         }
 
         // Check whether the transaction fits in the current block. If not, return
         // an error indicating that the client should retry.
         let gas_remaining = U256::from(BLOCK_GAS_LIMIT) - ectx.env_info.gas_used;
-        if tx.gas > gas_remaining {
+        if txn.gas > gas_remaining {
             return Err(TransactionError::BlockGasLimitReached.into());
         }
 
@@ -79,7 +79,7 @@ pub mod execute {
             .apply(
                 &ectx.env_info,
                 genesis::SPEC.engine.machine(),
-                &tx,
+                &txn,
                 false, /* tracing */
                 true,  /* should_return_value */
             )
@@ -88,7 +88,7 @@ pub mod execute {
             })?;
 
         // Add to set of executed transactions.
-        ectx.transaction_set.insert(tx_hash);
+        ectx.transaction_set.insert(txn_hash);
 
         // Calculate the amount of gas used by this transaction and update the
         // cumulative gas used for the batch. Note: receipt.gas_used is the cumulative
@@ -99,7 +99,7 @@ pub mod execute {
         // Emit the Ekiden transaction hash so that we can query it.
         #[cfg(not(feature = "test"))]
         {
-            ctx.emit_txn_tag(TAG_ETH_TX_HASH, tx_hash);
+            ctx.emit_txn_tag(TAG_ETH_TX_HASH, txn_hash);
             for log in &outcome.receipt.logs {
                 ctx.emit_txn_tag(TAG_ETH_LOG_ADDRESS, log.address);
                 log.topics
