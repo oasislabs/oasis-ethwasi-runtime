@@ -28,7 +28,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_TARGET_DIR=/tmp/artifacts"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
-      - "EKIDEN_BRANCH=peterjgilbert/ekiden-net-runner"
+      - "EKIDEN_BRANCH=master"
       - "E2E_TESTS_BRANCH=master"
       - "DEVELOPER_GATEWAY_BRANCH=master"
     propagate-environment: true
