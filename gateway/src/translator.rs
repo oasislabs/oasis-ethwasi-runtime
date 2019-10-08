@@ -31,7 +31,7 @@ use futures::{future, prelude::*};
 use hash::KECCAK_EMPTY_LIST_RLP;
 use io_context::Context;
 use lazy_static::lazy_static;
-use oasis_runtime_api::{ExecutionResult, TransactionError, METHOD_ETH_TXN};
+use oasis_runtime_api::{ExecutionResult, TransactionError, METHOD_TX};
 use oasis_runtime_common::{
     genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS, TAG_ETH_TX_HASH,
 };
@@ -210,7 +210,7 @@ impl Translator {
             ),
             move |(retries, client, payload, decoded)| {
                 client
-                    .ethereum_transaction(payload.clone())
+                    .tx(payload.clone())
                     .then(move |maybe_result| match maybe_result {
                         Ok(result) => Ok(future::Loop::Break((decoded.hash(), result))),
                         Err(err) => {
@@ -368,7 +368,7 @@ impl Translator {
             .map(move |txns| {
                 txns.into_iter().flat_map(|txn| {
                 // This should not happen as such transactions should not emit tags.
-                if txn.input.method != METHOD_ETH_TXN {
+                if txn.input.method != METHOD_TX {
                     error!(logger, "Query returned non-ethereum transaction";
                         "method" => txn.input.method,
                     );
@@ -469,7 +469,7 @@ impl EthereumTransaction {
     /// Retrieve the (localized) Ethereum transaction input.
     pub fn transaction(&self) -> Fallible<LocalizedTransaction> {
         // Validate method.
-        if self.snapshot.input.method != METHOD_ETH_TXN {
+        if self.snapshot.input.method != METHOD_TX {
             return Err(format_err!("not an Ethereum transaction"));
         }
 
@@ -598,7 +598,7 @@ impl EthereumBlock {
             .map(|txns| {
                 txns.0.into_iter().filter_map(|txn| {
                     let txn: TxnCall = cbor::from_slice(&txn).ok()?;
-                    if txn.method != METHOD_ETH_TXN {
+                    if txn.method != METHOD_TX {
                         return None;
                     }
 

@@ -285,8 +285,8 @@ impl Client {
             .sign(&client.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let result = methods::execute::ethereum_transaction(&raw.into_vec(), ctx)
-                .map_err(|err| err.to_string())?;
+            let result =
+                methods::execute::tx(&raw.into_vec(), ctx).map_err(|err| err.to_string())?;
             client.results.insert(tx.hash(), result);
 
             let address = if contract == None {

@@ -151,9 +151,8 @@ fn test_signature_verification() {
         data: vec![],
     }
     .fake_sign(client.keypair.address());
-    let check_should_fail = client.check_batch(|_client, ctx| {
-        methods::execute::ethereum_transaction(&rlp::encode(&bad_sig).into_vec(), ctx)
-    });
+    let check_should_fail = client
+        .check_batch(|_client, ctx| methods::execute::tx(&rlp::encode(&bad_sig).into_vec(), ctx));
     let good_sig = EthcoreTransaction {
         action: Action::Create,
         nonce: client.nonce(&client.keypair.address()),
@@ -163,9 +162,8 @@ fn test_signature_verification() {
         data: vec![],
     }
     .sign(client.keypair.secret(), None);
-    let check_should_pass = client.check_batch(|_client, ctx| {
-        methods::execute::ethereum_transaction(&rlp::encode(&good_sig).into_vec(), ctx)
-    });
+    let check_should_pass = client
+        .check_batch(|_client, ctx| methods::execute::tx(&rlp::encode(&good_sig).into_vec(), ctx));
 
     // Expected result: Err(InvalidSignature).
     match check_should_fail {
