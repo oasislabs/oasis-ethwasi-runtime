@@ -12,7 +12,7 @@ extern crate ekiden_client;
 extern crate ekiden_runtime;
 extern crate grpcio;
 extern crate io_context;
-extern crate runtime_ethereum_common;
+extern crate oasis_runtime_common;
 extern crate serde_bytes;
 extern crate serde_json;
 
@@ -31,7 +31,7 @@ use ethcore::{spec::Spec, state::State};
 use ethereum_types::{Address, H256, U256};
 use grpcio::EnvBuilder;
 use io_context::Context;
-use runtime_ethereum_common::{
+use oasis_runtime_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
 };

@@ -94,10 +94,10 @@ symlink-artifacts:
 	@$(ECHO) "$(CYAN)*** Symlinking done!$(OFF)"
 
 runtime: check-ekiden
-	@$(ECHO) "$(CYAN)*** Building runtime-ethereum...$(OFF)"
+	@$(ECHO) "$(CYAN)*** Building oasis-runtime...$(OFF)"
 	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
-		cargo build -p runtime-ethereum $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
-		cargo build -p runtime-ethereum $(EXTRA_BUILD_ARGS) && \
+		cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
+		cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) && \
 		cargo elf2sgxs $(EXTRA_BUILD_ARGS)
 
 gateway:
@@ -139,8 +139,8 @@ test-unit: check-ekiden
 	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
 		cargo test \
 			--features test \
-			-p runtime-ethereum-common \
-			-p runtime-ethereum \
+			-p oasis-runtime-common \
+			-p oasis-runtime \
 			-p web3-gateway
 	@make -C benchmark test
 

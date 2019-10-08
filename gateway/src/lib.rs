@@ -50,8 +50,8 @@ extern crate ekiden_client;
 extern crate ekiden_keymanager_client;
 extern crate ekiden_runtime;
 
-extern crate runtime_ethereum_api;
-extern crate runtime_ethereum_common;
+extern crate oasis_runtime_api;
+extern crate oasis_runtime_common;
 
 mod impls;
 mod informant;
@@ -73,7 +73,7 @@ use ekiden_runtime::common::runtime::RuntimeId;
 use ethereum_types::U256;
 use failure::Fallible;
 use grpcio::EnvBuilder;
-use runtime_ethereum_api::*;
+use oasis_runtime_api::*;
 use serde_bytes::ByteBuf;
 
 pub use self::run::RunningGateway;

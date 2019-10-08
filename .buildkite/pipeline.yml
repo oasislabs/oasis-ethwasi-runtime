@@ -71,7 +71,7 @@ steps:
       # This is done here to keep the build and test
       # script generic.
       - cd /tmp/artifacts/debug
-      - buildkite-agent artifact upload runtime-ethereum
+      - buildkite-agent artifact upload oasis-runtime
     env:
       RUNTIME_VARIANT: elf
     agents:
@@ -88,7 +88,7 @@ steps:
       # This is done here to keep the build and test
       # script generic.
       - cd /tmp/artifacts/x86_64-fortanix-unknown-sgx/debug
-      - buildkite-agent artifact upload runtime-ethereum.sgxs
+      - buildkite-agent artifact upload oasis-runtime.sgxs
     env:
       RUNTIME_VARIANT: sgxs
     agents:

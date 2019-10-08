@@ -10,9 +10,9 @@ use ethcore::{
 };
 use ethereum_types::U256;
 use failure::Fallible;
-use runtime_ethereum_api::{ExecutionResult, LogEntry, TransactionError};
+use oasis_runtime_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
-use runtime_ethereum_common::{
+use oasis_runtime_common::{
     genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS,
     TAG_ETH_TX_HASH,
 };

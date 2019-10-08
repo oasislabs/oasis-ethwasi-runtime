@@ -58,7 +58,7 @@ export KM_ENCLAVE_PATH="$PWD/target/x86_64-fortanix-unknown-sgx/debug/ekiden-key
 # the build cache.
 export CARGO_TARGET_DIR=/tmp/coverage_target
 
-# Possible workaround for runtime-ethereum#694
+# Possible workaround for #694
 # https://github.com/xd009642/tarpaulin/issues/35
 export RAYON_NUM_THREADS=1
 
@@ -68,8 +68,8 @@ git checkout -B ${BUILDKITE_BRANCH}
 # Calculate coverage.
 set +x
 cargo tarpaulin \
-  --packages runtime-ethereum \
-  --packages runtime-ethereum-common \
+  --packages oasis-runtime \
+  --packages oasis-runtime-common \
   --packages web3-gateway \
   --exclude-files .e2e* \
   --exclude-files *generated* \

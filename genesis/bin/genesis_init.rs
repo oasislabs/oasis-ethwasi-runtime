@@ -5,7 +5,7 @@ extern crate clap;
 extern crate ekiden_runtime;
 extern crate ethcore;
 extern crate io_context;
-extern crate runtime_ethereum_common;
+extern crate oasis_runtime_common;
 extern crate serde_json;
 
 use std::{fs::File, sync::Arc};
@@ -17,7 +17,7 @@ use ekiden_runtime::storage::{
 };
 use ethcore::spec::Spec;
 use io_context::Context;
-use runtime_ethereum_common::{
+use oasis_runtime_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
 };

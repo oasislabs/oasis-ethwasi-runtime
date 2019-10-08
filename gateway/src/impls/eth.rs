@@ -28,6 +28,7 @@ use jsonrpc_core::{
 };
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
+use oasis_runtime_common::genesis;
 use parity_rpc::v1::{
     helpers::{errors, fake_sign},
     metadata::Metadata,
@@ -42,7 +43,6 @@ use prometheus::{
     __register_counter_vec, histogram_opts, labels, opts, register_histogram_vec,
     register_int_counter_vec, HistogramVec, IntCounterVec,
 };
-use runtime_ethereum_common::genesis;
 use slog::{debug, info, Logger};
 
 use crate::{

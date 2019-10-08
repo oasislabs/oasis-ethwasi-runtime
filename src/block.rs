@@ -10,7 +10,7 @@ use ekiden_runtime::{
 use ethcore::{self, state::State, vm::EnvInfo};
 use ethereum_types::{H256, U256};
 use io_context::Context as IoContext;
-use runtime_ethereum_common::{
+use oasis_runtime_common::{
     confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
 };
 use slog::{info, Logger};

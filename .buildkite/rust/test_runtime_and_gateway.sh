@@ -46,6 +46,6 @@ export KM_ENCLAVE_PATH="$src_dir/target/x86_64-fortanix-unknown-sgx/debug/ekiden
 cd $src_dir
 cargo test \
     --features test \
-    -p runtime-ethereum \
-    -p runtime-ethereum-common \
+    -p oasis-runtime \
+    -p oasis-runtime-common \
     -p web3-gateway
