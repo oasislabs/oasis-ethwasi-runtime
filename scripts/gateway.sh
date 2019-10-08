@@ -7,14 +7,14 @@ source .buildkite/scripts/common.sh
 
 ekiden_node="${EKIDEN_ROOT_PATH}/go/ekiden/ekiden"
 ekiden_runner="${EKIDEN_ROOT_PATH}/go/ekiden-net-runner/ekiden-net-runner"
-runtime_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/runtime-ethereum"
+runtime_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-runtime"
 runtime_loader="${EKIDEN_ROOT_PATH}/target/debug/ekiden-runtime-loader"
 runtime_genesis="${GENESIS_ROOT_PATH}/ekiden_genesis_testing.json"
 keymanager_binary="${EKIDEN_ROOT_PATH}/target/debug/ekiden-keymanager-runtime"
 web3_gateway="${RUNTIME_CARGO_TARGET_DIR}/debug/gateway"
 
 # Prepare an empty data directory.
-data_dir="/tmp/runtime-ethereum-runner"
+data_dir="/tmp/oasis-runtime-runner"
 rm -rf "${data_dir}"
 mkdir -p "${data_dir}"
 chmod -R go-rwx "${data_dir}"

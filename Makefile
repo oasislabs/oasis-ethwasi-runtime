@@ -51,7 +51,7 @@ endif
 .PHONY: \
 	all \
 	check check-tools check-ekiden \
-	download-artifacts symlink-artifacts \
+	symlink-artifacts \
 	runtime gateway genesis \
 	genesis-update \
 	clean clean-test-e2e \
@@ -73,19 +73,14 @@ check-tools:
 check-ekiden:
 	@test -x $(EKIDEN_ROOT_PATH)/go/ekiden/ekiden || ( \
 		$(ECHO) "$(RED)error:$(OFF) ekiden node not found in $(EKIDEN_ROOT_PATH) (check EKIDEN_ROOT_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\" or \"make download-artifacts\"?" && \
+		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
 		exit 1 \
 	)
 	@test -f $(KM_ENCLAVE_PATH) || ( \
 		$(ECHO) "$(RED)error:$(OFF) ekiden key manager enclave not found in $(KM_ENCLAVE_PATH) (check KM_ENCLAVE_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\" or \"make download-artifacts\"?" && \
+		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
 		exit 1 \
 	)
-
-download-artifacts:
-	@$(ECHO) "$(CYAN)*** Downloading Ekiden and runtime build artifacts...$(OFF)"
-	@scripts/download_artifacts.sh "$(EKIDEN_ROOT_PATH)"
-	@$(ECHO) "$(CYAN)*** Download completed!$(OFF)"
 
 symlink-artifacts:
 	@$(ECHO) "$(CYAN)*** Symlinking Ekiden and runtime build artifacts...$(OFF)"
@@ -126,11 +121,11 @@ run-gateway:
 	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) GENESIS_ROOT_PATH=$(GENESIS_ROOT_PATH) && \
 		scripts/gateway.sh 2>&1 | python scripts/color-log.py
 
-# TODO: update run-gateway-sgx
-run-gateway-sgx:
-	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
-		scripts/gateway.sh single_node_sgx 2>&1 | python scripts/color-log.py
+# TODO: update gateway.sh to support SGX
+#run-gateway-sgx:
+#	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
+#	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
+#		scripts/gateway.sh single_node_sgx 2>&1 | python scripts/color-log.py
 
 test: test-unit test-e2e
 
@@ -146,7 +141,6 @@ test-unit: check-ekiden
 
 test-e2e: check-ekiden
 	@$(ECHO) "$(CYAN)*** Running E2E tests...$(OFF)"
-	@.buildkite/scripts/download_ekiden_test_scripts.sh
 	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) && \
 		.buildkite/scripts/test_e2e.sh
 

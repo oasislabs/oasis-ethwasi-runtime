@@ -24,9 +24,6 @@ To do this, you can either:
   process completes you can then run `make && make symlink-artifacts EKIDEN_SRC_PATH=/path/to/ekiden`
   and all the required artifacts will be symlinked under `.ekiden` and `.runtime`.
 
-* (Coming soon...) Download Ekiden artifacts from CI by running `make download-artifacts`. You need to have
-  the correct `BUILDKITE_ACCESS_TOKEN` set up to do this.
-
 * Manually provide the required artifacts in a custom directory and specify
   `EKIDEN_ROOT_PATH=/path/to/ekiden` on each invocation of `make`, e.g.
   `make EKIDEN_ROOT_PATH=/path/to/ekiden`.
@@ -49,41 +46,29 @@ To run a local Ekiden "cluster" and a development version of the web3 gateway, r
 $ make run-gateway
 ```
 
-## Benchmarking
+This command will launch a gateway with web3 RPC endpoints on ports 8545 (http) and 8555 (WebSocket).
+For example,
 
-Benchmarks require smart contract compilation and deployment tools, so you need
-to install:
-
-* rust support for wasm32 target: `rustup target add wasm32-unknown-unknown`,
-
-* wasm-build command: `cargo install owasm-utils-cli --bin wasm-build`,
-
-* abigen command as part of go ethereum devtools:
-```bash
-go get -u github.com/ethereum/go-ethereum
-cd $GOPATH/src/github.com/ethereum/go-ethereum/
-make devtools
 ```
-* xxd command for converting binary-compiled contract to readable hex format:
-  `apt install xxd`,
-
-To build the benchmarking version of the runtime (release build, logging suppressed, nonce checking disabled):
-```bash
-$ CARGO_TARGET_DIR=target_benchmark cargo build --release --features benchmark
-```
-
-Release builds of `gateway` and `genesis` are also used for benchmarking. To build, for each component:
-```bash
-$ cargo build -p <component> --release
+curl -s \
+    -X POST \
+    http://127.0.0.1:8545 \
+    -d @- \
+    --header "Content-Type: application/json" \
+    <<EOF
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "eth_getBalance",
+  "params": [
+    "0x1cca28600d7491365520b31b466f88647b9839ec",
+    "latest"
+  ]
+}
+EOF
 ```
 
-Finally, to build the benchmarking go client with benchmarks and Rust smart
-contracts:
-```bash
-$ cd benchmark
-$ make
+Should give a result like
 ```
-
-Run benchmarks by first spinning up the gateway (see previous chapter) and then
-executing `benchmark/benchmark -b <benchmark_name>`. Benchmarks results
-will be reported to STDOUT in JSON format.
+{"jsonrpc":"2.0","result":"0x56bc75e2d63100000","id":1}
+```

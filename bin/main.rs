@@ -1,4 +1,4 @@
-//! Ethereum runtime entry point.
+//! Oasis runtime entry point.
 extern crate oasis_runtime;
 
 extern crate ekiden_keymanager_client;
@@ -21,7 +21,7 @@ use ekiden_runtime::{
     register_runtime_txn_methods, version_from_cargo, Protocol, RpcDemux, RpcDispatcher,
     TxnDispatcher,
 };
-use oasis_runtime::block::EthereumBatchHandler;
+use oasis_runtime::block::OasisBatchHandler;
 #[cfg(target_env = "sgx")]
 use oasis_runtime::KM_ENCLAVE_HASH;
 use oasis_runtime_api::{with_api, ExecutionResult};
@@ -62,7 +62,7 @@ fn main() {
             1024, // TODO: How big should this cache be?
         ));
 
-        txn.set_batch_handler(EthereumBatchHandler::new(km_client));
+        txn.set_batch_handler(OasisBatchHandler::new(km_client));
     };
 
     // Start the runtime.

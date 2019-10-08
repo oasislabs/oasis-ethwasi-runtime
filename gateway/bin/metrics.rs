@@ -3,7 +3,7 @@ use std::{net, thread, time::Duration};
 
 use ekiden_runtime::common::logger::get_logger;
 use prometheus::{self, labels};
-use slog::{info, warn, Logger};
+use slog::{error, info, warn, Logger};
 
 /// Metrics service configuration.
 pub enum Config {
@@ -63,6 +63,7 @@ pub fn start(cfg: Config) {
             }
             Config::Pull { .. } => {
                 // TODO: Pull.
+                error!(logger, "Pull mode not supported");
             }
         }
     });

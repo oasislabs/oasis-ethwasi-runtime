@@ -26,18 +26,18 @@ pub struct BlockContext {
     pub transaction_set: HashSet<H256>,
 }
 
-/// Ethereum runtime batch handler.
-pub struct EthereumBatchHandler {
+/// Oasis runtime batch handler.
+pub struct OasisBatchHandler {
     key_manager: Arc<dyn KeyManagerClient>,
 }
 
-impl EthereumBatchHandler {
+impl OasisBatchHandler {
     pub fn new(key_manager: Arc<dyn KeyManagerClient>) -> Self {
         Self { key_manager }
     }
 }
 
-impl BatchHandler for EthereumBatchHandler {
+impl BatchHandler for OasisBatchHandler {
     fn start_batch(&self, ctx: &mut TxnContext) {
         let logger = get_logger("ethereum/block");
 
