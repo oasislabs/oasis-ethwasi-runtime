@@ -45,3 +45,30 @@ To run a local Ekiden "cluster" and a development version of the web3 gateway, r
 ```bash
 $ make run-gateway
 ```
+
+This command will launch a gateway with web3 RPC endpoints on ports 8545 (http) and 8555 (WebSocket).
+For example,
+
+```
+curl -s \
+    -X POST \
+    http://127.0.0.1:8545 \
+    -d @- \
+    --header "Content-Type: application/json" \
+    <<EOF
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "eth_getBalance",
+  "params": [
+    "0x1cca28600d7491365520b31b466f88647b9839ec",
+    "latest"
+  ]
+}
+EOF
+```
+
+Should give a result like
+```
+{"jsonrpc":"2.0","result":"0x56bc75e2d63100000","id":1}
+```
