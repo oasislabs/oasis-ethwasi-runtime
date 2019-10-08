@@ -37,17 +37,17 @@ download_keymanager_runtime target/debug
 download_keymanager_runtime_sgx target/x86_64-fortanix-unknown-sgx/debug
 download_developer_gateway go/developer-gateway
 
-###########################
-# Download runtime-ethereum
-###########################
+########################
+# Download oasis-runtime
+########################
 buildkite-agent artifact download \
-    runtime-ethereum.sgxs \
+    oasis-runtime.sgxs \
     target/x86_64-fortanix-unknown-sgx/debug
 
 buildkite-agent artifact download \
-    runtime-ethereum \
+    oasis-runtime \
     target/debug
-chmod +x target/debug/runtime-ethereum
+chmod +x target/debug/oasis-runtime
 
 ##################
 # Download gateway

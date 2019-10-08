@@ -40,19 +40,19 @@ download_keymanager_runtime_sgx() {
 
 download_gateway() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build web3 gateway" gateway $out_dir
+	.buildkite/scripts/download_artifact.sh oasis-runtime $RUNTIME_BRANCH "Build web3 gateway" gateway $out_dir
 	chmod +x $out_dir/gateway
 }
 
 download_runtime() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build runtime" runtime-ethereum $out_dir
-	chmod +x $out_dir/runtime-ethereum
+	.buildkite/scripts/download_artifact.sh oasis-runtime $RUNTIME_BRANCH "Build runtime" oasis-runtime $out_dir
+	chmod +x $out_dir/oasis-runtime
 }
 
 download_runtime_sgx() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh runtime-ethereum $RUNTIME_BRANCH "Build runtime" runtime-ethereum.sgxs $out_dir
+	.buildkite/scripts/download_artifact.sh oasis-runtime $RUNTIME_BRANCH "Build runtime" oasis-runtime.sgxs $out_dir
 }
 
 download_developer_gateway() {

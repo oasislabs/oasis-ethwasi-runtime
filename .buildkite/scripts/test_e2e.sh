@@ -26,7 +26,7 @@ EKIDEN_RUNTIME_LOADER=${EKIDEN_RUNTIME_LOADER:-${EKIDEN_ROOT_PATH}/target/debug/
 # Path to keymanager binary.
 EKIDEN_KM_BINARY=${EKIDEN_KM_BINARY:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-keymanager-runtime}
 # Path to runtime binary.
-RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/runtime-ethereum}
+RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/oasis-runtime}
 # Path to runtime genesis state.
 RUNTIME_GENESIS=${RUNTIME_GENESIS:-${WORKDIR}/resources/genesis/ekiden_genesis_testing.json}
 # Path to web3 gateway.
