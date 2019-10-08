@@ -10,7 +10,6 @@
 
 # Temporary test base directory.
 TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)})
-CLIENT_SOCKET="${TEST_BASE_DIR}/net-runner/network/client-0/internal.sock"
 
 # Defaults.
 WORKDIR=$(pwd)
@@ -69,8 +68,7 @@ E2E_TEST_COUNTER=0
 # Required named arguments:
 #
 #   name           - unique test name
-#   scenario       - function that will start the compute nodes; see the
-#                    scenario function section below for details
+#   scenario       - function that will start the network
 #
 # Scenario function:
 #
@@ -124,22 +122,24 @@ scenario_basic() {
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
 
+    local client_socket="${TEST_BASE_DIR}/net-runner/network/client-0/internal.sock"
+
     # Wait for the nodes to be registered.
-    echo "Waiting for nodes to register."
+    echo "Waiting for the nodes to be registered."
     ${EKIDEN_NODE} debug dummy wait-nodes \
-        --address unix:${CLIENT_SOCKET} \
+        --address unix:${client_socket} \
         --nodes 6
 
     # Advance epoch.
     echo "Advancing epoch."
     ${EKIDEN_NODE} debug dummy set-epoch \
-        --address unix:${CLIENT_SOCKET} \
+        --address unix:${client_socket} \
         --epoch 1
 
     # Start the gateway.
     echo "Starting the web3 gateway."
     ${RUNTIME_GATEWAY} \
-        --node-address unix:${CLIENT_SOCKET} \
+        --node-address unix:${client_socket} \
         --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port 8545 \
         --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway.log | sed "s/^/[gateway] /" &
