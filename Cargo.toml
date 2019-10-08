@@ -2,7 +2,6 @@
 name = "oasis-runtime"
 version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
-build = "build.rs"
 edition = "2018"
 
 [package.metadata.fortanix-sgx]
