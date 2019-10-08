@@ -2,7 +2,7 @@
 
 ############################################################
 # Simple wrapper script to call
-# docker/ekiden-runtime-ethereum/build_context.sh
+# docker/deployment/build_context.sh
 ############################################################
 
 # Helpful tips on writing build scripts:
@@ -28,4 +28,4 @@ fi
 
 buildkite-agent artifact download "$platform_dir/*" .
 
-docker/ekiden-runtime-ethereum/build_context.sh "$platform_dir" "$context"
+docker/deployment/build_context.sh "$platform_dir" "$context"

@@ -47,4 +47,4 @@ tar -czf "$dst" \
     target/release/oasis-runtime \
     target/x86_64-fortanix-unknown-sgx/release/oasis-runtime.sgxs \
     target/release/gateway \
-    docker/ekiden-runtime-ethereum/Dockerfile
+    docker/deployment/Dockerfile

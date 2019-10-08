@@ -26,7 +26,7 @@ base_image_tag=${4:-latest}
 #################
 # Local variables
 #################
-docker_image_name=oasislabs/ekiden-runtime-ethereum
+docker_image_name=oasislabs/oasis-runtime
 
 ####################################
 # Build and publish the docker image
@@ -40,9 +40,9 @@ set +x
 docker build --pull --rm --force-rm \
   --build-arg OASIS_RUNTIME_COMMIT_SHA=${git_commit_sha} \
   --build-arg OASIS_RUNTIME_BUILD_IMAGE_TAG=${docker_image_tag} \
-  --build-arg OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=${base_image_tag} \
-  -t oasislabs/ekiden-runtime-ethereum:${docker_image_tag} \
-  --file=docker/ekiden-runtime-ethereum/Dockerfile \
+  --build-arg OASIS_NODE_BASE_DOCKER_IMAGE_TAG=${base_image_tag} \
+  -t oasislabs/${docker_image_name}:${docker_image_tag} \
+  --file=docker/deployment/Dockerfile \
   - <"$context"
 set -x
 

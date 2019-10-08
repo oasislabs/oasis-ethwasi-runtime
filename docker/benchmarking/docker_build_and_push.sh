@@ -26,7 +26,7 @@ base_image_tag=${4:-latest-testing}
 #################
 # Local variables
 #################
-docker_image_name=oasislabs/ekiden-runtime-ethereum
+docker_image_name=oasislabs/oasis-runtime
 
 ####################################
 # Build and publish the docker image

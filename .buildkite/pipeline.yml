@@ -10,7 +10,6 @@ docker_plugin: &docker_plugin_configuration
       - .:/workdir
       - /var/lib/buildkite-agent/.ssh:/root/.ssh
       - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
-      - /var/lib/buildkite-agent/.circleci:/root/.circleci
       - /var/lib/buildkite-agent/.buildkite:/root/.buildkite
       # Shared Rust incremental compile caches.
       - /tmp/cargo_ic/debug:/tmp/artifacts/debug/incremental
@@ -35,7 +34,6 @@ docker_plugin: &docker_plugin_configuration
     unconfined: true
 
 steps:
-
   - label: Build genesis
     command:
       - .buildkite/scripts/setup_gitconfig.sh
@@ -48,7 +46,6 @@ steps:
   - label: Build web3 gateway
     command:
       - .buildkite/scripts/setup_gitconfig.sh
-
       # Build code and run tests
       - .buildkite/rust/build_generic.sh /workdir -p web3-gateway
 
@@ -131,7 +128,7 @@ steps:
   #       parallel jobs to finish, just the ones we need
   #       to run the tests...
 
-    # End-to-end tests
+  # End-to-end tests
   - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
@@ -163,8 +160,8 @@ steps:
 
   - wait
 
-  - label: ":rocket: Deploy"
-    trigger: runtime-ethereum-deploy-to-staging
+  - label: ":rocket: Build docker image context"
+    trigger: oasis-runtime-build-image-context
     async: true
     branches: "master devnet2"
     build:

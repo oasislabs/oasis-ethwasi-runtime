@@ -1,7 +1,7 @@
-ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest
+ARG OASIS_NODE_BASE_DOCKER_IMAGE_TAG=latest
 
-# Load a reference testnet base image
-FROM oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG}
+# Load a reference ekiden base image
+FROM oasislabs/oasis-node:${OASIS_NODE_BASE_DOCKER_IMAGE_TAG}
 
 ARG OASIS_RUNTIME_COMMIT_SHA
 ARG OASIS_RUNTIME_BUILD_IMAGE_TAG
