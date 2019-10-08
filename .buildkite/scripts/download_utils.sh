@@ -15,6 +15,12 @@ download_ekiden_node() {
 	chmod +x $out_dir/ekiden
 }
 
+download_ekiden_net_runner() {
+	local out_dir=$1
+	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Go node" ekiden-net-runner $out_dir
+	chmod +x $out_dir/ekiden-net-runner
+}
+
 download_ekiden_runtime_loader() {
 	local out_dir=$1
 	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Rust runtime loader" ekiden-runtime-loader $out_dir

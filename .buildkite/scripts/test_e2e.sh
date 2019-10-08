@@ -7,9 +7,30 @@
 # test_e2e.sh [-w <workdir>] [-t <test-name>]
 ############################################################
 
+
+# Temporary test base directory.
+TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)})
+
 # Defaults.
 WORKDIR=$(pwd)
 TEST_FILTER=""
+
+# Path to Ekiden root.
+EKIDEN_ROOT_PATH=${EKIDEN_ROOT_PATH:-${WORKDIR}}
+# Path to the Ekiden node.
+EKIDEN_NODE=${EKIDEN_NODE:-${EKIDEN_ROOT_PATH}/go/ekiden/ekiden}
+# Path to ekiden-net-runner.
+EKIDEN_RUNNER=${EKIDEN_RUNNER:-${EKIDEN_ROOT_PATH}/go/ekiden-net-runner/ekiden-net-runner}
+# Path to the runtime loader.
+EKIDEN_RUNTIME_LOADER=${EKIDEN_RUNTIME_LOADER:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-runtime-loader}
+# Path to keymanager binary.
+EKIDEN_KM_BINARY=${EKIDEN_KM_BINARY:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-keymanager-runtime}
+# Path to runtime binary.
+RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/runtime-ethereum}
+# Path to runtime genesis state.
+RUNTIME_GENESIS=${RUNTIME_GENESIS:-${WORKDIR}/resources/genesis/ekiden_genesis_testing.json}
+# Path to web3 gateway.
+RUNTIME_GATEWAY=${RUNTIME_GATEWAY:-${WORKDIR}/target/debug/gateway}
 
 #########################
 # Process test arguments.
@@ -30,8 +51,6 @@ done
 set -euxo pipefail
 
 source .buildkite/scripts/common.sh
-source .e2e/ekiden_common_e2e.sh
-source .buildkite/scripts/common_e2e.sh
 source .buildkite/rust/common.sh
 
 # Ensure NVM is loaded when present.
@@ -41,38 +60,90 @@ nvm_script="${NVM_DIR:-${HOME}/.nvm}/nvm.sh"
 ###################
 # Test definitions.
 ###################
-run_backend_tendermint_committee_custom() {
-    run_backend_tendermint_committee \
-        epochtime_backend=tendermint_mock \
-        replica_group_size=3 \
-        runtime_genesis=${WORKDIR}/resources/genesis/ekiden_genesis_testing.json
-}
+# Global test counter used for parallelizing jobs.
+E2E_TEST_COUNTER=0
 
-run_no_client() {
-    :
+# Run a specific test scenario.
+#
+# Required named arguments:
+#
+#   name           - unique test name
+#   scenario       - function that will start the network
+#
+# Scenario function:
+#
+# The scenario function defines what will be executed during the test.
+#
+run_test() {
+    # Required arguments.
+    local name scenario
+    # Optional arguments with default values.
+    local pre_init_hook=""
+    # Load named arguments that override defaults.
+    local "${@}"
+
+    # Check if we should run this test.
+    if [[ "${TEST_FILTER:-}" == "" ]]; then
+        local test_index=$E2E_TEST_COUNTER
+        let E2E_TEST_COUNTER+=1 1
+
+        if [[ -n ${BUILDKITE_PARALLEL_JOB+x} ]]; then
+            let test_index%=BUILDKITE_PARALLEL_JOB_COUNT 1
+
+            if [[ $BUILDKITE_PARALLEL_JOB != $test_index ]]; then
+                echo "Skipping test '${name}' (assigned to different parallel build)."
+                return
+            fi
+        fi
+    elif [[ "${TEST_FILTER}" != "${name}" ]]; then
+        return
+    fi
+
+    echo -e "\n\e[36;7;1mRUNNING TEST:\e[27m ${name}\e[0m\n"
+
+    if [[ "${pre_init_hook}" != "" ]]; then
+        $pre_init_hook
+    fi
+
+    # Run scenario.
+    $scenario
 }
 
 scenario_basic() {
-    local runtime=$1
+    # Run the network.
+    echo "Starting the test network."
+    ${EKIDEN_RUNNER} \
+        --net.ekiden.binary ${EKIDEN_NODE} \
+        --net.runtime.binary ${RUNTIME_BINARY} \
+        --net.runtime.loader ${EKIDEN_RUNTIME_LOADER} \
+        --net.runtime.genesis_state ${RUNTIME_GENESIS} \
+        --net.keymanager.binary ${EKIDEN_KM_BINARY} \
+        --net.epochtime_backend tendermint_mock \
+        --basedir.no_temp_dir \
+        --basedir ${TEST_BASE_DIR} &
 
-    # Initialize compute nodes.
-    run_compute_node 1 ${runtime}
-    run_compute_node 2 ${runtime}
-    run_compute_node 3 ${runtime}
-    run_compute_node 4 ${runtime}
+    local client_socket="${TEST_BASE_DIR}/net-runner/network/client-0/internal.sock"
 
-    # Initialize storage nodes.
-    run_storage_node 1
-    run_storage_node 2
+    # Wait for the nodes to be registered.
+    echo "Waiting for the nodes to be registered."
+    ${EKIDEN_NODE} debug dummy wait-nodes \
+        --address unix:${client_socket} \
+        --nodes 6
 
-    # Wait for all compute nodes to start.
-    wait_nodes 6 # 4 + 2 storage
+    # Advance epoch.
+    echo "Advancing epoch."
+    ${EKIDEN_NODE} debug dummy set-epoch \
+        --address unix:${client_socket} \
+        --epoch 1
 
-    # Advance epoch to elect a new committee.
-    set_epoch 1
+    # Start the gateway.
+    echo "Starting the web3 gateway."
+    ${RUNTIME_GATEWAY} \
+        --node-address unix:${client_socket} \
+        --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
+        --http-port 8545 \
+        --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway.log | sed "s/^/[gateway] /" &
 
-    # Initialize gateway.
-    run_gateway 1
     sleep 3
 }
 
@@ -99,7 +170,7 @@ scenario_rpc_tests() {
 
     echo "Running RPC tests."
     pushd ${WORKDIR}/tests/rpc-tests
-        ./run_tests.sh 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-rpc-tests.log
+        ./run_tests.sh 2>&1 | tee ${TEST_BASE_DIR}/tests-rpc-tests.log
     popd
 }
 
@@ -173,43 +244,18 @@ scenario_e2e_tests() {
         export DEVELOPER_GATEWAY_URL="http://localhost:1234"
         # Cleanup persisted keys.
         rm -rf .oasis
-        npm run test:development 2>&1 | tee ${EKIDEN_COMMITTEE_DIR}/tests-e2e-tests.log
+        npm run test:development 2>&1 | tee ${TEST_BASE_DIR}/tests-e2e-tests.log
     popd
 }
 
-#############
-# Test suite.
-#
-# Arguments:
-#    backend_name - name of the backend to use in test name
-#    backend_runner - function that will prepare and run the backend services
-#############
-test_suite() {
-    local backend_name=$1
-    local backend_runner=$2
+# RPC test.
+run_test \
+    pre_init_hook=install_rpc_tests \
+    scenario=scenario_rpc_tests \
+    name="rpc-tests"
 
-    # RPC test.
-    run_test \
-        pre_init_hook=install_rpc_tests \
-        scenario=scenario_rpc_tests \
-        name="e2e-${backend_name}-rpc-tests" \
-        backend_runner=$backend_runner \
-        runtime=runtime-ethereum \
-        client_runner=run_no_client \
-        on_success_hook=assert_basic_gw_success
-
-    # E2E tests from e2e-tests repository.
-    run_test \
-        pre_init_hook=install_e2e_tests \
-        scenario=scenario_e2e_tests \
-        name="e2e-${backend_name}-e2e-tests" \
-        backend_runner=$backend_runner \
-        runtime=runtime-ethereum \
-        client_runner=run_no_client \
-        on_success_hook=assert_basic_gw_success
-}
-
-##########################################
-# Multiple validators tendermint backends.
-##########################################
-test_suite tm-committee run_backend_tendermint_committee_custom
+# E2E tests from e2e-tests repository.
+run_test \
+    pre_init_hook=install_e2e_tests \
+    scenario=scenario_e2e_tests \
+    name="e2e-tests"
