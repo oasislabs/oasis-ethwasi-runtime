@@ -34,9 +34,9 @@ top-level directory:
 $ make
 ```
 
-## Running the gateway
+## Running the web3 gateway
 
-To run a local single-node Ekiden "cluster" and a development version of the gateway, run:
+To run a local Ekiden "cluster" and a development version of the web3 gateway, run:
 ```bash
 $ make run-gateway
 ```
