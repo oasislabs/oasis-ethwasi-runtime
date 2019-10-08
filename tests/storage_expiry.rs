@@ -1,13 +1,13 @@
 extern crate ethereum_types;
-extern crate runtime_ethereum;
-extern crate runtime_ethereum_api;
+extern crate oasis_runtime;
+extern crate oasis_runtime_api;
 extern crate time;
 
 mod contracts;
 
 use ethereum_types::{Address, U256};
-use runtime_ethereum::test;
-use runtime_ethereum_api::ExecutionResult;
+use oasis_runtime::test;
+use oasis_runtime_api::ExecutionResult;
 
 /// Makes a call to the `getCounter()` method.
 fn get_counter<'a>(contract: &Address, client: &mut test::Client) -> U256 {

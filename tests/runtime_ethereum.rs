@@ -4,8 +4,8 @@ extern crate ethcore;
 extern crate ethereum_types;
 extern crate ethkey;
 extern crate hex;
-extern crate runtime_ethereum;
-extern crate runtime_ethereum_common;
+extern crate oasis_runtime;
+extern crate oasis_runtime_common;
 
 use ekiden_runtime::transaction::dispatcher::CheckOnlySuccess;
 use ethcore::{
@@ -13,7 +13,7 @@ use ethcore::{
     transaction::{Action, Transaction as EthcoreTransaction},
 };
 use ethereum_types::{H256, U256};
-use runtime_ethereum::{methods, test};
+use oasis_runtime::{methods, test};
 
 #[test]
 fn test_create_balance() {

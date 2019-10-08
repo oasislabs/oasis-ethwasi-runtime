@@ -31,8 +31,8 @@ use ethkey::{KeyPair, Secret};
 
 use io_context::Context as IoContext;
 use keccak_hash::keccak;
-use runtime_ethereum_api::ExecutionResult;
-use runtime_ethereum_common::{
+use oasis_runtime_api::ExecutionResult;
+use oasis_runtime_common::{
     confidential::ConfidentialCtx,
     genesis,
     parity::NullBackend,
