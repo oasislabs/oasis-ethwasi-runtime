@@ -24,9 +24,6 @@ To do this, you can either:
   process completes you can then run `make && make symlink-artifacts EKIDEN_SRC_PATH=/path/to/ekiden`
   and all the required artifacts will be symlinked under `.ekiden` and `.runtime`.
 
-* (Coming soon...) Download Ekiden artifacts from CI by running `make download-artifacts`. You need to have
-  the correct `BUILDKITE_ACCESS_TOKEN` set up to do this.
-
 * Manually provide the required artifacts in a custom directory and specify
   `EKIDEN_ROOT_PATH=/path/to/ekiden` on each invocation of `make`, e.g.
   `make EKIDEN_ROOT_PATH=/path/to/ekiden`.

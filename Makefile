@@ -51,7 +51,7 @@ endif
 .PHONY: \
 	all \
 	check check-tools check-ekiden \
-	download-artifacts symlink-artifacts \
+	symlink-artifacts \
 	runtime gateway genesis \
 	genesis-update \
 	clean clean-test-e2e \
@@ -73,19 +73,14 @@ check-tools:
 check-ekiden:
 	@test -x $(EKIDEN_ROOT_PATH)/go/ekiden/ekiden || ( \
 		$(ECHO) "$(RED)error:$(OFF) ekiden node not found in $(EKIDEN_ROOT_PATH) (check EKIDEN_ROOT_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\" or \"make download-artifacts\"?" && \
+		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
 		exit 1 \
 	)
 	@test -f $(KM_ENCLAVE_PATH) || ( \
 		$(ECHO) "$(RED)error:$(OFF) ekiden key manager enclave not found in $(KM_ENCLAVE_PATH) (check KM_ENCLAVE_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\" or \"make download-artifacts\"?" && \
+		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
 		exit 1 \
 	)
-
-download-artifacts:
-	@$(ECHO) "$(CYAN)*** Downloading Ekiden and runtime build artifacts...$(OFF)"
-	@scripts/download_artifacts.sh "$(EKIDEN_ROOT_PATH)"
-	@$(ECHO) "$(CYAN)*** Download completed!$(OFF)"
 
 symlink-artifacts:
 	@$(ECHO) "$(CYAN)*** Symlinking Ekiden and runtime build artifacts...$(OFF)"
@@ -146,7 +141,6 @@ test-unit: check-ekiden
 
 test-e2e: check-ekiden
 	@$(ECHO) "$(CYAN)*** Running E2E tests...$(OFF)"
-	@.buildkite/scripts/download_ekiden_test_scripts.sh
 	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) && \
 		.buildkite/scripts/test_e2e.sh
 
