@@ -120,6 +120,7 @@ scenario_basic() {
         --net.runtime.loader ${EKIDEN_RUNTIME_LOADER} \
         --net.runtime.genesis_state ${RUNTIME_GENESIS} \
         --net.keymanager.binary ${EKIDEN_KM_BINARY} \
+        --net.epochtime_backend tendermint_mock \
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
 
@@ -129,6 +130,12 @@ scenario_basic() {
         --address unix:${CLIENT_SOCKET} \
         --nodes 6
 
+    # Advance epoch.
+    echo "Advancing epoch."
+    ${EKIDEN_NODE} debug dummy set-epoch \
+        --address unix:${CLIENT_SOCKET} \
+        --epoch 1
+
     # Start the gateway.
     echo "Starting the web3 gateway."
     ${RUNTIME_GATEWAY} \
@@ -136,6 +143,8 @@ scenario_basic() {
         --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
         --http-port 8545 \
         --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway.log | sed "s/^/[gateway] /" &
+
+    sleep 3
 }
 
 ###########
