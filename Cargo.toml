@@ -1,5 +1,5 @@
 [package]
-name = "runtime-ethereum"
+name = "oasis-runtime"
 version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 build = "build.rs"
@@ -11,13 +11,13 @@ stack-size = 2097152
 threads = 2
 
 [[bin]]
-name = "runtime-ethereum"
+name = "oasis-runtime"
 path ="bin/main.rs"
 
 [dependencies]
 # Internal.
-runtime-ethereum-api = { path = "./api" }
-runtime-ethereum-common = { path = "./common" }
+oasis-runtime-api = { path = "./api" }
+oasis-runtime-common = { path = "./common" }
 
 # Ekiden.
 ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
@@ -55,9 +55,9 @@ default = ["confidential"]
 confidential = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
-test = ["runtime-ethereum-common/test"]
-benchmarking = ["runtime-ethereum-common/benchmarking"]
-production-genesis = ["runtime-ethereum-common/production-genesis"]
+test = ["oasis-runtime-common/test"]
+benchmarking = ["oasis-runtime-common/benchmarking"]
+production-genesis = ["oasis-runtime-common/production-genesis"]
 
 [profile.release]
 panic = "abort"
