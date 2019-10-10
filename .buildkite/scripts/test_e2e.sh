@@ -208,11 +208,11 @@ install_e2e_tests() {
                         e2e-tests \
                         ${e2e_tests_branch} \
                         "Lint and Compile Contracts" \
-                        mantle.zip \
+                        services.zip \
                         "$(pwd)"
-                    rm -rf mantle
-                    unzip mantle.zip
-                    rm mantle.zip
+                    rm -rf services
+                    unzip services.zip
+                    rm services.zip
                 else
                     # Ensure no special compiler flags are in effect.
                     unset RUSTFLAGS
