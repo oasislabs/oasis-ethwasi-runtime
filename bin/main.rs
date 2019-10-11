@@ -22,14 +22,7 @@ use ekiden_runtime::{
     TxnDispatcher,
 };
 use oasis_runtime::block::OasisBatchHandler;
-#[cfg(target_env = "sgx")]
-use oasis_runtime::KM_ENCLAVE_HASH;
 use oasis_runtime_api::{with_api, ExecutionResult};
-
-#[cfg(target_env = "sgx")]
-use ekiden_runtime::common::sgx::avr::EnclaveIdentity;
-#[cfg(target_env = "sgx")]
-use std::collections::HashSet;
 
 fn main() {
     // Initializer.
@@ -43,20 +36,9 @@ fn main() {
             with_api! { register_runtime_txn_methods!(txn, api); }
         }
 
-        #[cfg(target_env = "sgx")]
-        let remote_enclaves: Option<HashSet<EnclaveIdentity>> = Some(
-            [EnclaveIdentity::fortanix_test(KM_ENCLAVE_HASH)]
-                .iter()
-                .cloned()
-                .collect(),
-        );
-        #[cfg(not(target_env = "sgx"))]
-        let remote_enclaves = None;
-
         // Create the key manager client.
         let km_client = Arc::new(ekiden_keymanager_client::RemoteClient::new_runtime(
             RuntimeId::default(), // HACK: This is what's deployed.
-            remote_enclaves,
             protocol.clone(),
             rak.clone(),
             1024, // TODO: How big should this cache be?
