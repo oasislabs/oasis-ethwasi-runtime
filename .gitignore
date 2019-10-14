@@ -51,8 +51,8 @@ tests/e2e-tests/
 # Ekiden E2E test scripts.
 .e2e
 
-# Ekiden binary symlinks or downloads.
-.ekiden
+# Oasis Core binary symlinks or downloads.
+.oasis-core
 
 # Coverage report from Tarpaulin
 cobertura.xml

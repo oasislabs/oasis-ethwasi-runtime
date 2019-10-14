@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use ekiden_keymanager_client::{ContractId, KeyManagerClient};
-use ekiden_runtime::common::logger::get_logger;
 use ethereum_types::Address;
 use futures::prelude::*;
 use hash::keccak;
@@ -9,6 +7,8 @@ use io_context::Context;
 use jsonrpc_core::BoxFuture;
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
+use oasis_core_keymanager_client::{ContractId, KeyManagerClient};
+use oasis_core_runtime::common::logger::get_logger;
 use parity_rpc::v1::{
     helpers::errors,
     metadata::Metadata,

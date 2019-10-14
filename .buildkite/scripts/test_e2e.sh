@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ############################################################
-# This script tests the Ekiden project.
+# This script tests the Oasis runtime project.
 #
 # Usage:
 # test_e2e.sh [-w <workdir>] [-t <test-name>]
@@ -9,26 +9,26 @@
 
 
 # Temporary test base directory.
-TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir ekiden-e2e-XXXXXXXXXX)})
+TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-runtime-e2e-XXXXXXXXXX)})
 
 # Defaults.
 WORKDIR=$(pwd)
 TEST_FILTER=""
 
-# Path to Ekiden root.
-EKIDEN_ROOT_PATH=${EKIDEN_ROOT_PATH:-${WORKDIR}}
-# Path to the Ekiden node.
-EKIDEN_NODE=${EKIDEN_NODE:-${EKIDEN_ROOT_PATH}/go/ekiden/ekiden}
-# Path to ekiden-net-runner.
-EKIDEN_RUNNER=${EKIDEN_RUNNER:-${EKIDEN_ROOT_PATH}/go/ekiden-net-runner/ekiden-net-runner}
+# Path to Oasis Core root.
+OASIS_CORE_ROOT_PATH=${OASIS_CORE_ROOT_PATH:-${WORKDIR}}
+# Path to the Oasis node.
+OASIS_NODE=${OASIS_NODE:-${OASIS_CORE_ROOT_PATH}/go/oasis-node/oasis-node}
+# Path to oasis-net-runner.
+OASIS_NET_RUNNER=${OASIS_NET_RUNNER:-${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner/oasis-net-runner}
 # Path to the runtime loader.
-EKIDEN_RUNTIME_LOADER=${EKIDEN_RUNTIME_LOADER:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-runtime-loader}
+OASIS_CORE_RUNTIME_LOADER=${OASIS_CORE_RUNTIME_LOADER:-${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-runtime-loader}
 # Path to keymanager binary.
-EKIDEN_KM_BINARY=${EKIDEN_KM_BINARY:-${EKIDEN_ROOT_PATH}/target/debug/ekiden-keymanager-runtime}
+OASIS_CORE_KM_BINARY=${OASIS_CORE_KM_BINARY:-${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-keymanager-runtime}
 # Path to runtime binary.
 RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/oasis-runtime}
 # Path to runtime genesis state.
-RUNTIME_GENESIS=${RUNTIME_GENESIS:-${WORKDIR}/resources/genesis/ekiden_genesis_testing.json}
+RUNTIME_GENESIS=${RUNTIME_GENESIS:-${WORKDIR}/resources/genesis/oasis_genesis_testing.json}
 # Path to web3 gateway.
 RUNTIME_GATEWAY=${RUNTIME_GATEWAY:-${WORKDIR}/target/debug/gateway}
 
@@ -112,12 +112,12 @@ run_test() {
 scenario_basic() {
     # Run the network.
     echo "Starting the test network."
-    ${EKIDEN_RUNNER} \
-        --net.ekiden.binary ${EKIDEN_NODE} \
+    ${OASIS_NET_RUNNER} \
+        --net.node.binary ${OASIS_NODE} \
         --net.runtime.binary ${RUNTIME_BINARY} \
-        --net.runtime.loader ${EKIDEN_RUNTIME_LOADER} \
+        --net.runtime.loader ${OASIS_CORE_RUNTIME_LOADER} \
         --net.runtime.genesis_state ${RUNTIME_GENESIS} \
-        --net.keymanager.binary ${EKIDEN_KM_BINARY} \
+        --net.keymanager.binary ${OASIS_CORE_KM_BINARY} \
         --net.epochtime_backend tendermint_mock \
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
@@ -126,13 +126,13 @@ scenario_basic() {
 
     # Wait for the nodes to be registered.
     echo "Waiting for the nodes to be registered."
-    ${EKIDEN_NODE} debug dummy wait-nodes \
+    ${OASIS_NODE} debug dummy wait-nodes \
         --address unix:${client_socket} \
         --nodes 6
 
     # Advance epoch.
     echo "Advancing epoch."
-    ${EKIDEN_NODE} debug dummy set-epoch \
+    ${OASIS_NODE} debug dummy set-epoch \
         --address unix:${client_socket} \
         --epoch 1
 

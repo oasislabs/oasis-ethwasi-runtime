@@ -22,9 +22,9 @@ extern crate fdlimit;
 extern crate signal_hook;
 #[macro_use]
 extern crate clap;
-extern crate ekiden_runtime;
 extern crate failure;
 extern crate log;
+extern crate oasis_core_runtime;
 extern crate oasis_runtime_common;
 extern crate prometheus;
 extern crate slog;
@@ -39,7 +39,7 @@ use failure::Fallible;
 use fdlimit::raise_fd_limit;
 use slog::{error, info};
 
-use ekiden_runtime::common::logger::{get_logger, init_logger};
+use oasis_core_runtime::common::logger::{get_logger, init_logger};
 use oasis_runtime_common::MIN_GAS_PRICE_GWEI;
 use web3_gateway::util;
 

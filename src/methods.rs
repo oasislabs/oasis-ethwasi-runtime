@@ -1,8 +1,4 @@
 //! Methods exported to Ekiden clients.
-use ekiden_runtime::{
-    runtime_context,
-    transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
-};
 use ethcore::{
     rlp,
     transaction::{SignedTransaction, UnverifiedTransaction},
@@ -10,6 +6,10 @@ use ethcore::{
 };
 use ethereum_types::U256;
 use failure::Fallible;
+use oasis_core_runtime::{
+    runtime_context,
+    transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
+};
 use oasis_runtime_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
 use oasis_runtime_common::{

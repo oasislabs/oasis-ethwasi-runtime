@@ -1,19 +1,16 @@
 #!/usr/bin/env gmake
 
-# Ekiden binary base path.
-EKIDEN_ROOT_PATH ?= .ekiden
+# Oasis Core binary base path.
+OASIS_CORE_ROOT_PATH ?= .oasis-core
 
 # Runtime binary base path.
 RUNTIME_ROOT_PATH ?= .runtime
 
 # Ekiden cargo target directory.
-EKIDEN_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(EKIDEN_ROOT_PATH)/target)
+OASIS_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(OASIS_CORE_ROOT_PATH)/target)
 
 # Runtime cargo target directory.
 RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)
-
-# Key manager enclave path.
-KM_ENCLAVE_PATH ?= $(EKIDEN_CARGO_TARGET_DIR)/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs
 
 # Genesis files.
 GENESIS_ROOT_PATH ?= resources/genesis
@@ -50,7 +47,7 @@ endif
 
 .PHONY: \
 	all \
-	check check-tools check-ekiden \
+	check check-tools check-oasis-core \
 	symlink-artifacts \
 	runtime gateway genesis \
 	genesis-update \
@@ -62,38 +59,32 @@ endif
 all: check runtime gateway
 	@$(ECHO) "$(CYAN)*** Everything built successfully!$(OFF)"
 
-check: check-tools check-ekiden
+check: check-tools check-oasis-core
 
 check-tools:
 	@which cargo-elf2sgxs >/dev/null || ( \
-		$(ECHO) "$(RED)error:$(OFF) ekiden-tools not installed (or not in PATH)" && \
+		$(ECHO) "$(RED)error:$(OFF) oasis-core-tools not installed (or not in PATH)" && \
 		exit 1 \
 	)
 
-check-ekiden:
-	@test -x $(EKIDEN_ROOT_PATH)/go/ekiden/ekiden || ( \
-		$(ECHO) "$(RED)error:$(OFF) ekiden node not found in $(EKIDEN_ROOT_PATH) (check EKIDEN_ROOT_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
-		exit 1 \
-	)
-	@test -f $(KM_ENCLAVE_PATH) || ( \
-		$(ECHO) "$(RED)error:$(OFF) ekiden key manager enclave not found in $(KM_ENCLAVE_PATH) (check KM_ENCLAVE_PATH)" && \
+check-oasis-core:
+	@test -x $(OASIS_CORE_ROOT_PATH)/go/oasis-node/oasis-node || ( \
+		$(ECHO) "$(RED)error:$(OFF) oasis-node not found in $(OASIS_CORE_ROOT_PATH) (check OASIS_CORE_ROOT_PATH)" && \
 		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
 		exit 1 \
 	)
 
 symlink-artifacts:
-	@$(ECHO) "$(CYAN)*** Symlinking Ekiden and runtime build artifacts...$(OFF)"
-	@export EKIDEN_CARGO_TARGET_DIR=$(EKIDEN_CARGO_TARGET_DIR) && \
-		scripts/symlink_artifacts.sh "$(EKIDEN_ROOT_PATH)" "$(EKIDEN_SRC_PATH)" "$(RUNTIME_ROOT_PATH)" $$(pwd)
+	@$(ECHO) "$(CYAN)*** Symlinking Oasis Core and runtime build artifacts...$(OFF)"
+	@export OASIS_CARGO_TARGET_DIR=$(OASIS_CARGO_TARGET_DIR) && \
+		scripts/symlink_artifacts.sh "$(OASIS_CORE_ROOT_PATH)" "$(OASIS_CORE_SRC_PATH)" "$(RUNTIME_ROOT_PATH)" $$(pwd)
 	@$(ECHO) "$(CYAN)*** Symlinking done!$(OFF)"
 
-runtime: check-ekiden
+runtime: check-oasis-core
 	@$(ECHO) "$(CYAN)*** Building oasis-runtime...$(OFF)"
-	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
-		cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
-		cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) && \
-		cargo elf2sgxs $(EXTRA_BUILD_ARGS)
+	@cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx
+	@cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS)
+	@cargo elf2sgxs $(EXTRA_BUILD_ARGS)
 
 gateway:
 	@$(ECHO) "$(CYAN)*** Building web3-gateway...$(OFF)"
@@ -109,7 +100,7 @@ genesis-update:
 		$(ECHO) "$(MAGENTA)  * Genesis file: $$g$(OFF)"; \
 		cargo run -p genesis $(EXTRA_BUILD_ARGS) --bin genesis-init -- \
 			"$(GENESIS_ROOT_PATH)/$${g}" \
-			"$(GENESIS_ROOT_PATH)/ekiden_$${g}"; \
+			"$(GENESIS_ROOT_PATH)/oasis_$${g}"; \
 	done
 
 benchmark: genesis
@@ -117,31 +108,30 @@ benchmark: genesis
 	@make -C benchmark
 
 run-gateway:
-	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) GENESIS_ROOT_PATH=$(GENESIS_ROOT_PATH) && \
+	@$(ECHO) "$(CYAN)*** Starting Oasis Network Runner and Web3 gateway...$(OFF)"
+	@export OASIS_CORE_ROOT_PATH=$(OASIS_CORE_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) GENESIS_ROOT_PATH=$(GENESIS_ROOT_PATH) && \
 		scripts/gateway.sh 2>&1 | python scripts/color-log.py
 
 # TODO: update gateway.sh to support SGX
 #run-gateway-sgx:
 #	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
-#	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
+#	@export OASIS_CORE_ROOT_PATH=$(OASIS_CORE_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
 #		scripts/gateway.sh single_node_sgx 2>&1 | python scripts/color-log.py
 
 test: test-unit test-e2e
 
-test-unit: check-ekiden
+test-unit: check-oasis-core
 	@$(ECHO) "$(CYAN)*** Running unit tests...$(OFF)"
-	@export KM_ENCLAVE_PATH=$(KM_ENCLAVE_PATH) && \
-		cargo test \
-			--features test \
-			-p oasis-runtime-common \
-			-p oasis-runtime \
-			-p web3-gateway
+	@cargo test \
+		--features test \
+		-p oasis-runtime-common \
+		-p oasis-runtime \
+		-p web3-gateway
 	@make -C benchmark test
 
-test-e2e: check-ekiden
+test-e2e: check-oasis-core
 	@$(ECHO) "$(CYAN)*** Running E2E tests...$(OFF)"
-	@export EKIDEN_ROOT_PATH=$(EKIDEN_ROOT_PATH) && \
+	@export OASIS_CORE_ROOT_PATH=$(OASIS_CORE_ROOT_PATH) && \
 		.buildkite/scripts/test_e2e.sh
 
 fmt:

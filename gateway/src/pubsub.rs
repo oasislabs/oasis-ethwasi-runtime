@@ -8,9 +8,9 @@ use std::{
     time::Duration,
 };
 
-use ekiden_runtime::common::logger::get_logger;
 use ethcore::filter::TxEntry;
 use futures::prelude::*;
+use oasis_core_runtime::common::logger::get_logger;
 use slog::{error, Logger};
 use tokio::timer::Interval;
 

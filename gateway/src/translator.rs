@@ -2,18 +2,6 @@
 //! runtime and an Ethereum chain exposed to clients.
 use std::{collections::BTreeMap, sync::Arc};
 
-use ekiden_client::{
-    transaction::{
-        snapshot::{BlockSnapshot, TransactionSnapshot},
-        Query, QueryCondition, ROUND_LATEST,
-    },
-    BoxFuture,
-};
-use ekiden_runtime::{
-    common::{cbor, crypto::hash::Hash, logger::get_logger},
-    storage::MKVS,
-    transaction::types::{TxnCall, TxnOutput},
-};
 use ethcore::{
     error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
@@ -31,6 +19,18 @@ use futures::{future, prelude::*};
 use hash::KECCAK_EMPTY_LIST_RLP;
 use io_context::Context;
 use lazy_static::lazy_static;
+use oasis_core_client::{
+    transaction::{
+        snapshot::{BlockSnapshot, TransactionSnapshot},
+        Query, QueryCondition, ROUND_LATEST,
+    },
+    BoxFuture,
+};
+use oasis_core_runtime::{
+    common::{cbor, crypto::hash::Hash, logger::get_logger},
+    storage::MKVS,
+    transaction::types::{TxnCall, TxnOutput},
+};
 use oasis_runtime_api::{ExecutionResult, TransactionError, METHOD_TX};
 use oasis_runtime_common::{
     genesis, parity::NullBackend, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS, TAG_ETH_TX_HASH,

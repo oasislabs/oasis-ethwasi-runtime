@@ -1,7 +1,7 @@
 download_oasis_binaries() {
 	local out_dir=$1
-	download_ekiden_node $out_dir
-	download_ekiden_runtime_loader $out_dir
+	download_oasis_node $out_dir
+	download_oasis_core_runtime_loader $out_dir
 	download_keymanager_runtime $out_dir
 	download_keymanager_runtime_sgx $out_dir
 	download_runtime $out_dir
@@ -9,33 +9,33 @@ download_oasis_binaries() {
 	download_gateway $out_dir
 }
 
-download_ekiden_node() {
+download_oasis_node() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Go node" ekiden $out_dir
-	chmod +x $out_dir/ekiden
+	.buildkite/scripts/download_artifact.sh oasis-core $OASIS_CORE_BRANCH "Build Go node" oasis-node $out_dir
+	chmod +x $out_dir/oasis-node
 }
 
-download_ekiden_net_runner() {
+download_oasis_net_runner() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Go node" ekiden-net-runner $out_dir
-	chmod +x $out_dir/ekiden-net-runner
+	.buildkite/scripts/download_artifact.sh oasis-core $OASIS_CORE_BRANCH "Build Go node" oasis-net-runner $out_dir
+	chmod +x $out_dir/oasis-net-runner
 }
 
-download_ekiden_runtime_loader() {
+download_oasis_core_runtime_loader() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build Rust runtime loader" ekiden-runtime-loader $out_dir
-	chmod +x $out_dir/ekiden-runtime-loader
+	.buildkite/scripts/download_artifact.sh oasis-core $OASIS_CORE_BRANCH "Build Rust runtime loader" oasis-core-runtime-loader $out_dir
+	chmod +x $out_dir/oasis-core-runtime-loader
 }
 
 download_keymanager_runtime() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager runtime" ekiden-keymanager-runtime $out_dir
-	chmod +x $out_dir/ekiden-keymanager-runtime
+	.buildkite/scripts/download_artifact.sh oasis-core $OASIS_CORE_BRANCH "Build key manager runtime" oasis-core-keymanager-runtime $out_dir
+	chmod +x $out_dir/oasis-core-keymanager-runtime
 }
 
 download_keymanager_runtime_sgx() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh ekiden $EKIDEN_BRANCH "Build key manager runtime" ekiden-keymanager-runtime.sgxs $out_dir
+	.buildkite/scripts/download_artifact.sh oasis-core $OASIS_CORE_BRANCH "Build key manager runtime" oasis-core-keymanager-runtime.sgxs $out_dir
 }
 
 download_gateway() {

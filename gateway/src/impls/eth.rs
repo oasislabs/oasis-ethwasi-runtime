@@ -18,7 +18,6 @@
 
 use std::{collections::BTreeMap, sync::Arc};
 
-use ekiden_runtime::common::logger::get_logger;
 use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use ethereum_types::{Address, H256, H64, U256};
 use failure::Error;
@@ -28,6 +27,7 @@ use jsonrpc_core::{
 };
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
+use oasis_core_runtime::common::logger::get_logger;
 use oasis_runtime_common::genesis;
 use parity_rpc::v1::{
     helpers::{errors, fake_sign},
