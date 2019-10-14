@@ -4,7 +4,7 @@ This directory contains the genesis blocks which are used by the runtime. There
 are two representations of the genesis information:
 
 * The Ethereum chain specification file.
-* The Ekiden runtime genesis state (`ekiden_` prefix). These are automatically
+* The Oasis runtime genesis state (`oasis_` prefix). These are automatically
   generated from the corresponding Ethereum chain specification files by running
   the `make genesis-update` in the top-level directory.
 

@@ -26,20 +26,6 @@ shift
 
 source .buildkite/rust/common.sh
 
-#######################################
-# Fetch the key manager runtime enclave
-#######################################
-echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
-mkdir -p $src_dir/target/x86_64-fortanix-unknown-sgx/debug
-.buildkite/scripts/download_artifact.sh \
-    ekiden \
-    $EKIDEN_BRANCH \
-    "Build key manager runtime" \
-    ekiden-keymanager-runtime.sgxs \
-    $src_dir/target/x86_64-fortanix-unknown-sgx/debug
-
-export KM_ENCLAVE_PATH="$src_dir/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
-
 ###############
 # Run the tests
 ###############

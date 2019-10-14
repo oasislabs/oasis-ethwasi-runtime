@@ -1,7 +1,7 @@
 //! Prometheus metrics.
 use std::{net, thread, time::Duration};
 
-use ekiden_runtime::common::logger::get_logger;
+use oasis_core_runtime::common::logger::get_logger;
 use prometheus::{self, labels};
 use slog::{error, info, warn, Logger};
 

@@ -4,9 +4,9 @@ version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
-# Ekiden.
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+# Oasis Core.
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
 
 # Parity.
 ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }

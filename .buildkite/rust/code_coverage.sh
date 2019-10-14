@@ -40,20 +40,6 @@ set -x
 #################################################
 ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 
-#######################################
-# Fetch the key manager runtime enclave
-#######################################
-echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
-mkdir -p target/x86_64-fortanix-unknown-sgx/debug
-.buildkite/scripts/download_artifact.sh \
-    ekiden \
-    $EKIDEN_BRANCH \
-    "Build key manager runtime" \
-    ekiden-keymanager-runtime.sgxs \
-    target/x86_64-fortanix-unknown-sgx/debug
-
-export KM_ENCLAVE_PATH="$PWD/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
-
 # We need to use a separate target dir for tarpaulin as it otherwise clears
 # the build cache.
 export CARGO_TARGET_DIR=/tmp/coverage_target

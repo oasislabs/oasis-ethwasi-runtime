@@ -18,9 +18,9 @@ path ="bin/main.rs"
 oasis-runtime-api = { path = "./api" }
 oasis-runtime-common = { path = "./common" }
 
-# Ekiden.
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+# Oasis Core.
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
 
 # Parity.
 common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
@@ -42,7 +42,7 @@ io-context = "0.2.0"
 slog = "2.4.1"
 
 [build-dependencies]
-ekiden-tools = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+oasis-core-tools = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
 
 [dev-dependencies]
 assert_matches = "1.3.0"

@@ -20,11 +20,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ekiden_keymanager_client::KeyManagerClient;
-use ekiden_runtime::common::logger::get_logger;
 use ethereum_types::U256;
 use failure::{format_err, Fallible};
 use informant;
+use oasis_core_keymanager_client::KeyManagerClient;
+use oasis_core_runtime::common::logger::get_logger;
 use parity_reactor::EventLoop;
 use rpc::{self, HttpConfiguration, WsConfiguration};
 use rpc_apis;

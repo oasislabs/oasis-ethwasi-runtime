@@ -55,25 +55,11 @@ set -u
 if [ ! -x ${CARGO_INSTALL_ROOT}/bin/cargo-elf2sgxs ]; then
     cargo install \
         --force \
-        --git https://github.com/oasislabs/ekiden \
-        --branch $EKIDEN_BRANCH \
+        --git https://github.com/oasislabs/oasis-core \
+        --branch $OASIS_CORE_BRANCH \
         --debug \
-        ekiden-tools
+        oasis-core-tools
 fi
-
-#######################################
-# Fetch the key manager runtime enclave
-#######################################
-echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
-mkdir -p $src_dir/target/x86_64-fortanix-unknown-sgx/debug
-.buildkite/scripts/download_artifact.sh \
-    ekiden \
-    $EKIDEN_BRANCH \
-    "Build key manager runtime" \
-    ekiden-keymanager-runtime.sgxs \
-    $src_dir/target/x86_64-fortanix-unknown-sgx/debug
-
-export KM_ENCLAVE_PATH="$src_dir/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
 
 ###################
 # Build the runtime

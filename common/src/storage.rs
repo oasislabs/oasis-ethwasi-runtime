@@ -4,10 +4,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use ekiden_runtime::storage::{KeyValue, StorageContext};
 use ethcore;
 use failure::{format_err, Fallible};
 use io_context::Context;
+use oasis_core_runtime::storage::{KeyValue, StorageContext};
 
 /// MKVS implementation which uses the thread-local MKVS provided by
 /// the `StorageContext`.

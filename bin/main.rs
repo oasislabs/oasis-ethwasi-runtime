@@ -1,12 +1,12 @@
 //! Oasis runtime entry point.
 extern crate oasis_runtime;
 
-extern crate ekiden_keymanager_client;
-extern crate ekiden_runtime;
 extern crate ethcore;
 extern crate ethereum_types;
 extern crate failure;
 extern crate io_context;
+extern crate oasis_core_keymanager_client;
+extern crate oasis_core_runtime;
 extern crate oasis_runtime_api;
 extern crate oasis_runtime_common;
 extern crate serde_bytes;
@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 use serde_bytes::ByteBuf;
 
-use ekiden_runtime::{
+use oasis_core_runtime::{
     common::{runtime::RuntimeId, version::Version},
     rak::RAK,
     register_runtime_txn_methods, version_from_cargo, Protocol, RpcDemux, RpcDispatcher,
@@ -37,7 +37,7 @@ fn main() {
         }
 
         // Create the key manager client.
-        let km_client = Arc::new(ekiden_keymanager_client::RemoteClient::new_runtime(
+        let km_client = Arc::new(oasis_core_keymanager_client::RemoteClient::new_runtime(
             RuntimeId::default(), // HACK: This is what's deployed.
             protocol.clone(),
             rak.clone(),
@@ -48,5 +48,5 @@ fn main() {
     };
 
     // Start the runtime.
-    ekiden_runtime::start_runtime(Some(Box::new(init)), version_from_cargo!());
+    oasis_core_runtime::start_runtime(Some(Box::new(init)), version_from_cargo!());
 }

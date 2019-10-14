@@ -34,11 +34,11 @@ mem = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 ## Common functionality between runtime and gateway
 oasis-runtime-common = { path = "../common" }
 
-## Ekiden client dependencies
+## Oasis Core client dependencies
 clap = "2.29.1"
-ekiden-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
-ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
 oasis-runtime-api = { path = "../api" }
 rand = "0.4"
 grpcio = "0.4.4"

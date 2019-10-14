@@ -21,8 +21,8 @@ source .buildkite/scripts/download_utils.sh
 
 # Create directory to put artifacts into.
 mkdir -p \
-    go/ekiden \
-    go/ekiden-net-runner \
+    go/oasis-node \
+    go/oasis-net-runner \
     go/developer-gateway \
     target/debug \
     target/x86_64-fortanix-unknown-sgx/debug
@@ -30,9 +30,9 @@ mkdir -p \
 ###########################################
 # Download artifacts from other pipelines
 ###########################################
-download_ekiden_node go/ekiden
-download_ekiden_net_runner go/ekiden-net-runner
-download_ekiden_runtime_loader target/debug
+download_oasis_node go/oasis-node
+download_oasis_net_runner go/oasis-net-runner
+download_oasis_core_runtime_loader target/debug
 download_keymanager_runtime target/debug
 download_keymanager_runtime_sgx target/x86_64-fortanix-unknown-sgx/debug
 download_developer_gateway go/developer-gateway

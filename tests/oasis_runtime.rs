@@ -7,12 +7,12 @@ extern crate hex;
 extern crate oasis_runtime;
 extern crate oasis_runtime_common;
 
-use ekiden_runtime::transaction::dispatcher::CheckOnlySuccess;
 use ethcore::{
     rlp,
     transaction::{Action, Transaction as EthcoreTransaction},
 };
 use ethereum_types::{H256, U256};
+use oasis_core_runtime::transaction::dispatcher::CheckOnlySuccess;
 use oasis_runtime::{methods, test};
 
 #[test]

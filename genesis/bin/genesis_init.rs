@@ -2,21 +2,21 @@
 #![deny(warnings)]
 
 extern crate clap;
-extern crate ekiden_runtime;
 extern crate ethcore;
 extern crate io_context;
+extern crate oasis_core_runtime;
 extern crate oasis_runtime_common;
 extern crate serde_json;
 
 use std::{fs::File, sync::Arc};
 
 use clap::{crate_authors, crate_version, App, Arg};
-use ekiden_runtime::storage::{
+use ethcore::spec::Spec;
+use io_context::Context;
+use oasis_core_runtime::storage::{
     mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
     StorageContext,
 };
-use ethcore::spec::Spec;
-use io_context::Context;
 use oasis_runtime_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
