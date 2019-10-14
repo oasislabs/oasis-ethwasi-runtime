@@ -6,18 +6,9 @@
 # to other pipelines that will be triggered daily.
 
 steps:
-  - label: "Trigger e2e tests"
+  - label: Trigger benchmark build
     branches: master
-    trigger: runtime-ethereum-e2e-tests
-    async: true
-    build:
-      message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: "${BUILDKITE_BRANCH}"
-
-  - label: "Trigger benchmark run"
-    branches: master
-    trigger: runtime-ethereum-benchmarks
+    trigger: oasis-runtime-benchmarks-build-image-context
     async: true
     build:
       message: "${BUILDKITE_MESSAGE}"

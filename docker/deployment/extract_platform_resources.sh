@@ -15,7 +15,7 @@ base_image_tag=${2:-latest}
 
 mkdir -p "$dst_dir"
 
-container=$(docker create "oasislabs/testnet:$base_image_tag")
+container=$(docker create "oasislabs/oasis-node:$base_image_tag")
 trap "docker rm $container" EXIT
 
 docker cp "$container:/oasis/lib/oasis-core-keymanager-runtime.sgxs" "$dst_dir"
