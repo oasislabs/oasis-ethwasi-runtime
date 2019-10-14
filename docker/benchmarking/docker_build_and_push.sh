@@ -38,8 +38,8 @@ set +x
 # history, so we intentionally disable printing commands
 # with set +x.
 docker build --pull --rm --force-rm \
-  --build-arg RUNTIME_ETHEREUM_COMMIT_SHA=${git_commit_sha} \
-  --build-arg RUNTIME_ETHEREUM_BUILD_IMAGE_TAG=${docker_image_tag} \
+  --build-arg OASIS_RUNTIME_COMMIT_SHA=${git_commit_sha} \
+  --build-arg OASIS_RUNTIME_BUILD_IMAGE_TAG=${docker_image_tag} \
   --build-arg OASISLABS_RUNTIME_BASE_DOCKER_IMAGE_TAG=${base_image_tag} \
   -t ${docker_image_name}:${docker_image_tag} \
   --file=docker/benchmarking/Dockerfile \

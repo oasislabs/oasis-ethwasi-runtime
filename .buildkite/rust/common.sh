@@ -28,13 +28,3 @@ if [ -z ${RUSTLINT+x} ]; then
 
     echo "Using RUSTFLAGS="$RUSTFLAGS
 fi
-
-########################################
-# Add SSH identity so that `cargo build`
-# can successfully download dependencies
-# from private github repos.
-########################################
-eval `ssh-agent -s`
-trap_add "kill ${SSH_AGENT_PID}" EXIT
-
-ssh-add || true

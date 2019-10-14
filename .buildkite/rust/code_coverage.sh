@@ -21,7 +21,7 @@ source .buildkite/rust/common.sh
 ###############
 # Optional args
 ###############
-path_to_coveralls_api_token=${1:-~/.coveralls/runtime_ethereum_api_token}
+path_to_coveralls_api_token=${1:-~/.coveralls/oasis_runtime_api_token}
 
 ############
 # Local vars
@@ -38,6 +38,7 @@ set -x
 # GitHub and the /root/.gitconfig file transforms
 # https to ssh when pulling from GitHub.
 #################################################
+mkdir ~/.ssh/
 ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 
 # We need to use a separate target dir for tarpaulin as it otherwise clears
