@@ -1,6 +1,6 @@
-ARG OASISLABS_EKIDEN_RUNTIME_ETHEREUM_BASE_DOCKER_IMAGE_TAG=latest-testing
+ARG OASISLABS_OASIS_RUNTIME_BASE_DOCKER_IMAGE_TAG=latest-testing
 
-FROM oasislabs/ekiden-runtime-ethereum:${OASISLABS_EKIDEN_RUNTIME_ETHEREUM_BASE_DOCKER_IMAGE_TAG}
+FROM oasislabs/oasis-runtime:${OASISLABS_OASIS_RUNTIME_BASE_DOCKER_IMAGE_TAG}
 
 COPY docker/all-in-one/service /etc/service
 COPY configs/single_node /var/ekiden/all-in-one-sw

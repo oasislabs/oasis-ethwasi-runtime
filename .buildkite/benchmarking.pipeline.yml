@@ -8,7 +8,6 @@ docker_plugin: &docker_plugin_configuration
     workdir: /workdir
     volumes:
       - .:/workdir
-      - /var/lib/buildkite-agent/.ssh:/root/.ssh
       - /var/lib/buildkite-agent/.coveralls:/root/.coveralls
       - /var/lib/buildkite-agent/.buildkite:/root/.buildkite
       # Shared Rust target artifacts cache.
@@ -24,7 +23,7 @@ docker_plugin: &docker_plugin_configuration
       - "CARGO_TARGET_DIR=/workdir/target"
       - "CARGO_INSTALL_ROOT=/root/.cargo"
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
-      - "GOPROXY=https://athens.ops.oasiscloud.io/"
+      - "GOPROXY=https://proxy.golang.org/"
     propagate-environment: true
     unconfined: true
 
@@ -32,9 +31,6 @@ steps:
   - label: Build artifacts
     branches: master
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - eval $(ssh-agent -s)
-      - ssh-add
       - .buildkite/scripts/build_benchmarking_context.sh context.tar.gz
     artifact_paths:
       - context.tar.gz
