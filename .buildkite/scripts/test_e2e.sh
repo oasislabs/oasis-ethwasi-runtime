@@ -230,8 +230,8 @@ install_e2e_tests() {
 scenario_e2e_tests() {
     scenario_basic $*
 
-    echo "Starting the developer-gateway"
-    ./go/developer-gateway/developer-gateway \
+    echo "Starting the oasis-gateway"
+    ./go/oasis-gateway/oasis-gateway \
         --config.path configs/developer-gateway/testing.toml \
         --bind_public.max_body_bytes 16777216 \
         --bind_public.http_write_timeout_ms 100000 &

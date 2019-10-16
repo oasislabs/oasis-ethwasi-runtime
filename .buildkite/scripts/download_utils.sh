@@ -55,8 +55,8 @@ download_runtime_sgx() {
 	.buildkite/scripts/download_artifact.sh oasis-runtime $RUNTIME_BRANCH "Build runtime" oasis-runtime.sgxs $out_dir
 }
 
-download_developer_gateway() {
+download_oasis_gateway() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh developer-gateway $DEVELOPER_GATEWAY_BRANCH "Build" developer-gateway $out_dir
-	chmod +x $out_dir/developer-gateway
+	.buildkite/scripts/download_artifact.sh oasis-gateway $OASIS_GATEWAY_BRANCH "Build" oasis-gateway $out_dir
+	chmod +x $out_dir/oasis-gateway
 }
