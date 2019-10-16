@@ -9,7 +9,7 @@ oasis_node="${OASIS_CORE_ROOT_PATH}/go/oasis-node/oasis-node"
 oasis_runner="${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner/oasis-net-runner"
 runtime_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-runtime"
 runtime_loader="${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-runtime-loader"
-runtime_genesis="${GENESIS_ROOT_PATH}/ekiden_genesis_testing.json"
+runtime_genesis="${GENESIS_ROOT_PATH}/oasis_genesis_testing.json"
 keymanager_binary="${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-keymanager-runtime"
 web3_gateway="${RUNTIME_CARGO_TARGET_DIR}/debug/gateway"
 
