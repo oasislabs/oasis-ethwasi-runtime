@@ -23,7 +23,7 @@ source .buildkite/scripts/download_utils.sh
 mkdir -p \
     go/oasis-node \
     go/oasis-net-runner \
-    go/developer-gateway \
+    go/oasis-gateway \
     target/debug \
     target/x86_64-fortanix-unknown-sgx/debug
 
@@ -35,7 +35,7 @@ download_oasis_net_runner go/oasis-net-runner
 download_oasis_core_runtime_loader target/debug
 download_keymanager_runtime target/debug
 download_keymanager_runtime_sgx target/x86_64-fortanix-unknown-sgx/debug
-download_developer_gateway go/developer-gateway
+download_oasis_gateway go/oasis-gateway
 
 ########################
 # Download oasis-runtime

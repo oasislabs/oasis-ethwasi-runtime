@@ -7,13 +7,18 @@
 # test_e2e.sh [-w <workdir>] [-t <test-name>]
 ############################################################
 
-
-# Temporary test base directory.
-TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-runtime-e2e-XXXXXXXXXX)})
-
 # Defaults.
 WORKDIR=$(pwd)
 TEST_FILTER=""
+
+# We need a directory in the workdir so that Buildkite can fetch artifacts.
+if [[ ! -z ${BUILDKITE} ]]; then
+    TEST_BASE_DIR="${WORKDIR}/e2e"
+    mkdir -p ${TEST_BASE_DIR}
+fi
+
+# Temporary test base directory.
+TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-runtime-e2e-XXXXXXXXXX)})
 
 # Path to Oasis Core root.
 OASIS_CORE_ROOT_PATH=${OASIS_CORE_ROOT_PATH:-${WORKDIR}}
@@ -225,8 +230,8 @@ install_e2e_tests() {
 scenario_e2e_tests() {
     scenario_basic $*
 
-    echo "Starting the developer-gateway"
-    ./go/developer-gateway/developer-gateway \
+    echo "Starting the oasis-gateway"
+    ./go/oasis-gateway/oasis-gateway \
         --config.path configs/developer-gateway/testing.toml \
         --bind_public.max_body_bytes 16777216 \
         --bind_public.http_write_timeout_ms 100000 &
