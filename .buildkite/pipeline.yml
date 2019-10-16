@@ -127,6 +127,8 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - rm -rf tests/rpc-tests
       - .buildkite/scripts/test_e2e.sh -t rpc-tests
+    artifact_paths:
+      - e2e/**/*.log
     timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2
     retry:
@@ -140,6 +142,8 @@ steps:
       - .buildkite/scripts/download_common_artifacts.sh
       - rm -rf tests/e2e-tests
       - .buildkite/scripts/test_e2e.sh -t e2e-tests
+    artifact_paths:
+      - e2e/**/*.log
     timeout_in_minutes: 25
     # use default: exit-status: "*" and retry limit of 2
     retry:

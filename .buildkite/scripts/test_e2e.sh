@@ -7,13 +7,18 @@
 # test_e2e.sh [-w <workdir>] [-t <test-name>]
 ############################################################
 
-
-# Temporary test base directory.
-TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-runtime-e2e-XXXXXXXXXX)})
-
 # Defaults.
 WORKDIR=$(pwd)
 TEST_FILTER=""
+
+# We need a directory in the workdir so that Buildkite can fetch artifacts.
+if [[ ! -z ${BUILDKITE} ]]; then
+    TEST_BASE_DIR="${WORKDIR}/e2e"
+    mkdir -p ${TEST_BASE_DIR}
+fi
+
+# Temporary test base directory.
+TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-runtime-e2e-XXXXXXXXXX)})
 
 # Path to Oasis Core root.
 OASIS_CORE_ROOT_PATH=${OASIS_CORE_ROOT_PATH:-${WORKDIR}}
