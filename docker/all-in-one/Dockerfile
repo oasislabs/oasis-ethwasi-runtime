@@ -1,6 +1,6 @@
-ARG OASISLABS_OASIS_RUNTIME_BASE_DOCKER_IMAGE_TAG=latest-testing
+ARG OASIS_RUNTIME_BASE_DOCKER_IMAGE_TAG=master-testing
 
-FROM oasislabs/oasis-runtime:${OASISLABS_OASIS_RUNTIME_BASE_DOCKER_IMAGE_TAG}
+FROM oasislabs/oasis-runtime:${OASIS_RUNTIME_BASE_DOCKER_IMAGE_TAG}
 
 COPY docker/all-in-one/service /etc/service
 COPY configs/single_node /var/ekiden/all-in-one-sw
