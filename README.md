@@ -1,6 +1,6 @@
 # Oasis runtime
 
-[![Build status](https://badge.buildkite.com/e1de50bd91d01f6aaf2b9fba113ad48b0118459d7d2c5dd2bd.svg?branch=master)](https://buildkite.com/oasislabs/oasis-runtime)
+[![Build status](https://badge.buildkite.com/0b4e493086daa3fc34c604dfce6597c56da35cfd093bdd943d.svg)](https://buildkite.com/oasislabs/oasis-runtime-ci)
 [![Coverage Status](https://coveralls.io/repos/github/oasislabs/oasis-runtime/badge.svg?branch=master&t=shmqoK)](https://coveralls.io/github/oasislabs/oasis-runtime?branch=master)
 
 ## Contributing
