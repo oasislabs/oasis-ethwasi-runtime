@@ -70,7 +70,11 @@ cargo tarpaulin \
   --out Xml \
   --coveralls ${coveralls_api_token} \
   --features test \
-  -v
+  -v \
+  # Revert to pre-0.9 behaviour
+  # https://github.com/xd009642/tarpaulin/issues/264
+  -- --test-threads=1
+
 set -x
 
 # Error if coverage results file does not exist.
