@@ -21,7 +21,7 @@ symlink_artifact() {
     local root_path=$3
     local skip_sanity_check=${4:-"0"}
 
-    local artifact_src_path="$(realpath "${src_path}/${binary_path}")"
+    local artifact_src_path="$(realpath -m "${src_path}/${binary_path}")"
     local artifact_dst_path="${root_path}/${binary_path}"
 
     # Sanity check the source artifact.
