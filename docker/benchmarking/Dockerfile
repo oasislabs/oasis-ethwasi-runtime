@@ -8,5 +8,5 @@ ARG OASIS_RUNTIME_BUILD_IMAGE_TAG
 LABEL com.oasislabs.oasis-runtime-commit-sha="${OASIS_RUNTIME_COMMIT_SHA}"
 LABEL com.oasislabs.oasis-runtime-build-image-tag="${OASIS_RUNTIME_BUILD_IMAGE_TAG}"
 
-COPY target/release/genesis-playback /ekiden/bin/
-COPY benchmark/benchmark /ekiden/bin/
+COPY target/release/genesis-playback /oasis/bin/
+COPY benchmark/benchmark /oasis/bin/
