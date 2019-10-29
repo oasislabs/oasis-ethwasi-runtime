@@ -1,0 +1,4 @@
+benchmark
+
+# abigen-generated Go wrappers
+contracts/**/*.go

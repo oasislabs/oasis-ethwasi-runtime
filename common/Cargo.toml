@@ -1,0 +1,29 @@
+[package]
+name = "runtime-ethereum-common"
+version = "0.3.0"
+authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
+
+[dependencies]
+# Ekiden.
+ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/ekiden", branch = "master" }
+
+# Parity.
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
+hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+vm = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+
+# Others.
+elastic-array = "0.10"
+failure = "0.1.5"
+io-context = "0.2.0"
+lazy_static = "1.3.0"
+zeroize = "0.6"
+
+[features]
+default = []
+benchmarking = []
+production-genesis = []
+test = []
