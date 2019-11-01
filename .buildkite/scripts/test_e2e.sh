@@ -260,7 +260,7 @@ run_test \
     name="rpc-tests"
 
 # E2E tests from e2e-tests repository.
-run_test \
+E2E_TESTS_BRANCH=update-oasisjs run_test \
     pre_init_hook=install_e2e_tests \
     scenario=scenario_e2e_tests \
     name="e2e-tests"
