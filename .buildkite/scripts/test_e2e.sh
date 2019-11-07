@@ -123,7 +123,7 @@ scenario_basic() {
         --net.runtime.loader ${OASIS_CORE_RUNTIME_LOADER} \
         --net.runtime.genesis_state ${RUNTIME_GENESIS} \
         --net.keymanager.binary ${OASIS_CORE_KM_BINARY} \
-        --net.epochtime_backend tendermint_mock \
+        --net.epochtime_mock \
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
 
