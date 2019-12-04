@@ -67,7 +67,7 @@ fi
 echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
 mkdir -p $src_dir/target/x86_64-fortanix-unknown-sgx/debug
 .buildkite/scripts/download_artifact.sh \
-    ekiden \
+    oasis-core-ci \
     $EKIDEN_BRANCH \
     "Build key manager runtime" \
     ekiden-keymanager-runtime.sgxs \

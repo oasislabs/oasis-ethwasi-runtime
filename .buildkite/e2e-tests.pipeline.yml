@@ -29,7 +29,6 @@ docker_plugin: &docker_plugin_configuration
 steps:
   - label: Celer tests
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh celer
     timeout_in_minutes: 25
     # use default: exit-status: "*" and retry limit of 2
@@ -42,7 +41,6 @@ steps:
 
   - label: Augur tests
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/run_dapp_test.sh augur
     timeout_in_minutes: 20
     # use default: exit-status: "*" and retry limit of 2

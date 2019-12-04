@@ -31,7 +31,6 @@ steps:
   - label: Build artifacts
     branches: master devnet2
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
       - ssh-add
       - .buildkite/scripts/build_benchmarking_context.sh context.tar.gz
