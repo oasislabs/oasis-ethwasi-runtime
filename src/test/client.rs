@@ -2,15 +2,6 @@
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use byteorder::{BigEndian, ByteOrder};
-use elastic_array::ElasticArray128;
-use ethcore::{
-    executive::contract_address,
-    rlp,
-    transaction::{Action, Transaction as EthcoreTransaction},
-    vm::{ConfidentialCtx as EthConfidentialCtx, OASIS_HEADER_PREFIX},
-};
-use ethereum_types::{Address, H256, U256};
-use ethkey::{KeyPair, Secret};
 use ekiden_keymanager_client::{self, ContractId, ContractKey, KeyManagerClient};
 use ekiden_runtime::{
     common::{
@@ -28,6 +19,15 @@ use ekiden_runtime::{
     },
     transaction::{dispatcher::BatchHandler, Context as TxnContext},
 };
+use elastic_array::ElasticArray128;
+use ethcore::{
+    executive::contract_address,
+    rlp,
+    transaction::{Action, Transaction as EthcoreTransaction},
+    vm::{ConfidentialCtx as EthConfidentialCtx, OASIS_HEADER_PREFIX},
+};
+use ethereum_types::{Address, H256, U256};
+use ethkey::{KeyPair, Secret};
 
 use io_context::Context as IoContext;
 use keccak_hash::keccak;
@@ -62,7 +62,7 @@ pub struct Client {
     /// In-memory MKVS.
     pub mkvs: Option<UrkelTree>,
     /// Key manager client.
-    pub km_client: Arc<KeyManagerClient>,
+    pub km_client: Arc<dyn KeyManagerClient>,
     /// Results.
     pub results: HashMap<H256, ExecutionResult>,
 }
@@ -70,7 +70,9 @@ pub struct Client {
 impl Client {
     pub fn new() -> Self {
         let km_client = Arc::new(ekiden_keymanager_client::mock::MockClient::new());
-        let mut mkvs = UrkelTree::make().new(Box::new(NoopReadSyncer {}));
+        let mut mkvs = UrkelTree::make()
+            .new(IoContext::background(), Box::new(NoopReadSyncer {}))
+            .unwrap();
 
         // Initialize genesis.
         let untrusted_local = Arc::new(MemoryKeyValue::new());
