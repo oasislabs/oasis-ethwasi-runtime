@@ -8,10 +8,10 @@ extern crate filebuffer;
 extern crate hex;
 #[macro_use]
 extern crate serde_derive;
-extern crate grpcio;
-extern crate io_context;
 extern crate ekiden_client;
 extern crate ekiden_runtime;
+extern crate grpcio;
+extern crate io_context;
 extern crate runtime_ethereum_common;
 extern crate serde_bytes;
 extern crate serde_json;
@@ -19,10 +19,6 @@ extern crate serde_json;
 use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
 
 use clap::{crate_authors, crate_version, value_t_or_exit, App, Arg};
-use ethcore::{spec::Spec, state::State};
-use ethereum_types::{Address, H256, U256};
-use grpcio::EnvBuilder;
-use io_context::Context;
 use ekiden_client::{transaction::api::storage, Node};
 use ekiden_runtime::{
     common::{crypto::hash::Hash, roothash},
@@ -31,6 +27,10 @@ use ekiden_runtime::{
         StorageContext,
     },
 };
+use ethcore::{spec::Spec, state::State};
+use ethereum_types::{Address, H256, U256};
+use grpcio::EnvBuilder;
+use io_context::Context;
 use runtime_ethereum_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
@@ -197,7 +197,8 @@ fn main() {
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = UrkelTree::make()
         .with_capacity(0, 0)
-        .new(Box::new(NoopReadSyncer {}));
+        .new(Context::background(), Box::new(NoopReadSyncer {}))
+        .unwrap();
 
     // Load Ethereum genesis state.
     let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");

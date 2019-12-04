@@ -2,21 +2,21 @@
 #![deny(warnings)]
 
 extern crate clap;
+extern crate ekiden_runtime;
 extern crate ethcore;
 extern crate io_context;
-extern crate ekiden_runtime;
 extern crate runtime_ethereum_common;
 extern crate serde_json;
 
 use std::{fs::File, sync::Arc};
 
 use clap::{crate_authors, crate_version, App, Arg};
-use ethcore::spec::Spec;
-use io_context::Context;
 use ekiden_runtime::storage::{
     mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
     StorageContext,
 };
+use ethcore::spec::Spec;
+use io_context::Context;
 use runtime_ethereum_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
@@ -48,7 +48,8 @@ fn main() {
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = UrkelTree::make()
         .with_capacity(0, 0)
-        .new(Box::new(NoopReadSyncer {}));
+        .new(Context::background(), Box::new(NoopReadSyncer {}))
+        .unwrap();
 
     StorageContext::enter(&mut mkvs, untrusted_local, || {
         spec.ensure_db_good(
