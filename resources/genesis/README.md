@@ -4,7 +4,7 @@ This directory contains the genesis blocks which are used by the runtime. There
 are two representations of the genesis information:
 
 * The Ethereum chain specification file.
-* The Ekiden runtime genesis state (`ekiden_` prefix). These are automatically
+* The Oasis runtime genesis state (`oasis_` prefix). These are automatically
   generated from the corresponding Ethereum chain specification files by running
   the `make genesis-update` in the top-level directory.
 
@@ -17,9 +17,9 @@ with the `production-genesis` feature enabled.*
 
 The genesis block contains the following accounts:
 
-* `abc6fdb3c0e53552acf5eb4061b54e4e38962dc6` is the account for the private faucet
-  that is used to fund all other accounts. The private key is stored securely and
-  is only available to the [private faucet application](https://github.com/oasislabs/private-faucet).
+* `abc6fdb3c0e53552acf5eb4061b54e4e38962dc6` is the account for the Devnet private
+  faucet that is used to fund all other accounts. The private key is stored securely
+  and is only available to the Devnet private faucet.
 
 ## `genesis_testing.json` - Testing-only genesis block
 

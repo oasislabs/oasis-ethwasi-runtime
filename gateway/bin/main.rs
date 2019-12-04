@@ -22,11 +22,11 @@ extern crate fdlimit;
 extern crate signal_hook;
 #[macro_use]
 extern crate clap;
-extern crate ekiden_runtime;
 extern crate failure;
 extern crate log;
+extern crate oasis_core_runtime;
+extern crate oasis_runtime_common;
 extern crate prometheus;
-extern crate runtime_ethereum_common;
 extern crate slog;
 extern crate web3_gateway;
 
@@ -39,12 +39,12 @@ use failure::Fallible;
 use fdlimit::raise_fd_limit;
 use slog::{error, info};
 
-use ekiden_runtime::common::logger::{get_logger, init_logger};
-use runtime_ethereum_common::MIN_GAS_PRICE_GWEI;
+use oasis_core_runtime::common::logger::{get_logger, init_logger};
+use oasis_runtime_common::MIN_GAS_PRICE_GWEI;
 use web3_gateway::util;
 
-const METRICS_MODE_PULL: &'static str = "pull";
-const METRICS_MODE_PUSH: &'static str = "push";
+const METRICS_MODE_PULL: &str = "pull";
+const METRICS_MODE_PUSH: &str = "push";
 
 fn main() -> Fallible<()> {
     // TODO: is this needed?
@@ -53,7 +53,7 @@ fn main() -> Fallible<()> {
 
     let gas_price = MIN_GAS_PRICE_GWEI.to_string();
 
-    let args = App::new("Ethereum Runtime Web3 Gateway")
+    let args = App::new("Oasis Runtime Web3 Gateway")
         .arg(
             Arg::with_name("runtime-id")
                 .long("runtime-id")
@@ -124,6 +124,13 @@ fn main() -> Fallible<()> {
                 .default_value("10")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("interface")
+                .long("interface")
+                .help("Interface address for HTTP and WebSocket servers.")
+                .default_value("127.0.0.1")
+                .takes_value(true),
+        )
         // Metrics.
         .arg(
             Arg::with_name("prometheus-mode")
@@ -180,6 +187,7 @@ fn main() -> Fallible<()> {
     let logger = get_logger("gateway/main");
 
     let num_threads = value_t!(args, "threads", usize)?;
+    let interface = value_t!(args, "interface", String)?;
     let http_port = value_t!(args, "http-port", u16)?;
     let ws_port = value_t!(args, "ws-port", u16)?;
     let ws_max_connections = value_t!(args, "ws-max-connections", usize)?;
@@ -218,6 +226,7 @@ fn main() -> Fallible<()> {
     let client = web3_gateway::start(
         args,
         pubsub_interval_secs,
+        &interface,
         http_port,
         num_threads,
         ws_port,

@@ -20,7 +20,6 @@
 
 use std::sync::{Arc, Weak};
 
-use ekiden_runtime::common::logger::get_logger;
 use ethcore::{
     filter::{Filter as EthFilter, TxEntry as EthTxEntry, TxFilter as EthTxFilter},
     ids::BlockId,
@@ -34,6 +33,7 @@ use jsonrpc_macros::{
 };
 use jsonrpc_pubsub::SubscriptionId;
 use lazy_static::lazy_static;
+use oasis_core_runtime::common::logger::get_logger;
 use parity_rpc::v1::{
     helpers::{errors, Subscribers},
     metadata::Metadata,
@@ -188,8 +188,6 @@ impl Listener for ChainNotificationHandler {
 
     fn notify_completed_transaction(&self, entry: &EthTxEntry, output: Vec<u8>) {
         for &(ref subscriber, ref filter) in self.tx_subscribers.read().values() {
-            let filter = filter.clone();
-
             if !filter.matches(entry) {
                 continue;
             }

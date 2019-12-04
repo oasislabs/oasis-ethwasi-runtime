@@ -46,12 +46,12 @@ extern crate slog;
 extern crate tokio;
 extern crate tokio_threadpool;
 
-extern crate ekiden_client;
-extern crate ekiden_keymanager_client;
-extern crate ekiden_runtime;
+extern crate oasis_core_client;
+extern crate oasis_core_keymanager_client;
+extern crate oasis_core_runtime;
 
-extern crate runtime_ethereum_api;
-extern crate runtime_ethereum_common;
+extern crate oasis_runtime_api;
+extern crate oasis_runtime_common;
 
 mod impls;
 mod informant;
@@ -68,12 +68,12 @@ pub mod util;
 use std::sync::Arc;
 
 use clap::{value_t_or_exit, ArgMatches};
-use ekiden_client::{create_txn_api_client, Node, TxnClient};
-use ekiden_runtime::common::runtime::RuntimeId;
 use ethereum_types::U256;
 use failure::Fallible;
 use grpcio::EnvBuilder;
-use runtime_ethereum_api::*;
+use oasis_core_client::{create_txn_api_client, Node, TxnClient};
+use oasis_core_runtime::common::runtime::RuntimeId;
+use oasis_runtime_api::*;
 use serde_bytes::ByteBuf;
 
 pub use self::run::RunningGateway;
@@ -85,6 +85,7 @@ with_api! {
 pub fn start(
     args: ArgMatches,
     pubsub_interval_secs: u64,
+    interface: &str,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -101,7 +102,7 @@ pub fn start(
     let txn_client = TxnClient::new(node.channel(), runtime_id, None);
     let client = EthereumRuntimeClient::new(txn_client);
     // TODO: Key manager MRENCLAVE.
-    let km_client = Arc::new(ekiden_keymanager_client::RemoteClient::new_grpc(
+    let km_client = Arc::new(oasis_core_keymanager_client::RemoteClient::new_grpc(
         runtime_id,
         None,
         node.channel(),
@@ -112,6 +113,7 @@ pub fn start(
         client,
         km_client,
         pubsub_interval_secs,
+        interface,
         http_port,
         num_threads,
         ws_port,

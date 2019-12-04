@@ -1,6 +1,6 @@
-use ekiden_runtime::runtime_api;
 use ethereum_types::{Address, Bloom, H256, U256};
 use failure::Fail;
+use oasis_core_runtime::runtime_api;
 use serde_derive::{Deserialize, Serialize};
 
 // used in runtime_api! macro
@@ -37,15 +37,17 @@ pub enum TransactionError {
     BlockGasLimitReached,
     #[fail(display = "duplicate transaction")]
     DuplicateTransaction,
+    #[fail(display = "execution failed: {}", message)]
+    ExecutionFailure { message: String },
     #[fail(display = "insufficient gas price")]
     GasPrice,
     #[fail(display = "requested gas greater than block gas limit")]
     TooMuchGas,
 }
 
-/// Name of the method which executes an ethereum transaction.
-pub const METHOD_ETH_TXN: &'static str = "ethereum_transaction";
+/// Name of the method which executes a transaction.
+pub const METHOD_TX: &'static str = "tx";
 
 runtime_api! {
-    pub fn ethereum_transaction(ByteBuf) -> ExecutionResult;
+    pub fn tx(ByteBuf) -> ExecutionResult;
 }

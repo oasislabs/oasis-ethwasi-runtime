@@ -16,8 +16,8 @@
 
 use std::{cmp::PartialEq, collections::HashSet, str::FromStr, sync::Arc};
 
-use ekiden_keymanager_client::KeyManagerClient;
 use jsonrpc_core::{self as core, MetaIoHandler};
+use oasis_core_keymanager_client::KeyManagerClient;
 use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
 use crate::{
@@ -102,7 +102,7 @@ impl FromStr for ApiSet {
                     apis.extend(ApiSet::UnsafeContext.list_apis());
                 }
                 // Remove the API
-                api if api.starts_with("-") => {
+                api if api.starts_with('-') => {
                     let api = api[1..].parse()?;
                     apis.remove(&api);
                 }
@@ -147,7 +147,7 @@ pub trait Dependencies {
 pub struct FullDependencies {
     pub translator: Arc<Translator>,
     pub broker: Arc<Broker>,
-    pub km_client: Arc<KeyManagerClient>,
+    pub km_client: Arc<dyn KeyManagerClient>,
     pub ws_address: Option<Host>,
 }
 
@@ -221,7 +221,7 @@ impl Dependencies for FullDependencies {
 impl ApiSet {
     pub fn list_apis(&self) -> HashSet<Api> {
         let public_list: HashSet<Api> = [Api::Web3, Api::Net, Api::Eth, Api::EthPubSub, Api::Oasis]
-            .into_iter()
+            .iter()
             .cloned()
             .collect();
 

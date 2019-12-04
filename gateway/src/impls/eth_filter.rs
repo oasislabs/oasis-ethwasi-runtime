@@ -18,7 +18,6 @@
 
 use std::sync::Arc;
 
-use ekiden_runtime::common::logger::get_logger;
 use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use failure::format_err;
 use jsonrpc_core::{
@@ -26,6 +25,7 @@ use jsonrpc_core::{
     BoxFuture, Result,
 };
 use lazy_static::lazy_static;
+use oasis_core_runtime::common::logger::get_logger;
 use parity_rpc::v1::{
     helpers::{errors, limit_logs, PollFilter, PollManager},
     traits::EthFilter,
@@ -148,7 +148,7 @@ impl EthFilter for EthFilterClient {
                                     .map(|blk| RpcH256::from(blk.hash()))
                                     .collect()
                                     .map_err(jsonrpc_error)
-                                    .map(|hashes| FilterChanges::Hashes(hashes)),
+                                    .map(FilterChanges::Hashes),
                             );
 
                             *number = blk.number_u64();

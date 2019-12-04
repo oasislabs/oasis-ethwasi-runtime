@@ -8,9 +8,9 @@ use std::{
     time::Duration,
 };
 
-use ekiden_runtime::common::logger::get_logger;
 use ethcore::filter::TxEntry;
 use futures::prelude::*;
+use oasis_core_runtime::common::logger::get_logger;
 use slog::{error, Logger};
 use tokio::timer::Interval;
 
@@ -29,7 +29,7 @@ struct Inner {
     logger: Logger,
     translator: Arc<Translator>,
     last_notified_block: AtomicU64,
-    listeners: RwLock<Vec<Weak<Listener>>>,
+    listeners: RwLock<Vec<Weak<dyn Listener>>>,
 }
 
 pub struct Broker {
@@ -48,7 +48,7 @@ impl Broker {
         }
     }
 
-    pub fn add_listener(&self, listener: Weak<Listener>) {
+    pub fn add_listener(&self, listener: Weak<dyn Listener>) {
         let mut listeners = self.inner.listeners.write().unwrap();
         listeners.push(listener);
     }
