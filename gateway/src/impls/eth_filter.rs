@@ -25,7 +25,7 @@ use jsonrpc_core::{
     BoxFuture, Result,
 };
 use lazy_static::lazy_static;
-use oasis_core_runtime::common::logger::get_logger;
+use ekiden_runtime::common::logger::get_logger;
 use parity_rpc::v1::{
     helpers::{errors, limit_logs, PollFilter, PollManager},
     traits::EthFilter,

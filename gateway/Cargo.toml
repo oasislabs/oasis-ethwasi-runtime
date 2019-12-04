@@ -32,14 +32,14 @@ keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "eki
 mem = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 
 ## Common functionality between runtime and gateway
-oasis-runtime-common = { path = "../common" }
+runtime-ethereum-common = { path = "../common" }
 
 ## Oasis Core client dependencies
 clap = "2.29.1"
-oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-runtime-api = { path = "../api" }
+ekiden-client = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
+ekiden-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
+runtime-ethereum-api = { path = "../api" }
 rand = "0.4"
 grpcio = "0.4.4"
 tokio = "0.1.17"
@@ -56,8 +56,8 @@ hex = "0.3"
 [features]
 default = ["pubsub"]
 pubsub = []
-production-genesis = ["oasis-runtime-common/production-genesis"]
-benchmarking = ["oasis-runtime-common/benchmarking"]
+production-genesis = ["runtime-ethereum-common/production-genesis"]
+benchmarking = ["runtime-ethereum-common/benchmarking"]
 
 [[bin]]
 name = "gateway"

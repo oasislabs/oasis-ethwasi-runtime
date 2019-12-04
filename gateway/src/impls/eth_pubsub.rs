@@ -33,7 +33,7 @@ use jsonrpc_macros::{
 };
 use jsonrpc_pubsub::SubscriptionId;
 use lazy_static::lazy_static;
-use oasis_core_runtime::common::logger::get_logger;
+use ekiden_runtime::common::logger::get_logger;
 use parity_rpc::v1::{
     helpers::{errors, Subscribers},
     metadata::Metadata,

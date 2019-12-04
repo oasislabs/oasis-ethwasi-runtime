@@ -5,8 +5,8 @@ use ethereum_types::{Address, H256};
 use failure::ResultExt;
 use io_context::Context;
 use keccak_hash::keccak;
-use oasis_core_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
-use oasis_core_runtime::{
+use ekiden_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
+use ekiden_runtime::{
     common::crypto::{
         hash::Hash,
         mrae::{
@@ -297,7 +297,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
 
 #[cfg(test)]
 mod tests {
-    use oasis_core_keymanager_client::{self, ContractKey, PrivateKey, PublicKey, StateKey};
+    use ekiden_keymanager_client::{self, ContractKey, PrivateKey, PublicKey, StateKey};
 
     use super::*;
 
@@ -306,7 +306,7 @@ mod tests {
         let ctx = ConfidentialCtx::new(
             H256::default(),
             Context::background().freeze(),
-            Arc::new(oasis_core_keymanager_client::mock::MockClient::new()),
+            Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
         );
         let res = ctx.decrypt(Vec::new());
 
@@ -333,7 +333,7 @@ mod tests {
             next_storage_nonce: Some(nonce),
             // No storage encryption, so don't need a Deoxys-II instance.
             d2: None,
-            key_manager: Arc::new(oasis_core_keymanager_client::mock::MockClient::new()),
+            key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
             activated: true,
         };
@@ -364,7 +364,7 @@ mod tests {
                 next_storage_nonce: None,
                 // No storage encryption, so don't need a Deoxys-II instance.
                 d2: None,
-                key_manager: Arc::new(oasis_core_keymanager_client::mock::MockClient::new()),
+                key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
                 activated: true,
             }
@@ -380,7 +380,7 @@ mod tests {
                 next_storage_nonce: None,
                 // No storage encryption, so don't need a Deoxys-II instance.
                 d2: None,
-                key_manager: Arc::new(oasis_core_keymanager_client::mock::MockClient::new()),
+                key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
                 io_ctx: Context::background().freeze(),
                 activated: false,
             }
@@ -406,7 +406,7 @@ mod tests {
             next_storage_nonce: None,
             // No storage encryption, so don't need a Deoxys-II instance.
             d2: None,
-            key_manager: Arc::new(oasis_core_keymanager_client::mock::MockClient::new()),
+            key_manager: Arc::new(ekiden_keymanager_client::mock::MockClient::new()),
             io_ctx: Context::background().freeze(),
             activated: false,
         };

@@ -1,4 +1,8 @@
 //! Methods exported to Ekiden clients.
+use ekiden_runtime::{
+    runtime_context,
+    transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
+};
 use ethcore::{
     rlp,
     transaction::{SignedTransaction, UnverifiedTransaction},
@@ -6,13 +10,9 @@ use ethcore::{
 };
 use ethereum_types::U256;
 use failure::Fallible;
-use oasis_core_runtime::{
-    runtime_context,
-    transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
-};
-use oasis_runtime_api::{ExecutionResult, LogEntry, TransactionError};
+use runtime_ethereum_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
-use oasis_runtime_common::{
+use runtime_ethereum_common::{
     genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS,
     TAG_ETH_TX_HASH,
 };
@@ -55,7 +55,7 @@ pub mod execute {
 
         // If this is a check txn request, return success.
         if ctx.check_only {
-            return Err(CheckOnlySuccess::default().into());
+            return Err(CheckOnlySuccess.into());
         }
 
         let ectx = runtime_context!(ctx, BlockContext);

@@ -6,8 +6,8 @@
 use std::convert::TryInto;
 
 use failure::{format_err, Fallible, ResultExt};
-use oasis_core_keymanager_client::{PrivateKey, PublicKey};
-use oasis_core_runtime::common::crypto::mrae::{
+use ekiden_keymanager_client::{PrivateKey, PublicKey};
+use ekiden_runtime::common::crypto::mrae::{
     deoxysii,
     nonce::{Nonce, NONCE_SIZE},
 };

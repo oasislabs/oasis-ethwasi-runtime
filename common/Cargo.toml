@@ -1,12 +1,12 @@
 [package]
-name = "oasis-runtime-common"
+name = "runtime-ethereum-common"
 version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 # Oasis Core.
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
 
 # Parity.
 ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }

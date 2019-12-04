@@ -1,5 +1,5 @@
 [package]
-name = "oasis-runtime"
+name = "runtime-ethereum"
 version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 edition = "2018"
@@ -10,17 +10,17 @@ stack-size = 2097152
 threads = 2
 
 [[bin]]
-name = "oasis-runtime"
+name = "runtime-ethereum"
 path ="bin/main.rs"
 
 [dependencies]
 # Internal.
-oasis-runtime-api = { path = "./api" }
-oasis-runtime-common = { path = "./common" }
+runtime-ethereum-api = { path = "./api" }
+runtime-ethereum-common = { path = "./common" }
 
 # Oasis Core.
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
+ekiden-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
 
 # Parity.
 common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
@@ -42,7 +42,7 @@ io-context = "0.2.0"
 slog = "2.4.1"
 
 [build-dependencies]
-oasis-core-tools = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+ekiden-tools = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
 
 [dev-dependencies]
 assert_matches = "1.3.0"
@@ -54,9 +54,9 @@ default = ["confidential"]
 confidential = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
-test = ["oasis-runtime-common/test"]
-benchmarking = ["oasis-runtime-common/benchmarking"]
-production-genesis = ["oasis-runtime-common/production-genesis"]
+test = ["runtime-ethereum-common/test"]
+benchmarking = ["runtime-ethereum-common/benchmarking"]
+production-genesis = ["runtime-ethereum-common/production-genesis"]
 
 [profile.release]
 panic = "abort"

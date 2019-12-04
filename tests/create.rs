@@ -1,10 +1,10 @@
 extern crate ethabi;
-extern crate oasis_runtime;
+extern crate runtime_ethereum;
 
 mod contracts;
 
 use ethereum_types::{Address, U256};
-use oasis_runtime::test;
+use runtime_ethereum::test;
 
 /// Deploys a confidential contract from within a confidential
 /// contract and sets storage on that deploy.

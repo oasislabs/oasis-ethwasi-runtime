@@ -4,13 +4,13 @@ use std::{collections::HashSet, sync::Arc};
 use ethcore::{self, state::State, vm::EnvInfo};
 use ethereum_types::{H256, U256};
 use io_context::Context as IoContext;
-use oasis_core_keymanager_client::KeyManagerClient;
-use oasis_core_runtime::{
+use ekiden_keymanager_client::KeyManagerClient;
+use ekiden_runtime::{
     common::logger::get_logger,
     runtime_context,
     transaction::{dispatcher::BatchHandler, Context as TxnContext},
 };
-use oasis_runtime_common::{
+use runtime_ethereum_common::{
     confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
 };
 use slog::{info, Logger};

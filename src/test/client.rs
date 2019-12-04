@@ -1,4 +1,4 @@
-//! Test client to interact with an oasis-runtime blockchain.
+//! Test client to interact with an runtime-ethereum blockchain.
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use byteorder::{BigEndian, ByteOrder};
@@ -11,8 +11,8 @@ use ethcore::{
 };
 use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair, Secret};
-use oasis_core_keymanager_client::{self, ContractId, ContractKey, KeyManagerClient};
-use oasis_core_runtime::{
+use ekiden_keymanager_client::{self, ContractId, ContractKey, KeyManagerClient};
+use ekiden_runtime::{
     common::{
         crypto::{
             hash::Hash,
@@ -31,8 +31,8 @@ use oasis_core_runtime::{
 
 use io_context::Context as IoContext;
 use keccak_hash::keccak;
-use oasis_runtime_api::ExecutionResult;
-use oasis_runtime_common::{
+use runtime_ethereum_api::ExecutionResult;
+use runtime_ethereum_common::{
     confidential::ConfidentialCtx,
     genesis,
     parity::NullBackend,
@@ -69,7 +69,7 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> Self {
-        let km_client = Arc::new(oasis_core_keymanager_client::mock::MockClient::new());
+        let km_client = Arc::new(ekiden_keymanager_client::mock::MockClient::new());
         let mut mkvs = UrkelTree::make().new(Box::new(NoopReadSyncer {}));
 
         // Initialize genesis.

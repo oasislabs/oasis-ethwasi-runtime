@@ -55,7 +55,7 @@ set -u
 if [ ! -x ${CARGO_INSTALL_ROOT}/bin/cargo-elf2sgxs ]; then
     cargo install \
         --force \
-        --git https://github.com/oasislabs/ekiden \
+        --git https://github.com/oasislabs/oasis-core \
         --branch $EKIDEN_BRANCH \
         --debug \
         ekiden-tools

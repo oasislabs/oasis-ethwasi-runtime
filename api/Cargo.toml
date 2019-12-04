@@ -1,11 +1,11 @@
 [package]
-name = "oasis-runtime-api"
+name = "runtime-ethereum-api"
 version = "0.2.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 edition = "2018"
 
 [dependencies]
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+ekiden-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 failure = "0.1.5"
 serde = "1.0.71"

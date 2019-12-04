@@ -7,8 +7,8 @@ extern crate hashdb;
 extern crate io_context;
 extern crate keccak_hash;
 extern crate lazy_static;
-extern crate oasis_core_keymanager_client;
-extern crate oasis_core_runtime;
+extern crate ekiden_keymanager_client;
+extern crate ekiden_runtime;
 extern crate vm;
 extern crate zeroize;
 

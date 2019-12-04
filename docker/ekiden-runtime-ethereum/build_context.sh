@@ -23,7 +23,7 @@ export EKIDEN_UNSAFE_SKIP_AVR_VERIFY
 #       for this and other runtime-ethereum CI jobs.
 cargo install \
     --force \
-    --git https://github.com/oasislabs/ekiden \
+    --git https://github.com/oasislabs/oasis-core \
     --branch master \
     ekiden-tools
 

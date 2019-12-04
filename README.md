@@ -6,7 +6,7 @@
 ## Setting up the development environment
 
 First, make sure that you have everything required for Ekiden installed by
-following [the Ekiden instructions](https://github.com/oasislabs/ekiden/blob/master/README.md).
+following [the Ekiden instructions](https://github.com/oasislabs/oasis-core/blob/master/README.md).
 
 For building and running the runtime, you need to have specific Ekiden artifacts available.
 To do this, you can either:
