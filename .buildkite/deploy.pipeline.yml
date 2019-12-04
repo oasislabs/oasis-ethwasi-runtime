@@ -35,13 +35,13 @@ steps:
       - platform/*
 
   - label: Extract platform resources
-    branches: devnet2
+    branches: devnet2.1
     command:
       - .buildkite/scripts/extract_platform_resources.sh platform
     artifact_paths:
       - platform/*
     env:
-      BASE_VARIANT: devnet2
+      BASE_VARIANT: devnet2.1
 
   - label: Extract production-track platform resources
     branches: master
@@ -51,9 +51,9 @@ steps:
       - platform-prod/*
 
   - label: Extract production-track platform resources
-    branches: devnet2
+    branches: devnet2.1
     command:
-      - .buildkite/scripts/extract_platform_resources.sh platform-prod latest-devnet2
+      - .buildkite/scripts/extract_platform_resources.sh platform-prod latest-devnet2.1
     artifact_paths:
       - platform-prod/*
 
@@ -64,7 +64,7 @@ steps:
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
 
   - label: Build testing artifacts
-    branches: master devnet2
+    branches: master devnet2.1
     command:
       - .buildkite/scripts/build_deployment_context.sh platform context.tar.gz
     artifact_paths:
@@ -75,7 +75,7 @@ steps:
       <<: *docker_plugin_configuration
 
   - label: Build benchmarking artifacts
-    branches: master devnet2
+    branches: master devnet2.1
     command:
       - .buildkite/scripts/build_deployment_context.sh platform context-bench.tar.gz
     env:
@@ -88,7 +88,7 @@ steps:
       <<: *docker_plugin_configuration
 
   - label: Build production-track artifacts
-    branches: master devnet2
+    branches: master devnet2.1
     command:
       - .buildkite/scripts/build_deployment_context.sh platform-prod context-prod.tar.gz
     env:
@@ -116,11 +116,11 @@ steps:
   - label: ":rocket: Publish docker images"
     trigger: private-ops-oasis-runtime-publish-image
     async: true
-    branches: devnet2
+    branches: devnet2.1
     build:
       message: "${BUILDKITE_MESSAGE}"
       env:
         OASIS_RUNTIME_JOB_ID: "${BUILDKITE_JOB_ID}"
         OASIS_RUNTIME_COMMIT: "${BUILDKITE_COMMIT}"
         OASIS_RUNTIME_BRANCH: "${BUILDKITE_BRANCH}"
-        IMAGE_VARIANT: devnet2
+        IMAGE_VARIANT: devnet2.1
