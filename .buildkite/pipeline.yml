@@ -136,23 +136,6 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: End-to-end tests (%n)
-    parallelism: 4
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - rm -rf tests/e2e-tests
-      - .buildkite/scripts/test_e2e.sh -t e2e-tests
-    artifact_paths:
-      - e2e/**/*.log
-    timeout_in_minutes: 25
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
   - wait
 
   - label: ":rocket: Build docker image context"
