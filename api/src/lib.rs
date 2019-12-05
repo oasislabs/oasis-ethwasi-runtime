@@ -1,6 +1,6 @@
+extern crate ekiden_runtime;
 extern crate ethereum_types;
 extern crate failure;
-extern crate ekiden_runtime;
 extern crate serde;
 extern crate serde_bytes;
 extern crate serde_derive;

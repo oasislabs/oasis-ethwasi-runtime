@@ -1,4 +1,6 @@
 //! Common data structures shared by runtime and gateway.
+extern crate ekiden_keymanager_client;
+extern crate ekiden_runtime;
 extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_types;
@@ -7,8 +9,6 @@ extern crate hashdb;
 extern crate io_context;
 extern crate keccak_hash;
 extern crate lazy_static;
-extern crate ekiden_keymanager_client;
-extern crate ekiden_runtime;
 extern crate vm;
 extern crate zeroize;
 

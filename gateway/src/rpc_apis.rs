@@ -16,8 +16,8 @@
 
 use std::{cmp::PartialEq, collections::HashSet, str::FromStr, sync::Arc};
 
-use jsonrpc_core::{self as core, MetaIoHandler};
 use ekiden_keymanager_client::KeyManagerClient;
+use jsonrpc_core::{self as core, MetaIoHandler};
 use parity_rpc::{informant::ActivityNotifier, Host, Metadata};
 
 use crate::{

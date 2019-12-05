@@ -1,15 +1,15 @@
 //! Ethereum block creation.
 use std::{collections::HashSet, sync::Arc};
 
-use ethcore::{self, state::State, vm::EnvInfo};
-use ethereum_types::{H256, U256};
-use io_context::Context as IoContext;
 use ekiden_keymanager_client::KeyManagerClient;
 use ekiden_runtime::{
     common::logger::get_logger,
     runtime_context,
     transaction::{dispatcher::BatchHandler, Context as TxnContext},
 };
+use ethcore::{self, state::State, vm::EnvInfo};
+use ethereum_types::{H256, U256};
+use io_context::Context as IoContext;
 use runtime_ethereum_common::{
     confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
 };

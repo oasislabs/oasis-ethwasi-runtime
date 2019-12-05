@@ -22,11 +22,11 @@ extern crate fdlimit;
 extern crate signal_hook;
 #[macro_use]
 extern crate clap;
+extern crate ekiden_runtime;
 extern crate failure;
 extern crate log;
-extern crate ekiden_runtime;
-extern crate runtime_ethereum_common;
 extern crate prometheus;
+extern crate runtime_ethereum_common;
 extern crate slog;
 extern crate web3_gateway;
 

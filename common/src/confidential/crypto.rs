@@ -5,12 +5,12 @@
 
 use std::convert::TryInto;
 
-use failure::{format_err, Fallible, ResultExt};
 use ekiden_keymanager_client::{PrivateKey, PublicKey};
 use ekiden_runtime::common::crypto::mrae::{
     deoxysii,
     nonce::{Nonce, NONCE_SIZE},
 };
+use failure::{format_err, Fallible, ResultExt};
 
 /// Number of bytes representing the CIPHER_LEN parameter of the confidential
 /// wire format.

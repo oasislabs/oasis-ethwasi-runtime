@@ -7,12 +7,12 @@ extern crate hex;
 extern crate runtime_ethereum;
 extern crate runtime_ethereum_common;
 
+use ekiden_runtime::transaction::dispatcher::CheckOnlySuccess;
 use ethcore::{
     rlp,
     transaction::{Action, Transaction as EthcoreTransaction},
 };
 use ethereum_types::{H256, U256};
-use ekiden_runtime::transaction::dispatcher::CheckOnlySuccess;
 use runtime_ethereum::{methods, test};
 
 #[test]

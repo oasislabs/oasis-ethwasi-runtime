@@ -29,7 +29,6 @@ download_keymanager_runtime() {
 
 download_keymanager_runtime_sgx() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh oasis-core-ci $EKIDEN_BRANCH "Build key manager runtime" ekiden-keymanager-runtime.sgxs $out_dir
 	cp /ekiden/lib/ekiden-keymanager-runtime-sgxs $out_dir
 }
 

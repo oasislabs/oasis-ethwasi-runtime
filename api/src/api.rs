@@ -1,6 +1,6 @@
+use ekiden_runtime::runtime_api;
 use ethereum_types::{Address, Bloom, H256, U256};
 use failure::Fail;
-use ekiden_runtime::runtime_api;
 use serde_derive::{Deserialize, Serialize};
 
 // used in runtime_api! macro

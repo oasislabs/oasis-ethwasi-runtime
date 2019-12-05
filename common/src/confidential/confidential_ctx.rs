@@ -1,10 +1,6 @@
 #![deny(warnings)]
 use std::sync::Arc;
 
-use ethereum_types::{Address, H256};
-use failure::ResultExt;
-use io_context::Context;
-use keccak_hash::keccak;
 use ekiden_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
 use ekiden_runtime::{
     common::crypto::{
@@ -16,6 +12,10 @@ use ekiden_runtime::{
     },
     executor::Executor,
 };
+use ethereum_types::{Address, H256};
+use failure::ResultExt;
+use io_context::Context;
+use keccak_hash::keccak;
 use vm::{AuthenticatedPayload, ConfidentialCtx as EthConfidentialCtx, Error, Result};
 use zeroize::Zeroize;
 

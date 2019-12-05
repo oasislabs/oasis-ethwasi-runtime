@@ -68,11 +68,11 @@ pub mod util;
 use std::sync::Arc;
 
 use clap::{value_t_or_exit, ArgMatches};
+use ekiden_client::{create_txn_api_client, Node, TxnClient};
+use ekiden_runtime::common::runtime::RuntimeId;
 use ethereum_types::U256;
 use failure::Fallible;
 use grpcio::EnvBuilder;
-use ekiden_client::{create_txn_api_client, Node, TxnClient};
-use ekiden_runtime::common::runtime::RuntimeId;
 use runtime_ethereum_api::*;
 use serde_bytes::ByteBuf;
 
