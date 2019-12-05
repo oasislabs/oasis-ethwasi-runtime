@@ -29,7 +29,7 @@ download_keymanager_runtime() {
 
 download_keymanager_runtime_sgx() {
 	local out_dir=$1
-	cp /ekiden/lib/ekiden-keymanager-runtime-sgxs $out_dir
+	cp /ekiden/lib/ekiden-keymanager-runtime.sgxs $out_dir
 }
 
 download_gateway() {

@@ -104,27 +104,6 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Code coverage
-    command:
-      - .buildkite/rust/code_coverage.sh
-
-      # Save the report as a build artifact
-      # so it can be easily accessed for debugging.
-      - buildkite-agent artifact upload cobertura.xml
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
-  # TODO: figure out a way to start running the
-  #       end-to-end tests as soon as its dependencies
-  #       are done running. Don't wait for all other
-  #       parallel jobs to finish, just the ones we need
-  #       to run the tests...
-
     # End-to-end tests
   - label: RPC tests
     command:
