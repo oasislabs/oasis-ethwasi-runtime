@@ -66,7 +66,6 @@ steps:
   - label: Build artifacts
     branches: master devnet2
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
       - ssh-add
       - .buildkite/scripts/build_deployment_context.sh platform context.tar.gz
@@ -80,7 +79,6 @@ steps:
   - label: Build benchmarking artifacts
     branches: master devnet2
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
       - ssh-add
       - .buildkite/scripts/build_deployment_context.sh platform context-bench.tar.gz
@@ -96,7 +94,6 @@ steps:
   - label: Build production-track artifacts
     branches: master devnet2
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - eval $(ssh-agent -s)
       - ssh-add
       - .buildkite/scripts/build_deployment_context.sh platform-prod context-prod.tar.gz

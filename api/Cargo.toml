@@ -5,7 +5,7 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 edition = "2018"
 
 [dependencies]
-ekiden-runtime = { git = "https://github.com/oasislabs/ekiden", branch = "devnet2" }
+ekiden-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "devnet2" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 failure = "0.1.5"
 serde = "1.0.71"

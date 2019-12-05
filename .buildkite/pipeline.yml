@@ -3,7 +3,7 @@
 ################
 docker_plugin: &docker_plugin_configuration
   oasislabs/docker#v2.1.0-oasis4:
-    image: "oasislabs/testing:0.3.0"
+    image: "oasislabs/testing:devnet2"
     always_pull: true
     workdir: /workdir
     volumes:
@@ -31,6 +31,7 @@ docker_plugin: &docker_plugin_configuration
       - "EKIDEN_BRANCH=devnet2"
       - "E2E_TESTS_BRANCH=master"
       - "DEVELOPER_GATEWAY_BRANCH=master"
+      - "EKIDEN_ARTIFACTS_DIR=/ekiden"
     propagate-environment: true
     unconfined: true
 
@@ -38,7 +39,6 @@ steps:
 
   - label: Build genesis
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_generic.sh /workdir -p genesis
     agents:
       buildkite_agent_size: large
@@ -47,7 +47,6 @@ steps:
 
   - label: Build web3 gateway
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
 
       # Build code and run tests
       - .buildkite/rust/build_generic.sh /workdir -p web3-gateway
@@ -64,7 +63,6 @@ steps:
 
   - label: Build runtime (ELF)
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_runtime.sh /workdir
 
       # Upload artifact required in end-to-end tests.
@@ -81,7 +79,6 @@ steps:
 
   - label: Build runtime (SGXS)
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/build_runtime.sh /workdir
 
       # Upload artifact required in end-to-end tests.
@@ -102,40 +99,16 @@ steps:
 
   - label: Cargo tests
     command:
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/rust/test_runtime_and_gateway.sh /workdir
     agents:
       buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 
-  - label: Code coverage
-    command:
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/rust/code_coverage.sh
-
-      # Save the report as a build artifact
-      # so it can be easily accessed for debugging.
-      - buildkite-agent artifact upload cobertura.xml
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
-    plugins:
-      <<: *docker_plugin_configuration
-
-  # TODO: figure out a way to start running the
-  #       end-to-end tests as soon as its dependencies
-  #       are done running. Don't wait for all other
-  #       parallel jobs to finish, just the ones we need
-  #       to run the tests...
-
     # End-to-end tests
   - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
       - .buildkite/scripts/download_ekiden_test_scripts.sh
       - rm -rf tests/rpc-tests
       - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-rpc-tests
@@ -143,23 +116,6 @@ steps:
     # use default: exit-status: "*" and retry limit of 2
     retry:
       automatic: true
-    plugins:
-      <<: *docker_plugin_configuration
-
-  - label: End-to-end tests (%n)
-    parallelism: 4
-    command:
-      - .buildkite/scripts/download_common_artifacts.sh
-      - .buildkite/scripts/setup_gitconfig.sh
-      - .buildkite/scripts/download_ekiden_test_scripts.sh
-      - rm -rf tests/e2e-tests
-      - .buildkite/scripts/test_e2e.sh -t e2e-tm-committee-e2e-tests
-    timeout_in_minutes: 25
-    # use default: exit-status: "*" and retry limit of 2
-    retry:
-      automatic: true
-    agents:
-      buildkite_agent_size: large
     plugins:
       <<: *docker_plugin_configuration
 

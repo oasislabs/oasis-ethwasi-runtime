@@ -85,6 +85,7 @@ with_api! {
 pub fn start(
     args: ArgMatches,
     pubsub_interval_secs: u64,
+    interface: &str,
     http_port: u16,
     num_threads: usize,
     ws_port: u16,
@@ -112,6 +113,7 @@ pub fn start(
         client,
         km_client,
         pubsub_interval_secs,
+        interface,
         http_port,
         num_threads,
         ws_port,

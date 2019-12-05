@@ -45,12 +45,7 @@ ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 #######################################
 echo "Fetching the ekiden-keymanager-runtime.sgxs enclave"
 mkdir -p target/x86_64-fortanix-unknown-sgx/debug
-.buildkite/scripts/download_artifact.sh \
-    ekiden \
-    $EKIDEN_BRANCH \
-    "Build key manager runtime" \
-    ekiden-keymanager-runtime.sgxs \
-    target/x86_64-fortanix-unknown-sgx/debug
+cp /ekiden/lib/ekiden-keymanager-runtime.sgxs $src_dir/target/x86_64-fortanix-unknown-sgx/debug
 
 export KM_ENCLAVE_PATH="$PWD/target/x86_64-fortanix-unknown-sgx/debug/ekiden-keymanager-runtime.sgxs"
 

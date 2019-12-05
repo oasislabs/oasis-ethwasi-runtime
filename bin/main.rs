@@ -1,4 +1,4 @@
-//! Ethereum runtime entry point.
+//! Oasis runtime entry point.
 extern crate runtime_ethereum;
 
 extern crate ekiden_keymanager_client;
@@ -19,15 +19,13 @@ use ekiden_runtime::{
     common::runtime::RuntimeId, rak::RAK, register_runtime_txn_methods, Protocol, RpcDemux,
     RpcDispatcher, TxnDispatcher,
 };
-use runtime_ethereum::block::EthereumBatchHandler;
-#[cfg(target_env = "sgx")]
-use runtime_ethereum::KM_ENCLAVE_HASH;
+use runtime_ethereum::block::OasisBatchHandler;
 use runtime_ethereum_api::{with_api, ExecutionResult};
 
 #[cfg(target_env = "sgx")]
 use ekiden_runtime::common::sgx::avr::EnclaveIdentity;
 #[cfg(target_env = "sgx")]
-use std::collections::HashSet;
+use runtime_ethereum::KM_ENCLAVE_HASH;
 
 fn main() {
     // Initializer.
@@ -42,7 +40,7 @@ fn main() {
         }
 
         #[cfg(target_env = "sgx")]
-        let remote_enclaves: Option<HashSet<EnclaveIdentity>> = Some(
+        let remote_enclaves: Option<std::collections::HashSet<EnclaveIdentity>> = Some(
             [EnclaveIdentity::fortanix_test(KM_ENCLAVE_HASH)]
                 .iter()
                 .cloned()
@@ -60,7 +58,7 @@ fn main() {
             1024, // TODO: How big should this cache be?
         ));
 
-        txn.set_batch_handler(EthereumBatchHandler::new(km_client));
+        txn.set_batch_handler(OasisBatchHandler::new(km_client));
     };
 
     // Start the runtime.

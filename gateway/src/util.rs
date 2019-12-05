@@ -4,7 +4,7 @@ use ethcore::ids::BlockId;
 use ethereum_types::U256;
 use failure::Error;
 use jsonrpc_core::{self, ErrorCode, Value};
-use parity_rpc::v1::types::BlockNumber;
+use parity_rpc::v1::{helpers::errors::codes, types::BlockNumber};
 
 pub fn gwei_to_wei(gwei: u64) -> U256 {
     U256::from(gwei).saturating_mul(U256::from(1_000_000_000))
@@ -34,7 +34,7 @@ pub fn jsonrpc_error(err: Error) -> jsonrpc_core::Error {
 /// TODO: format error message
 pub fn execution_error<T: fmt::Display>(data: T) -> jsonrpc_core::Error {
     jsonrpc_core::Error {
-        code: ErrorCode::ServerError(-32015),
+        code: ErrorCode::ServerError(codes::EXECUTION_ERROR),
         message: format!("Transaction execution error with cause: {}", data),
         data: Some(Value::String(format!("{}", data))),
     }

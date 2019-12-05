@@ -25,7 +25,7 @@ echo "Updating ekiden E2E scripts (repo \"${EKIDEN_REPO}\", branch \"${EKIDEN_BR
 rm -rf ${E2E_SCRIPTS_DIR}
 mkdir -p ${E2E_SCRIPTS_DIR}
 pushd ${E2E_SCRIPTS_DIR}
-    git clone ${EKIDEN_REPO} -b ${EKIDEN_BRANCH} --depth 1
+    git clone ${EKIDEN_REPO} -b ${EKIDEN_BRANCH} --depth 1 ekiden
     ln -s ekiden/.buildkite/scripts/common_e2e.sh ekiden_common_e2e.sh
 popd
 

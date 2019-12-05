@@ -1,4 +1,4 @@
-//! Test client to interact with a runtime-ethereum blockchain.
+//! Test client to interact with an runtime-ethereum blockchain.
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use byteorder::{BigEndian, ByteOrder};
@@ -41,7 +41,7 @@ use runtime_ethereum_common::{
 use serde_json::map::Map;
 
 use crate::{
-    block::{BlockContext, EthereumBatchHandler},
+    block::{BlockContext, OasisBatchHandler},
     methods,
 };
 
@@ -49,7 +49,8 @@ use crate::{
 pub struct Client {
     /// KeyPair used for signing transactions.
     pub keypair: KeyPair,
-    /// Contract key used for encrypting web3c transactions.
+    /// The client's keys used for generating the encrypted `data` field to
+    /// send transactions from Client -> Enclave.
     pub ephemeral_key: ContractKey,
     /// Gas limit used for transactions.
     /// TODO: use estimate gas to set this dynamically
@@ -61,7 +62,7 @@ pub struct Client {
     /// In-memory MKVS.
     pub mkvs: Option<UrkelTree>,
     /// Key manager client.
-    pub km_client: Arc<KeyManagerClient>,
+    pub km_client: Arc<dyn KeyManagerClient>,
     /// Results.
     pub results: HashMap<H256, ExecutionResult>,
 }
@@ -121,7 +122,7 @@ impl Client {
         let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
         let header = self.header.clone();
         let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, true);
-        let handler = EthereumBatchHandler::new(self.km_client.clone());
+        let handler = OasisBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
         let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
@@ -143,7 +144,7 @@ impl Client {
         let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
         let header = self.header.clone();
         let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, false);
-        let handler = EthereumBatchHandler::new(self.km_client.clone());
+        let handler = OasisBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
         let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
@@ -286,8 +287,8 @@ impl Client {
             .sign(&client.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let result = methods::execute::ethereum_transaction(&raw.into_vec(), ctx)
-                .map_err(|err| err.to_string())?;
+            let result =
+                methods::execute::tx(&raw.into_vec(), ctx).map_err(|err| err.to_string())?;
             client.results.insert(tx.hash(), result);
 
             let address = if contract == None {
@@ -341,10 +342,19 @@ impl Client {
             .unwrap()
     }
 
-    /// Returns an *open* confidential context used from the perspective of the client,
-    /// so that it can encrypt/decrypt transactions to/from web3c. This should not be
-    /// injected into the parity State, because such a confidential context should be
-    /// from the perspective of the keymanager. See `key_manager_confidential_ctx`.
+    /// Returns an *active* confidential context used from the perspective of the client,
+    /// so that it can encrypt/decrypt transactions to/from web3c.
+    ///
+    /// In production, a `ConfidentialCtx` will never be created like this. This
+    /// is just a convenience to generate the encrypted `data` field to send txs
+    /// from Client -> Enclave while testing.
+    ///
+    /// In addition, this should not be injected into the parity State, because such a
+    /// confidential context should be from the perspective of the keymanager.
+    ///
+    /// See `key_manager_confidential_ctx`, which supplies the dual encryption ctx,
+    /// i.e., everything encrypted from `client_confidential_ctx` can be decrypted from
+    /// `key_manager_confidential_ctx` and vice versa.
     pub fn client_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
         let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
         let mut executor = Executor::new();
@@ -372,7 +382,7 @@ impl Client {
         )
     }
 
-    /// Returns an *open* confidential context. Using this with a parity State object will
+    /// Returns an *active* confidential context. Using this with a parity State object will
     /// transparently encrypt/decrypt everything going into and out of contract storage.
     /// Do not use this if you're trying to access *unencrypted* state.
     pub fn key_manager_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
