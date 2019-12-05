@@ -8,7 +8,6 @@ docker_plugin: &docker_plugin_configuration
     workdir: /workdir
     volumes:
       - .:/workdir
-      - /var/lib/buildkite-agent/.ssh:/root/.ssh
       # Shared Rust incremental compile caches.
       - /tmp/cargo_ic/release:/workdir/target/release/incremental
       - /tmp/cargo_ic/release_sgx:/workdir/target/x86_64-fortanix-unknown-sgx/release/incremental
@@ -66,8 +65,6 @@ steps:
   - label: Build artifacts
     branches: master devnet2
     command:
-      - eval $(ssh-agent -s)
-      - ssh-add
       - .buildkite/scripts/build_deployment_context.sh platform context.tar.gz
     artifact_paths:
       - context.tar.gz
@@ -79,8 +76,6 @@ steps:
   - label: Build benchmarking artifacts
     branches: master devnet2
     command:
-      - eval $(ssh-agent -s)
-      - ssh-add
       - .buildkite/scripts/build_deployment_context.sh platform context-bench.tar.gz
     env:
       BUILD_BENCHMARKING: "1"
@@ -94,8 +89,6 @@ steps:
   - label: Build production-track artifacts
     branches: master devnet2
     command:
-      - eval $(ssh-agent -s)
-      - ssh-add
       - .buildkite/scripts/build_deployment_context.sh platform-prod context-prod.tar.gz
     env:
       BUILD_PRODUCTION_GENESIS: "1"
