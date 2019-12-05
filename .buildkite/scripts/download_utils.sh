@@ -11,25 +11,25 @@ download_oasis_binaries() {
 
 download_ekiden_node() {
 	local out_dir=$1
-	cp /ekiden/bin/ekiden-node $out_dir/ekiden
+	cp $EKIDEN_ARTIFACTS_DIR/bin/ekiden-node $out_dir/ekiden
 	chmod +x $out_dir/ekiden
 }
 
 download_ekiden_runtime_loader() {
 	local out_dir=$1
-	cp /ekiden/bin/ekiden-node $out_dir/ekiden-runtime-loader
+	cp $EKIDEN_ARTIFACTS_DIR/bin/ekiden-runtime-loader $out_dir/ekiden-runtime-loader
 	chmod +x $out_dir/ekiden-runtime-loader
 }
 
 download_keymanager_runtime() {
 	local out_dir=$1
-	cp /ekiden/lib/ekiden-keymanager-runtime $out_dir/ekiden-keymanager-runtime
+	cp $EKIDEN_ARTIFACTS_DIR/lib/ekiden-keymanager-runtime $out_dir/ekiden-keymanager-runtime
 	chmod +x $out_dir/ekiden-keymanager-runtime
 }
 
 download_keymanager_runtime_sgx() {
 	local out_dir=$1
-	cp /ekiden/lib/ekiden-keymanager-runtime.sgxs $out_dir
+	cp $EKIDEN_ARTIFACTS_DIR/lib/ekiden-keymanager-runtime.sgxs $out_dir
 }
 
 download_gateway() {
