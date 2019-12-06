@@ -49,9 +49,12 @@ else
     cp resources/genesis/ekiden_genesis_testing.json resources/genesis.json
 fi
 
+mkdir docker/deployment
+cp docker/ekiden-runtime-ethereum/Dockerfile docker/deployment
 tar -czf "$dst" \
     resources/genesis.json \
     target/release/runtime-ethereum \
     target/x86_64-fortanix-unknown-sgx/release/runtime-ethereum.sgxs \
     target/release/gateway \
-    docker/ekiden-runtime-ethereum/Dockerfile
+    docker/ekiden-runtime-ethereum/Dockerfile \
+    docker/deployment/Dockerfile

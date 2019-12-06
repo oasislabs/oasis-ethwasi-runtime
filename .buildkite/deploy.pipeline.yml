@@ -113,7 +113,7 @@ steps:
         OASIS_RUNTIME_BRANCH: "${BUILDKITE_BRANCH}"
 
   - label: ":rocket: Publish docker images"
-    trigger: private-ops-oasis-runtime-publish-image
+    trigger: private-ops-oasis-runtime-publish-devnet2-image
     async: true
     branches: devnet2
     build:
