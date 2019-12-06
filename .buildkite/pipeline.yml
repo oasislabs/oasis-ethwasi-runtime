@@ -121,8 +121,8 @@ steps:
 
   - wait
 
-  - label: ":rocket: Deploy"
-    trigger: runtime-ethereum-deploy-to-staging
+  - label: ":rocket: Build docker image context"
+    trigger: oasis-runtime-build-image-context
     async: true
     branches: "master devnet2"
     build:
