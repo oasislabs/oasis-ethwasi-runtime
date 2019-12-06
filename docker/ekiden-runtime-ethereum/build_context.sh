@@ -24,8 +24,8 @@ export EKIDEN_UNSAFE_SKIP_AVR_VERIFY
 cargo install \
     --force \
     --git https://github.com/oasislabs/oasis-core \
-    --branch master \
-    ekiden-tools
+    --branch ${EKIDEN_BRANCH:-master} \
+    oasis-core-tools
 
 # Build the runtime
 export KM_ENCLAVE_PATH="$(realpath "$platform_dir")/ekiden-keymanager-runtime.sgxs"
