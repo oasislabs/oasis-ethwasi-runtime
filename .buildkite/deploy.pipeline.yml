@@ -101,76 +101,25 @@ steps:
 
   - wait
 
-  - label: Update testing docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh latest-testing
-    env:
-      BASE_VARIANT: testing
-      DEPLOYMENT_VARIANT: testing
-
-  - label: Update testing docker image tags (devnet2 branch only)
-    branches: devnet2
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh latest-testing-devnet2
-    env:
-      BASE_VARIANT: testing
-      DEPLOYMENT_VARIANT: testing
-
-  - label: Update benchmarking docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context-bench.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh latest-benchmarking
-    env:
-      BASE_VARIANT: testing
-      DEPLOYMENT_VARIANT: benchmarking
-
-  - label: Update staging docker image tags (master branches only)
-    branches: master
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh staging
-
-  - label: Update staging devnet2 docker image tags (devnet2 branch only)
-    branches: devnet2
-    command:
-      - .buildkite/scripts/build_tag_push_deployment_image.sh context-prod.tar.gz
-      - .buildkite/scripts/promote_deployment_image_to.sh staging-devnet2
-    env:
-      BASE_VARIANT: devnet2
-      DEPLOYMENT_VARIANT: devnet2
-
-  - wait
-
-  - label: "Trigger staging deployment (master branches only)"
-    trigger: private-ops-deploy-ekiden-staging
+  - label: ":rocket: Publish docker images"
+    trigger: private-ops-oasis-runtime-publish-image
+    async: true
     branches: master
     build:
       message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: master
+      env:
+        OASIS_RUNTIME_JOB_ID: "${BUILDKITE_JOB_ID}"
+        OASIS_RUNTIME_COMMIT: "${BUILDKITE_COMMIT}"
+        OASIS_RUNTIME_BRANCH: "${BUILDKITE_BRANCH}"
 
-  - label: "Trigger staging devnet2 deployment (devnet2 branch only)"
-    trigger: private-ops-deploy-ekiden-devnet2-staging
+  - label: ":rocket: Publish docker images"
+    trigger: private-ops-oasis-runtime-publish-image
+    async: true
     branches: devnet2
     build:
       message: "${BUILDKITE_MESSAGE}"
-      commit: HEAD
-      branch: master
-
-  - label: "Build and push all-in-one image (master branches only)"
-    branches: master
-    command:
-      - ./docker/all-in-one/build.sh
-      - docker tag local-aio:latest oasislabs/private-all-in-one:latest
-      - docker push oasislabs/private-all-in-one:latest
-
-  - label: "Build and push all-in-one image (devnet2 branch only)"
-    branches: devnet2
-    command:
-      - ./docker/all-in-one/build.sh
-      - docker tag local-aio:latest oasislabs/private-all-in-one:latest-devnet2
-      - docker push oasislabs/private-all-in-one:latest-devnet2
+      env:
+        OASIS_RUNTIME_JOB_ID: "${BUILDKITE_JOB_ID}"
+        OASIS_RUNTIME_COMMIT: "${BUILDKITE_COMMIT}"
+        OASIS_RUNTIME_BRANCH: "${BUILDKITE_BRANCH}"
+        IMAGE_VARIANT: devnet2
