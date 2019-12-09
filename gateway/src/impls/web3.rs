@@ -53,7 +53,7 @@ impl Web3 for Web3Client {
             "oasis/{}/{}/{}",
             env!("CARGO_PKG_NAME"),
             env!("CARGO_PKG_VERSION"),
-            env!("CARGO_PKG_GIT_REV"),
+            env!("CARGO_PKG_GIT_REV"), // set in build.rs
         ))
     }
 
