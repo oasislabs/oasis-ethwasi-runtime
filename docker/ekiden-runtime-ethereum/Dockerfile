@@ -1,4 +1,4 @@
-ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest
+ARG OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG=latest-devnet2
 
 # Load a reference testnet base image
 FROM oasislabs/testnet:${OASISLABS_TESTNET_BASE_DOCKER_IMAGE_TAG}
