@@ -43,7 +43,7 @@ ssh-keyscan rsa github.com >> ~/.ssh/known_hosts
 
 # We need to use a separate target dir for tarpaulin as it otherwise clears
 # the build cache.
-export CARGO_TARGET_DIR=/tmp/coverage_target
+export CARGO_TARGET_DIR=/var/tmp/coverage_target
 
 # Possible workaround for #694
 # https://github.com/xd009642/tarpaulin/issues/35
