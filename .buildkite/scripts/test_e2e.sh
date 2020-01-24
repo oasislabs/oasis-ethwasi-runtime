@@ -123,23 +123,10 @@ scenario_basic() {
         --net.runtime.loader ${OASIS_CORE_RUNTIME_LOADER} \
         --net.runtime.genesis_state ${RUNTIME_GENESIS} \
         --net.keymanager.binary ${OASIS_CORE_KM_BINARY} \
-        --net.epochtime_mock \
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
 
     local client_socket="${TEST_BASE_DIR}/net-runner/network/client-0/internal.sock"
-
-    # Wait for the nodes to be registered.
-    echo "Waiting for the nodes to be registered."
-    ${OASIS_NODE} debug dummy wait-nodes \
-        --address unix:${client_socket} \
-        --nodes 6
-
-    # Advance epoch.
-    echo "Advancing epoch."
-    ${OASIS_NODE} debug dummy set-epoch \
-        --address unix:${client_socket} \
-        --epoch 1
 
     # Start the gateway.
     echo "Starting the web3 gateway."
