@@ -132,7 +132,7 @@ impl Translator {
         let client = self.client.clone();
         self.client
             .txn_client()
-            .query_block(Hash::from(hash.as_ref() as &[u8]))
+            .get_block_by_hash(Hash::from(hash.as_ref() as &[u8]))
             .map(|snapshot| snapshot.map(|snapshot| EthereumBlock::new(snapshot, client)))
     }
 
@@ -143,7 +143,7 @@ impl Translator {
     ) -> impl Future<Item = Option<EthereumTransaction>, Error = Error> {
         self.client
             .txn_client()
-            .query_txn(TAG_ETH_TX_HASH, hash)
+            .query_tx(TAG_ETH_TX_HASH, hash)
             .map(|txn| txn.map(EthereumTransaction::new))
     }
 
@@ -156,7 +156,7 @@ impl Translator {
     ) -> impl Future<Item = Option<EthereumTransaction>, Error = Error> {
         self.client
             .txn_client()
-            .get_txn(round, index)
+            .get_tx(round, index)
             .map(|txn| txn.map(EthereumTransaction::new))
     }
 
@@ -169,7 +169,7 @@ impl Translator {
     ) -> impl Future<Item = Option<EthereumTransaction>, Error = Error> {
         self.client
             .txn_client()
-            .get_txn_by_block_hash(Hash::from(block_hash.as_ref() as &[u8]), index)
+            .get_tx_by_block_hash(Hash::from(block_hash.as_ref() as &[u8]), index)
             .map(|txn| txn.map(EthereumTransaction::new))
     }
 
@@ -322,7 +322,7 @@ impl Translator {
         let f = filter.clone();
         let client = self.client.clone();
         let txns = blocks.and_then(move |blks| {
-            client.txn_client().query_txns(Query {
+            client.txn_client().query_txs(Query {
                 round_min: blks[0].snapshot.block.header.round,
                 round_max: blks[1].snapshot.block.header.round,
                 conditions: {
@@ -591,7 +591,7 @@ impl EthereumBlock {
     ) -> impl Future<Item = impl Iterator<Item = TxnCall>, Error = Error> {
         self.client
             .txn_client()
-            .get_transactions(
+            .get_txs(
                 self.snapshot.block.header.round,
                 self.snapshot.block.header.io_root,
             )

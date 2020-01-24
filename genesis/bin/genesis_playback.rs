@@ -21,13 +21,13 @@ use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
 use clap::{crate_authors, crate_version, value_t_or_exit, App, Arg};
 use ethcore::{spec::Spec, state::State};
 use ethereum_types::{Address, H256, U256};
-use grpcio::EnvBuilder;
+use grpcio::{CallOption, EnvBuilder};
 use io_context::Context;
 use oasis_core_client::{transaction::api::storage, Node};
 use oasis_core_runtime::{
     common::{crypto::hash::Hash, roothash},
     storage::{
-        mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
+        mkvs::{urkel::sync::NoopReadSyncer, LogEntry, UrkelTree},
         StorageContext,
     },
 };
@@ -232,26 +232,23 @@ fn main() {
             });
 
             // Push to storage.
-            let mut request = storage::ApplyRequest::new();
-            request.set_namespace(runtime_id.as_ref().to_vec());
-            request.set_src_round(0);
-            request.set_src_root(root.as_ref().to_vec());
-            request.set_dst_round(0);
-            request.set_dst_root(state_root.as_ref().to_vec());
-            request.set_log(
-                write_log
-                    .into_iter()
-                    .map(|entry| {
-                        let mut request = storage::LogEntry::new();
-                        request.set_key(entry.key);
-                        request.set_value(entry.value);
+            storage
+                .apply(
+                    &storage::ApplyRequest {
+                        namespace: runtime_id,
+                        src_round: 0,
+                        src_root: root,
+                        dst_round: 0,
+                        dst_root: state_root,
+                        writelog: write_log
+                            .iter()
+                            .map(|entry| LogEntry::new(&entry.key, &entry.value))
+                            .collect(),
+                    },
+                    CallOption::default().wait_for_ready(true /* wait_for_ready */),
+                )
+                .expect("storage apply must succeed");
 
-                        request
-                    })
-                    .collect(),
-            );
-
-            storage.apply(&request).expect("storage apply must succeed");
             root = state_root;
         };
 
