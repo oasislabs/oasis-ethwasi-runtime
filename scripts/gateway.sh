@@ -14,7 +14,7 @@ keymanager_binary="${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-keymanager-ru
 web3_gateway="${RUNTIME_CARGO_TARGET_DIR}/debug/gateway"
 
 # Prepare an empty data directory.
-data_dir="/tmp/oasis-runtime-runner"
+data_dir="/var/tmp/oasis-runtime-runner"
 rm -rf "${data_dir}"
 mkdir -p "${data_dir}"
 chmod -R go-rwx "${data_dir}"
