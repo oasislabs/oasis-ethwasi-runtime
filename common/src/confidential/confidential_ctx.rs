@@ -237,8 +237,9 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn encrypt_storage_key(&self, data: Vec<u8>) -> Result<Vec<u8>> {
-        // TODO: Use AES-ECB rather than Deoxys-II with a 0 nonce.
         let nonce = [0u8; NONCE_SIZE];
+        //^ We're not trying to protect the identity of the key, so a zero nonce is fine.
+        //  We could also use AES-ECB, therefore.
         Ok(self
             .d2
             .as_ref()
@@ -246,7 +247,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
             .seal(&nonce, data, vec![]))
     }
 
-    fn encrypt_storage_value(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
+    fn encrypt_storage_value(&mut self, storage_key: &[u8], data: Vec<u8>) -> Result<Vec<u8>> {
         let mut nonce = [0u8; NONCE_SIZE];
         nonce.copy_from_slice(
             &self
@@ -255,11 +256,14 @@ impl EthConfidentialCtx for ConfidentialCtx {
                 .expect("Should always have a storage encryption nonce.")[..NONCE_SIZE],
         );
 
+        let mut keyed_plaintext = keccak(storage_key).to_vec();
+        keyed_plaintext.extend(data); // u8 is `Copy`, so `extend` ~= `append`
+
         let mut ciphertext = self
             .d2
             .as_ref()
             .expect("Should always have a Deoxys-II instance to encrypt storage")
-            .seal(&nonce, data, vec![]);
+            .seal(&nonce, keyed_plaintext, vec![]);
         ciphertext.extend_from_slice(&nonce); // ciphertext || tag || nonce
 
         self.next_storage_nonce
@@ -271,7 +275,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(ciphertext)
     }
 
-    fn decrypt_storage_value(&self, data: Vec<u8>) -> Result<Vec<u8>> {
+    fn decrypt_storage_value(&self, storage_key: &[u8], data: Vec<u8>) -> Result<Vec<u8>> {
         if data.len() < TAG_SIZE + NONCE_SIZE {
             return Err(Error::Confidential("truncated ciphertext".to_string()));
         }
@@ -282,12 +286,23 @@ impl EthConfidentialCtx for ConfidentialCtx {
         nonce.copy_from_slice(&data[nonce_offset..]);
         let ciphertext = &data[..nonce_offset];
 
-        Ok(self
+        let keyed_plaintext = self
             .d2
             .as_ref()
             .expect("Should always have a Deoxys-II instance to decrypt storage")
             .open(&nonce, ciphertext.to_vec(), vec![])
-            .unwrap())
+            .unwrap();
+
+        let expected_key_hash = keccak(storage_key);
+        if keyed_plaintext.len() < expected_key_hash.len() {
+            return Err(Error::Confidential("truncated plaintext".to_string()));
+        }
+        let (key_hash, plaintext) = keyed_plaintext.split_at(expected_key_hash.len());
+        if H256::from(key_hash) == expected_key_hash {
+            Ok(plaintext.to_vec())
+        } else {
+            Err(Error::Confidential("invalid storage key".to_string()))
+        }
     }
 
     fn peer(&self) -> Option<Vec<u8>> {
