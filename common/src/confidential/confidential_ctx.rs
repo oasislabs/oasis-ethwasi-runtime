@@ -247,6 +247,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
             .seal(&nonce, data, vec![]))
     }
 
+    // This implementation of `ConfidentialCtx` ensures key-value mapping integrity by setting the
+    // (encrypted) `storage_key` as the AAD.
     fn encrypt_storage_value(&mut self, storage_key: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>> {
         let mut nonce = [0u8; NONCE_SIZE];
         nonce.copy_from_slice(
@@ -272,6 +274,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
         Ok(ciphertext)
     }
 
+    // This implementation of `ConfidentialCtx` ensures key-value mapping integrity by checking the
+    // AAD stored with the value against the expected (encrypted) `storage_key`.
     fn decrypt_storage_value(&self, storage_key: Vec<u8>, data: Vec<u8>) -> Result<Vec<u8>> {
         if data.len() < TAG_SIZE + NONCE_SIZE {
             return Err(Error::Confidential("truncated ciphertext".to_string()));

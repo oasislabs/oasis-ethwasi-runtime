@@ -11,8 +11,8 @@ clap = "2.29.1"
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 filebuffer = "0.4.0"
 hex = "0.3.1"
-rlp = { git = "https://github.com/oasislabs/oasis-parity", branch = "nonce-w-key" }
-ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "nonce-w-key" }
+rlp = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
