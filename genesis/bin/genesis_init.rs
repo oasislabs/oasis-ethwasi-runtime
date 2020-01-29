@@ -1,4 +1,4 @@
-//! A utility for generating Ekiden genesis state for runtime-ethereum.
+//! A utility for generating oasis-node's genesis state for oasis-runtime.
 #![deny(warnings)]
 
 extern crate clap;
@@ -34,7 +34,7 @@ fn main() {
         )
         .arg(
             Arg::with_name("output_file")
-                .help("Ekiden storage genesis file")
+                .help("Oasis storage genesis file")
                 .takes_value(true)
                 .required(true),
         )

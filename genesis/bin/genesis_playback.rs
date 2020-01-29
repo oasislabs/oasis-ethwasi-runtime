@@ -16,7 +16,13 @@ extern crate oasis_runtime_common;
 extern crate serde_bytes;
 extern crate serde_json;
 
-use std::{collections::BTreeMap, fs::File, io::Cursor, str::FromStr, sync::Arc};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fs::File,
+    io::Cursor,
+    str::FromStr,
+    sync::Arc,
+};
 
 use clap::{crate_authors, crate_version, value_t_or_exit, App, Arg};
 use ethcore::{spec::Spec, state::State};
@@ -25,7 +31,13 @@ use grpcio::{CallOption, EnvBuilder};
 use io_context::Context;
 use oasis_core_client::{transaction::api::storage, Node};
 use oasis_core_runtime::{
-    common::{crypto::hash::Hash, roothash},
+    common::{
+        crypto::{
+            hash::Hash,
+            signature::{PublicKey, Signature, SignatureBundle},
+        },
+        registry, roothash,
+    },
     storage::{
         mkvs::{urkel::sync::NoopReadSyncer, LogEntry, UrkelTree},
         StorageContext,
@@ -156,7 +168,7 @@ fn main() {
         )
         .arg(
             Arg::with_name("output_file")
-                .help("Resulting roothash genesis block")
+                .help("Oasis roothash runtime states genesis file in JSON format")
                 .takes_value(true)
                 .required(true),
         )
@@ -165,14 +177,13 @@ fn main() {
                 .help("Target runtime ID")
                 .long("runtime-id")
                 .takes_value(true)
-                .required(true)
-                // TODO: Remove this default value to discourage use (see ekiden#1693).
-                .default_value("0000000000000000000000000000000000000000000000000000000000000000"),
+                .required(true),
         )
         .arg(
             Arg::with_name("node-address")
                 .help("Storage node address")
                 .long("node-address")
+                .short("a")
                 .takes_value(true)
                 .required(true),
         )
@@ -297,13 +308,20 @@ fn main() {
     println!("Done, genesis state root is {:?}.", state_root);
 
     // Generate genesis roothash block file.
-    let mut block = roothash::Block::default();
-    block.header.namespace = runtime_id;
-    block.header.state_root = state_root;
-    block.header.io_root = Hash::empty_hash();
-    let blocks = vec![block];
+    let rtg = registry::RuntimeGenesis {
+        state_root: state_root,
+        state: vec![],
+        storage_receipts: vec![SignatureBundle {
+            // public_key must not be None, but empty.
+            public_key: Some(PublicKey::default()),
+            signature: Signature::default(),
+        }],
+        round: 0,
+    };
+    let rtg_map: HashMap<roothash::Namespace, registry::RuntimeGenesis> =
+        [(runtime_id, rtg)].iter().cloned().collect();
 
     // Save to file.
     let mut file = File::create(matches.value_of("output_file").unwrap()).unwrap();
-    serde_json::to_writer(&mut file, &blocks).unwrap();
+    serde_json::to_writer(&mut file, &rtg_map).unwrap();
 }
