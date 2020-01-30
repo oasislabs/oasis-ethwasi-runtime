@@ -11,12 +11,6 @@ set -euxo pipefail
 ###############
 dst=$1
 
-# Set protobuf branch to master, otherwise go-ethereum make fails, because
-# git pull on protobuf fails.
-pushd /go/src/github.com/golang/protobuf
-    git checkout master
-popd
-
 # Compile and install go-ethereum devtools (abigen etc.).
 go get -d github.com/ethereum/go-ethereum
 pushd /go/src/github.com/ethereum/go-ethereum
