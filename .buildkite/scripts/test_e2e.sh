@@ -123,16 +123,43 @@ scenario_basic() {
         --net.runtime.loader ${OASIS_CORE_RUNTIME_LOADER} \
         --net.runtime.genesis_state ${RUNTIME_GENESIS} \
         --net.keymanager.binary ${OASIS_CORE_KM_BINARY} \
+        --net.epochtime_mock \
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
 
     local client_socket="${TEST_BASE_DIR}/net-runner/network/client-0/internal.sock"
 
+    # Wait for the validator and keymanager nodes to be registered.
+    echo "Waiting for the validator and keymanager to be registered."
+    ${OASIS_NODE} debug control wait-nodes \
+        --address unix:${client_socket} \
+        --nodes 2 \
+        --wait
+
+    # Advance epoch.
+    echo "Advancing epoch."
+    ${OASIS_NODE} debug control set-epoch \
+        --address unix:${client_socket} \
+        --epoch 1
+
+    # Wait for all nodes to be registered.
+    echo "Waiting for all nodes to be registered."
+    ${OASIS_NODE} debug control wait-nodes \
+        --address unix:${client_socket} \
+        --nodes 6 \
+        --wait
+
+    # Advance epoch.
+    echo "Advancing epoch."
+    ${OASIS_NODE} debug control set-epoch \
+        --address unix:${client_socket} \
+        --epoch 2
+
     # Start the gateway.
     echo "Starting the web3 gateway."
     ${RUNTIME_GATEWAY} \
         --node-address unix:${client_socket} \
-        --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
+        --runtime-id 8000000000000000000000000000000000000000000000000000000000000000 \
         --http-port 8545 \
         --ws-port 8555 2>&1 | tee ${TEST_BASE_DIR}/gateway.log | sed "s/^/[gateway] /" &
 

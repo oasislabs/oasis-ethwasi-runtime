@@ -39,5 +39,5 @@ ${oasis_node} debug dummy wait-nodes \
 # Start the gateway.
 ${web3_gateway} \
     --node-address unix:${client_socket} \
-    --runtime-id 0000000000000000000000000000000000000000000000000000000000000000 \
+    --runtime-id 8000000000000000000000000000000000000000000000000000000000000000 \
     --ws-port 8555
