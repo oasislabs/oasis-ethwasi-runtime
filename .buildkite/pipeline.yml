@@ -28,6 +28,7 @@ docker_plugin: &docker_plugin_configuration
       - "RUSTFLAGS=-C target-feature=+aes,+ssse3"
       - "OASIS_CORE_BRANCH=master"
       - "E2E_TESTS_BRANCH=master"
+      - "RPC_TESTS_BRANCH=ekiden-testing"
       - "OASIS_GATEWAY_BRANCH=master"
     propagate-environment: true
     unconfined: true
