@@ -1748,7 +1748,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/oasis-core#6a99a0a9f997652a7e4cd7d6ce4922a8ab0e0bb6"
+source = "git+https://github.com/oasislabs/oasis-core#48b5e03227c7e89679059cb8a50b3a8ffb8f375e"
 dependencies = [
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1769,7 +1769,25 @@ dependencies = [
 [[package]]
 name = "oasis-core-keymanager-api"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/oasis-core#6a99a0a9f997652a7e4cd7d6ce4922a8ab0e0bb6"
+source = "git+https://github.com/oasislabs/oasis-core#48b5e03227c7e89679059cb8a50b3a8ffb8f375e"
+dependencies = [
+ "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "oasis-core-keymanager-api-common 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)",
+ "oasis-core-runtime 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)",
+ "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_bytes 0.10.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "x25519-dalek 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "oasis-core-keymanager-api-common"
+version = "0.3.0-alpha"
+source = "git+https://github.com/oasislabs/oasis-core#48b5e03227c7e89679059cb8a50b3a8ffb8f375e"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1786,7 +1804,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/oasis-core#6a99a0a9f997652a7e4cd7d6ce4922a8ab0e0bb6"
+source = "git+https://github.com/oasislabs/oasis-core#48b5e03227c7e89679059cb8a50b3a8ffb8f375e"
 dependencies = [
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1801,7 +1819,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/oasis-core#6a99a0a9f997652a7e4cd7d6ce4922a8ab0e0bb6"
+source = "git+https://github.com/oasislabs/oasis-core#48b5e03227c7e89679059cb8a50b3a8ffb8f375e"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bincode 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1846,7 +1864,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasislabs/oasis-core#6a99a0a9f997652a7e4cd7d6ce4922a8ab0e0bb6"
+source = "git+https://github.com/oasislabs/oasis-core#48b5e03227c7e89679059cb8a50b3a8ffb8f375e"
 dependencies = [
  "ansi_term 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4081,6 +4099,7 @@ dependencies = [
 "checksum num_cpus 1.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "46203554f085ff89c235cd12f7075f3233af9b11ed7c9e16dfe2560d03313ce6"
 "checksum oasis-core-client 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)" = "<none>"
 "checksum oasis-core-keymanager-api 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)" = "<none>"
+"checksum oasis-core-keymanager-api-common 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)" = "<none>"
 "checksum oasis-core-keymanager-client 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)" = "<none>"
 "checksum oasis-core-runtime 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)" = "<none>"
 "checksum oasis-core-tools 0.3.0-alpha (git+https://github.com/oasislabs/oasis-core)" = "<none>"
