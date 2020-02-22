@@ -30,6 +30,7 @@ cargo install \
 # Build the runtime
 export KM_ENCLAVE_PATH="$(realpath "$platform_dir")/ekiden-keymanager-runtime.sgxs"
 
+rustup target add x86_64-fortanix-unknown-sgx
 cargo build --release ${RUNTIME_BUILD_EXTRA_ARGS:-}
 cargo build --release --target x86_64-fortanix-unknown-sgx ${RUNTIME_BUILD_EXTRA_ARGS:-}
 cargo elf2sgxs --release
