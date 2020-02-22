@@ -80,7 +80,7 @@ scenario_basic() {
 # RPC tests
 ###########
 install_rpc_tests() {
-    local rpc_tests_branch=${RPC_TESTS_BRANCH:-ekiden}
+    local rpc_tests_branch=${RPC_TESTS_BRANCH:-devnet2}
 
     echo "Installing RPC test dependencies."
     pushd ${WORKDIR}/tests
