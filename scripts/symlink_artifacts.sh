@@ -10,7 +10,7 @@ set -euo pipefail
 # Sanity check the source paths.
 if [ ! -d "${oasis_core_src_path}" ]; then
     echo "ERROR: Invalid arguments specified."
-    echo "       Invoke as: make symlink-artifacts OASIS_CORE_SRC_PATH=path/to/ekiden"
+    echo "       Invoke as: make symlink-artifacts OASIS_CORE_SRC_PATH=path/to/oasis-core"
     exit 1
 fi
 
@@ -47,9 +47,9 @@ if [ -n "${CARGO_TARGET_DIR}" ]; then
 fi
 set -u
 
-symlink_artifact $oasis_core_src_path target/debug/oasis-core-runtime-loader  $oasis_core_root_path
-symlink_artifact $oasis_core_src_path target/debug/oasis-core-keymanager-runtime $oasis_core_root_path
-symlink_artifact $oasis_core_src_path target/x86_64-fortanix-unknown-sgx/debug/oasis-core-keymanager-runtime.sgxs $oasis_core_root_path
+symlink_artifact $oasis_core_src_path target/default/debug/oasis-core-runtime-loader  $oasis_core_root_path
+symlink_artifact $oasis_core_src_path target/default/debug/oasis-core-keymanager-runtime $oasis_core_root_path
+symlink_artifact $oasis_core_src_path target/sgx/x86_64-fortanix-unknown-sgx/debug/oasis-core-keymanager-runtime.sgxs $oasis_core_root_path
 
 # Symlink the runtime artifacts.
 symlink_artifact $runtime_src_path target/debug/oasis-runtime $runtime_root_path 1
