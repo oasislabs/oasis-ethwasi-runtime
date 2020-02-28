@@ -6,11 +6,12 @@ OASIS_CORE_ROOT_PATH ?= .oasis-core
 # Runtime binary base path.
 RUNTIME_ROOT_PATH ?= .runtime
 
-# Ekiden cargo target directory.
+# oasis-core cargo target directory.
 OASIS_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(OASIS_CORE_ROOT_PATH)/target)
 
 # Runtime cargo target directory.
-RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)
+RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)/default
+RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)/sgx
 
 # Genesis files.
 GENESIS_ROOT_PATH ?= resources/genesis
@@ -82,23 +83,23 @@ symlink-artifacts:
 
 runtime: check-oasis-core
 	@$(ECHO) "$(CYAN)*** Building oasis-runtime...$(OFF)"
-	@cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx
-	@cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS)
-	@cargo elf2sgxs $(EXTRA_BUILD_ARGS)
+	@CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx
+	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS)
+	@CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo elf2sgxs $(EXTRA_BUILD_ARGS)
 
 gateway:
 	@$(ECHO) "$(CYAN)*** Building web3-gateway...$(OFF)"
-	@cargo build -p web3-gateway $(EXTRA_BUILD_ARGS)
+	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p web3-gateway $(EXTRA_BUILD_ARGS)
 
 genesis:
 	@$(ECHO) "$(CYAN)*** Building genesis utilities...$(OFF)"
-	@cargo build -p genesis $(EXTRA_BUILD_ARGS)
+	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p genesis $(EXTRA_BUILD_ARGS)
 
-genesis-update:
-	@$(ECHO) "$(CYAN)*** Generating Ekiden-compatible genesis files...$(OFF)"
+genesis-update: genesis
+	@$(ECHO) "$(CYAN)*** Generating oasis-core-compatible genesis files...$(OFF)"
 	@for g in $(GENESIS_FILES); do \
 		$(ECHO) "$(MAGENTA)  * Genesis file: $$g$(OFF)"; \
-		cargo run -p genesis $(EXTRA_BUILD_ARGS) --bin genesis-init -- \
+		CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo run -p genesis $(EXTRA_BUILD_ARGS) --bin genesis-init -- \
 			"$(GENESIS_ROOT_PATH)/$${g}" \
 			"$(GENESIS_ROOT_PATH)/oasis_$${g}"; \
 	done
@@ -114,7 +115,7 @@ run-gateway:
 
 # TODO: update gateway.sh to support SGX
 #run-gateway-sgx:
-#	@$(ECHO) "$(CYAN)*** Starting Ekiden node and Web3 gateway (SGX)...$(OFF)"
+#	@$(ECHO) "$(CYAN)*** Starting oasis-core node and Web3 gateway (SGX)...$(OFF)"
 #	@export OASIS_CORE_ROOT_PATH=$(OASIS_CORE_ROOT_PATH) RUNTIME_CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) && \
 #		scripts/gateway.sh single_node_sgx 2>&1 | python scripts/color-log.py
 

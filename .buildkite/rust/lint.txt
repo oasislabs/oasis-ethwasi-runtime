@@ -16,7 +16,6 @@ plugin-as-library
 private-in-public
 safe-extern-statics
 unconditional-recursion
-unions-with-drop-fields
 # unused
 unused-allocation
 unused-comparisons
