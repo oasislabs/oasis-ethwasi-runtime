@@ -19,7 +19,7 @@ use oasis_core_runtime::{
     common::{runtime::RuntimeId, version::Version},
     rak::RAK,
     register_runtime_txn_methods, version_from_cargo, Protocol, RpcDemux, RpcDispatcher,
-    TxnDispatcher,
+    TxnDispatcher, TxnMethDispatcher,
 };
 use oasis_runtime::block::OasisBatchHandler;
 use oasis_runtime_api::{with_api, ExecutionResult};
@@ -29,8 +29,9 @@ fn main() {
     let init = |protocol: &Arc<Protocol>,
                 rak: &Arc<RAK>,
                 _rpc_demux: &mut RpcDemux,
-                _rpc: &mut RpcDispatcher,
-                txn: &mut TxnDispatcher| {
+                _rpc: &mut RpcDispatcher|
+     -> Option<Box<dyn TxnDispatcher>> {
+        let mut txn = TxnMethDispatcher::new();
         {
             use oasis_runtime::methods::execute::*;
             with_api! { register_runtime_txn_methods!(txn, api); }
@@ -45,8 +46,9 @@ fn main() {
         ));
 
         txn.set_batch_handler(OasisBatchHandler::new(km_client));
+        Some(Box::new(txn))
     };
 
     // Start the runtime.
-    oasis_core_runtime::start_runtime(Some(Box::new(init)), version_from_cargo!());
+    oasis_core_runtime::start_runtime(Box::new(init), version_from_cargo!());
 }
