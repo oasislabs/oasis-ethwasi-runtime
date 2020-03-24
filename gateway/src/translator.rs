@@ -681,16 +681,13 @@ impl EthereumBlock {
                 EthRpcBlockTransactions::Full(
                     txns.enumerate()
                         .map(|(i, txn)| {
-                            EthRpcTransaction::from_localized(
-                                LocalizedTransaction {
-                                    signed: txn,
-                                    block_number: header.round,
-                                    block_hash: block_hash.as_ref().into(),
-                                    transaction_index: i,
-                                    cached_sender: None,
-                                },
-                                genesis::SPEC.params().eip86_transition,
-                            )
+                            EthRpcTransaction::from_localized(LocalizedTransaction {
+                                signed: txn,
+                                block_number: header.round,
+                                block_hash: block_hash.as_ref().into(),
+                                transaction_index: i,
+                                cached_sender: None,
+                            })
                         })
                         .collect(),
                 )

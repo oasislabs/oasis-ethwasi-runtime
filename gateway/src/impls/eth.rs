@@ -28,7 +28,6 @@ use jsonrpc_core::{
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
 use oasis_core_runtime::common::logger::get_logger;
-use oasis_runtime_common::genesis;
 use parity_rpc::v1::{
     helpers::{errors, fake_sign},
     metadata::Metadata,
@@ -396,19 +395,13 @@ impl Eth for EthClient {
         info!(self.logger, "eth_getTransactionByHash"; "hash" => ?hash);
 
         let hash = hash.into();
-        let eip86_transition = genesis::SPEC.params().eip86_transition;
 
         Box::new(
             self.translator
                 .get_txn_by_hash(hash)
                 .and_then(move |txn| {
-                    txn.map(|txn| {
-                        Ok(RpcTransaction::from_localized(
-                            txn.transaction()?,
-                            eip86_transition,
-                        ))
-                    })
-                    .transpose()
+                    txn.map(|txn| Ok(RpcTransaction::from_localized(txn.transaction()?)))
+                        .transpose()
                 })
                 .map_err(jsonrpc_error),
         )
@@ -430,19 +423,13 @@ impl Eth for EthClient {
         );
 
         let hash = hash.into();
-        let eip86_transition = genesis::SPEC.params().eip86_transition;
 
         Box::new(
             self.translator
                 .get_txn_by_block_hash_and_index(hash, index.value() as u32)
                 .and_then(move |txn| {
-                    txn.map(|txn| {
-                        Ok(RpcTransaction::from_localized(
-                            txn.transaction()?,
-                            eip86_transition,
-                        ))
-                    })
-                    .transpose()
+                    txn.map(|txn| Ok(RpcTransaction::from_localized(txn.transaction()?)))
+                        .transpose()
                 })
                 .map_err(jsonrpc_error),
         )
@@ -468,19 +455,12 @@ impl Eth for EthClient {
             return Box::new(future::ok(None));
         }
 
-        let eip86_transition = genesis::SPEC.params().eip86_transition;
-
         Box::new(
             self.translator
                 .get_txn(block_number_to_id(num), index.value() as u32)
                 .and_then(move |txn| {
-                    txn.map(|txn| {
-                        Ok(RpcTransaction::from_localized(
-                            txn.transaction()?,
-                            eip86_transition,
-                        ))
-                    })
-                    .transpose()
+                    txn.map(|txn| Ok(RpcTransaction::from_localized(txn.transaction()?)))
+                        .transpose()
                 })
                 .map_err(jsonrpc_error),
         )
