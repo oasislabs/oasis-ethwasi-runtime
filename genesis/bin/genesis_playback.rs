@@ -39,7 +39,7 @@ use oasis_core_runtime::{
         registry, roothash,
     },
     storage::{
-        mkvs::{urkel::sync::NoopReadSyncer, LogEntry, UrkelTree},
+        mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
         StorageContext,
     },
 };
@@ -251,10 +251,7 @@ fn main() {
                         src_root: root,
                         dst_round: 0,
                         dst_root: state_root,
-                        writelog: write_log
-                            .iter()
-                            .map(|entry| LogEntry::new(&entry.key, &entry.value))
-                            .collect(),
+                        writelog: write_log,
                     },
                     CallOption::default().wait_for_ready(true /* wait_for_ready */),
                 )
