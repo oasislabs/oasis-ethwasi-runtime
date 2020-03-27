@@ -25,6 +25,7 @@ fn push_metrics(logger: Logger, address: &str, job_name: &str, instance_name: &s
         labels! {"instance".to_owned() => instance_name.to_owned(),},
         address,
         prometheus::gather(),
+        None, /* basic auth */
     )
     .or_else::<prometheus::Error, _>(|err| {
         warn!(logger, "Cannot push Prometheus metrics"; "err" => ?err);

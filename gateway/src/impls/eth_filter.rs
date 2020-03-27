@@ -32,7 +32,7 @@ use parity_rpc::v1::{
     types::{Filter, FilterChanges, Index, Log, H256 as RpcH256, U256 as RpcU256},
 };
 use parking_lot::Mutex;
-use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+use prometheus::{labels, register_int_counter_vec, IntCounterVec};
 use slog::{info, Logger};
 
 use crate::{translator::Translator, util::jsonrpc_error};
