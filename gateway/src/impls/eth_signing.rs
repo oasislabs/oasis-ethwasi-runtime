@@ -9,7 +9,7 @@ use parity_rpc::v1::{
         H520 as RpcH520,
     },
 };
-use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+use prometheus::{labels, register_int_counter_vec, IntCounterVec};
 
 // Metrics.
 lazy_static! {

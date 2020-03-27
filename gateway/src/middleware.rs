@@ -6,8 +6,7 @@ use jsonrpc_ws_server as ws;
 use lazy_static::lazy_static;
 use parity_rpc::{informant::ActivityNotifier, v1::types::H256, Metadata, Origin};
 use prometheus::{
-    __register_counter, histogram_opts, opts, register_histogram, register_int_counter,
-    register_int_gauge, Histogram, IntCounter, IntGauge, __register_gauge,
+    register_histogram, register_int_counter, register_int_gauge, Histogram, IntCounter, IntGauge,
 };
 use std::{sync::Arc, vec::Vec};
 

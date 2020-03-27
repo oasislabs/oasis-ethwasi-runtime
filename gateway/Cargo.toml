@@ -15,7 +15,7 @@ serde_derive = "1.0"
 futures = "0.1"
 fdlimit = "0.1"
 signal-hook = "0.1.8"
-prometheus = { version = "0.4.2", features = ["push"] }
+prometheus = { version = "0.8", features = ["push"] }
 jsonrpc-core = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "oasis-parity-1.11" }
 jsonrpc-http-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "oasis-parity-1.11" }
 jsonrpc-ws-server = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "oasis-parity-1.11" }
@@ -41,7 +41,7 @@ oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch =
 oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
 oasis-runtime-api = { path = "../api" }
 rand = "0.4"
-grpcio = "0.4.4"
+grpcio = { version = "0.4.4", features = ["openssl"] }
 tokio = "0.1.17"
 tokio-threadpool = "0.1.14"
 failure = "0.1.5"

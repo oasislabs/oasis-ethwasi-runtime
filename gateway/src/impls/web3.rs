@@ -22,7 +22,7 @@ use parity_rpc::v1::{
     traits::Web3,
     types::{Bytes, H256},
 };
-use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+use prometheus::{labels, register_int_counter_vec, IntCounterVec};
 
 // Metrics.
 lazy_static! {

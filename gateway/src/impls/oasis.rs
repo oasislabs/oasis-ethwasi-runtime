@@ -15,8 +15,7 @@ use parity_rpc::v1::{
     types::{BlockNumber, Bytes, H160 as RpcH160},
 };
 use prometheus::{
-    __register_counter_vec, histogram_opts, labels, opts, register_histogram_vec,
-    register_int_counter_vec, HistogramVec, IntCounterVec,
+    labels, register_histogram_vec, register_int_counter_vec, HistogramVec, IntCounterVec,
 };
 use slog::{debug, info, Logger};
 

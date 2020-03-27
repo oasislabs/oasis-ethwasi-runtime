@@ -18,7 +18,7 @@
 use jsonrpc_core::Result;
 use lazy_static::lazy_static;
 use parity_rpc::v1::traits::Net;
-use prometheus::{__register_counter_vec, labels, opts, register_int_counter_vec, IntCounterVec};
+use prometheus::{labels, register_int_counter_vec, IntCounterVec};
 
 // Metrics.
 lazy_static! {
