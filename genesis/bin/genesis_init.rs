@@ -14,7 +14,7 @@ use clap::{crate_authors, crate_version, App, Arg};
 use ethcore::spec::Spec;
 use io_context::Context;
 use oasis_core_runtime::storage::{
-    mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
+    mkvs::{sync::NoopReadSyncer, Tree},
     StorageContext,
 };
 use oasis_runtime_common::{
@@ -46,7 +46,7 @@ fn main() {
 
     // Populate MKVS with state required at genesis.
     let untrusted_local = Arc::new(MemoryKeyValue::new());
-    let mut mkvs = UrkelTree::make()
+    let mut mkvs = Tree::make()
         .with_capacity(0, 0)
         .new(Box::new(NoopReadSyncer {}));
 
