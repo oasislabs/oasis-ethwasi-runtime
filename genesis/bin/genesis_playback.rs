@@ -39,7 +39,7 @@ use oasis_core_runtime::{
         registry, roothash,
     },
     storage::{
-        mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
+        mkvs::{sync::NoopReadSyncer, Tree},
         StorageContext,
     },
 };
@@ -206,7 +206,7 @@ fn main() {
     let storage = storage::StorageClient::new(node.channel());
 
     let untrusted_local = Arc::new(MemoryKeyValue::new());
-    let mut mkvs = UrkelTree::make()
+    let mut mkvs = Tree::make()
         .with_capacity(0, 0)
         .new(Box::new(NoopReadSyncer {}));
 

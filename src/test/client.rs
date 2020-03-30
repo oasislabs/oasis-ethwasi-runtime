@@ -23,7 +23,7 @@ use oasis_core_runtime::{
     executor::Executor,
     runtime_context,
     storage::{
-        mkvs::{urkel::sync::NoopReadSyncer, UrkelTree},
+        mkvs::{sync::NoopReadSyncer, Tree},
         StorageContext,
     },
     transaction::{dispatcher::BatchHandler, Context as TxnContext},
@@ -60,7 +60,7 @@ pub struct Client {
     /// Header.
     pub header: Header,
     /// In-memory MKVS.
-    pub mkvs: Option<UrkelTree>,
+    pub mkvs: Option<Tree>,
     /// Key manager client.
     pub km_client: Arc<KeyManagerClient>,
     /// Results.
@@ -70,7 +70,7 @@ pub struct Client {
 impl Client {
     pub fn new() -> Self {
         let km_client = Arc::new(oasis_core_keymanager_client::mock::MockClient::new());
-        let mut mkvs = UrkelTree::make().new(Box::new(NoopReadSyncer {}));
+        let mut mkvs = Tree::make().new(Box::new(NoopReadSyncer {}));
 
         // Initialize genesis.
         let untrusted_local = Arc::new(MemoryKeyValue::new());
