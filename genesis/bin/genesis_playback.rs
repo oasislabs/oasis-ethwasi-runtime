@@ -188,11 +188,13 @@ fn main() {
                 .required(true),
         )
         .arg(
+            // A too big batch can hit: cbor max number of elements in array
+            // limit error. (default: 131072)
             Arg::with_name("commit-every")
-                .help("Commit every so many imported accounts")
+                .help("Commit every so many operations")
                 .long("commit-every")
                 .takes_value(true)
-                .default_value("10000"),
+                .default_value("50000"),
         )
         .get_matches();
 
@@ -260,12 +262,26 @@ fn main() {
             root = state_root;
         };
 
+        let mut check_commit = |state: &mut State<_>, ops: &mut usize, n_accounts: usize| {
+            *ops += 1;
+            if *ops == commit_every {
+                println!("Committing state. Imported accounts: {}", n_accounts);
+                commit(state);
+                *ops = 0;
+            }
+        };
+
         // Iteratively parse input and import into state.
         println!("Injecting accounts...");
         let state_path = matches.value_of("exported_state").unwrap();
         let state_fb = filebuffer::FileBuffer::open(state_path).unwrap();
         let accounts = StateParser::new(&state_fb);
-        let mut index = 0;
+        let mut n_accounts = 0;
+        // Count number of pending operations that will get committed on
+        // next commit call.
+        // NOTE: ops is an upper limit on the size of the write-log that will
+        // be applied on commit.
+        let mut ops = 0;
 
         for (addr, account) in accounts {
             let address = Address::from_str(strip_0x(&addr)).unwrap();
@@ -275,8 +291,11 @@ fn main() {
             // Inject account.
             // (storage expiry initialized to 0)
             state.new_contract(&address, balance, nonce, 0);
+            check_commit(&mut state, &mut ops, n_accounts);
+
             if let Some(code) = account.code {
                 state.init_code(&address, from_hex(&code)).unwrap();
+                check_commit(&mut state, &mut ops, n_accounts);
             }
 
             // Inject account storage items.
@@ -286,14 +305,11 @@ fn main() {
                     let value = H256::from_str(strip_0x(&value)).unwrap();
 
                     state.set_storage(&address, key, value).unwrap();
+                    check_commit(&mut state, &mut ops, n_accounts);
                 }
             }
 
-            index += 1;
-            if index % commit_every == 0 {
-                println!("Imported {} accounts, committing state.", index);
-                commit(&mut state);
-            }
+            n_accounts += 1;
         }
 
         commit(&mut state);
