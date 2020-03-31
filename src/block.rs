@@ -6,9 +6,7 @@ use ethereum_types::{H256, U256};
 use io_context::Context as IoContext;
 use oasis_core_keymanager_client::KeyManagerClient;
 use oasis_core_runtime::{
-    common::logger::get_logger,
-    runtime_context,
-    transaction::{dispatcher::BatchHandler, Context as TxnContext},
+    common::logger::get_logger, runtime_context, transaction::Context as TxnContext,
 };
 use oasis_runtime_common::{
     confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
@@ -35,10 +33,8 @@ impl OasisBatchHandler {
     pub fn new(key_manager: Arc<dyn KeyManagerClient>) -> Self {
         Self { key_manager }
     }
-}
 
-impl BatchHandler for OasisBatchHandler {
-    fn start_batch(&self, ctx: &mut TxnContext) {
+    pub fn start_batch(&self, ctx: &mut TxnContext) {
         let logger = get_logger("ethereum/block");
 
         info!(logger, "Computing new block"; "round" => ctx.header.round + 1);
@@ -77,7 +73,7 @@ impl BatchHandler for OasisBatchHandler {
         });
     }
 
-    fn end_batch(&self, ctx: &mut TxnContext) {
+    pub fn end_batch(&self, ctx: &mut TxnContext) {
         let ectx = runtime_context!(ctx, BlockContext);
 
         info!(ectx.logger, "Commiting state into storage");

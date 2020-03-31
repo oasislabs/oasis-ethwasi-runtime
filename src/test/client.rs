@@ -42,7 +42,7 @@ use serde_json::map::Map;
 
 use crate::{
     block::{BlockContext, OasisBatchHandler},
-    methods,
+    dispatcher, methods,
 };
 
 /// Test client.
@@ -285,8 +285,10 @@ impl Client {
             .sign(&client.keypair.secret(), None);
 
             let raw = rlp::encode(&tx);
-            let result =
-                methods::execute::tx(&raw.into_vec(), ctx).map_err(|err| err.to_string())?;
+            let decoded_call = dispatcher::DecodedCall {
+                transaction: methods::check::tx(&raw, ctx).map_err(|err| err.to_string())?,
+            };
+            let result = methods::execute::tx(&decoded_call, ctx).map_err(|err| err.to_string())?;
             client.results.insert(tx.hash(), result);
 
             let address = if contract == None {

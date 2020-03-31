@@ -47,11 +47,11 @@ pub mod check {
 /// Execute transactions.
 pub mod execute {
     use super::*;
+    use crate::dispatcher::DecodedCall;
 
     /// Execute an Ethereum transaction.
-    pub fn tx(txn: &[u8], ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
-        // Perform transaction checks.
-        let txn = super::check::tx(txn, ctx)?;
+    pub fn tx(call: &DecodedCall, ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
+        let txn = &call.transaction;
 
         // If this is a check txn request, return success.
         if ctx.check_only {
