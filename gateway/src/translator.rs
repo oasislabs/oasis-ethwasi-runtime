@@ -333,7 +333,10 @@ impl Translator {
                             key: TAG_ETH_LOG_ADDRESS.to_vec(),
                             values: addresses
                                 .iter()
-                                .map(|x| <[u8]>::as_ref(x).to_vec().into())
+                                .map(|addr: &ethereum_types::Address| {
+                                    let bytes: &[u8] = addr;
+                                    bytes.to_vec().into()
+                                })
                                 .collect(),
                         });
                     }
@@ -349,7 +352,10 @@ impl Translator {
                                     key: tag.to_vec(),
                                     values: topic
                                         .iter()
-                                        .map(|x| <[u8]>::as_ref(&x).to_vec().into())
+                                        .map(|topic: &ethereum_types::H256| {
+                                            let bytes: &[u8] = topic;
+                                            bytes.to_vec().into()
+                                        })
                                         .collect(),
                                 })
                             }),

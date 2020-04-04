@@ -2424,7 +2424,7 @@ source = "git+https://github.com/NikVolf/parity-tokio-ipc?rev=306ea3e#306ea3e6ff
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio-named-pipes 0.1.6 (git+https://github.com/alexcrichton/mio-named-pipes)",
  "miow 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.3.23 (registry+https://github.com/rust-lang/crates.io-index)",
