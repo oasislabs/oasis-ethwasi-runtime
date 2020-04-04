@@ -9,11 +9,11 @@ oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch =
 oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
 
 # Parity.
-ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
-hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
-vm = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
+keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
+vm = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
 
 # Others.
 elastic-array = "0.10"
