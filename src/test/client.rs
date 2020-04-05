@@ -62,7 +62,7 @@ pub struct Client {
     /// In-memory MKVS.
     pub mkvs: Option<Tree>,
     /// Key manager client.
-    pub km_client: Arc<KeyManagerClient>,
+    pub km_client: Arc<dyn KeyManagerClient>,
     /// Results.
     pub results: HashMap<H256, ExecutionResult>,
 }

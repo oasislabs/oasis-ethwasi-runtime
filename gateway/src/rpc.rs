@@ -18,8 +18,8 @@ use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
+use jsonrpc_http_server::tokio::runtime::TaskExecutor;
 use middleware::{Middleware, WsDispatcher, WsStats};
-use parity_reactor::TokioRemote;
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
 
@@ -115,7 +115,7 @@ fn address(
 
 pub struct Dependencies<D: rpc_apis::Dependencies> {
     pub apis: Arc<D>,
-    pub remote: TokioRemote,
+    pub executor: TaskExecutor,
     pub stats: Arc<RpcStats>,
 }
 
@@ -143,7 +143,7 @@ pub fn new_ws<D: rpc_apis::Dependencies>(
         handler
     };
 
-    let remote = deps.remote.clone();
+    let remote = deps.executor.clone();
     let allowed_origins = into_domains(collect_hosts(conf.origins, &conf.dapps_address));
     let allowed_hosts = into_domains(collect_hosts(conf.hosts, &Some(url.clone().into())));
 
@@ -184,7 +184,7 @@ pub fn new_http<D: rpc_apis::Dependencies>(
         .parse()
         .map_err(|_| format!("Invalid {} listen host/port given: {}", id, url))?;
     let handler = setup_apis(conf.apis, deps, conf.max_batch_size);
-    let remote = deps.remote.clone();
+    let executor = deps.executor.clone();
 
     let cors_domains = into_domains(conf.cors);
     let allowed_hosts = into_domains(collect_hosts(conf.hosts, &Some(url.clone().into())));
@@ -194,7 +194,7 @@ pub fn new_http<D: rpc_apis::Dependencies>(
         cors_domains,
         allowed_hosts,
         handler,
-        remote,
+        executor,
         rpc::RpcExtractor,
         conf.server_threads,
     );

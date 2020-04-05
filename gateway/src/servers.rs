@@ -19,7 +19,7 @@
 #![warn(missing_docs)]
 
 use jsonrpc_core;
-use jsonrpc_http_server::{self as http, hyper, tokio_core};
+use jsonrpc_http_server::{self as http, hyper, tokio};
 use jsonrpc_ws_server as ws;
 
 use parity_rpc::http_common::{self, HttpMetaExtractor};
@@ -35,7 +35,7 @@ pub fn start_http<M, S, H, T>(
     cors_domains: http::DomainsValidation<http::AccessControlAllowOrigin>,
     allowed_hosts: http::DomainsValidation<http::Host>,
     handler: H,
-    remote: tokio_core::reactor::Remote,
+    executor: tokio::runtime::TaskExecutor,
     extractor: T,
     threads: usize,
 ) -> ::std::io::Result<HttpServer>
@@ -48,7 +48,7 @@ where
     let extractor = http_common::MetaExtractor::new(extractor);
     let builder = http::ServerBuilder::with_meta_extractor(handler, extractor)
         .threads(threads)
-        .event_loop_remote(remote)
+        .event_loop_executor(executor)
         .request_middleware(|request: hyper::Request<hyper::Body>| {
             // If the requested url is /status, terminate with 200 OK response.
             // Otherwise, proceed with normal request handling.
@@ -68,7 +68,7 @@ where
 pub fn start_ws<M, S, H, T, U, V>(
     addr: &SocketAddr,
     handler: H,
-    remote: tokio_core::reactor::Remote,
+    task_executor: tokio::runtime::TaskExecutor,
     allowed_origins: ws::DomainsValidation<ws::Origin>,
     allowed_hosts: ws::DomainsValidation<ws::Host>,
     max_connections: usize,
@@ -85,7 +85,7 @@ where
     V: ws::RequestMiddleware,
 {
     ws::ServerBuilder::with_meta_extractor(handler, extractor)
-        .event_loop_remote(remote)
+        .event_loop_executor(task_executor)
         .request_middleware(middleware)
         .allowed_origins(allowed_origins)
         .allowed_hosts(allowed_hosts)
