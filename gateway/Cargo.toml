@@ -23,13 +23,13 @@ jsonrpc-macros = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "h
 jsonrpc-pubsub = { git = "https://github.com/oasislabs/jsonrpc.git", branch = "hyper-v0.12" }
 lazy_static = "1.3.0"
 wasmi = "0.4"
-ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
-rlp = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
-parity-reactor = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
-parity-rpc = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
-keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
-mem = { git = "https://github.com/oasislabs/oasis-parity", branch = "upgrade-hyper" }
+rlp = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+parity-reactor = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+parity-rpc = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+mem = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 
 ## Common functionality between runtime and gateway
 oasis-runtime-common = { path = "../common" }
