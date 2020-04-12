@@ -19,7 +19,7 @@
 #![warn(missing_docs)]
 
 use jsonrpc_core;
-use jsonrpc_http_server::{self as http, hyper, tokio};
+use jsonrpc_http_server::{self as http, hyper};
 use jsonrpc_ws_server as ws;
 
 use parity_rpc::http_common::{self, HttpMetaExtractor};
