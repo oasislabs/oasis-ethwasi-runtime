@@ -62,9 +62,6 @@ pub fn execute(
 
     let rpc_stats = Arc::new(informant::RpcStats::default());
 
-    // spin up event loop
-    let event_loop = tokio::runtime::Runtime::new()?;
-
     // expose the http and ws servers to the world
     // conf corresponds to parity command-line options "--unsafe-expose" + "--jsonrpc-cors=all"
     let mut ws_conf = WsConfiguration::default();
@@ -97,7 +94,7 @@ pub fn execute(
 
     let dependencies = rpc::Dependencies {
         apis: deps_for_rpc_apis.clone(),
-        executor: event_loop.executor(),
+        executor: runtime.executor(),
         stats: rpc_stats.clone(),
     };
 
@@ -114,7 +111,6 @@ pub fn execute(
         runtime,
         translator,
         km_client,
-        event_loop,
         http_server,
         ws_server,
     };
@@ -130,7 +126,6 @@ pub struct RunningGateway {
     runtime: tokio::runtime::Runtime,
     translator: Arc<Translator>,
     km_client: Arc<dyn KeyManagerClient>,
-    event_loop: jsonrpc_http_server::tokio::runtime::Runtime,
     http_server: Option<jsonrpc_http_server::Server>,
     ws_server: Option<jsonrpc_ws_server::Server>,
 }
@@ -143,7 +138,6 @@ impl RunningGateway {
             runtime,
             translator,
             km_client,
-            event_loop,
             http_server,
             ws_server,
         } = self;
@@ -155,7 +149,6 @@ impl RunningGateway {
         let weak_translator = Arc::downgrade(&translator);
         // drop this stuff as soon as exit detected.
         drop(runtime.shutdown_now());
-        drop(event_loop);
         drop(http_server);
         drop(ws_server);
         drop(translator);

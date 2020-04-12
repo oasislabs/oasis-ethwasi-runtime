@@ -18,10 +18,10 @@ use std::{collections::HashSet, io, sync::Arc};
 
 use informant::RpcStats;
 use jsonrpc_core::MetaIoHandler;
-use jsonrpc_http_server::tokio::runtime::TaskExecutor;
 use middleware::{Middleware, WsDispatcher, WsStats};
 use parity_rpc::{self as rpc, DomainsValidation, Metadata};
 use rpc_apis::{self, ApiSet};
+use tokio::runtime::TaskExecutor;
 
 use servers;
 
