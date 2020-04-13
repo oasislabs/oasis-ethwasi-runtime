@@ -36,10 +36,11 @@ oasis-runtime-common = { path = "../common" }
 
 ## Oasis Core client dependencies
 clap = "2.29.1"
-oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5" }
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5" }
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5" }
 oasis-runtime-api = { path = "../api" }
+
 rand = "0.4"
 grpcio = { version = "0.4.4", features = ["openssl"] }
 tokio = "0.1.17"

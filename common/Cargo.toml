@@ -5,8 +5,11 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 # Oasis Core.
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", branch = "master" }
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5" }
+# TODO: change commit hash once oasis-core PR is merged.
+# This will have to target a specific commit until new oasis-core release is
+# made.
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", rev = "f55cdff15da73f49beb68733147adfa29bb09866" }
 
 # Parity.
 ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
