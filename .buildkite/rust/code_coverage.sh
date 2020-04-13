@@ -58,6 +58,7 @@ cargo tarpaulin \
   --packages oasis-runtime \
   --packages oasis-runtime-common \
   --packages web3-gateway \
+  --packages oasis-runtime-keymanager \
   --exclude-files .e2e* \
   --exclude-files *generated* \
   --exclude-files genesis* \

@@ -7,7 +7,7 @@ oasis_runner="${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner/oasis-net-runner"
 runtime_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-runtime"
 runtime_loader="${OASIS_CORE_ROOT_PATH}/target/default/debug/oasis-core-runtime-loader"
 runtime_genesis="${GENESIS_ROOT_PATH}/oasis_genesis_testing.json"
-keymanager_binary="${OASIS_CORE_ROOT_PATH}/target/default/debug/oasis-core-keymanager-runtime"
+keymanager_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-runtime-keymanager"
 web3_gateway="${RUNTIME_CARGO_TARGET_DIR}/debug/gateway"
 
 # Prepare an empty data directory.
@@ -16,7 +16,6 @@ rm -rf "${data_dir}"
 mkdir -p "${data_dir}"
 chmod -R go-rwx "${data_dir}"
 client_socket="${data_dir}/net-runner/network/client-0/internal.sock"
-
 
 # Run the network.
 echo "Starting the test network."

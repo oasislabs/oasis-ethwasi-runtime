@@ -93,6 +93,36 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
+  - label: Build key manager runtime (ELF)
+    command:
+      # Build keymanager runtime.
+      - .buildkite/rust/build_runtime.sh /workdir/keymanager-runtime
+
+      # Upload the built artifacts.
+      - cd /var/tmp/artifacts/debug
+      - buildkite-agent artifact upload oasis-runtime-keymanager
+    env:
+      RUNTIME_VARIANT: elf
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
+  - label: Build key manager runtime (SGXS)
+    command:
+      # Build keymanager runtime.
+      - .buildkite/rust/build_runtime.sh /workdir/keymanager-runtime
+
+      # Upload the built artifacts.
+      - cd /var/tmp/artifacts/x86_64-fortanix-unknown-sgx/debug
+      - buildkite-agent artifact upload oasis-runtime-keymanager.sgxs
+    env:
+      RUNTIME_VARIANT: sgxs
+    agents:
+      buildkite_agent_size: large
+    plugins:
+      <<: *docker_plugin_configuration
+
   # Wait for all jobs defined before this point
   # to finish running in parallel before continuing.
   - wait
@@ -146,7 +176,7 @@ steps:
   - label: ":rocket: Build docker image context"
     trigger: oasis-runtime-build-image-context
     async: true
-    branches: "master devnet2"
+    branches: master
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"

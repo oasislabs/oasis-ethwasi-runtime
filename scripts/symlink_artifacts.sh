@@ -48,8 +48,6 @@ fi
 set -u
 
 symlink_artifact $oasis_core_src_path target/default/debug/oasis-core-runtime-loader  $oasis_core_root_path
-symlink_artifact $oasis_core_src_path target/default/debug/oasis-core-keymanager-runtime $oasis_core_root_path
-symlink_artifact $oasis_core_src_path target/sgx/x86_64-fortanix-unknown-sgx/debug/oasis-core-keymanager-runtime.sgxs $oasis_core_root_path
 
 # Symlink the runtime artifacts.
 symlink_artifact $runtime_src_path target/debug/oasis-runtime $runtime_root_path 1
