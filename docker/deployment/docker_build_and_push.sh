@@ -16,7 +16,8 @@ set -euxo pipefail
 ###############
 git_commit_sha=$1
 docker_image_tag=$2
-context=$3
+oasis_core_version=$3
+context=$4
 
 ###############
 # Optional args
@@ -40,7 +41,7 @@ set +x
 docker build --pull --rm --force-rm \
   --build-arg OASIS_RUNTIME_COMMIT_SHA=${git_commit_sha} \
   --build-arg OASIS_RUNTIME_BUILD_IMAGE_TAG=${docker_image_tag} \
-  --build-arg OASIS_NODE_BASE_DOCKER_IMAGE_TAG=${base_image_tag} \
+  --build-arg OASIS_CORE_VERSION=${oasis_core_version} \
   -t oasislabs/${docker_image_name}:${docker_image_tag} \
   --file=docker/deployment/Dockerfile \
   - <"$context"
