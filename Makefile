@@ -73,11 +73,7 @@ check-tools:
 	)
 
 check-oasis-core:
-	@test -x $(OASIS_CORE_ROOT_PATH)/go/oasis-node/oasis-node || ( \
-		$(ECHO) "$(RED)error:$(OFF) oasis-node not found in $(OASIS_CORE_ROOT_PATH) (check OASIS_CORE_ROOT_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
-		exit 1 \
-	)
+	@scripts/check_artifacts.sh
 
 symlink-artifacts:
 	@$(ECHO) "$(CYAN)*** Symlinking Oasis Core and runtime build artifacts...$(OFF)"
