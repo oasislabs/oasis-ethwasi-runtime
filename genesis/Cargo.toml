@@ -5,8 +5,15 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 oasis-runtime-common = { path = "../common" }
-oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5" }
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5" }
+
+# The referenced commit has rust code compatible with artifacts in oasis-core
+# release: 20.5, with some rust changes needed that were not yet present in
+# that release.
+# Once a new oasis-core release is made, update the references to point to the
+# new release.
+oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", rev = "0757868e351a63ad44d52b0d2df44c16b4e5c823" }
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", rev = "0757868e351a63ad44d52b0d2df44c16b4e5c823" }
+
 clap = "2.29.1"
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 filebuffer = "0.4.0"

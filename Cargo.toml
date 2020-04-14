@@ -19,12 +19,14 @@ oasis-runtime-api = { path = "./api" }
 oasis-runtime-common = { path = "./common" }
 oasis-runtime-keymanager = { path = "./keymanager-runtime" }
 
-# Oasis Core.
-# TODO: change commit hash once oasis-core PR is merged.
-# This will have to target a specific commit until new oasis-core release is
-# made.
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", rev = "f55cdff15da73f49beb68733147adfa29bb09866" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", rev = "f55cdff15da73f49beb68733147adfa29bb09866" }
+# Oasis core.
+# The referenced commit has rust code compatible with artifacts in oasis-core
+# release: 20.5, with some rust changes needed that were not yet present in
+# that release.
+# Once a new oasis-core release is made, update the references to point to the
+# new release.
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", rev = "0757868e351a63ad44d52b0d2df44c16b4e5c823" }
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", rev = "0757868e351a63ad44d52b0d2df44c16b4e5c823" }
 
 # Parity.
 common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
