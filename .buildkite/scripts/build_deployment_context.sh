@@ -9,8 +9,7 @@
 # https://buildkite.com/docs/pipelines/writing-build-scripts
 set -euxo pipefail
 
-oasis_core_version=$1
-output=$2
+output=$1
 
 if [ -n "${BUILD_PRODUCTION_GENESIS:-}" -a -n "${BUILD_BENCHMARKING:-}" ]; then
     echo "Cannot use BUILD_PRODUCTION_GENESIS and BUILD_BENCHMARKING options together!"
@@ -27,4 +26,4 @@ if [ -n "${BUILD_BENCHMARKING:-}" ]; then
     export GATEWAY_BUILD_EXTRA_ARGS='--features benchmarking'
 fi
 
-docker/deployment/build_context.sh "$oasis_core_version" "$output"
+docker/deployment/build_context.sh "$output"

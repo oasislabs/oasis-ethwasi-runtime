@@ -24,9 +24,9 @@ To do this, you can either:
   process completes you can then run `make && make symlink-artifacts OASIS_CORE_SRC_PATH=/path/to/oasis-core`
   and all the required artifacts will be symlinked under `.oasis-core` and `.runtime`.
 
-* Download Oasis Core artifacts from a release and then set `OASIS_NODE=/path/to/oasis-node`,
-  `OASIS_NET_RUNNER=/path/to/oasis-net-runner` and `OASIS_CORE_RUNTIME_LOADER=/path/to/oasis-core-runtime-loader`
-  environment variables.
+* Download Oasis Core artifacts from a release (for currently supported release see `OASIS_CORE_VERSION` file),
+  and then set `OASIS_NODE=/path/to/oasis-node`, `OASIS_NET_RUNNER=/path/to/oasis-net-runner` and
+  `OASIS_CORE_RUNTIME_LOADER=/path/to/oasis-core-runtime-loader` environment variables.
 
 In the following instructions, the top-level directory is the directory
 where the code has been checked out.

@@ -9,8 +9,10 @@ set -euxo pipefail
 ###############
 # Required args
 ###############
-oasis_core_version="$1"
-dst="$2"
+dst="$1"
+
+# Read oasis core version.
+oasis_core_version="$(cat OASIS_CORE_VERSION)"
 
 OASIS_UNSAFE_SKIP_AVR_VERIFY=1
 export OASIS_UNSAFE_SKIP_AVR_VERIFY
@@ -68,4 +70,5 @@ tar -czf "$dst" \
     target/x86_64-fortanix-unknown-sgx/release/oasis-runtime-keymanager.sgxs \
     target/release/gateway \
     oasis-core/ \
+    OASIS_CORE_VERSION \
     docker/deployment/Dockerfile
