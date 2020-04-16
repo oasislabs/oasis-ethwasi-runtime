@@ -30,9 +30,7 @@ mkdir -p \
 ###########################################
 # Download artifacts from other pipelines
 ###########################################
-download_oasis_node go/oasis-node
-download_oasis_net_runner go/oasis-net-runner
-download_oasis_core_runtime_loader target/debug
+download_oasis_core_artifacts .
 download_oasis_gateway go/oasis-gateway
 
 ########################

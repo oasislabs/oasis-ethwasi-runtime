@@ -19,7 +19,7 @@ export OASIS_UNSAFE_SKIP_AVR_VERIFY
 OASIS_UNSAFE_KM_POLICY_KEYS=1
 export OASIS_UNSAFE_KM_POLICY_KEYS
 
-# Load oasis-core artifacts.
+# Download oasis-core artifacts.
 curl -L -o oasis_core_linux_amd64.tar.gz \
  "https://github.com/oasislabs/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
 mkdir -p oasis-core

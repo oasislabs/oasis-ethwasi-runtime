@@ -1,7 +1,6 @@
 download_oasis_binaries() {
 	local out_dir=$1
-	download_oasis_node $out_dir
-	download_oasis_core_runtime_loader $out_dir
+	download_oasis_core_artifacts $out_dir
 	download_keymanager_runtime $out_dir
 	download_keymanager_runtime_sgx $out_dir
 	download_runtime $out_dir
@@ -9,22 +8,22 @@ download_oasis_binaries() {
 	download_gateway $out_dir
 }
 
-download_oasis_node() {
+download_oasis_core_artifacts() {
 	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh oasis-core-ci $OASIS_CORE_BRANCH "Build Go node" oasis-node $out_dir
-	chmod +x $out_dir/oasis-node
-}
 
-download_oasis_net_runner() {
-	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh oasis-core-ci $OASIS_CORE_BRANCH "Build Go node" oasis-net-runner $out_dir
-	chmod +x $out_dir/oasis-net-runner
-}
+	oasis_core_version=$(cat OASIS_CORE_VERSION)
 
-download_oasis_core_runtime_loader() {
-	local out_dir=$1
-	.buildkite/scripts/download_artifact.sh oasis-core-ci $OASIS_CORE_BRANCH "Build Rust runtime loader" oasis-core-runtime-loader $out_dir
-	chmod +x $out_dir/oasis-core-runtime-loader
+	mkdir -p "${out_dir}/go/oasis-node"
+	mkdir -p "${out_dir}/go/oasis-net-runner"
+	mkdir -p "${out_dir}/target/debug/"
+
+	curl -L -o /tmp/oasis_core_linux_amd64.tar.gz \
+		"https://github.com/oasislabs/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
+	tar -C /tmp/ -xzf /tmp/oasis_core_linux_amd64.tar.gz
+
+	mv /tmp/oasis-node "${out_dir}/go/oasis-node/"
+	mv /tmp/oasis-net-runner "${out_dir}/go/oasis-net-runner/"
+	mv /tmp/oasis-core-runtime-loader "${out_dir}/target/debug/"
 }
 
 download_gateway() {

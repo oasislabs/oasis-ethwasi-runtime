@@ -150,12 +150,6 @@ steps:
     plugins:
       <<: *docker_plugin_configuration
 
-  # TODO: figure out a way to start running the
-  #       end-to-end tests as soon as its dependencies
-  #       are done running. Don't wait for all other
-  #       parallel jobs to finish, just the ones we need
-  #       to run the tests...
-
   # End-to-end tests
   - label: RPC tests
     command:
