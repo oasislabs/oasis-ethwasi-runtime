@@ -23,6 +23,7 @@ use oasis_core_runtime::{
 };
 use oasis_runtime::block::OasisBatchHandler;
 use oasis_runtime_api::{with_api, ExecutionResult};
+use oasis_runtime_keymanager::trusted_policy_signers;
 
 fn main() {
     // Initializer.
@@ -43,6 +44,7 @@ fn main() {
             protocol.clone(),
             rak.clone(),
             1024, // TODO: How big should this cache be?
+            trusted_policy_signers(),
         ));
 
         txn.set_batch_handler(OasisBatchHandler::new(km_client));

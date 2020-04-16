@@ -29,7 +29,7 @@ OASIS_NET_RUNNER=${OASIS_NET_RUNNER:-${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner
 # Path to the runtime loader.
 OASIS_CORE_RUNTIME_LOADER=${OASIS_CORE_RUNTIME_LOADER:-${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-runtime-loader}
 # Path to keymanager binary.
-OASIS_CORE_KM_BINARY=${OASIS_CORE_KM_BINARY:-${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-keymanager-runtime}
+OASIS_CORE_KM_BINARY=${OASIS_CORE_KM_BINARY:-${WORKDIR}/target/debug/oasis-runtime-keymanager}
 # Path to runtime binary.
 RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/oasis-runtime}
 # Path to runtime genesis state.

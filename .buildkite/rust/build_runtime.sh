@@ -1,10 +1,10 @@
 #!/bin/bash
 
 ############################################################
-# This script builds the runtime and runs the runtime tests.
+# This script builds a runtime.
 #
 # Usage:
-# build_and_test_runtime.sh <src_dir>
+# build_runtime.sh <src_dir>
 #
 # src_dir - Absolute or relative path to the directory
 #           containing the source code.
@@ -23,20 +23,11 @@ if [ ! -d $src_dir ]; then
   exit 1
 fi
 shift
+
 # Runtime variant (elf, sgxs).
 variant=${RUNTIME_VARIANT:-elf}
 
-#########################################
-# Additional args passed to `cargo build`
-#########################################
-extra_args=$*
-
 source .buildkite/rust/common.sh
-
-#################################
-# Change into the build directory
-#################################
-cd $src_dir
 
 #######################################################
 # Update the PATH to respect $CARGO_INSTALL_ROOT.
@@ -64,19 +55,22 @@ fi
 ###################
 # Build the runtime
 ###################
-case $variant in
-    elf)
-        # Build non-SGX runtime.
-        cargo build --locked -p oasis-runtime
-        ;;
-    sgxs)
-        # Build SGX runtime.
-        cargo build --locked -p oasis-runtime --target x86_64-fortanix-unknown-sgx
-        cargo elf2sgxs
-        ;;
-esac
+pushd $src_dir
+    case $variant in
+        elf)
+            # Build non-SGX runtime.
+            OASIS_UNSAFE_SKIP_KM_POLICY="1" cargo build --locked
+            ;;
+        sgxs)
+            unset OASIS_UNSAFE_SKIP_KM_POLICY
+            # Build SGX runtime.
+            cargo build --locked --target x86_64-fortanix-unknown-sgx
+            cargo elf2sgxs
+            ;;
+    esac
 
-######################################
-# Apply the rust code formatting rules
-######################################
-cargo fmt -- --check
+    ######################################
+    # Apply the rust code formatting rules
+    ######################################
+    cargo fmt -- --check
+popd

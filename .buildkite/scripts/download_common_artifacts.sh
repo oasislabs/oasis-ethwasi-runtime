@@ -30,11 +30,7 @@ mkdir -p \
 ###########################################
 # Download artifacts from other pipelines
 ###########################################
-download_oasis_node go/oasis-node
-download_oasis_net_runner go/oasis-net-runner
-download_oasis_core_runtime_loader target/debug
-download_keymanager_runtime target/debug
-download_keymanager_runtime_sgx target/x86_64-fortanix-unknown-sgx/debug
+download_oasis_core_artifacts .
 download_oasis_gateway go/oasis-gateway
 
 ########################
@@ -48,6 +44,18 @@ buildkite-agent artifact download \
     oasis-runtime \
     target/debug
 chmod +x target/debug/oasis-runtime
+
+###################################
+# Download oasis-runtime-keymanager
+###################################
+buildkite-agent artifact download \
+    oasis-runtime-keymanager.sgxs \
+    target/x86_64-fortanix-unknown-sgx/debug
+
+buildkite-agent artifact download \
+    oasis-runtime-keymanager \
+    target/debug
+chmod +x target/debug/oasis-runtime-keymanager
 
 ##################
 # Download gateway

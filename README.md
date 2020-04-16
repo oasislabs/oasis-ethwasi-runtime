@@ -16,7 +16,7 @@ Read our [Security](https://github.com/oasislabs/oasis-core/blob/master/SECURITY
 First, make sure that you have everything required for Oasis Core installed by
 following [the instructions](https://github.com/oasislabs/oasis-core/blob/master/README.md).
 
-For building and running the runtime, you need to have specific Ekiden artifacts available.
+For building and running the runtime, you need to have Oasis Core artifacts available.
 To do this, you can either:
 
 * Build Oasis Core locally by checking out the oasis-core repository (e.g., in `/path/to/oasis-core`)
@@ -24,9 +24,9 @@ To do this, you can either:
   process completes you can then run `make && make symlink-artifacts OASIS_CORE_SRC_PATH=/path/to/oasis-core`
   and all the required artifacts will be symlinked under `.oasis-core` and `.runtime`.
 
-* Manually provide the required artifacts in a custom directory and specify
-  `OASIS_CORE_ROOT_PATH=/path/to/oasis-core` on each invocation of `make`, e.g.
-  `make OASIS_CORE_ROOT_PATH=/path/to/oasis-core`.
+* Download Oasis Core artifacts from a release (for currently supported release see `OASIS_CORE_VERSION` file),
+  and then set `OASIS_NODE=/path/to/oasis-node`, `OASIS_NET_RUNNER=/path/to/oasis-net-runner` and
+  `OASIS_CORE_RUNTIME_LOADER=/path/to/oasis-core-runtime-loader` environment variables.
 
 In the following instructions, the top-level directory is the directory
 where the code has been checked out.

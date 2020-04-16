@@ -34,4 +34,5 @@ cargo test \
     --features test \
     -p oasis-runtime \
     -p oasis-runtime-common \
+    -p oasis-runtime-keymanager \
     -p web3-gateway

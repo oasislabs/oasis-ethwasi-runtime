@@ -10,8 +10,12 @@ RUNTIME_ROOT_PATH ?= .runtime
 OASIS_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(OASIS_CORE_ROOT_PATH)/target)
 
 # Runtime cargo target directory.
-RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)/default
-RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)/sgx
+RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)/target)/default
+RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)target)/sgx
+
+# List of runtime paths to build.
+RUNTIMES := . \
+	keymanager-runtime
 
 # Genesis files.
 GENESIS_ROOT_PATH ?= resources/genesis
@@ -50,14 +54,14 @@ endif
 	all \
 	check check-tools check-oasis-core \
 	symlink-artifacts \
-	runtime gateway genesis \
+	build-runtimes gateway genesis \
 	genesis-update \
 	clean clean-test-e2e \
 	fmt \
 	run-gateway run-gateway-sgx \
 	test test-unit test-e2e
 
-all: check runtime gateway
+all: check build-runtimes gateway genesis
 	@$(ECHO) "$(CYAN)*** Everything built successfully!$(OFF)"
 
 check: check-tools check-oasis-core
@@ -69,11 +73,7 @@ check-tools:
 	)
 
 check-oasis-core:
-	@test -x $(OASIS_CORE_ROOT_PATH)/go/oasis-node/oasis-node || ( \
-		$(ECHO) "$(RED)error:$(OFF) oasis-node not found in $(OASIS_CORE_ROOT_PATH) (check OASIS_CORE_ROOT_PATH)" && \
-		$(ECHO) "       Maybe you need to run \"make symlink-artifacts\"?" && \
-		exit 1 \
-	)
+	@scripts/check_artifacts.sh
 
 symlink-artifacts:
 	@$(ECHO) "$(CYAN)*** Symlinking Oasis Core and runtime build artifacts...$(OFF)"
@@ -81,11 +81,15 @@ symlink-artifacts:
 		scripts/symlink_artifacts.sh "$(OASIS_CORE_ROOT_PATH)" "$(OASIS_CORE_SRC_PATH)" "$(RUNTIME_ROOT_PATH)" $$(pwd)
 	@$(ECHO) "$(CYAN)*** Symlinking done!$(OFF)"
 
-runtime: check-oasis-core
-	@$(ECHO) "$(CYAN)*** Building oasis-runtime...$(OFF)"
-	@CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx
-	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p oasis-runtime $(EXTRA_BUILD_ARGS)
-	@CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo elf2sgxs $(EXTRA_BUILD_ARGS)
+build-runtimes:
+	@CARGO_TARGET_ROOT=$(shell pwd)/target && for e in $(RUNTIMES); do \
+		$(ECHO) "$(MAGENTA)*** Building runtime: $$e...$(OFF)"; \
+		(cd $$e && \
+			CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo build  $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
+			CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build  $(EXTRA_BUILD_ARGS) && \
+			CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo elf2sgxs  $(EXTRA_BUILD_ARGS) \
+		) || exit 1; \
+	done
 
 gateway:
 	@$(ECHO) "$(CYAN)*** Building web3-gateway...$(OFF)"
