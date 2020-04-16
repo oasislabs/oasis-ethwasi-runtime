@@ -10,8 +10,8 @@ RUNTIME_ROOT_PATH ?= .runtime
 OASIS_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(OASIS_CORE_ROOT_PATH)/target)
 
 # Runtime cargo target directory.
-RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)/default
-RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),target)/sgx
+RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)/target)/default
+RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)target)/sgx
 
 # List of runtime paths to build.
 RUNTIMES := . \
