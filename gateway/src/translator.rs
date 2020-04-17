@@ -199,7 +199,7 @@ impl Translator {
         };
 
         // Try to verify the signature.
-        let signed: SignedTransaction = match SignedTransaction::new(decoded.clone()) {
+        let signed = match SignedTransaction::new(decoded) {
             Ok(signed) => signed,
             Err(err) => return Box::new(future::err(err.into())),
         };
@@ -212,16 +212,15 @@ impl Translator {
                 MAX_RETRIES,
                 self.client.clone(),
                 ByteBuf::from(raw),
-                decoded,
                 signed,
                 self.logger.clone(),
             ),
-            move |(retries, client, payload, decoded, signed, logger)| {
+            move |(retries, client, payload, signed, logger)| {
                 client
                     .tx(payload.clone())
                     .then(move |maybe_result| match maybe_result {
                         Ok(result) => {
-                            let hash = decoded.hash();
+                            let hash = signed.hash();
                             info!(logger, "send_raw_transaction OK";
                                 "hash" => ?hash,
                                 "transaction" => ?signed,
@@ -237,11 +236,11 @@ impl Translator {
                                     }
                                     let retries = retries - 1;
                                     return Ok(future::Loop::Continue((
-                                        retries, client, payload, decoded, signed, logger,
+                                        retries, client, payload, signed, logger,
                                     )));
                                 }
                             }
-                            let hash = decoded.hash();
+                            let hash = signed.hash();
                             info!(logger, "send_raw_transaction ERR";
                                 "hash" => ?hash,
                                 "transaction" => ?signed,
