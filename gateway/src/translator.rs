@@ -41,7 +41,7 @@ use parity_rpc::v1::types::{
 };
 
 use serde_bytes::ByteBuf;
-use slog::{error, Logger};
+use slog::{error, info, Logger};
 use tokio_threadpool::{Builder as ThreadPoolBuilder, ThreadPool};
 
 use crate::EthereumRuntimeClient;
@@ -192,9 +192,15 @@ impl Translator {
 
     /// Submit a raw Ethereum transaction to the chain.
     pub fn send_raw_transaction(&self, raw: Vec<u8>) -> BoxFuture<(H256, ExecutionResult)> {
-        // TODO: Perform more checks.
+        // Try to decode the transaction.
         let decoded: UnverifiedTransaction = match rlp::decode(&raw) {
             Ok(decoded) => decoded,
+            Err(err) => return Box::new(future::err(err.into())),
+        };
+
+        // Try to verify the signature.
+        let signed: SignedTransaction = match SignedTransaction::new(decoded.clone()) {
+            Ok(signed) => signed,
             Err(err) => return Box::new(future::err(err.into())),
         };
 
@@ -207,12 +213,22 @@ impl Translator {
                 self.client.clone(),
                 ByteBuf::from(raw),
                 decoded,
+                signed,
+                self.logger.clone(),
             ),
-            move |(retries, client, payload, decoded)| {
+            move |(retries, client, payload, decoded, signed, logger)| {
                 client
                     .tx(payload.clone())
                     .then(move |maybe_result| match maybe_result {
-                        Ok(result) => Ok(future::Loop::Break((decoded.hash(), result))),
+                        Ok(result) => {
+                            let hash = decoded.hash();
+                            info!(logger, "send_raw_transaction OK";
+                                "hash" => ?hash,
+                                "transaction" => ?signed,
+                                "result" => ?result
+                            );
+                            Ok(future::Loop::Break((hash, result)))
+                        }
                         Err(err) => {
                             if let Some(txn_err) = err.downcast_ref::<TransactionError>() {
                                 if let TransactionError::BlockGasLimitReached = txn_err {
@@ -221,10 +237,16 @@ impl Translator {
                                     }
                                     let retries = retries - 1;
                                     return Ok(future::Loop::Continue((
-                                        retries, client, payload, decoded,
+                                        retries, client, payload, decoded, signed, logger,
                                     )));
                                 }
                             }
+                            let hash = decoded.hash();
+                            info!(logger, "send_raw_transaction ERR";
+                                "hash" => ?hash,
+                                "transaction" => ?signed,
+                                "err" => ?err,
+                            );
                             Err(err)
                         }
                     })
