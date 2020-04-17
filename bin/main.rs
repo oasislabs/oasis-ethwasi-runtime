@@ -16,10 +16,8 @@ use std::sync::Arc;
 use serde_bytes::ByteBuf;
 
 use oasis_core_runtime::{
-    common::{runtime::RuntimeId, version::Version},
-    rak::RAK,
-    register_runtime_txn_methods, version_from_cargo, Protocol, RpcDemux, RpcDispatcher,
-    TxnDispatcher, TxnMethDispatcher,
+    common::version::Version, rak::RAK, register_runtime_txn_methods, version_from_cargo, Protocol,
+    RpcDemux, RpcDispatcher, TxnDispatcher, TxnMethDispatcher,
 };
 use oasis_runtime::block::OasisBatchHandler;
 use oasis_runtime_api::{with_api, ExecutionResult};
