@@ -73,7 +73,8 @@ check-tools:
 	)
 
 check-oasis-core:
-	@scripts/check_artifacts.sh
+	@export OASIS_CORE_ROOT_PATH=$(OASIS_CORE_ROOT_PATH) && \
+		scripts/check_artifacts.sh
 
 symlink-artifacts:
 	@$(ECHO) "$(CYAN)*** Symlinking Oasis Core and runtime build artifacts...$(OFF)"
