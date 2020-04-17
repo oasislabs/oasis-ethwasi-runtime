@@ -31,11 +31,13 @@ To do this, you can either:
 In the following instructions, the top-level directory is the directory
 where the code has been checked out.
 
-## Building the runtime
+## Building the runtime (unsafe non-SGX environment)
 
 To build everything required for running the runtime, simply execute in the
 top-level directory:
 ```bash
+$ export OASIS_UNSAFE_SKIP_AVR_VERIFY="1"
+$ export OASIS_UNSAFE_SKIP_KM_POLICY="1"
 $ make
 ```
 
