@@ -37,9 +37,8 @@ fn main() {
         }
 
         // Create the key manager client.
-        let rt_id = protocol.get_runtime_id();
         let km_client = Arc::new(oasis_core_keymanager_client::RemoteClient::new_runtime(
-            rt_id,
+            protocol.get_runtime_id(),
             protocol.clone(),
             rak.clone(),
             1024, // TODO: How big should this cache be?
