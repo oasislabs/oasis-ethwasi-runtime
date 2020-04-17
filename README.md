@@ -20,7 +20,7 @@ For building and running the runtime, you need to have Oasis Core artifacts avai
 To do this, you can either:
 
 * Build Oasis Core locally by checking out the oasis-core repository (e.g., in `/path/to/oasis-core`)
-  and then running `OASIS_UNSAFE_SKIP_KM_POLICY=1 make -C /path/to/oasis-core`. After the
+  and then running `make -C /path/to/oasis-core`. After the
   process completes you can then run `make && make symlink-artifacts OASIS_CORE_SRC_PATH=/path/to/oasis-core`
   and all the required artifacts will be symlinked under `.oasis-core` and `.runtime`.
 
