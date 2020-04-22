@@ -118,12 +118,12 @@ scenario_basic() {
     # Run the network.
     echo "Starting the test network."
     ${OASIS_NET_RUNNER} \
-        --net.node.binary ${OASIS_NODE} \
-        --net.runtime.binary ${RUNTIME_BINARY} \
-        --net.runtime.loader ${OASIS_CORE_RUNTIME_LOADER} \
-        --net.runtime.genesis_state ${RUNTIME_GENESIS} \
-        --net.keymanager.binary ${OASIS_CORE_KM_BINARY} \
-        --net.epochtime_mock \
+        --fixture.default.node.binary ${OASIS_NODE} \
+        --fixture.default.runtime.binary ${RUNTIME_BINARY} \
+        --fixture.default.runtime.loader ${OASIS_CORE_RUNTIME_LOADER} \
+        --fixture.default.runtime.genesis_state ${RUNTIME_GENESIS} \
+        --fixture.default.keymanager.binary ${OASIS_CORE_KM_BINARY} \
+        --fixture.default.epochtime_mock \
         --basedir.no_temp_dir \
         --basedir ${TEST_BASE_DIR} &
 

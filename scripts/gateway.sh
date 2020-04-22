@@ -20,12 +20,12 @@ client_socket="${data_dir}/net-runner/network/client-0/internal.sock"
 # Run the network.
 echo "Starting the test network."
 ${oasis_runner} \
-    --net.node.binary ${oasis_node} \
-    --net.runtime.binary ${runtime_binary} \
-    --net.runtime.loader ${runtime_loader} \
-    --net.runtime.genesis_state ${runtime_genesis} \
-    --net.keymanager.binary ${keymanager_binary} \
-    --net.epochtime_mock \
+    --fixture.default.node.binary ${oasis_node} \
+    --fixture.default.runtime.binary ${runtime_binary} \
+    --fixture.default.runtime.loader ${runtime_loader} \
+    --fixture.default.runtime.genesis_state ${runtime_genesis} \
+    --fixture.default.keymanager.binary ${keymanager_binary} \
+    --fixture.default.epochtime_mock \
     --basedir.no_temp_dir \
     --basedir ${data_dir} &
 

@@ -35,9 +35,9 @@ mem = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 oasis-runtime-common = { path = "../common" }
 
 ## Oasis Core client dependencies.
-oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5.1" }
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5.1" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.5.1" }
+oasis-core-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.6" }
+oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.6" }
+oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.6" }
 oasis-runtime-api = { path = "../api" }
 
 clap = "2.29.1"
