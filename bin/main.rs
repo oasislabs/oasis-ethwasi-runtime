@@ -28,7 +28,7 @@ fn main() {
     let init = |protocol: &Arc<Protocol>,
                 rak: &Arc<RAK>,
                 _rpc_demux: &mut RpcDemux,
-                _rpc: &mut RpcDispatcher|
+                rpc: &mut RpcDispatcher|
      -> Option<Box<dyn TxnDispatcher>> {
         let mut txn = TxnMethDispatcher::new();
         {
@@ -44,8 +44,18 @@ fn main() {
             1024, // TODO: How big should this cache be?
             trusted_policy_signers(),
         ));
+        let initializer_km_client = km_client.clone();
 
-        txn.set_batch_handler(OasisBatchHandler::new(km_client));
+        #[cfg(not(target_env = "sgx"))]
+        let _ = rpc;
+        #[cfg(target_env = "sgx")]
+        rpc.set_keymanager_policy_update_handler(Some(Box::new(move |raw_signed_policy| {
+            km_client
+                .set_policy(raw_signed_policy)
+                .expect("failed to update km client policy");
+        })));
+
+        txn.set_batch_handler(OasisBatchHandler::new(initializer_km_client));
         Some(Box::new(txn))
     };
 
