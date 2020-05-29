@@ -5,8 +5,8 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 
 [dependencies]
 # Oasis Core.
-oasis-core-runtime = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.6" }
-oasis-core-keymanager-client = { git = "https://github.com/oasislabs/oasis-core", tag = "v20.6" }
+oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.7" }
+oasis-core-keymanager-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.7" }
 
 # Parity.
 ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
