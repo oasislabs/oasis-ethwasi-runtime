@@ -10,8 +10,8 @@ use ethcore::{
     vm::{ConfidentialCtx as EthConfidentialCtx, OASIS_HEADER_PREFIX},
 };
 use ethereum_types::{Address, H256, U256};
-use ethkey::{KeyPair, Secret};
-use oasis_core_keymanager_client::{self, ContractId, ContractKey, KeyManagerClient};
+use ethkey::{KeyPair as EtyKeyPair, Secret};
+use oasis_core_keymanager_client::{self, KeyManagerClient, KeyPair, KeyPairId};
 use oasis_core_runtime::{
     common::{
         crypto::{
@@ -48,10 +48,10 @@ use crate::{
 /// Test client.
 pub struct Client {
     /// KeyPair used for signing transactions.
-    pub keypair: KeyPair,
+    pub keypair: EtyKeyPair,
     /// The client's keys used for generating the encrypted `data` field to
     /// send transactions from Client -> Enclave.
-    pub ephemeral_key: ContractKey,
+    pub ephemeral_key: KeyPair,
     /// Gas limit used for transactions.
     /// TODO: use estimate gas to set this dynamically
     pub gas_limit: U256,
@@ -90,14 +90,14 @@ impl Client {
 
         Self {
             // address: 0x7110316b618d20d0c44728ac2a3d683536ea682
-            keypair: KeyPair::from_secret(
+            keypair: EtyKeyPair::from_secret(
                 Secret::from_str(
                     "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c",
                 )
                 .unwrap(),
             )
             .unwrap(),
-            ephemeral_key: ContractKey::generate_mock(),
+            ephemeral_key: KeyPair::generate_mock(),
             gas_price: U256::from(1000000000),
             gas_limit: U256::from(1000000),
             mkvs: Some(mkvs),
@@ -354,7 +354,7 @@ impl Client {
     /// i.e., everything encrypted from `client_confidential_ctx` can be decrypted from
     /// `key_manager_confidential_ctx` and vice versa.
     pub fn client_confidential_ctx(&self, contract: Address) -> ConfidentialCtx {
-        let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
+        let contract_id = KeyPairId::from(&keccak(contract.to_vec())[..]);
         let mut executor = Executor::new();
         let contract_key = executor
             .block_on(
