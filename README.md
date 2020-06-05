@@ -5,16 +5,16 @@
 
 ## Contributing
 
-See the [Oasis Core Contributing Guidelines](https://github.com/oasislabs/oasis-core/blob/master/CONTRIBUTING.md).
+See the [Oasis Core Contributing Guidelines](https://github.com/oasisprotocol/oasis-core/blob/master/CONTRIBUTING.md).
 
 ## Security
 
-Read our [Security](https://github.com/oasislabs/oasis-core/blob/master/SECURITY.md) document.
+Read our [Security](https://github.com/oasisprotocol/oasis-core/blob/master/SECURITY.md) document.
 
 ## Setting up the development environment
 
 First, make sure that you have everything required for Oasis Core installed by
-following [the instructions](https://github.com/oasislabs/oasis-core/blob/master/README.md).
+following [the instructions](https://github.com/oasisprotocol/oasis-core/blob/master/README.md).
 
 For building and running the runtime, you need to have Oasis Core artifacts available.
 To do this, you can either:

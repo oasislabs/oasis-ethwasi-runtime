@@ -18,7 +18,7 @@ download_oasis_core_artifacts() {
 	mkdir -p "${out_dir}/target/debug/"
 
 	curl -L -o /tmp/oasis_core_linux_amd64.tar.gz \
-		"https://github.com/oasislabs/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
+		"https://github.com/oasisprotocol/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
 	tar -C /tmp/ -xzf /tmp/oasis_core_linux_amd64.tar.gz
 
 	mv /tmp/oasis-node "${out_dir}/go/oasis-node/"
