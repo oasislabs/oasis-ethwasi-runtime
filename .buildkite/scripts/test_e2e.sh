@@ -136,6 +136,11 @@ scenario_basic() {
         --nodes 2 \
         --wait
 
+    # Wait for keymanager node to be ready.
+    echo "Waiting for keymanager to initialize."
+    ${OASIS_NODE} debug control wait-ready \
+        --address "unix:${TEST_BASE_DIR}/net-runner/network/keymanager-0/internal.sock"
+
     # Advance epoch.
     echo "Advancing epoch."
     ${OASIS_NODE} debug control set-epoch \
