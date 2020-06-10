@@ -7,7 +7,7 @@ use io_context::Context;
 use jsonrpc_core::BoxFuture;
 use jsonrpc_macros::Trailing;
 use lazy_static::lazy_static;
-use oasis_core_keymanager_client::{ContractId, KeyManagerClient};
+use oasis_core_keymanager_client::{KeyManagerClient, KeyPairId};
 use oasis_core_runtime::common::logger::get_logger;
 use parity_rpc::v1::{
     helpers::errors,
@@ -73,7 +73,7 @@ impl Oasis for OasisClient {
 
         info!(self.logger, "oasis_getPublicKey"; "contract" => ?contract);
 
-        let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
+        let contract_id = KeyPairId::from(&keccak(contract.to_vec())[..]);
 
         // TODO: Support proper I/O contexts (requires RPC interface changes).
         Box::new(

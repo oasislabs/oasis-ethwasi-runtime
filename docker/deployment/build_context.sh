@@ -21,14 +21,14 @@ export OASIS_UNSAFE_KM_POLICY_KEYS
 
 # Download oasis-core artifacts.
 curl -L -o oasis_core_linux_amd64.tar.gz \
- "https://github.com/oasislabs/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
+ "https://github.com/oasisprotocol/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
 mkdir -p oasis-core
 tar -C oasis-core -xzf oasis_core_linux_amd64.tar.gz
 
 # Install oasis-core-tools.
 cargo install \
     --force \
-    --git https://github.com/oasislabs/oasis-core \
+    --git https://github.com/oasisprotocol/oasis-core \
     --tag "v$oasis_core_version" \
     oasis-core-tools
 

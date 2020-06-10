@@ -46,7 +46,7 @@ set -u
 if [ ! -x ${CARGO_INSTALL_ROOT}/bin/cargo-elf2sgxs ]; then
     cargo install \
         --force \
-        --git https://github.com/oasislabs/oasis-core \
+        --git https://github.com/oasisprotocol/oasis-core \
         --branch $OASIS_CORE_BRANCH \
         --debug \
         oasis-core-tools

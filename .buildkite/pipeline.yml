@@ -3,7 +3,7 @@
 ################
 docker_plugin: &docker_plugin_configuration
   oasislabs/docker#v2.1.0-oasis4:
-    image: "oasislabs/testing:0.3.0"
+    image: "oasisprotocol/oasis-core-ci:stable-20.7.x"
     always_pull: true
     workdir: /workdir
     volumes:
@@ -154,6 +154,7 @@ steps:
   - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/install-e2e-dependencies.sh
       - rm -rf tests/rpc-tests
       - .buildkite/scripts/test_e2e.sh -t rpc-tests
     artifact_paths:

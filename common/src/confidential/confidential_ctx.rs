@@ -5,7 +5,7 @@ use ethereum_types::{Address, H256};
 use failure::ResultExt;
 use io_context::Context;
 use keccak_hash::keccak;
-use oasis_core_keymanager_client::{ContractId, ContractKey, KeyManagerClient, PublicKey};
+use oasis_core_keymanager_client::{KeyManagerClient, KeyPair, KeyPairId, PublicKey};
 use oasis_core_runtime::{
     common::crypto::{
         hash::Hash,
@@ -32,7 +32,7 @@ pub struct ConfidentialCtx {
     /// swapped or set to None in an open confidential context, facilitating
     /// a confidential context switch to encrypt for the *same peer* but under
     /// a different contract.
-    contract: Option<(Address, ContractKey)>,
+    contract: Option<(Address, KeyPair)>,
     /// The next nonce to use when encrypting a message to `peer_public_key`.
     /// This starts at the nonce+1 given by the `encrypted_tx_data` param in the
     /// `decrypt_session` fn. Then, throughout the transaction, is incremented each
@@ -79,7 +79,7 @@ impl ConfidentialCtx {
     #[cfg(feature = "test")]
     pub fn new_test(
         peer_public_key: Option<PublicKey>,
-        contract: Option<(Address, ContractKey)>,
+        contract: Option<(Address, KeyPair)>,
         next_nonce: Option<Nonce>,
         activated: bool,
         prev_block_hash: H256,
@@ -112,7 +112,7 @@ impl ConfidentialCtx {
         Ok(decryption.plaintext)
     }
 
-    fn swap_contract(&mut self, contract: Option<(Address, ContractKey)>) -> Option<Address> {
+    fn swap_contract(&mut self, contract: Option<(Address, KeyPair)>) -> Option<Address> {
         let old_contract_address = self.contract.as_ref().map(|c| c.0);
         self.contract = contract;
 
@@ -161,8 +161,8 @@ impl EthConfidentialCtx for ConfidentialCtx {
         match contract {
             None => Ok(self.swap_contract(None)),
             Some(contract) => {
-                let contract_id = ContractId::from(&keccak(contract.to_vec())[..]);
-                let contract_key =
+                let contract_id = KeyPairId::from(&keccak(contract.to_vec())[..]);
+                let key_pair =
                     Executor::with_current(|executor| {
                         executor
                             .block_on(self.key_manager.get_or_create_keys(
@@ -173,7 +173,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
                     })
                     .map_err(|err| Error::Confidential(err.to_string()))?;
 
-                Ok(self.swap_contract(Some((contract, contract_key))))
+                Ok(self.swap_contract(Some((contract, key_pair))))
             }
         }
     }
@@ -301,7 +301,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
 
 #[cfg(test)]
 mod tests {
-    use oasis_core_keymanager_client::{self, ContractKey, PrivateKey, PublicKey, StateKey};
+    use oasis_core_keymanager_client::{self, KeyPair, PrivateKey, PublicKey, StateKey};
 
     use super::*;
 
@@ -326,7 +326,7 @@ mod tests {
         let public_key = PublicKey::default();
         let private_key = PrivateKey::default();
         let state_key = StateKey::default();
-        let contract_key = ContractKey::new(public_key, private_key, state_key, vec![]);
+        let contract_key = KeyPair::new(public_key, private_key, state_key, vec![]);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let address = Address::default();
         let ctx = ConfidentialCtx {
@@ -356,7 +356,7 @@ mod tests {
         let public_key = PublicKey::default();
         let private_key = PrivateKey::default();
         let state_key = StateKey::default();
-        let contract_key = ContractKey::new(public_key, private_key, state_key, vec![]);
+        let contract_key = KeyPair::new(public_key, private_key, state_key, vec![]);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let address = Address::default();
         assert_eq!(
@@ -399,7 +399,7 @@ mod tests {
         let public_key = PublicKey::default();
         let private_key = PrivateKey::default();
         let state_key = StateKey::default();
-        let contract_key = ContractKey::new(public_key, private_key, state_key, vec![]);
+        let contract_key = KeyPair::new(public_key, private_key, state_key, vec![]);
         let nonce = Nonce::new([0; NONCE_SIZE]);
         let address = Address::default();
         let mut ctx = ConfidentialCtx {
