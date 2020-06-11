@@ -52,6 +52,7 @@ ethabi = "8.0.0"
 
 [features]
 default = ["confidential"]
+prefetch = []
 confidential = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.

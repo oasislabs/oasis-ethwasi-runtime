@@ -26,6 +26,9 @@ GENESIS_FILES ?= \
 # Extra build args.
 EXTRA_BUILD_ARGS := $(if $(RELEASE),--release,)
 
+# Extra args specifically for cargo build.
+CARGO_BUILD_ARGS := $(if $(BENCHMARKS),--features benchmarking,)
+
 # Check if we're running in an interactive terminal.
 ISATTY := $(shell [ -t 0 ] && echo 1)
 
@@ -86,19 +89,19 @@ build-runtimes:
 	@CARGO_TARGET_ROOT=$(shell pwd)/target && for e in $(RUNTIMES); do \
 		$(ECHO) "$(MAGENTA)*** Building runtime: $$e...$(OFF)"; \
 		(cd $$e && \
-			CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo build  $(EXTRA_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
-			CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build  $(EXTRA_BUILD_ARGS) && \
-			CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo elf2sgxs  $(EXTRA_BUILD_ARGS) \
+			CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo build $(EXTRA_BUILD_ARGS) $(CARGO_BUILD_ARGS) --target x86_64-fortanix-unknown-sgx && \
+			CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build $(EXTRA_BUILD_ARGS) $(CARGO_BUILD_ARGS) && \
+			CARGO_TARGET_DIR=$(RUNTIME_SGX_CARGO_TARGET_DIR) cargo elf2sgxs $(EXTRA_BUILD_ARGS) \
 		) || exit 1; \
 	done
 
 gateway:
 	@$(ECHO) "$(CYAN)*** Building web3-gateway...$(OFF)"
-	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p web3-gateway $(EXTRA_BUILD_ARGS)
+	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p web3-gateway $(EXTRA_BUILD_ARGS) $(CARGO_BUILD_ARGS)
 
 genesis:
 	@$(ECHO) "$(CYAN)*** Building genesis utilities...$(OFF)"
-	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p genesis $(EXTRA_BUILD_ARGS)
+	@CARGO_TARGET_DIR=$(RUNTIME_CARGO_TARGET_DIR) cargo build -p genesis $(EXTRA_BUILD_ARGS) $(CARGO_BUILD_ARGS)
 
 genesis-update: genesis
 	@$(ECHO) "$(CYAN)*** Generating oasis-core-compatible genesis files...$(OFF)"
