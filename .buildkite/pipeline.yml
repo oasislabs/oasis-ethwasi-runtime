@@ -171,7 +171,7 @@ steps:
   - label: ":rocket: Build docker image context"
     trigger: oasis-runtime-build-image-context
     async: true
-    branches: master
+    branches: master devnet3
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
