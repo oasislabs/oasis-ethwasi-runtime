@@ -154,6 +154,7 @@ steps:
   - label: RPC tests
     command:
       - .buildkite/scripts/download_common_artifacts.sh
+      - .buildkite/scripts/install-e2e-dependencies.sh
       - rm -rf tests/rpc-tests
       - .buildkite/scripts/test_e2e.sh -t rpc-tests
     artifact_paths:
