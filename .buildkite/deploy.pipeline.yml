@@ -28,11 +28,11 @@ docker_plugin: &docker_plugin_configuration
 
 steps:
   - label: Get docker tag and save it as metadata for use later
-    branches: master
+    branches: master devnet3
     command: .buildkite/scripts/set_docker_tag_meta_data.sh
 
   - label: Build testing artifacts
-    branches: master
+    branches: master devnet3
     command:
       - .buildkite/scripts/build_deployment_context.sh context.tar.gz
     artifact_paths:
@@ -43,7 +43,7 @@ steps:
       <<: *docker_plugin_configuration
 
   - label: Build benchmarking artifacts
-    branches: master
+    branches: master devnet3
     command:
       - .buildkite/scripts/build_deployment_context.sh context-bench.tar.gz
     env:
@@ -56,7 +56,7 @@ steps:
       <<: *docker_plugin_configuration
 
   - label: Build production-track artifacts
-    branches: master
+    branches: master devnet3
     command:
       - .buildkite/scripts/build_deployment_context.sh context-prod.tar.gz
     env:
@@ -73,7 +73,7 @@ steps:
   - label: ":rocket: Publish docker images"
     trigger: private-ops-oasis-runtime-publish-image
     async: true
-    branches: master
+    branches: master devnet3
     build:
       message: "${BUILDKITE_MESSAGE}"
       env:
