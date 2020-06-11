@@ -1,4 +1,5 @@
 //! Oasis runtime.
+#![feature(drain_filter)]
 #[cfg(feature = "test")]
 extern crate byteorder;
 #[cfg(feature = "test")]
@@ -10,6 +11,7 @@ extern crate ethkey;
 extern crate serde_json;
 
 pub mod block;
+pub mod dispatcher;
 pub mod methods;
 
 #[cfg(feature = "test")]

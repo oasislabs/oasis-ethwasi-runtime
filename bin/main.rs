@@ -13,14 +13,11 @@ extern crate serde_bytes;
 
 use std::sync::Arc;
 
-use serde_bytes::ByteBuf;
-
 use oasis_core_runtime::{
-    common::version::Version, rak::RAK, register_runtime_txn_methods, version_from_cargo, Protocol,
-    RpcDemux, RpcDispatcher, TxnDispatcher, TxnMethDispatcher,
+    common::version::Version, rak::RAK, version_from_cargo, Protocol, RpcDemux, RpcDispatcher,
+    TxnDispatcher,
 };
-use oasis_runtime::block::OasisBatchHandler;
-use oasis_runtime_api::{with_api, ExecutionResult};
+use oasis_runtime::dispatcher::Dispatcher;
 use oasis_runtime_keymanager::trusted_policy_signers;
 
 fn main() {
@@ -30,12 +27,6 @@ fn main() {
                 _rpc_demux: &mut RpcDemux,
                 rpc: &mut RpcDispatcher|
      -> Option<Box<dyn TxnDispatcher>> {
-        let mut txn = TxnMethDispatcher::new();
-        {
-            use oasis_runtime::methods::execute::*;
-            with_api! { register_runtime_txn_methods!(txn, api); }
-        }
-
         // Create the key manager client.
         let km_client = Arc::new(oasis_core_keymanager_client::RemoteClient::new_runtime(
             protocol.get_runtime_id(),
@@ -55,8 +46,7 @@ fn main() {
                 .expect("failed to update km client policy");
         })));
 
-        txn.set_batch_handler(OasisBatchHandler::new(initializer_km_client));
-        Some(Box::new(txn))
+        Some(Box::new(Dispatcher::new(initializer_km_client)))
     };
 
     // Start the runtime.
