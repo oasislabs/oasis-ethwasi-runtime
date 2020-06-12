@@ -8,7 +8,7 @@ OASIS_NODE=${OASIS_NODE:-${OASIS_CORE_ROOT_PATH}/go/oasis-node/oasis-node}
 # Path to oasis-net-runner.
 OASIS_NET_RUNNER=${OASIS_NET_RUNNER:-${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner/oasis-net-runner}
 # Path to the runtime loader.
-OASIS_CORE_RUNTIME_LOADER=${OASIS_CORE_RUNTIME_LOADER:-${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-runtime-loader}
+OASIS_CORE_RUNTIME_LOADER=${OASIS_CORE_RUNTIME_LOADER:-${OASIS_CORE_ROOT_PATH}/target/default/debug/oasis-core-runtime-loader}
 
 function check_executable() {
     if [[ ! -x ${!1} ]]; then
