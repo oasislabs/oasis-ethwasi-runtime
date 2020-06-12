@@ -11,7 +11,7 @@ OASIS_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(OASIS_C
 
 # Runtime cargo target directory.
 RUNTIME_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)/target)/default
-RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)target)/sgx
+RUNTIME_SGX_CARGO_TARGET_DIR := $(if $(CARGO_TARGET_DIR),$(CARGO_TARGET_DIR),$(shell pwd)/target)/sgx
 
 # List of runtime paths to build.
 RUNTIMES := . \
