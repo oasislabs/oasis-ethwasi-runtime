@@ -1,8 +1,8 @@
 //! Common data structures shared by runtime and gateway.
+extern crate anyhow;
 extern crate elastic_array;
 extern crate ethcore;
 extern crate ethereum_types;
-extern crate failure;
 extern crate hashdb;
 extern crate io_context;
 extern crate keccak_hash;

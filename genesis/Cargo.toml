@@ -6,8 +6,8 @@ authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 [dependencies]
 oasis-ethwasi-runtime-common = { path = "../common" }
 
-oasis-core-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.7" }
-oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.7" }
+oasis-core-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.8.2" }
+oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.8.2" }
 
 clap = "2.29.1"
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
@@ -20,7 +20,6 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_bytes = "~0.10"
 grpcio = "0.4.4"
-failure = "0.1.5"
 io-context = "0.2.0"
 
 [[bin]]

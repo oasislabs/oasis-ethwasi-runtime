@@ -18,8 +18,8 @@
 
 use std::sync::Arc;
 
+use anyhow::anyhow;
 use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
-use failure::format_err;
 use jsonrpc_core::{
     futures::{future, prelude::*, stream},
     BoxFuture, Result,
@@ -143,7 +143,7 @@ impl EthFilter for EthFilterClient {
                                     .and_then(move |round| translator.get_block_by_round(round))
                                     .and_then(|blk| match blk {
                                         Some(blk) => Ok(blk),
-                                        None => Err(format_err!("block not found")),
+                                        None => Err(anyhow!("block not found")),
                                     })
                                     .map(|blk| RpcH256::from(blk.hash()))
                                     .collect()

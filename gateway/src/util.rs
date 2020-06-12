@@ -1,8 +1,8 @@
 use std::fmt;
 
+use anyhow::Error;
 use ethcore::ids::BlockId;
 use ethereum_types::U256;
-use failure::Error;
 use jsonrpc_core::{self, ErrorCode, Value};
 use parity_rpc::v1::{helpers::errors::codes, types::BlockNumber};
 
