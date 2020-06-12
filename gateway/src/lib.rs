@@ -27,9 +27,9 @@ extern crate serde_derive;
 extern crate jsonrpc_core;
 #[macro_use]
 extern crate jsonrpc_macros;
+extern crate anyhow;
 extern crate ethcore;
 extern crate ethereum_types;
-extern crate failure;
 extern crate grpcio;
 #[cfg(test)]
 extern crate hex;
@@ -67,9 +67,9 @@ pub mod util;
 
 use std::sync::Arc;
 
+use anyhow::Result;
 use clap::{value_t_or_exit, ArgMatches};
 use ethereum_types::U256;
-use failure::Fallible;
 use grpcio::EnvBuilder;
 use oasis_core_client::{create_txn_api_client, Node, TxnClient};
 use oasis_core_runtime::common::runtime::RuntimeId;
@@ -93,7 +93,7 @@ pub fn start(
     ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
-) -> Fallible<RunningGateway> {
+) -> Result<RunningGateway> {
     let node_address = args.value_of("node-address").unwrap();
     let runtime_id = value_t_or_exit!(args, "runtime-id", RuntimeId);
 

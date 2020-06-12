@@ -4,8 +4,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use anyhow::{anyhow, Result};
 use ethcore;
-use failure::{format_err, Fallible};
 use io_context::Context;
 use oasis_core_runtime::storage::{KeyValue, StorageContext};
 
@@ -58,16 +58,16 @@ impl MemoryKeyValue {
 }
 
 impl KeyValue for MemoryKeyValue {
-    fn get(&self, key: Vec<u8>) -> Fallible<Vec<u8>> {
+    fn get(&self, key: Vec<u8>) -> Result<Vec<u8>> {
         self.0
             .lock()
             .unwrap()
             .get(&key)
             .cloned()
-            .ok_or(format_err!("not found"))
+            .ok_or(anyhow!("not found"))
     }
 
-    fn insert(&self, key: Vec<u8>, value: Vec<u8>) -> Fallible<()> {
+    fn insert(&self, key: Vec<u8>, value: Vec<u8>) -> Result<()> {
         self.0.lock().unwrap().insert(key, value);
         Ok(())
     }

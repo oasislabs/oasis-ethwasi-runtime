@@ -2,6 +2,7 @@
 //! runtime and an Ethereum chain exposed to clients.
 use std::{collections::BTreeMap, sync::Arc};
 
+use anyhow::{anyhow, Error, Result};
 use ethcore::{
     error::CallError,
     executive::{contract_address, Executed, Executive, TransactOptions},
@@ -14,7 +15,6 @@ use ethcore::{
     vm::EnvInfo,
 };
 use ethereum_types::{H256, H64, U256};
-use failure::{format_err, Error, Fallible};
 use futures::{future, prelude::*};
 use hash::KECCAK_EMPTY_LIST_RLP;
 use io_context::Context;
@@ -99,7 +99,7 @@ impl Translator {
     ) -> impl Future<Item = EthereumBlock, Error = Error> {
         self.get_block(id).and_then(|blk| match blk {
             Some(blk) => Ok(blk),
-            None => Err(format_err!("block not found")),
+            None => Err(anyhow!("block not found")),
         })
     }
 
@@ -494,10 +494,10 @@ impl EthereumTransaction {
     }
 
     /// Retrieve the (localized) Ethereum transaction input.
-    pub fn transaction(&self) -> Fallible<LocalizedTransaction> {
+    pub fn transaction(&self) -> Result<LocalizedTransaction> {
         // Validate method.
         if self.snapshot.input.method != METHOD_TX {
-            return Err(format_err!("not an Ethereum transaction"));
+            return Err(anyhow!("not an Ethereum transaction"));
         }
 
         // We know that arguments are raw Ethereum transaction bytes.
@@ -514,7 +514,7 @@ impl EthereumTransaction {
     }
 
     /// Retrieve the (localized) Ethereum transaction output (receipt).
-    pub fn receipt(&self) -> Fallible<LocalizedReceipt> {
+    pub fn receipt(&self) -> Result<LocalizedReceipt> {
         match self.snapshot.output {
             TxnOutput::Success(ref value) => {
                 // We know that output is ExecutionResult.
@@ -568,7 +568,7 @@ impl EthereumTransaction {
                     outcome: TransactionOutcome::StatusCode(result.status_code),
                 })
             }
-            TxnOutput::Error(_) => Err(format_err!("receipt not available")),
+            TxnOutput::Error(_) => Err(anyhow!("receipt not available")),
         }
     }
 }
@@ -602,7 +602,7 @@ impl EthereumBlock {
     }
 
     /// Ethereum state snapshot at given block.
-    pub fn state(&self) -> Fallible<State<NullBackend>> {
+    pub fn state(&self) -> Result<State<NullBackend>> {
         Ok(State::from_existing(
             Box::new(BlockSnapshotMKVS(self.snapshot.clone())),
             NullBackend,

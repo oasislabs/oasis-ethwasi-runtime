@@ -18,9 +18,9 @@
 
 use std::{collections::BTreeMap, sync::Arc};
 
+use anyhow::Error;
 use ethcore::{filter::Filter as EthcoreFilter, ids::BlockId};
 use ethereum_types::{Address, H256, H64, U256};
-use failure::Error;
 use jsonrpc_core::{
     futures::{future, Future},
     BoxFuture, Result,

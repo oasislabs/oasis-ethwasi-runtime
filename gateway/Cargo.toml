@@ -45,7 +45,7 @@ rand = "0.4"
 grpcio = { version = "0.4.4", features = ["openssl"] }
 tokio = "0.1.17"
 tokio-threadpool = "0.1.14"
-failure = "0.1.5"
+anyhow = "1.0"
 io-context = "0.2.0"
 
 [build-dependencies]

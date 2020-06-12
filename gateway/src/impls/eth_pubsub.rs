@@ -20,11 +20,11 @@
 
 use std::sync::{Arc, Weak};
 
+use anyhow::anyhow;
 use ethcore::{
     filter::{Filter as EthFilter, TxEntry as EthTxEntry, TxFilter as EthTxFilter},
     ids::BlockId,
 };
-use failure::format_err;
 use futures::{prelude::*, stream};
 use jsonrpc_core::Result;
 use jsonrpc_macros::{
@@ -133,7 +133,7 @@ impl ChainNotificationHandler {
                 .and_then(move |round| translator.get_block_by_round(round))
                 .and_then(|blk| match blk {
                     Some(blk) => Ok(blk),
-                    None => Err(format_err!("block not found")),
+                    None => Err(anyhow!("block not found")),
                 })
                 .map(|blk| blk.rich_header())
                 .collect()

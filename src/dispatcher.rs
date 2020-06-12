@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
+use anyhow::{Context as AnyContext, Error as AnyError, Result};
 use ethcore::transaction::SignedTransaction;
 #[cfg(feature = "prefetch")]
 use ethcore::{
     state::{MKVS_KEY_CODE, MKVS_KEY_METADATA},
     transaction::Action,
 };
-use failure::{Error, Fail, Fallible, ResultExt};
 use serde_bytes::ByteBuf;
+use thiserror::Error;
 
 use oasis_core_keymanager_client::KeyManagerClient;
 #[cfg(feature = "prefetch")]
@@ -30,9 +31,9 @@ use super::{
 use oasis_runtime_api as api;
 
 /// Dispatch error.
-#[derive(Debug, Fail)]
+#[derive(Error, Debug)]
 enum DispatchError {
-    #[fail(display = "method not found: {}", method)]
+    #[error("method not found: {method}")]
     MethodNotFound { method: String },
 }
 
@@ -53,7 +54,7 @@ impl Dispatcher {
         }
     }
 
-    fn decode_transaction(&self, call: &[u8], ctx: &mut Context) -> Fallible<DecodedCall> {
+    fn decode_transaction(&self, call: &[u8], ctx: &mut Context) -> Result<DecodedCall> {
         let call: TxnCall = cbor::from_slice(call).context("unable to parse call")?;
 
         if call.method != api::METHOD_TX {
@@ -72,13 +73,13 @@ impl Dispatcher {
         })
     }
 
-    fn encode_response(&self, call: &DecodedCall, ctx: &mut Context) -> Fallible<Vec<u8>> {
+    fn encode_response(&self, call: &DecodedCall, ctx: &mut Context) -> Result<Vec<u8>> {
         let response = execute::tx(call, ctx)?;
         let response = TxnOutput::Success(cbor::to_value(response));
         Ok(cbor::to_vec(&response))
     }
 
-    fn serialize_error(&self, err: &Error) -> Vec<u8> {
+    fn serialize_error(&self, err: &AnyError) -> Vec<u8> {
         let txn_output = match err.downcast_ref::<CheckOnlySuccess>() {
             Some(check_result) => TxnOutput::Success(cbor::to_value(check_result.0.clone())),
             None => TxnOutput::Error(format!("{}", err)),
@@ -100,7 +101,7 @@ impl TxnDispatcher for Dispatcher {
         let mut prefixes: Vec<Prefix> = Vec::new();
 
         // Decode and check transactions in this batch.
-        let calls: Vec<Fallible<DecodedCall>> = batch
+        let calls: Vec<Result<DecodedCall>> = batch
             .iter()
             .map(|call| {
                 ctx.start_transaction();
@@ -161,7 +162,7 @@ impl TxnDispatcher for Dispatcher {
                 .map(|call| match call {
                     Ok(call) => self
                         .encode_response(call, &mut ctx)
-                        .or_else(|err| -> Fallible<Vec<u8>> { Ok(self.serialize_error(&err)) })
+                        .or_else(|err| -> Result<Vec<u8>> { Ok(self.serialize_error(&err)) })
                         .unwrap(), // Can't fail because the error is always mapped into an Ok() above.
                     Err(err) => self.serialize_error(err),
                 })

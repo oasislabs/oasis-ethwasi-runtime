@@ -1,8 +1,8 @@
 #![deny(warnings)]
 use std::sync::Arc;
 
+use anyhow::Context as AnyContext;
 use ethereum_types::{Address, H256};
-use failure::ResultExt;
 use io_context::Context;
 use keccak_hash::keccak;
 use oasis_core_keymanager_client::{KeyManagerClient, KeyPair, KeyPairId, PublicKey};

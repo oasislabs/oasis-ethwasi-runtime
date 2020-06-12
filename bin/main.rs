@@ -1,15 +1,16 @@
 //! Oasis runtime entry point.
 extern crate oasis_runtime;
 
+extern crate anyhow;
 extern crate ethcore;
 extern crate ethereum_types;
-extern crate failure;
 extern crate io_context;
 extern crate oasis_core_keymanager_client;
 extern crate oasis_core_runtime;
 extern crate oasis_runtime_api;
 extern crate oasis_runtime_common;
 extern crate serde_bytes;
+extern crate thiserror;
 
 use std::sync::Arc;
 

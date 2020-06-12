@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.7" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
-failure = "0.1.5"
+thiserror = "1.0"
 serde = "1.0.71"
 serde_derive = "1.0"
 serde_bytes = "~0.10"

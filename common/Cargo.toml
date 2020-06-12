@@ -16,8 +16,8 @@ keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "eki
 vm = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
 
 # Others.
+anyhow = "1.0"
 elastic-array = "0.10"
-failure = "0.1.5"
 io-context = "0.2.0"
 lazy_static = "1.3.0"
 zeroize = "0.10"

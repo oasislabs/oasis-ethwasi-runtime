@@ -1,7 +1,7 @@
 use ethereum_types::{Address, Bloom, H256, U256};
-use failure::Fail;
 use oasis_core_runtime::runtime_api;
 use serde_derive::{Deserialize, Serialize};
+use thiserror::Error;
 
 // used in runtime_api! macro
 #[allow(unused_imports)]
@@ -31,17 +31,17 @@ pub struct ExecutionResult {
 }
 
 /// Ethereum transaction error.
-#[derive(Debug, Fail)]
+#[derive(Debug, Error)]
 pub enum TransactionError {
-    #[fail(display = "block gas limit reached")]
+    #[error("block gas limit reached")]
     BlockGasLimitReached,
-    #[fail(display = "duplicate transaction")]
+    #[error("duplicate transaction")]
     DuplicateTransaction,
-    #[fail(display = "execution failed: {}", message)]
+    #[error("execution failed: {message}")]
     ExecutionFailure { message: String },
-    #[fail(display = "insufficient gas price")]
+    #[error("insufficient gas price")]
     GasPrice,
-    #[fail(display = "requested gas greater than block gas limit")]
+    #[error("requested gas greater than block gas limit")]
     TooMuchGas,
 }
 
