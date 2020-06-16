@@ -200,7 +200,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
         }
         if !err_msg.is_empty() {
             return Err(Error::Confidential(format!(
-                "Cannot encrypt session {}.",
+                "Cannot encrypt session{}.",
                 err_msg
             )));
         }
