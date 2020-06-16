@@ -188,6 +188,7 @@ impl EthConfidentialCtx for ConfidentialCtx {
     }
 
     fn encrypt_session(&mut self, data: Vec<u8>) -> Result<Vec<u8>> {
+        let mut err_msg = "".to_string();
         if self.peer_public_key.is_none() {
             err_msg.push_str("; no peer public key specified");
         }
@@ -230,8 +231,15 @@ impl EthConfidentialCtx for ConfidentialCtx {
     fn decrypt_session(&mut self, encrypted_payload: Vec<u8>) -> Result<AuthenticatedPayload> {
         let contract_secret_key = self.contract.as_ref().unwrap().1.input_keypair.get_sk();
 
-        let decryption = crypto::decrypt(Some(encrypted_payload), contract_secret_key)
-            .map_err(|err| Error::Confidential(format!("Failed to decrypt session payload ({} bytes): {}", encrypted_payload.size(), err.to_string())))?;
+        let payload_len = &encrypted_payload.len();
+        let decryption =
+            crypto::decrypt(Some(encrypted_payload), contract_secret_key).map_err(|err| {
+                Error::Confidential(format!(
+                    "Failed to decrypt session payload ({} bytes): {}",
+                    payload_len,
+                    err.to_string()
+                ))
+            })?;
         self.peer_public_key = Some(decryption.peer_public_key);
 
         let mut nonce = decryption.nonce;
