@@ -1,4 +1,4 @@
-# Oasis runtime
+# Oasis Eth/WASI Runtime
 
 [![Build status](https://badge.buildkite.com/0b4e493086daa3fc34c604dfce6597c56da35cfd093bdd943d.svg?branch=master)](https://buildkite.com/oasislabs/oasis-runtime-ci)
 [![Coverage Status](https://coveralls.io/repos/github/oasislabs/oasis-runtime/badge.svg?branch=master&t=shmqoK)](https://coveralls.io/github/oasislabs/oasis-runtime?branch=master)
