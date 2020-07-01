@@ -57,7 +57,7 @@ fn main() -> Fallible<()> {
         .arg(
             Arg::with_name("runtime-id")
                 .long("runtime-id")
-                .help("Oasis Core runtime identifier for this runtime")
+                .help("Oasis Core runtime identifier for the runtime")
                 .takes_value(true)
                 .required(true),
         )
