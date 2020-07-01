@@ -169,7 +169,7 @@ steps:
   - wait
 
   - label: ":rocket: Build docker image context"
-    trigger: oasis-runtime-build-image-context
+    trigger: oasis-ethwasi-runtime-build-image-context
     async: true
     branches: master
     build:
