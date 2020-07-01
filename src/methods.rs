@@ -1,4 +1,4 @@
-//! Methods exported to Ekiden clients.
+//! Methods exported to Oasis Core clients.
 use ethcore::{
     rlp,
     transaction::{SignedTransaction, UnverifiedTransaction},
@@ -10,9 +10,9 @@ use oasis_core_runtime::{
     runtime_context,
     transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
 };
-use oasis_runtime_api::{ExecutionResult, LogEntry, TransactionError};
+use oasis_ethwasi_runtime_api::{ExecutionResult, LogEntry, TransactionError};
 #[cfg_attr(feature = "test", allow(unused))]
-use oasis_runtime_common::{
+use oasis_ethwasi_runtime_common::{
     genesis, BLOCK_GAS_LIMIT, MIN_GAS_PRICE_GWEI, TAG_ETH_LOG_ADDRESS, TAG_ETH_LOG_TOPICS,
     TAG_ETH_TX_HASH,
 };
@@ -96,7 +96,7 @@ pub mod execute {
         let gas_used = outcome.receipt.gas_used - ectx.env_info.gas_used;
         ectx.env_info.gas_used = outcome.receipt.gas_used;
 
-        // Emit the Ekiden transaction hash so that we can query it.
+        // Emit the Oasis Core transaction hash so that we can query it.
         #[cfg(not(feature = "test"))]
         {
             ctx.emit_txn_tag(TAG_ETH_TX_HASH, txn_hash);

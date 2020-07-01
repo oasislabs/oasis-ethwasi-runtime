@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Parity.  If not, see <http://www.gnu.org/licenses/>.
 
-//! web3 gateway for Oasis Ethereum runtime.
+//! web3 gateway for Oasis Eth/WASI runtime.
 
 #![deny(warnings)]
 
@@ -25,7 +25,7 @@ extern crate clap;
 extern crate failure;
 extern crate log;
 extern crate oasis_core_runtime;
-extern crate oasis_runtime_common;
+extern crate oasis_ethwasi_runtime_common;
 extern crate prometheus;
 extern crate slog;
 extern crate web3_gateway;
@@ -40,7 +40,7 @@ use fdlimit::raise_fd_limit;
 use slog::{error, info};
 
 use oasis_core_runtime::common::logger::{get_logger, init_logger};
-use oasis_runtime_common::MIN_GAS_PRICE_GWEI;
+use oasis_ethwasi_runtime_common::MIN_GAS_PRICE_GWEI;
 use web3_gateway::util;
 
 const METRICS_MODE_PULL: &str = "pull";
@@ -53,18 +53,18 @@ fn main() -> Fallible<()> {
 
     let gas_price = MIN_GAS_PRICE_GWEI.to_string();
 
-    let args = App::new("Oasis Runtime Web3 Gateway")
+    let args = App::new("Oasis Eth/WASI Runtime Web3 Gateway")
         .arg(
             Arg::with_name("runtime-id")
                 .long("runtime-id")
-                .help("Ekiden runtime identifier for ethereum-runtime")
+                .help("Oasis Core runtime identifier for this runtime")
                 .takes_value(true)
                 .required(true),
         )
         .arg(
             Arg::with_name("node-address")
                 .long("node-address")
-                .help("Ekiden node address")
+                .help("Oasis Core node address")
                 .takes_value(true)
                 .required(true),
         )

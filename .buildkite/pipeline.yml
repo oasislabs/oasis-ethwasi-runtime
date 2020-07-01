@@ -69,7 +69,7 @@ steps:
       # This is done here to keep the build and test
       # script generic.
       - cd /var/tmp/artifacts/debug
-      - buildkite-agent artifact upload oasis-runtime
+      - buildkite-agent artifact upload oasis-ethwasi-runtime
     env:
       RUNTIME_VARIANT: elf
     agents:
@@ -85,7 +85,7 @@ steps:
       # This is done here to keep the build and test
       # script generic.
       - cd /var/tmp/artifacts/x86_64-fortanix-unknown-sgx/debug
-      - buildkite-agent artifact upload oasis-runtime.sgxs
+      - buildkite-agent artifact upload oasis-ethwasi-runtime.sgxs
     env:
       RUNTIME_VARIANT: sgxs
     agents:
@@ -100,7 +100,7 @@ steps:
 
       # Upload the built artifacts.
       - cd /var/tmp/artifacts/debug
-      - buildkite-agent artifact upload oasis-runtime-keymanager
+      - buildkite-agent artifact upload oasis-ethwasi-runtime-keymanager
     env:
       RUNTIME_VARIANT: elf
     agents:
@@ -115,7 +115,7 @@ steps:
 
       # Upload the built artifacts.
       - cd /var/tmp/artifacts/x86_64-fortanix-unknown-sgx/debug
-      - buildkite-agent artifact upload oasis-runtime-keymanager.sgxs
+      - buildkite-agent artifact upload oasis-ethwasi-runtime-keymanager.sgxs
     env:
       RUNTIME_VARIANT: sgxs
     agents:

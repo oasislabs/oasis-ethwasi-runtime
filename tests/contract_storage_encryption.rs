@@ -1,14 +1,14 @@
 extern crate ethcore;
 extern crate ethereum_types;
 extern crate keccak_hash;
-extern crate oasis_runtime;
-extern crate oasis_runtime_common;
+extern crate oasis_ethwasi_runtime;
+extern crate oasis_ethwasi_runtime_common;
 
 mod contracts;
 
 use ethcore::vm::ConfidentialCtx;
 use ethereum_types::{Address, H256, U256};
-use oasis_runtime::test;
+use oasis_ethwasi_runtime::test;
 
 /// With a contract of the form
 ///

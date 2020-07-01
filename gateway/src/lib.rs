@@ -50,8 +50,8 @@ extern crate oasis_core_client;
 extern crate oasis_core_keymanager_client;
 extern crate oasis_core_runtime;
 
-extern crate oasis_runtime_api;
-extern crate oasis_runtime_common;
+extern crate oasis_ethwasi_runtime_api;
+extern crate oasis_ethwasi_runtime_common;
 
 mod impls;
 mod informant;
@@ -73,7 +73,7 @@ use failure::Fallible;
 use grpcio::EnvBuilder;
 use oasis_core_client::{create_txn_api_client, Node, TxnClient};
 use oasis_core_runtime::common::runtime::RuntimeId;
-use oasis_runtime_api::*;
+use oasis_ethwasi_runtime_api::*;
 use serde_bytes::ByteBuf;
 
 pub use self::run::RunningGateway;
