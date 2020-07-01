@@ -1,5 +1,5 @@
 [package]
-name = "oasis-runtime"
+name = "oasis-ethwasi-runtime"
 version = "0.3.0"
 authors = ["Oasis Labs Inc. <info@oasislabs.com>"]
 edition = "2018"
@@ -10,14 +10,14 @@ stack-size = 2097152
 threads = 2
 
 [[bin]]
-name = "oasis-runtime"
+name = "oasis-ethwasi-runtime"
 path ="bin/main.rs"
 
 [dependencies]
 # Internal.
-oasis-runtime-api = { path = "./api" }
-oasis-runtime-common = { path = "./common" }
-oasis-runtime-keymanager = { path = "./keymanager-runtime" }
+oasis-ethwasi-runtime-api = { path = "./api" }
+oasis-ethwasi-runtime-common = { path = "./common" }
+oasis-ethwasi-runtime-keymanager = { path = "./keymanager-runtime" }
 
 # Oasis core.
 oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.7" }
@@ -56,9 +56,9 @@ prefetch = []
 confidential = []
 # Use test feature flag since Rust doesn't support conditional compilation using
 # cfg(test) on dependent crates.
-test = ["oasis-runtime-common/test"]
-benchmarking = ["oasis-runtime-common/benchmarking"]
-production-genesis = ["oasis-runtime-common/production-genesis"]
+test = ["oasis-ethwasi-runtime-common/test"]
+benchmarking = ["oasis-ethwasi-runtime-common/benchmarking"]
+production-genesis = ["oasis-ethwasi-runtime-common/production-genesis"]
 
 [profile.release]
 panic = "abort"

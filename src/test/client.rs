@@ -1,4 +1,4 @@
-//! Test client to interact with an oasis-runtime blockchain.
+//! Test client to interact with an oasis-ethwasi-runtime blockchain.
 use std::{collections::HashMap, str::FromStr, sync::Arc};
 
 use byteorder::{BigEndian, ByteOrder};
@@ -31,8 +31,8 @@ use oasis_core_runtime::{
 
 use io_context::Context as IoContext;
 use keccak_hash::keccak;
-use oasis_runtime_api::ExecutionResult;
-use oasis_runtime_common::{
+use oasis_ethwasi_runtime_api::ExecutionResult;
+use oasis_ethwasi_runtime_common::{
     confidential::ConfidentialCtx,
     genesis,
     parity::NullBackend,

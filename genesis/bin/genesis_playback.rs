@@ -12,7 +12,7 @@ extern crate grpcio;
 extern crate io_context;
 extern crate oasis_core_client;
 extern crate oasis_core_runtime;
-extern crate oasis_runtime_common;
+extern crate oasis_ethwasi_runtime_common;
 extern crate serde_bytes;
 extern crate serde_json;
 
@@ -43,7 +43,7 @@ use oasis_core_runtime::{
         StorageContext,
     },
 };
-use oasis_runtime_common::{
+use oasis_ethwasi_runtime_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
 };

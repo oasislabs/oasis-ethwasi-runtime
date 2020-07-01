@@ -1,11 +1,11 @@
-//! A utility for generating oasis-node's genesis state for oasis-runtime.
+//! A utility for generating oasis-node's genesis state for oasis-ethwasi-runtime.
 #![deny(warnings)]
 
 extern crate clap;
 extern crate ethcore;
 extern crate io_context;
 extern crate oasis_core_runtime;
-extern crate oasis_runtime_common;
+extern crate oasis_ethwasi_runtime_common;
 extern crate serde_json;
 
 use std::{fs::File, sync::Arc};
@@ -17,7 +17,7 @@ use oasis_core_runtime::storage::{
     mkvs::{sync::NoopReadSyncer, Tree},
     StorageContext,
 };
-use oasis_runtime_common::{
+use oasis_ethwasi_runtime_common::{
     parity::NullBackend,
     storage::{MemoryKeyValue, ThreadLocalMKVS},
 };

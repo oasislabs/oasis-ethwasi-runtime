@@ -1,4 +1,4 @@
-//! Encryption utilties to wrap the ekiden mrae box, transparently
+//! Encryption utilties to wrap the Oasis Core mrae box, transparently
 //! encoding/decoding the ciphertext layout:
 //!
 //! PUBLIC_KEY || CIPHER_LEN || AAD_LEN || CIPHER || AAD || NONCE.

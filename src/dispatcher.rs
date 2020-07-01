@@ -27,7 +27,7 @@ use super::{
     methods::{check, execute},
 };
 
-use oasis_runtime_api as api;
+use oasis_ethwasi_runtime_api as api;
 
 /// Dispatch error.
 #[derive(Debug, Fail)]

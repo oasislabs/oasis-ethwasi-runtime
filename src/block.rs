@@ -8,7 +8,7 @@ use oasis_core_keymanager_client::KeyManagerClient;
 use oasis_core_runtime::{
     common::logger::get_logger, runtime_context, transaction::Context as TxnContext,
 };
-use oasis_runtime_common::{
+use oasis_ethwasi_runtime_common::{
     confidential::ConfidentialCtx, genesis, parity::NullBackend, storage::ThreadLocalMKVS,
 };
 use slog::{info, Logger};

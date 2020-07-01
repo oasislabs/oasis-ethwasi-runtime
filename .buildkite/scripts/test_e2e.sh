@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ############################################################
-# This script tests the Oasis runtime project.
+# This script tests the Oasis Eth/WASI runtime project.
 #
 # Usage:
 # test_e2e.sh [-w <workdir>] [-t <test-name>]
@@ -18,7 +18,7 @@ if [[ ! -z ${BUILDKITE} ]]; then
 fi
 
 # Temporary test base directory.
-TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-runtime-e2e-XXXXXXXXXX)})
+TEST_BASE_DIR=$(realpath ${TEST_BASE_DIR:-$(mktemp -d --tmpdir oasis-ethwasi-runtime-e2e-XXXXXXXXXX)})
 
 # Path to Oasis Core root.
 OASIS_CORE_ROOT_PATH=${OASIS_CORE_ROOT_PATH:-${WORKDIR}}
@@ -29,9 +29,9 @@ OASIS_NET_RUNNER=${OASIS_NET_RUNNER:-${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner
 # Path to the runtime loader.
 OASIS_CORE_RUNTIME_LOADER=${OASIS_CORE_RUNTIME_LOADER:-${OASIS_CORE_ROOT_PATH}/target/debug/oasis-core-runtime-loader}
 # Path to keymanager binary.
-OASIS_CORE_KM_BINARY=${OASIS_CORE_KM_BINARY:-${WORKDIR}/target/debug/oasis-runtime-keymanager}
+OASIS_CORE_KM_BINARY=${OASIS_CORE_KM_BINARY:-${WORKDIR}/target/debug/oasis-ethwasi-runtime-keymanager}
 # Path to runtime binary.
-RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/oasis-runtime}
+RUNTIME_BINARY=${RUNTIME_BINARY:-${WORKDIR}/target/debug/oasis-ethwasi-runtime}
 # Path to runtime genesis state.
 RUNTIME_GENESIS=${RUNTIME_GENESIS:-${WORKDIR}/resources/genesis/oasis_genesis_testing.json}
 # Path to web3 gateway.

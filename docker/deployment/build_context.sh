@@ -64,10 +64,10 @@ fi
 
 tar -czf "$dst" \
     resources/genesis.json \
-    target/release/oasis-runtime \
-    target/x86_64-fortanix-unknown-sgx/release/oasis-runtime.sgxs \
-    target/release/oasis-runtime-keymanager \
-    target/x86_64-fortanix-unknown-sgx/release/oasis-runtime-keymanager.sgxs \
+    target/release/oasis-ethwasi-runtime \
+    target/x86_64-fortanix-unknown-sgx/release/oasis-ethwasi-runtime.sgxs \
+    target/release/oasis-ethwasi-runtime-keymanager \
+    target/x86_64-fortanix-unknown-sgx/release/oasis-ethwasi-runtime-keymanager.sgxs \
     target/release/gateway \
     oasis-core/ \
     OASIS_CORE_VERSION \

@@ -32,7 +32,7 @@ source .buildkite/rust/common.sh
 cd $src_dir
 cargo test \
     --features test \
-    -p oasis-runtime \
-    -p oasis-runtime-common \
-    -p oasis-runtime-keymanager \
+    -p oasis-ethwasi-runtime \
+    -p oasis-ethwasi-runtime-common \
+    -p oasis-ethwasi-runtime-keymanager \
     -p web3-gateway

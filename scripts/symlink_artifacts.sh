@@ -50,4 +50,4 @@ set -u
 symlink_artifact $oasis_core_src_path target/default/debug/oasis-core-runtime-loader  $oasis_core_root_path
 
 # Symlink the runtime artifacts.
-symlink_artifact $runtime_src_path target/debug/oasis-runtime $runtime_root_path 1
+symlink_artifact $runtime_src_path target/debug/oasis-ethwasi-runtime $runtime_root_path 1

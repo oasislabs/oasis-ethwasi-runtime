@@ -4,14 +4,14 @@ set -euo pipefail
 
 oasis_node="${OASIS_CORE_ROOT_PATH}/go/oasis-node/oasis-node"
 oasis_runner="${OASIS_CORE_ROOT_PATH}/go/oasis-net-runner/oasis-net-runner"
-runtime_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-runtime"
+runtime_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-ethwasi-runtime"
 runtime_loader="${OASIS_CORE_ROOT_PATH}/target/default/debug/oasis-core-runtime-loader"
 runtime_genesis="${GENESIS_ROOT_PATH}/oasis_genesis_testing.json"
-keymanager_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-runtime-keymanager"
+keymanager_binary="${RUNTIME_CARGO_TARGET_DIR}/debug/oasis-ethwasi-runtime-keymanager"
 web3_gateway="${RUNTIME_CARGO_TARGET_DIR}/debug/gateway"
 
 # Prepare an empty data directory.
-data_dir="/var/tmp/oasis-runtime-runner"
+data_dir="/var/tmp/oasis-ethwasi-runtime-runner"
 rm -rf "${data_dir}"
 mkdir -p "${data_dir}"
 chmod -R go-rwx "${data_dir}"

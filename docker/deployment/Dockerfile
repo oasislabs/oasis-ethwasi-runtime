@@ -19,13 +19,13 @@ COPY oasis-core/oasis-node /oasis/bin/oasis-node
 COPY oasis-core/oasis-core-runtime-loader /oasis/bin/
 
 # Oasis runtime.
-COPY target/release/oasis-runtime /oasis/lib/
-COPY target/x86_64-fortanix-unknown-sgx/release/oasis-runtime.sgxs /oasis/lib/
+COPY target/release/oasis-ethwasi-runtime /oasis/lib/oasis-runtime
+COPY target/x86_64-fortanix-unknown-sgx/release/oasis-ethwasi-runtime.sgxs /oasis/lib/oasis-runtime.sgxs
 # Gateway.
 COPY target/release/gateway /oasis/bin/
 COPY resources/genesis.json /oasis/res/oasis-runtime-genesis.json
 # Keymanager runtime.
-COPY target/release/oasis-runtime-keymanager /oasis/lib/
-COPY target/x86_64-fortanix-unknown-sgx/release/oasis-runtime-keymanager.sgxs /oasis/lib/
+COPY target/release/oasis-ethwasi-runtime-keymanager /oasis/lib/oasis-runtime-keymanager
+COPY target/x86_64-fortanix-unknown-sgx/release/oasis-ethwasi-runtime-keymanager.sgxs /oasis/lib/oasis-runtime-keymanager.sgxs
 
 ENV PATH "/oasis/bin:${PATH}"

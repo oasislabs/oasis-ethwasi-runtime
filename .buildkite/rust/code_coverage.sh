@@ -55,10 +55,10 @@ git checkout -B ${BUILDKITE_BRANCH}
 # Calculate coverage.
 set +x
 cargo tarpaulin \
-  --packages oasis-runtime \
-  --packages oasis-runtime-common \
+  --packages oasis-ethwasi-runtime \
+  --packages oasis-ethwasi-runtime-common \
   --packages web3-gateway \
-  --packages oasis-runtime-keymanager \
+  --packages oasis-ethwasi-runtime-keymanager \
   --exclude-files .e2e* \
   --exclude-files *generated* \
   --exclude-files genesis* \

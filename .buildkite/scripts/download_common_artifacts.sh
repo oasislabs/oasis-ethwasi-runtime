@@ -33,29 +33,29 @@ mkdir -p \
 download_oasis_core_artifacts .
 download_oasis_gateway go/oasis-gateway
 
-########################
-# Download oasis-runtime
-########################
+################################
+# Download oasis-ethwasi-runtime
+###############################
 buildkite-agent artifact download \
-    oasis-runtime.sgxs \
+    oasis-ethwasi-runtime.sgxs \
     target/x86_64-fortanix-unknown-sgx/debug
 
 buildkite-agent artifact download \
-    oasis-runtime \
+    oasis-ethwasi-runtime \
     target/debug
-chmod +x target/debug/oasis-runtime
+chmod +x target/debug/oasis-ethwasi-runtime
 
-###################################
-# Download oasis-runtime-keymanager
-###################################
+###########################################
+# Download oasis-ethwasi-runtime-keymanager
+###########################################
 buildkite-agent artifact download \
-    oasis-runtime-keymanager.sgxs \
+    oasis-ethwasi-runtime-keymanager.sgxs \
     target/x86_64-fortanix-unknown-sgx/debug
 
 buildkite-agent artifact download \
-    oasis-runtime-keymanager \
+    oasis-ethwasi-runtime-keymanager \
     target/debug
-chmod +x target/debug/oasis-runtime-keymanager
+chmod +x target/debug/oasis-ethwasi-runtime-keymanager
 
 ##################
 # Download gateway

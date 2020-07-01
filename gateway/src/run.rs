@@ -48,12 +48,12 @@ pub fn execute(
 
     let mut runtime = tokio::runtime::Runtime::new()?;
 
-    // Wait for the Ekiden node to be fully synced.
-    info!(logger, "Waiting for the Ekiden node to be fully synced");
+    // Wait for the Oasis Core node to be fully synced.
+    info!(logger, "Waiting for the Oasis Core node to be fully synced");
     runtime.block_on(client.txn_client().wait_sync())?;
     info!(
         logger,
-        "Ekiden node is fully synced, proceeding with initialization"
+        "Oasis Core node is fully synced, proceeding with initialization"
     );
 
     let translator = Arc::new(Translator::new(client, gas_price));
