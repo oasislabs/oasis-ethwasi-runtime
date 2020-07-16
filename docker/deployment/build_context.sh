@@ -32,6 +32,11 @@ cargo install \
     --tag "v$oasis_core_version" \
     oasis-core-tools
 
+
+# XXX: needed while we use a different rust toolchain than the one provided in
+# the oasis-core ci image. Remove once we are able to bump the toolchain.
+rustup target add x86_64-fortanix-unknown-sgx
+
 # Build the runtime.
 cargo build --release ${RUNTIME_BUILD_EXTRA_ARGS:-}
 cargo build --release --target x86_64-fortanix-unknown-sgx ${RUNTIME_BUILD_EXTRA_ARGS:-}
