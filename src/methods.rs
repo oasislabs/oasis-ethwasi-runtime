@@ -1,11 +1,11 @@
 //! Methods exported to Oasis Core clients.
+use anyhow::Result;
 use ethcore::{
     rlp,
     transaction::{SignedTransaction, UnverifiedTransaction},
     types::receipt::TransactionOutcome,
 };
 use ethereum_types::U256;
-use failure::Fallible;
 use oasis_core_runtime::{
     runtime_context,
     transaction::{dispatcher::CheckOnlySuccess, Context as TxnContext},
@@ -24,7 +24,7 @@ pub mod check {
     use super::*;
 
     /// Check transaction.
-    pub fn tx(txn: &[u8], _ctx: &mut TxnContext) -> Fallible<SignedTransaction> {
+    pub fn tx(txn: &[u8], _ctx: &mut TxnContext) -> Result<SignedTransaction> {
         let decoded: UnverifiedTransaction = rlp::decode(txn)?;
 
         // Check that gas < block gas limit.
@@ -50,7 +50,7 @@ pub mod execute {
     use crate::dispatcher::DecodedCall;
 
     /// Execute an Ethereum transaction.
-    pub fn tx(call: &DecodedCall, ctx: &mut TxnContext) -> Fallible<ExecutionResult> {
+    pub fn tx(call: &DecodedCall, ctx: &mut TxnContext) -> Result<ExecutionResult> {
         let txn = &call.transaction;
 
         // If this is a check txn request, return success.

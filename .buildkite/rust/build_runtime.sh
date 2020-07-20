@@ -52,6 +52,10 @@ if [ ! -x ${CARGO_INSTALL_ROOT}/bin/cargo-elf2sgxs ]; then
         oasis-core-tools
 fi
 
+# XXX: needed while we use a different rust toolchain than the one provided in
+# the oasis-core ci image. Remove once we are able to bump the toolchain.
+rustup target add x86_64-fortanix-unknown-sgx
+
 ###################
 # Build the runtime
 ###################

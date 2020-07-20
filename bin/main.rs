@@ -1,16 +1,4 @@
 //! Oasis Eth/WASI runtime entry point.
-extern crate oasis_ethwasi_runtime;
-
-extern crate ethcore;
-extern crate ethereum_types;
-extern crate failure;
-extern crate io_context;
-extern crate oasis_core_keymanager_client;
-extern crate oasis_core_runtime;
-extern crate oasis_ethwasi_runtime_api;
-extern crate oasis_ethwasi_runtime_common;
-extern crate serde_bytes;
-
 use std::sync::Arc;
 
 use oasis_core_runtime::{

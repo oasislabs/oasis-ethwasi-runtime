@@ -5,7 +5,7 @@
 
 use std::convert::TryInto;
 
-use failure::{format_err, Fallible, ResultExt};
+use anyhow::{ensure, Context as AnyContext, Result};
 use oasis_core_keymanager_client::{PrivateKey, PublicKey};
 use oasis_core_runtime::common::crypto::mrae::{
     deoxysii,
@@ -34,7 +34,7 @@ pub fn encrypt(
     public_key: PublicKey,
     secret_key: PrivateKey,
     aad: Vec<u8>,
-) -> Fallible<Vec<u8>> {
+) -> Result<Vec<u8>> {
     let ciphertext = deoxysii::box_seal(
         &nonce.clone(),
         plaintext.clone(),
@@ -48,7 +48,7 @@ pub fn encrypt(
 /// Decrypts the given payload generated in the same manner by the encrypt method.
 /// extracts the nonce and public key and uses them along with the given secret_key
 /// to decrypt the cipher, returning the resulting Decryption struct.
-pub fn decrypt(data: Option<Vec<u8>>, secret_key: PrivateKey) -> Fallible<Decryption> {
+pub fn decrypt(data: Option<Vec<u8>>, secret_key: PrivateKey) -> Result<Decryption> {
     if data.is_none() {
         return Ok(Decryption {
             plaintext: Default::default(),
@@ -65,7 +65,7 @@ pub fn decrypt(data: Option<Vec<u8>>, secret_key: PrivateKey) -> Fallible<Decryp
         &peer_public_key.into(),
         &secret_key.into(),
     )
-    .with_context(|e| format!("payload open failed: {}", e))?;
+    .with_context(|| format!("payload open failed"))?;
     Ok(Decryption {
         plaintext,
         peer_public_key,
@@ -108,10 +108,11 @@ fn encode_encryption(
 /// Returns a tuple of each component.
 fn split_encrypted_payload(
     data: Vec<u8>,
-) -> Fallible<(PublicKey, u64, u64, Vec<u8>, Vec<u8>, Nonce)> {
-    if data.len() < PublicKey::len() + NONCE_SIZE + CIPHER_LEN_SIZE + AAD_LEN_SIZE {
-        return Err(format_err!("invalid nonce or public key"));
-    }
+) -> Result<(PublicKey, u64, u64, Vec<u8>, Vec<u8>, Nonce)> {
+    ensure!(
+        data.len() >= PublicKey::len() + NONCE_SIZE + CIPHER_LEN_SIZE + AAD_LEN_SIZE,
+        "invalid nonce or public key"
+    );
 
     let peer_public_key = PublicKey::from(&data[..PublicKey::len()]);
 
@@ -129,9 +130,10 @@ fn split_encrypted_payload(
 
     let expected_data_length =
         PublicKey::len() + CIPHER_LEN_SIZE + AAD_LEN_SIZE + cipher_len + aad_len + NONCE_SIZE;
-    if data.len() != expected_data_length {
-        return Err(format_err!("invalid size for ciphertext"));
-    }
+    ensure!(
+        data.len() == expected_data_length,
+        "invalid size for ciphertext"
+    );
 
     let cipher_start = aad_len_end;
     let cipher_end = cipher_start + cipher_len;

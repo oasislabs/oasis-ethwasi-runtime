@@ -20,8 +20,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use anyhow::{Error, Result};
 use ethereum_types::U256;
-use failure::{format_err, Fallible};
 use informant;
 use oasis_core_keymanager_client::KeyManagerClient;
 use oasis_core_runtime::common::logger::get_logger;
@@ -43,7 +43,7 @@ pub fn execute(
     ws_rate_limit: usize,
     gas_price: U256,
     jsonrpc_max_batch_size: usize,
-) -> Fallible<RunningGateway> {
+) -> Result<RunningGateway> {
     let logger = get_logger("gateway/execute");
 
     let mut runtime = tokio::runtime::Runtime::new()?;
@@ -100,11 +100,11 @@ pub fn execute(
 
     // Start RPC servers.
     info!(logger, "Starting WS server"; "conf" => ?ws_conf);
-    let ws_server = rpc::new_ws(ws_conf, &dependencies).map_err(|err| format_err!("{}", err))?;
+    let ws_server = rpc::new_ws(ws_conf, &dependencies).map_err(Error::msg)?;
 
     info!(logger, "Starting HTTP server"; "conf" => ?http_conf);
-    let http_server = rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies)
-        .map_err(|err| format_err!("{}", err))?;
+    let http_server =
+        rpc::new_http("HTTP JSON-RPC", "jsonrpc", http_conf, &dependencies).map_err(Error::msg)?;
 
     let running_client = RunningGateway {
         logger,

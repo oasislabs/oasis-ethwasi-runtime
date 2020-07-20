@@ -22,7 +22,7 @@ extern crate fdlimit;
 extern crate signal_hook;
 #[macro_use]
 extern crate clap;
-extern crate failure;
+extern crate anyhow;
 extern crate log;
 extern crate oasis_core_runtime;
 extern crate oasis_ethwasi_runtime_common;
@@ -34,8 +34,8 @@ mod metrics;
 
 use std::{io::Read, net::SocketAddr, os::unix::net::UnixStream, time::Duration};
 
+use anyhow::Result;
 use clap::{App, Arg};
-use failure::Fallible;
 use fdlimit::raise_fd_limit;
 use slog::{error, info};
 
@@ -46,7 +46,7 @@ use web3_gateway::util;
 const METRICS_MODE_PULL: &str = "pull";
 const METRICS_MODE_PUSH: &str = "push";
 
-fn main() -> Fallible<()> {
+fn main() -> Result<()> {
     // TODO: is this needed?
     // increase max number of open files
     raise_fd_limit();
