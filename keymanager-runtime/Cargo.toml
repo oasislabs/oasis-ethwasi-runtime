@@ -10,12 +10,12 @@ stack-size = 2097152
 threads = 2
 
 [dependencies]
-oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.8.2" }
-oasis-core-keymanager-lib = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.8.2" }
-oasis-core-keymanager-api-common = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.8.2" }
+oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.9" }
+oasis-core-keymanager-lib = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.9" }
+oasis-core-keymanager-api-common = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.9" }
 
 [build-dependencies]
-oasis-core-tools = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.8.2" }
+oasis-core-tools = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.9" }
 
 [features]
 benchmarking = []
