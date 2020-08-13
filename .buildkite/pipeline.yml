@@ -171,7 +171,7 @@ steps:
   - label: ":rocket: Build docker image context"
     trigger: oasis-ethwasi-runtime-build-image-context
     async: true
-    branches: master ptrus/feature/oasis-core-20-9
+    branches: master
     build:
       message: "${BUILDKITE_MESSAGE}"
       commit: "${BUILDKITE_COMMIT}"
