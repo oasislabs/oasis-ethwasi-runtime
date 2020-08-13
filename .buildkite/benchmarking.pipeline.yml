@@ -29,7 +29,7 @@ docker_plugin: &docker_plugin_configuration
 
 steps:
   - label: Build artifacts
-    branches: master
+    branches: master ptrus/feature/oasis-core-20-9
     command:
       - .buildkite/scripts/build_benchmarking_context.sh context.tar.gz
     artifact_paths:
@@ -44,7 +44,7 @@ steps:
   - label: ":rocket: Publish benchmarking docker image"
     trigger: private-ops-oasis-runtime-benchmarking-publish-image
     async: true
-    branches: master
+    branches: master ptrus/feature/oasis-core-20-9
     build:
       message: "${BUILDKITE_MESSAGE}"
       env:
