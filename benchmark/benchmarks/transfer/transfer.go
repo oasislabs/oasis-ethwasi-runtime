@@ -26,17 +26,21 @@ import (
 )
 
 const (
-	cfgFaucetURL    = "benchmarks.transfer.faucet_url"
-	cfgWatchNewHead = "benchmarks.transfer.watch_new_head"
-	cfgQueryNonces  = "benchmarks.transfer.query_nonces"
+	cfgFaucetURL             = "benchmarks.transfer.faucet_url"
+	cfgWatchNewHead          = "benchmarks.transfer.watch_new_head"
+	cfgQueryNonces           = "benchmarks.transfer.query_nonces"
+	cfgFundingAccount        = "benchmarks.transfer.funding_account"
+	cfgFundingAccountAddress = "benchmarks.transfer.funding_account_address"
 
 	transferCost = 2100 // Simple transfers always cost this much gas.
 )
 
 var (
-	flagFaucetURL    string
-	flagWatchNewHead bool
-	flagQueryNonces  bool
+	flagFaucetURL             string
+	flagWatchNewHead          bool
+	flagQueryNonces           bool
+	flagFundingAccount        string
+	flagFundingAccountAddress string
 
 	gasPrice       = big.NewInt(1000000000)
 	transferAmount = big.NewInt(1)
@@ -398,30 +402,27 @@ func Init(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&flagFaucetURL, cfgFaucetURL, "", "Faucet private endpoint URL")
 	cmd.Flags().BoolVar(&flagWatchNewHead, cfgWatchNewHead, false, "Subscribe for `newHeads` events")
 	cmd.Flags().BoolVar(&flagQueryNonces, cfgQueryNonces, false, "Query explicitly for account nonces")
+	cmd.Flags().StringVar(&flagFundingAccount, cfgFundingAccount, "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c", "Hex encoded funding account key")
+	cmd.Flags().StringVar(&flagFundingAccountAddress, cfgFundingAccountAddress, "0x7110316b618d20d0c44728ac2a3d683536ea682b", "Funding account address")
 
 	for _, v := range []string{
 		cfgFaucetURL,
 		cfgWatchNewHead,
 		cfgQueryNonces,
+		cfgFundingAccount,
+		cfgFundingAccountAddress,
 	} {
 		viper.BindPFlag(v, cmd.Flags().Lookup(v)) // nolint: errcheck
 	}
 
-	// TODO: This probably shouldn't be hardcoded, but just initialize
-	// the funding account here for now.
-	const (
-		fundingAccount = "533d62aea9bbcb821dfdda14966bb01bfbbb53b7e9f5f0d69b8326e052e3450c"
-		fundingAddress = "0x7110316b618d20d0c44728ac2a3d683536ea682b"
-	)
-
-	privKey, err := crypto.HexToECDSA(fundingAccount)
+	privKey, err := crypto.HexToECDSA(flagFundingAccount)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("error parsing funding account private key: %v", err))
 	}
 
 	// Sanity check the addresss.
 	addr := privKeyToAddress(privKey)
-	if strings.ToLower(addr.Hex()) != fundingAddress {
+	if strings.ToLower(addr.Hex()) != strings.ToLower(flagFundingAccountAddress) {
 		panic("funding address does not match funding private key")
 	}
 
