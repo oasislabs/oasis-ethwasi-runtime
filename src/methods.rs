@@ -51,6 +51,9 @@ pub mod execute {
 
     /// Execute an Ethereum transaction.
     pub fn tx(call: &DecodedCall, ctx: &mut TxnContext) -> Result<ExecutionResult> {
+        // Notify the context that subsequent mutations are due to this new transaction.
+        ctx.start_transaction();
+
         let txn = &call.transaction;
 
         // If this is a check txn request, return success.

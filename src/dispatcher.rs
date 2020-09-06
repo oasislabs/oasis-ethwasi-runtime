@@ -119,7 +119,6 @@ impl TxnDispatcher for Dispatcher {
                 {
                     bail!("batch aborted");
                 }
-                ctx.start_transaction();
                 let tx = self.decode_transaction(call, &mut ctx)?;
 
                 #[cfg(feature = "prefetch")]
