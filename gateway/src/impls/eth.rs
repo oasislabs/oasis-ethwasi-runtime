@@ -556,7 +556,7 @@ impl Eth for EthClient {
             .with(&labels! {"call" => "sendRawTransaction",})
             .start_timer();
 
-        if log_enabled!(log::LogLevel::Debug) {
+        if log_enabled!(log::Level::Debug) {
             debug!(self.logger, "eth_sendRawTransaction"; "data" => ?raw);
         } else {
             info!(self.logger, "eth_sendRawTransaction")

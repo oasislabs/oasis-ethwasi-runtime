@@ -120,7 +120,7 @@ impl Oasis for OasisClient {
             .with(&labels! {"call" => "invoke",})
             .start_timer();
 
-        if log_enabled!(log::LogLevel::Debug) {
+        if log_enabled!(log::Level::Debug) {
             debug!(self.logger, "oasis_invoke"; "data" => ?raw);
         } else {
             info!(self.logger, "oasis_invoke")

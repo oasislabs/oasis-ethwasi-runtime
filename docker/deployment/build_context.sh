@@ -24,6 +24,8 @@ curl -L -o oasis_core_linux_amd64.tar.gz \
  "https://github.com/oasisprotocol/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
 mkdir -p oasis-core
 tar -C oasis-core -xzf oasis_core_linux_amd64.tar.gz
+mv "oasis-core/oasis_core_${oasis_core_version}_linux_amd64/oasis-node" oasis-core/
+mv "oasis-core/oasis_core_${oasis_core_version}_linux_amd64/oasis-core-runtime-loader" oasis-core/
 
 # Install oasis-core-tools.
 cargo install \
@@ -32,10 +34,6 @@ cargo install \
     --tag "v$oasis_core_version" \
     oasis-core-tools
 
-
-# XXX: needed while we use a different rust toolchain than the one provided in
-# the oasis-core ci image. Remove once we are able to bump the toolchain.
-rustup target add x86_64-fortanix-unknown-sgx
 
 # Build the runtime.
 cargo build --release ${RUNTIME_BUILD_EXTRA_ARGS:-}

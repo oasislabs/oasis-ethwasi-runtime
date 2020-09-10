@@ -22,10 +22,6 @@ rustup target add wasm32-unknown-unknown
 cargo install owasm-utils-cli --force --bin wasm-build
 apt install -y xxd
 
-# XXX: needed while we use a different rust toolchain than the one provided in
-# the oasis-core ci image. Remove once we are able to bump the toolchain.
-rustup target add x86_64-fortanix-unknown-sgx
-
 # Compile genesis tool.
 cargo build -p genesis --release
 
