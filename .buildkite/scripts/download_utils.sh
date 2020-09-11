@@ -21,9 +21,9 @@ download_oasis_core_artifacts() {
 		"https://github.com/oasisprotocol/oasis-core/releases/download/v${oasis_core_version}/oasis_core_${oasis_core_version}_linux_amd64.tar.gz"
 	tar -C /tmp/ -xzf /tmp/oasis_core_linux_amd64.tar.gz
 
-	mv /tmp/oasis-node "${out_dir}/go/oasis-node/"
-	mv /tmp/oasis-net-runner "${out_dir}/go/oasis-net-runner/"
-	mv /tmp/oasis-core-runtime-loader "${out_dir}/target/debug/"
+	mv "/tmp/oasis_core_${oasis_core_version}_linux_amd64/oasis-node" "${out_dir}/go/oasis-node/"
+	mv "/tmp/oasis_core_${oasis_core_version}_linux_amd64/oasis-net-runner" "${out_dir}/go/oasis-net-runner/"
+	mv "/tmp/oasis_core_${oasis_core_version}_linux_amd64/oasis-core-runtime-loader" "${out_dir}/target/debug/"
 }
 
 download_gateway() {

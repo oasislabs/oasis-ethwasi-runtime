@@ -175,11 +175,11 @@ fn main() -> Result<()> {
         .get_matches();
 
     let log_level = match args.occurrences_of("v") {
-        0 => log::LogLevel::Error,
-        1 => log::LogLevel::Warn,
-        2 => log::LogLevel::Debug,
-        3 => log::LogLevel::Info,
-        4 | _ => log::LogLevel::Trace,
+        0 => log::Level::Error,
+        1 => log::Level::Warn,
+        2 => log::Level::Debug,
+        3 => log::Level::Info,
+        4 | _ => log::Level::Trace,
     };
 
     // Initializes the log -> slog adapter so that we can use the log crate, e.g., in Parity.
