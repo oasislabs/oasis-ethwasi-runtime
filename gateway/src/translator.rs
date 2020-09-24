@@ -356,7 +356,7 @@ impl Translator {
                                 .iter()
                                 .map(|addr: &ethereum_types::Address| {
                                     let bytes: &[u8] = addr;
-                                    bytes.to_vec().into()
+                                    ByteBuf::from(bytes.to_vec())
                                 })
                                 .collect(),
                         });
@@ -375,7 +375,7 @@ impl Translator {
                                         .iter()
                                         .map(|topic: &ethereum_types::H256| {
                                             let bytes: &[u8] = topic;
-                                            bytes.to_vec().into()
+                                            ByteBuf::from(bytes.to_vec())
                                         })
                                         .collect(),
                                 })
