@@ -20,8 +20,8 @@ oasis-ethwasi-runtime-common = { path = "./common" }
 oasis-ethwasi-runtime-keymanager = { path = "./keymanager-runtime" }
 
 # Oasis core.
-oasis-core-keymanager-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11" }
-oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11" }
+oasis-core-keymanager-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11.2" }
+oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11.2" }
 
 # Parity.
 common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
@@ -45,7 +45,7 @@ slog = "2.4.1"
 thiserror = "1.0"
 
 [build-dependencies]
-oasis-core-tools = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11" }
+oasis-core-tools = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11.2" }
 
 [dev-dependencies]
 assert_matches = "1.3.0"
