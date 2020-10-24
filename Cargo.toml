@@ -24,11 +24,11 @@ oasis-core-keymanager-client = { git = "https://github.com/oasisprotocol/oasis-c
 oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.11.2" }
 
 # Parity.
-common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
-ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
-ethkey = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
-hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
-keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "ekiden" }
+common-types = { git = "https://github.com/oasislabs/oasis-parity", branch = "use-parity-ws" }
+ethcore = { git = "https://github.com/oasislabs/oasis-parity", branch = "use-parity-ws" }
+ethkey = { git = "https://github.com/oasislabs/oasis-parity", branch = "use-parity-ws" }
+hashdb = { git = "https://github.com/oasislabs/oasis-parity", branch = "use-parity-ws" }
+keccak-hash = { git = "https://github.com/oasislabs/oasis-parity", branch = "use-parity-ws" }
 ethereum-types = { version = "0.3", default-features = false, features = ["std", "serialize"] }
 
 # Others.
@@ -66,10 +66,6 @@ production-genesis = ["oasis-ethwasi-runtime-common/production-genesis"]
 panic = "abort"
 opt-level = 3
 lto = true
-
-# temporary fix for incompatibility between jsonrpc and ws-rs
-[patch."https://github.com/tomusdrw/ws-rs"]
-ws = { git = "https://github.com/oasislabs/ws-rs", branch = "ekiden" }
 
 [patch.crates-io]
 # TODO: Remove when merged upstream (briansmith/ring#738).
