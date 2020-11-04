@@ -2552,7 +2552,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.11.2#12e45f046c1b7ea0f2e8692967052abab40e5458"
+source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.12#47ec507544d664b0a524b11add7143c0154ac9ff"
 dependencies = [
  "anyhow",
  "futures",
@@ -2573,7 +2573,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-keymanager-api-common"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.11.2#12e45f046c1b7ea0f2e8692967052abab40e5458"
+source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.12#47ec507544d664b0a524b11add7143c0154ac9ff"
 dependencies = [
  "anyhow",
  "base64 0.12.3",
@@ -2590,7 +2590,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-keymanager-client"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.11.2#12e45f046c1b7ea0f2e8692967052abab40e5458"
+source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.12#47ec507544d664b0a524b11add7143c0154ac9ff"
 dependencies = [
  "anyhow",
  "futures",
@@ -2605,7 +2605,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-keymanager-lib"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.11.2#12e45f046c1b7ea0f2e8692967052abab40e5458"
+source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.12#47ec507544d664b0a524b11add7143c0154ac9ff"
 dependencies = [
  "anyhow",
  "io-context",
@@ -2625,7 +2625,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-runtime"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.11.2#12e45f046c1b7ea0f2e8692967052abab40e5458"
+source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.12#47ec507544d664b0a524b11add7143c0154ac9ff"
 dependencies = [
  "anyhow",
  "arbitrary",
@@ -2673,7 +2673,7 @@ dependencies = [
 [[package]]
 name = "oasis-core-tools"
 version = "0.3.0-alpha"
-source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.11.2#12e45f046c1b7ea0f2e8692967052abab40e5458"
+source = "git+https://github.com/oasisprotocol/oasis-core?tag=v20.12#47ec507544d664b0a524b11add7143c0154ac9ff"
 dependencies = [
  "ansi_term 0.12.1",
  "anyhow",
