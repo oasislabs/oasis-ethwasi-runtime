@@ -35,9 +35,9 @@ wasmi = "0.4"
 oasis-ethwasi-runtime-common = { path = "../common" }
 
 ## Oasis Core client dependencies.
-oasis-core-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.12.1" }
-oasis-core-keymanager-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.12.1" }
-oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.12.1" }
+oasis-core-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.12.3" }
+oasis-core-keymanager-client = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.12.3" }
+oasis-core-runtime = { git = "https://github.com/oasisprotocol/oasis-core", tag = "v20.12.3" }
 oasis-ethwasi-runtime-api = { path = "../api" }
 
 anyhow = "1.0"
