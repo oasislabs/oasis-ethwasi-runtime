@@ -13,17 +13,15 @@ use ethereum_types::{Address, H256, U256};
 use ethkey::{KeyPair as EtyKeyPair, Secret};
 use oasis_core_keymanager_client::{self, KeyManagerClient, KeyPair, KeyPairId};
 use oasis_core_runtime::{
-    common::{
-        crypto::{
-            hash::Hash,
-            mrae::nonce::{Nonce, NONCE_SIZE},
-        },
-        roothash::Header,
+    common::crypto::{
+        hash::Hash,
+        mrae::nonce::{Nonce, NONCE_SIZE},
     },
+    consensus::roothash::Header,
     executor::Executor,
     runtime_context,
     storage::{
-        mkvs::{sync::NoopReadSyncer, Tree},
+        mkvs::{sync::NoopReadSyncer, OverlayTree, RootType, Tree},
         StorageContext,
     },
     transaction::{dispatcher::BatchHandler, Context as TxnContext},
@@ -70,11 +68,14 @@ pub struct Client {
 impl Client {
     pub fn new() -> Self {
         let km_client = Arc::new(oasis_core_keymanager_client::mock::MockClient::new());
-        let mut mkvs = Tree::make().new(Box::new(NoopReadSyncer {}));
+        let mut mkvs = Tree::make()
+            .with_root_type(RootType::State)
+            .new(Box::new(NoopReadSyncer {}));
+        let mut overlay = OverlayTree::new(&mut mkvs);
 
         // Initialize genesis.
         let untrusted_local = Arc::new(MemoryKeyValue::new());
-        StorageContext::enter(&mut mkvs, untrusted_local, || {
+        StorageContext::enter(&mut overlay, untrusted_local, || {
             genesis::SPEC
                 .ensure_db_good(
                     Box::new(ThreadLocalMKVS::new(IoContext::background())),
@@ -84,8 +85,8 @@ impl Client {
                 .expect("genesis initialization must succeed");
         });
 
-        let (_, state_root) = mkvs
-            .commit(IoContext::background(), Default::default(), 0)
+        let (_, state_root) = overlay
+            .commit_both(IoContext::background(), Default::default(), 0)
             .expect("mkvs commit must succeed");
 
         Self {
@@ -118,12 +119,14 @@ impl Client {
         F: FnOnce(&mut Self, &mut TxnContext) -> R,
     {
         let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
+        let mut overlay = OverlayTree::new(&mut mkvs);
         let header = self.header.clone();
-        let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, true);
+        let results = Default::default();
+        let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, &results, 0, true);
         let handler = OasisBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
-        let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
+        let result = StorageContext::enter(&mut overlay, untrusted_local, || {
             handler.start_batch(&mut ctx);
             let result = f(self, &mut ctx);
             handler.end_batch(&mut ctx);
@@ -140,12 +143,20 @@ impl Client {
         F: FnOnce(&mut Self, &mut TxnContext) -> R,
     {
         let mut mkvs = self.mkvs.take().expect("nested execute_batch not allowed");
+        let mut overlay = OverlayTree::new(&mut mkvs);
         let header = self.header.clone();
-        let mut ctx = TxnContext::new(IoContext::background().freeze(), &header, false);
+        let results = Default::default();
+        let mut ctx = TxnContext::new(
+            IoContext::background().freeze(),
+            &header,
+            &results,
+            0,
+            false,
+        );
         let handler = OasisBatchHandler::new(self.km_client.clone());
         let untrusted_local = Arc::new(MemoryKeyValue::new());
 
-        let result = StorageContext::enter(&mut mkvs, untrusted_local, || {
+        let result = StorageContext::enter(&mut overlay, untrusted_local, || {
             handler.start_batch(&mut ctx);
             let result = f(self, &mut ctx);
             handler.end_batch(&mut ctx);
@@ -153,8 +164,8 @@ impl Client {
             result
         });
 
-        let (_, new_state_root) = mkvs
-            .commit(
+        let (_, new_state_root) = overlay
+            .commit_both(
                 IoContext::background(),
                 Default::default(),
                 self.header.round + 1,
