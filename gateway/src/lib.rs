@@ -72,7 +72,7 @@ use clap::{value_t_or_exit, ArgMatches};
 use ethereum_types::U256;
 use grpcio::EnvBuilder;
 use oasis_core_client::{create_txn_api_client, Node, TxnClient};
-use oasis_core_runtime::common::runtime::RuntimeId;
+use oasis_core_runtime::common::namespace::Namespace;
 use oasis_ethwasi_runtime_api::*;
 use serde_bytes::ByteBuf;
 
@@ -95,7 +95,7 @@ pub fn start(
     jsonrpc_max_batch_size: usize,
 ) -> Result<RunningGateway> {
     let node_address = args.value_of("node-address").unwrap();
-    let runtime_id = value_t_or_exit!(args, "runtime-id", RuntimeId);
+    let runtime_id = value_t_or_exit!(args, "runtime-id", Namespace);
 
     let env = Arc::new(EnvBuilder::new().build());
     let node = Node::new(env.clone(), node_address);

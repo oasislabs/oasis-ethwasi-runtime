@@ -14,7 +14,7 @@ use clap::{crate_authors, crate_version, App, Arg};
 use ethcore::spec::Spec;
 use io_context::Context;
 use oasis_core_runtime::storage::{
-    mkvs::{sync::NoopReadSyncer, Tree},
+    mkvs::{sync::NoopReadSyncer, OverlayTree, RootType, Tree},
     StorageContext,
 };
 use oasis_ethwasi_runtime_common::{
@@ -48,9 +48,10 @@ fn main() {
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = Tree::make()
         .with_capacity(0, 0)
+        .with_root_type(RootType::State)
         .new(Box::new(NoopReadSyncer {}));
-
-    StorageContext::enter(&mut mkvs, untrusted_local, || {
+    let mut overlay = OverlayTree::new(&mut mkvs);
+    StorageContext::enter(&mut overlay, untrusted_local, || {
         spec.ensure_db_good(
             Box::new(ThreadLocalMKVS::new(Context::background())),
             NullBackend,
@@ -59,8 +60,8 @@ fn main() {
         .expect("genesis initialization must succeed");
     });
 
-    let (write_log, _) = mkvs
-        .commit(Context::background(), Default::default(), 0)
+    let (write_log, _) = overlay
+        .commit_both(Context::background(), Default::default(), 0)
         .expect("mkvs commit must succeed");
 
     // Serialize genesis state.

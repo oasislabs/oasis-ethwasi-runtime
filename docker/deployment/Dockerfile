@@ -1,10 +1,10 @@
 FROM docker.io/tozd/sgx:ubuntu-bionic
 
 RUN apt-get install -qq libsnappy1v5 librocksdb5.8 && \
-    wget http://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_0.3.3-2_amd64.deb && \
-    echo '1cf9bdae5cfab75f292fad9ee0ef76a7c55243dbc0515709624b2a9573d19447 bubblewrap_0.3.3-2_amd64.deb' | sha256sum -c && \
-    dpkg -i bubblewrap_0.3.3-2_amd64.deb && \
-    rm bubblewrap_0.3.3-2_amd64.deb
+    wget http://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_0.4.1-1_amd64.deb && \
+    echo '25de452f209e4fdb4b009851c33ca9a0269ebf0b92f4bd9b86186480592cc3e2 bubblewrap_0.4.1-1_amd64.deb' | sha256sum -c && \
+    dpkg -i bubblewrap_0.4.1-1_amd64.deb && \
+    rm bubblewrap_0.4.1-1_amd64.deb
 
 ARG OASIS_CORE_VERSION
 ARG OASIS_RUNTIME_COMMIT_SHA

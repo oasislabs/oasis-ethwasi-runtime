@@ -36,10 +36,11 @@ use oasis_core_runtime::{
             hash::Hash,
             signature::{PublicKey, Signature, SignatureBundle},
         },
-        registry, roothash,
+        namespace::Namespace,
     },
+    consensus::registry,
     storage::{
-        mkvs::{sync::NoopReadSyncer, Tree},
+        mkvs::{sync::NoopReadSyncer, OverlayTree, RootType, Tree},
         StorageContext,
     },
 };
@@ -200,7 +201,7 @@ fn main() {
 
     let node_address = matches.value_of("node-address").unwrap();
     let commit_every = value_t_or_exit!(matches, "commit-every", usize);
-    let runtime_id = value_t_or_exit!(matches, "runtime-id", roothash::Namespace);
+    let runtime_id = value_t_or_exit!(matches, "runtime-id", Namespace);
 
     // Initialize connection to the storage node.
     let env = Arc::new(EnvBuilder::new().build());
@@ -210,13 +211,15 @@ fn main() {
     let untrusted_local = Arc::new(MemoryKeyValue::new());
     let mut mkvs = Tree::make()
         .with_capacity(0, 0)
+        .with_root_type(RootType::State)
         .new(Box::new(NoopReadSyncer {}));
+    let mut overlay = OverlayTree::new(&mut mkvs);
 
     // Load Ethereum genesis state.
     let genesis_json = include_str!("../../resources/genesis/genesis_testing.json");
     let spec = Spec::load(Cursor::new(genesis_json)).expect("failed to load Ethereum genesis file");
 
-    StorageContext::enter(&mut mkvs, untrusted_local, || {
+    StorageContext::enter(&mut overlay, untrusted_local, || {
         // Initialize state with genesis block.
         spec.ensure_db_good(
             Box::new(ThreadLocalMKVS::new(Context::background())),
@@ -239,8 +242,8 @@ fn main() {
         let mut commit = |state: &mut State<_>| {
             state.commit().unwrap();
 
-            let (write_log, state_root) = StorageContext::with_current(|mkvs, _untrusted_local| {
-                mkvs.commit(Context::background(), runtime_id, 0)
+            let (write_log, state_root) = StorageContext::with_current(|tree, _untrusted_local| {
+                tree.commit(Context::background(), runtime_id, 0)
                     .expect("mkvs commit must succeed")
             });
 
@@ -315,7 +318,7 @@ fn main() {
         commit(&mut state);
     });
 
-    let (_, state_root) = mkvs
+    let state_root = mkvs
         .commit(Context::background(), runtime_id, 0)
         .expect("mkvs commit must succeed");
     println!("Done, genesis state root is {:?}.", state_root);
@@ -323,15 +326,15 @@ fn main() {
     // Generate genesis roothash block file.
     let rtg = registry::RuntimeGenesis {
         state_root: state_root,
-        state: vec![],
-        storage_receipts: vec![SignatureBundle {
+        state: None,
+        storage_receipts: Some(vec![SignatureBundle {
             // public_key must not be None, but empty.
             public_key: Some(PublicKey::default()),
             signature: Signature::default(),
-        }],
+        }]),
         round: 0,
     };
-    let rtg_map: HashMap<roothash::Namespace, registry::RuntimeGenesis> =
+    let rtg_map: HashMap<Namespace, registry::RuntimeGenesis> =
         [(runtime_id, rtg)].iter().cloned().collect();
 
     // Save to file.
