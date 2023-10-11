@@ -28,8 +28,7 @@ require (
 	github.com/spf13/viper v1.2.1
 	github.com/stretchr/testify v1.2.2 // indirect
 	github.com/syndtr/goleveldb v0.0.0-20181012014443-6b91fda63f2e // indirect
-	golang.org/x/net v0.0.0-20181023162649-9b4f9f5ad519
-	golang.org/x/sys v0.0.0-20181026064943-731415f00dce // indirect
+	golang.org/x/net v0.17.0
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 )
 
